@@ -1,0 +1,24 @@
+workflows:
+  ios:
+    name: Build iOS IPA
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+    triggering:
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: develop
+          include: true
+    scripts:
+      - flutter clean
+      - flutter pub get
+      - flutter build ios --release --no-codesign
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/archive/*.xcarchive
+    publishing:
+      email:
+        recipients:
+          - mattiasironi1@gmail.com
