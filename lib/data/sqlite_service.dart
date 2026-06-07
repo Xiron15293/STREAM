@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../design/stream_icon_library.dart';
@@ -22,6 +23,10 @@ class SQLiteService {
   Future<void> close() async {
     await _db?.close();
     _db = null;
+  }
+
+  Future<T> transaction<T>(Future<T> Function(Transaction txn) action) async {
+    return _database.transaction(action);
   }
 
   Database get _database {
@@ -106,7 +111,7 @@ class SQLiteService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
-        CREATE TABLE accounts (
+        CREATE TABLE IF NOT EXISTS accounts (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           type TEXT NOT NULL,
@@ -120,46 +125,74 @@ class SQLiteService {
       try {
         await db.execute(
             "ALTER TABLE movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V2 add account_id to movements error: $e');
+      }
     }
     if (oldVersion < 3) {
       try {
         await db.execute(
             "ALTER TABLE quick_movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V3 add account_id to quick_movements error: $e');
+      }
       try {
         await db.execute(
             "ALTER TABLE favorite_movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V3 add account_id to favorite_movements error: $e');
+      }
     }
     if (oldVersion < 4) {
       try {
         await db.execute(
             "ALTER TABLE categories ADD COLUMN icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultCategoryIcon}'");
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V4 add icon_key to categories error: $e');
+      }
       try {
         await db.execute(
             "ALTER TABLE accounts ADD COLUMN icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultAccountIcon}'");
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V4 add icon_key to accounts error: $e');
+      }
     }
     if (oldVersion < 5) {
       try {
         await db.execute(
             "ALTER TABLE accounts ADD COLUMN color INTEGER");
         await db.update('accounts', {'color': StreamColorPalette.getDefault()}, where: 'color IS NULL');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V5 add color to accounts error: $e');
+      }
     }
     if (oldVersion < 6) {
       try {
         await db.execute("ALTER TABLE movements ADD COLUMN date TEXT");
+      } catch (e) {
+        debugPrint('Migration V6 add date column error: $e');
+      }
+      try {
         await db.rawUpdate('''
           UPDATE movements SET date = substr(created_at, 1, 10)
-          WHERE date IS NULL AND created_at IS NOT NULL
+          WHERE date IS NULL
+            AND created_at IS NOT NULL
+            AND length(created_at) >= 10
+            AND substr(created_at, 5, 1) = '-'
+            AND substr(created_at, 8, 1) = '-'
         ''');
-        await db.rawUpdate('''
-          UPDATE movements SET date = ? WHERE date IS NULL
-        ''', [DateTime.now().toIso8601String().substring(0, 10)]);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Migration V6 backfill from created_at error: $e');
+      }
+      try {
+        final today = DateTime.now().toIso8601String().substring(0, 10);
+        await db.rawUpdate(
+          "UPDATE movements SET date = ? WHERE date IS NULL OR date = ''",
+          [today],
+        );
+      } catch (e) {
+        debugPrint('Migration V6 fallback date error: $e');
+      }
     }
   }
 

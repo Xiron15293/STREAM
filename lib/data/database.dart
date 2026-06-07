@@ -430,4 +430,88 @@ class AppDatabase extends ChangeNotifier {
       notifyListeners();
     });
   }
+
+  void notify() {
+    notifyListeners();
+  }
+
+  // ── Backup/Restore internal API ──
+
+  SQLiteService? get sqliteService => _sqlite;
+
+  void clearMemory() {
+    _movements.clear();
+    _categories.clear();
+    _quickMovements.clear();
+    _favoriteMovements.clear();
+    _accounts.clear();
+  }
+
+  void replaceState({
+    required List<Movement> movements,
+    required List<Category> categories,
+    required List<QuickMovement> quickMovements,
+    required List<FavoriteMovement> favoriteMovements,
+    required List<Account> accounts,
+  }) {
+    _movements
+      ..clear()
+      ..addAll(movements);
+    _categories = List.from(categories);
+    _quickMovements = List.from(quickMovements);
+    _favoriteMovements
+      ..clear()
+      ..addAll(favoriteMovements);
+    _accounts = List.from(accounts);
+  }
+
+  void internalAddAccount(Account a) {
+    _accounts.add(a);
+    if (_sqlite != null) {
+      unawaited(_sqlite.insertAccount(a));
+    }
+  }
+
+  void internalAddCategory(Category c) {
+    _categories.add(c);
+    if (_sqlite != null) {
+      unawaited(_sqlite.insertCategory(c));
+    }
+  }
+
+  void internalAddOrUpdateCategory(Category c) {
+    final idx = _categories.indexWhere((x) => x.id == c.id);
+    if (idx >= 0) {
+      _categories[idx] = c;
+      if (_sqlite != null) {
+        unawaited(_sqlite.updateCategory(c));
+      }
+    } else {
+      _categories.add(c);
+      if (_sqlite != null) {
+        unawaited(_sqlite.insertCategory(c));
+      }
+    }
+  }
+
+  void internalAddMovement(Movement m) {
+    _movements.add(m);
+    if (_sqlite != null) {
+      unawaited(_sqlite.insertMovement(m));
+    }
+  }
+
+  void internalAddQuickMovement(QuickMovement qm) {
+    _quickMovements.add(qm);
+    if (_sqlite != null) {
+      unawaited(_sqlite.insertQuickMovement(qm));
+    }
+  }
+
+  void internalAddFavoriteMovement(FavoriteMovement fm) {
+    _favoriteMovements.add(fm);
+    if (_sqlite != null) {
+      unawaited(_sqlite.insertFavoriteMovement(fm));
+    }
+  }
 }

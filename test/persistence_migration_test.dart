@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart' show openDatabase;
 import 'package:path/path.dart' show join;
 import 'dart:io';
 
@@ -66,6 +65,62 @@ Future<void> _createV2Schema(Database db) async {
     "ALTER TABLE movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
 }
 
+/// Create V5 schema on an open database (all columns except date in movements).
+Future<void> _createV5Schema(Database db) async {
+  await db.execute('''
+    CREATE TABLE movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE categories (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE quick_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE favorite_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE accounts (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      initial_balance REAL NOT NULL DEFAULT 0.0,
+      icon_key TEXT NOT NULL DEFAULT 'wallet',
+      color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  // V5 DB would always have the default account (inserted by V1→V2 migration or V1 onCreate)
+  final now = DateTime.now().toIso8601String();
+  await db.insert('accounts', {
+    'id': defaultAccountId, 'name': 'Principale', 'type': 'bank',
+    'initial_balance': 0.0, 'archived': 0,
+    'created_at': now, 'updated_at': now,
+  });
+}
+
 /// Create V3 schema on an open database (V2 + account_id in quick/favorite).
 Future<void> _createV3Schema(Database db) async {
   await _createV2Schema(db);
@@ -95,6 +150,14 @@ Future<String> _makeV2Db() async {
 Future<String> _makeV3Db() async {
   final path = _tempDbPath('v3.db');
   var db = await openDatabase(path, version: 3, onCreate: (db, _) => _createV3Schema(db));
+  await db.close();
+  return path;
+}
+
+/// Crea database V5 su file (pre-V6: senza colonna date in movements).
+Future<String> _makeV5Db() async {
+  final path = _tempDbPath('v5.db');
+  var db = await openDatabase(path, version: 5, onCreate: (db, _) => _createV5Schema(db));
   await db.close();
   return path;
 }
@@ -342,7 +405,6 @@ void main() {
         accountId: defaultAccountId,
       ));
 
-      final now = DateTime.now();
       await sqlite.insertFavoriteMovement(FavoriteMovement(
         id: 'fv_full', title: 'Fav Custom', amount: 500.0,
         type: MovementType.income, categoryId: 'inc_1',
@@ -411,6 +473,155 @@ void main() {
       expect(appDb.quickMovements.length, 1);
       expect(appDb.favoriteMovements.length, 1);
       expect(appDb.accounts.length, 1);
+
+      await sqlite.close();
+    });
+  });
+
+  group('V5→V6 — migration date column robustezza', () {
+    /// Verifica la colonna date via raw SQL dopo la migration.
+    /// Non usa AppDatabase/loadMovements per evitare crash su created_at malformato.
+    Future<String> verifyDateAfterMigration(String dbPath, String movementId) async {
+      // Apri connessione raw per leggere, nessun upgrade callback
+      final reader = await openDatabase(dbPath);
+      final rows = await reader.rawQuery(
+        'SELECT date FROM movements WHERE id = ?', [movementId],
+      );
+      await reader.close();
+      expect(rows.length, 1);
+      final date = rows.first['date'] as String?;
+      expect(date, isNotNull);
+      expect(date, isNotEmpty);
+      return date!;
+    }
+
+    test('V5→V6: backfill da created_at ISO valido → date = substr(created_at, 1, 10)', () async {
+      final path = await _makeV5Db();
+      var db = await openDatabase(path, version: 5);
+      const createdAt = '2026-06-15T10:30:00.000';
+      await db.rawInsert('''
+        INSERT INTO movements (id, title, amount, type, category_id, account_id, created_at, updated_at)
+        VALUES ('m_v6_ok', 'Test V6', 50.0, 'expense', 'exp_1', '$defaultAccountId', '$createdAt', '$createdAt')
+      ''');
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      await sqlite.close();
+
+      final date = await verifyDateAfterMigration(path, 'm_v6_ok');
+      expect(date, '2026-06-15');
+    });
+
+    test('V5→V6: created_at vuoto → fallback a oggi', () async {
+      final path = await _makeV5Db();
+      var db = await openDatabase(path, version: 5);
+      const now = '2026-06-20T00:00:00.000';
+      await db.rawInsert('''
+        INSERT INTO movements (id, title, amount, type, category_id, account_id, created_at, updated_at)
+        VALUES ('m_v6_empty', 'Empty CA', 10.0, 'expense', 'exp_1', '$defaultAccountId', '', '$now')
+      ''');
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      await sqlite.close();
+
+      final date = await verifyDateAfterMigration(path, 'm_v6_empty');
+      // Fallback: today's date in yyyy-MM-dd format
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      expect(date, today);
+    });
+
+    test('V5→V6: created_at malformato senza dash → backfill skip, fallback a oggi', () async {
+      final path = await _makeV5Db();
+      var db = await openDatabase(path, version: 5);
+      const now = '2026-06-20T00:00:00.000';
+      await db.rawInsert('''
+        INSERT INTO movements (id, title, amount, type, category_id, account_id, created_at, updated_at)
+        VALUES ('m_v6_bad', 'Bad CA', 5.0, 'expense', 'exp_1', '$defaultAccountId', 'not-a-date', '$now')
+      ''');
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      await sqlite.close();
+
+      final date = await verifyDateAfterMigration(path, 'm_v6_bad');
+      // backfill: substr('not-a-date', 1, 10) = 'not-a-dat', substr(...,5,1)='a' != '-' → skip
+      // fallback: date IS NULL → set to today
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      expect(date, today);
+    });
+
+    test('V5→V6: created_at con solo dash pos errate → backfill skip, fallback a oggi', () async {
+      final path = await _makeV5Db();
+      var db = await openDatabase(path, version: 5);
+      const now = '2026-06-20T00:00:00.000';
+      // length >= 10, ma dash a posizione sbagliata
+      await db.rawInsert('''
+        INSERT INTO movements (id, title, amount, type, category_id, account_id, created_at, updated_at)
+        VALUES ('m_v6_wdash', 'Wrong dash', 3.0, 'income', 'inc_1', '$defaultAccountId', '2026=06=15foo', '$now')
+      ''');
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      await sqlite.close();
+
+      final date = await verifyDateAfterMigration(path, 'm_v6_wdash');
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      expect(date, today);
+    });
+
+    test('V5→V6: CREATE TABLE IF NOT EXISTS accounts non crasha', () async {
+      // _makeV5Db crea V5 con tabella accounts già esistente
+      final path = await _makeV5Db();
+      var db = await openDatabase(path, version: 5);
+      await db.close();
+
+      // SQLiteService V2 blocca usa CREATE TABLE IF NOT EXISTS — non deve crashare
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      await sqlite.close();
+
+      // Verifica che accounts tabella esista ancora
+      final reader = await openDatabase(path);
+      final tables = await reader.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='accounts'",
+      );
+      await reader.close();
+      expect(tables.length, 1);
+    });
+
+    test('V1→V6 upgrade completo: tutti i dati preservati, date non NULL', () async {
+      final path = await _makeV1Db();
+      var db = await openDatabase(path, version: 1);
+      final now = DateTime(2026, 6, 1).toIso8601String();
+      await db.insert('movements', {
+        'id': 'v1_v6_1', 'title': 'Sopravvissuto', 'amount': 99.0,
+        'type': 'expense', 'category_id': 'exp_1',
+        'date': now, 'created_at': now, 'updated_at': now,
+      });
+      await db.insert('categories', {
+        'id': 'exp_1', 'name': 'Spesa', 'type': 'expense',
+        'color': 0xFFEF5350, 'archived': 0,
+        'created_at': now, 'updated_at': now,
+      });
+      await db.close();
+
+      // Upgrade V1→V6
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      expect(appDb.movements.length, 1);
+      expect(appDb.movements.first.title, 'Sopravvissuto');
+      expect(appDb.accounts.length, greaterThanOrEqualTo(1));
+      expect(appDb.accounts.any((a) => a.id == defaultAccountId), true);
+      // date non deve essere NULL
+      expect(appDb.movements.first.date, isNotNull);
 
       await sqlite.close();
     });
