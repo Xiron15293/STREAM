@@ -1,14 +1,14 @@
 # HERMES QA REPORT
 
-> Contiene QA per Hermes V0.1 (conclusa), V0.2 (conclusa), V0.3.1 e V0.3.2 (COMPLETATO), V0.3.3 (COMPLETATO), V0.4 (COMPLETATO), V0.4.1 (COMPLETATO), V0.4.2 (COMPLETATO).
+> Contiene QA per Hermes V0.1 (conclusa), V0.2 (conclusa), V0.3.1 e V0.3.2 (COMPLETATO), V0.3.3 (COMPLETATO), V0.4 (COMPLETATO), V0.4.1 (COMPLETATO), V0.4.2 (COMPLETATO), V0.5.5 (COMPLETATO), V0.5.6 (COMPLETATO), MovementCard Refactor (COMPLETATO) e Backup/Restore in Impostazioni (COMPLETATO).
 
 ## 1. Data test
 
-2026-06-06 (V0.4.2)
+2026-06-08 (V0.5.6)
 
 ## 2. Versione app/test
 
-- **App**: STREAM powered by BudgetFlow — Hermes V0.1
+- **App**: STREAM powered by BudgetFlow — Hermes V0.5.6
 - **Flutter**: 3.44.1 (channel stable)
 - **Dart**: 3.12.1
 - **SDK constraint**: `^3.12.1`
@@ -80,6 +80,52 @@ Installing and launching... OK
 iOS build e run riusciti. CocoaPods non presente ma non necessario per debug. Bundle Identifier: `com.mattiasironi.flow`.
 
 ---
+
+## Hermes V0.5.6 — Dashboard Filtrata per Periodo + UI alignment ✅
+
+## Data test
+
+2026-06-08
+
+## Stato
+
+COMPLETATO
+
+## Verifica sintetica
+
+- [x] `TimeFilterBar` in Dashboard
+- [x] KPI filtrati per periodo
+- [x] KPI non filtrati per patrimonio/saldi attuali
+- [x] Sezione `Spese per categoria` al posto della lista movimenti
+- [x] Max 5 categorie visibili
+- [x] Empty state: `Nessuna spesa nel periodo selezionato`
+- [x] `MovementCard` condivisa per le schermate operative
+- [x] Fix `heroTag` FAB mantenuto
+- [x] Backup/Restore raggiungibile da `Impostazioni`
+- [x] Navigazione finale: `Dashboard / Archivio / Impostazioni`
+- [x] `Calendario` dentro `Archivio`
+- [x] `flutter analyze` ok
+- [x] `flutter test` ok
+- [ ] `flutter build apk --release` bloccato da errore `file_picker` nel registrant Android
+- [ ] `flutter build ios --release` bloccato da cache/permessi SwiftPM e CoreSimulator
+
+## Decisioni architetturali registrate
+
+- Dashboard = sintesi del periodo, non secondo Archivio
+- Backup/Restore = card dentro Impostazioni, non tab separata
+- Restore = transazionale con rollback automatico
+- Orfani account/categorie = gestiti durante il restore
+- Colori categoria = letti dal model corrente, fallback solo se il colore non è disponibile
+- Confronto col periodo precedente = solo per filtri semplici, non per custom range
+
+## Esito build
+
+```
+flutter analyze  → No issues found
+flutter test     → All tests passed
+flutter build apk --release → FAIL (file_picker / GeneratedPluginRegistrant)
+flutter build ios --release → FAIL (SwiftPM cache/permissions + CoreSimulator)
+```
 
 ## 10. Tabella dei 50 test
 

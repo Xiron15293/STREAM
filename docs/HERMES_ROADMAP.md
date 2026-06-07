@@ -60,7 +60,6 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 | V0.5+ | UI Inspiration Review (🔄) — revisione pattern esterni |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
 | V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
-| V1.2 | Cloud Sync (⏳) — backup premium, multi-dispositivo |
 
 ---
 
@@ -145,12 +144,16 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 - **Nessuna migrazione database** — solo refactor navigazione
 - **Test**: 235/235 preserved | flutter analyze: 0 errors in lib/
 
-### V0.5.5 — Dashboard Filtrata per Periodo ✅
+### V0.5.6 — Dashboard Filtrata per Periodo ✅
 
 > **Feature**: F16 — Dashboard Filtrata per Periodo
-> **Test**: 13 nuovi (10 logica + 3 widget) | test/dashboard_filtered_test.dart
-> **Refactor**: MovementCard unico (+14 test) | test/movement_card_test.dart
-> **Risultato**: 326 test pass | flutter analyze: 2 pre-existing
+> **Test**: 363 test pass
+> **Risultato**: `flutter analyze` pulito; build release native bloccati da problemi esterni al codice
+
+**Struttura reale attuale**
+- `Dashboard` = sintesi/insight del periodo selezionato, non lista movimenti
+- `Archivio` = area operativa con Movimenti / Conti / Categorie / Calendario
+- `Impostazioni` = Backup & Restore e voci di configurazione future
 
 **Riutilizzato**:
 - `TimeFilter` (lib/models/time_filter.dart) — invariato
@@ -158,22 +161,32 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 - `filterByTime()` — già implementata su `List<Movement>`
 
 **KPI filtrati** (dipendono dal periodo selezionato):
-- Entrate periodo, Spese periodo, Saldo periodo, Numero movimenti
+- Entrate periodo
+- Spese periodo
+- Saldo periodo
+- Numero movimenti periodo
+- Totale spese per categoria nel periodo
 
 **KPI non filtrati** (sempre globali):
-- Patrimonio totale (totalAccountsBalance), Saldi conti
+- Patrimonio totale (totalAccountsBalance)
+- Saldi conti
+- Fondi / situazione conti attuale
 
 **UI**:
 - `TimeFilterBar` sopra la hero card (Giorno/Mese/Anno/Periodo + navigazione frecce)
 - Default: mese corrente
-- KPI grid 2×2 (Entrate, Uscite, Saldo, Movimenti)
-- Ultime transazioni filtrate (last 5 del periodo)
-- Empty state: "Nessun movimento nel periodo selezionato" quando il periodo è vuoto ma ci sono movimenti globali
+- Card patrimonio/situazione attuale non filtrata dal periodo
+- KPI grid periodo con confronto spese rispetto al periodo precedente quando semplice
+- Sezione `Spese per categoria` al posto della lista movimenti
+- Massimo 5 categorie visibili, ordinate per spesa decrescente
+- Categoria più costosa leggermente evidenziata
+- Empty state: `Nessuna spesa nel periodo selezionato`
 
 **Vincoli rispettati**:
-- Nessuna modifica DB, migration, Bundle ID, applicationId
-- Nessuna modifica a Calendario, Archivio, popup movimenti
-- DashboardScreen convertita da StatelessWidget a StatefulWidget
+- Nessuna modifica a database, migration, model
+- Nessuna lista movimenti in Dashboard
+- Nessuna modifica a Backup/Restore, navigazione o Archivio
+- DashboardScreen resta la fonte della sintesi del periodo
 
 ### Refactor: MovementCard unico (architetturale)
 
@@ -203,6 +216,9 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 **Icona fissa**: 36×36 px in tutte le schermate (standardizzato, era 40×40 in Dashboard).
 **Test**: 14 nuovi widget test in `test/movement_card_test.dart`.
 **Risultato**: 326 test pass | flutter analyze: 2 pre-existing.
+
+**UI note**
+- Fix `heroTag` FAB: i tag Hero devono restare univoci o assenti quando più FAB possono convivere tra schermate, per evitare collisioni in transizione.
 
 ---
 

@@ -46,7 +46,7 @@
 - **Model-as-controller**: `AppDatabase` è il modello centrale, notifica i listener, espone metodi CRUD, mantiene cache
 - **No BLoC / Provider / Riverpod**: scelta deliberata per MVP. ListenableBuilder + StatefulWidget sono sufficienti per la complessità corrente. Da rivalutare a V0.5+ quando lo stato cresce
 - **Raw SQL**: sqflite con query raw invece di Drift ORM (dipendeenza drift presente ma non usata). Scelta per controllo totale e debugging trasparente
-- **MovementCard unico**: tutte le schermate usano `lib/widgets/movement_card.dart` per renderizzare un movimento. Nessuna duplicazione di layout. Dettaglio completo nella sezione "MovementCard Widget" sotto.
+- **MovementCard unico**: le schermate operative usano `lib/widgets/movement_card.dart` per renderizzare un movimento. La Dashboard ora mostra KPI e spese per categoria, non una lista movimenti. Dettaglio completo nella sezione "MovementCard Widget" sotto.
 
 ## MovementCard Widget
 
@@ -92,9 +92,21 @@ MovementCard è **solo vista**:
 
 | Schermata | File | Come viene usato |
 |-----------|------|------------------|
-| Dashboard | `lib/screens/dashboard_screen.dart` | `MovementCard(movement:, category:, account:)` — solo visuale, nessuna callback |
+| Dashboard | `lib/screens/dashboard_screen.dart` | Non usa `MovementCard`: mostra KPI periodici + spese per categoria |
 | Calendario | `lib/screens/calendar_screen.dart` | `MovementCard(movement:, category:, account:, onTap: → edit)` — tap apre modifica |
 | Movimenti | `lib/screens/movements_screen.dart` | `MovementCard(movement:, category:, account:, onEdit:, onDuplicate:, onSaveAsFavorite:, onDelete:, showNotes:, showDate:)` |
+
+## Dashboard Filtrata (V0.5.6)
+
+- **Obiettivo UX**: la Dashboard risponde a "come sta andando il periodo selezionato?", non a "quali movimenti ho registrato?"
+- **Riusi**: `TimeFilter`, `TimeFilterBar`, `filterByTime()`
+- **Filtrati**: entrate periodo, uscite periodo, saldo periodo, numero movimenti, spese per categoria
+- **Non filtrati**: patrimonio totale, saldi conti, fondi/situazione conti attuale
+- **Spese per categoria**: solo uscite, raggruppate per categoria, massimo 5 righe, ordine decrescente, percentuale solo se il totale spese è > 0
+- **Colori**: usa `Category.color` salvato; fallback al colore di default del design system se il colore non è disponibile
+- **Empty state**: `Nessuna spesa nel periodo selezionato`
+- **Periodo precedente**: confronto semplice per i filtri standard; saltato sui range custom per evitare logica fragile
+- **Vincolo**: nessuna lista movimenti in Dashboard, nessuna nuova ricerca o grafico complesso
 
 ## Database (V5)
 
@@ -250,6 +262,22 @@ Il tema STREAM è definito in `lib/theme.dart` con le classi:
 - **Nessuna migrazione database** — solo refactor navigazione
 - **Test**: 235/235 preserved
 
+### Navigation finale (V0.5.6+)
+
+- **Bottom nav**: 3 elementi reali — Dashboard, Archivio, Impostazioni
+- **Dentro Archivio**: Movimenti, Conti, Categorie e Calendario restano nell'area operativa
+- **Calendario**: non è una tab principale, vive dentro Archivio
+- **Backup/Restore**: non è una tab separata, vive dentro Impostazioni
+- **Dashboard**: resta solo sintesi/insight del periodo selezionato
+
+### Backup & Restore (Impostazioni)
+
+- **Posizionamento UI**: card/sezione `Backup & Restore` dentro `Impostazioni`
+- **Backup**: export/import su file JSON con file picker nativo
+- **Restore**: transazionale, con rollback automatico se qualcosa fallisce
+- **Gestione dati mancanti**: orfani account/categorie gestiti senza rompere il restore
+- **Vincoli**: nessuna modifica al model o allo schema per aggiungere campi solo per il backup
+
 ### Quick/Favorite Movement Library UX (V0.4.3) 📋 APPROVATA
 
 > Feature approvata, non implementata. Dettaglio in `HERMES_ROADMAP.md`.
@@ -383,6 +411,40 @@ Probabilmente signing non configurato. Verificare:
 2. Bundle ID com.mattiasironi.flow
 3. Dispositivo fidato (Trust this computer)
 4. Provare Xcode → Product → Run
+
+### `flutter build apk --release` FAIL: `file_picker` — classe `FilePickerPlugin` non trovata
+
+**Sintomo**:
+```
+error: cannot find symbol
+  class FilePickerPlugin
+```
+
+**Causa** (root):
+`file_picker 11.0.2/android/build.gradle` contiene:
+```groovy
+def isAgp9OrAbove = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0].toInteger() >= 9
+apply plugin: 'com.android.library'
+if (!isAgp9OrAbove) {
+    apply plugin: 'org.jetbrains.kotlin.android'
+}
+```
+Con AGP 9.0.1, `isAgp9OrAbove = true` → KGP **non** applicato. Flutter's `detectApplyingKotlinGradlePlugin` legge il testo del build file, trova `kotlin.android` (riga 30), e salta l'applicazione di KGP. Risultato: nessun KGP → sorgenti Kotlin non compilate → `FilePickerPlugin` assente nell'AAR.
+
+**Fix** (`android/build.gradle.kts`):
+```kotlin
+subprojects {
+    if (project.name == "file_picker") {
+        pluginManager.apply("kotlin-android")
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+            compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+}
+```
+KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il blocco `subprojects {}` in root `build.gradle.kts` esegue durante la configurazione, prima del `build.gradle` del plugin). Anche il `jvmTarget` è forzato a 17 perché il plugin salta il blocco `kotlinOptions` quando AGP >= 9.
+
+**Perché non `builtInKotlin=true`**: Flutter applicherebbe KGP a `flutter_plugin_android_lifecycle` (puro Java), e AGP 9.0.1 rifiuta KGP su progetti Java con `builtInKotlin=true`.
 
 ## Metriche
 
