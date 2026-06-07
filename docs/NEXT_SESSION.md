@@ -1,69 +1,61 @@
-# NEXT SESSION — Post V0.5.6 & MovementCard Refactor
+# NEXT SESSION — After Dashboard Filtrata
 
-> Stato: ✅ V0.5 COMPLETATO (tutte le 6 sotto-feature) + MovementCard unico
+> Stato attuale: Dashboard filtrata, Backup/Restore in Impostazioni e refactor UI già allineati al codice reale.
 
-## Ultimo risultato (V0.5.6 + Refactor)
+## COMPLETATO
+
+- Dashboard come sintesi/insight, non come secondo Archivio
+- `TimeFilter` + `TimeFilterBar` riusati per filtrare il periodo
+- KPI filtrati: entrate, uscite, saldo, numero movimenti
+- KPI non filtrati: patrimonio totale, saldi conti, situazione attuale
+- Sezione `Spese per categoria` con massimo 5 categorie visibili, ordinamento per spesa decrescente e empty state dedicato
+- `MovementCard` condivisa per le schermate operative
+- Fix `heroTag` FAB mantenuto
+- Backup/Restore spostato in `Impostazioni`
+
+## IN CORSO
+
+- Nessuna feature di prodotto aperta in questo file
+
+## FUTURO
+
+- Risolvere i blocchi delle build release native prima di riprendere nuove feature
+- Poi riprendere la roadmap V0.6, senza riaprire la Dashboard come lista movimenti
+
+## Ultimo stato verificato
 
 | Metrica | Valore |
 |---------|--------|
-| File nuovi | `lib/widgets/movement_card.dart` |
-| File modificati | `lib/screens/dashboard_screen.dart`, `calendar_screen.dart`, `movements_screen.dart` |
-| Componenti duplicati rimossi | 4 classi private (~376 righe eliminate) |
-| Test aggiunti (Dashboard Filtrata) | 13 (10 in-memory + 3 widget) |
-| Test aggiunti (MovementCard) | 14 (widget test) |
-| Test totali | **326/326 pass** |
-| flutter analyze | **0 nuovi issue** (2 pre-esistenti) |
+| Test totali | **363/363 pass** |
+| flutter analyze | **0 issue nuovi** |
+| `flutter build apk --release` | **FAIL**: errore plugin `file_picker` nel registrant Android |
+| `flutter build ios --release` | **FAIL**: risoluzione SPM/Xcode bloccata da cache/permessi e CoreSimulator |
 
-## Componenti riutilizzati (V0.5.6)
-- `TimeFilter` — invariato
-- `TimeFilterBar` — già usata in CalendarScreen
-- `filterByTime()` — già implementata su `List<Movement>`
+## Componenti riutilizzati
 
-## KPI Dashboard dopo V0.5.6
+- `TimeFilter`
+- `TimeFilterBar`
+- `filterByTime()`
 
-**Filtrati** (dipendono dal periodo selezionato):
-- Entrate periodo, Spese periodo, Saldo periodo, Numero movimenti
+## Dashboard filtrata
 
-**Non filtrati** (globali/strutturali):
-- Patrimonio totale, Saldi conti
+**Filtrati**:
+- Entrate periodo
+- Spese periodo
+- Saldo periodo
+- Numero movimenti periodo
+- Spese per categoria nel periodo
 
-## MovementCard unico — posizionamento architetturale
+**Non filtrati**:
+- Patrimonio totale
+- Saldi conti
+- Fondi/situazione conti attuale
 
-`lib/widgets/movement_card.dart` è ora la **fonte di verità unica** per renderizzare un movimento nell'intera app. Questo prepara tecnicamente le feature future:
+## Prossimo step reale
 
-| Feature futura | Cosa riusa di MovementCard |
-|----------------|---------------------------|
-| Ricerca Globale (F23) | Card per mostrare risultati |
-| Preferiti rapidi (F12) | Card per template preferiti |
-| Import Preview (F21) | Card per preview movimenti importati |
-| Heatmap Calendario (F13) | Card nel detail-on-tap del giorno |
+Sbloccare le build release native:
 
-MovementCard è **solo vista** (UI/callback). Non scrive su DB, non modifica Actual, non calcola aggregati.
+1. sistemare il registrant Android di `file_picker`
+2. sistemare la cache/permessi SwiftPM e CoreSimulator per iOS
 
-## Prossimi step suggeriti
-
-Con V0.5 completato, la priorità consigliata è:
-
-### 1. V0.5.6 — UX Booster (prima di V0.6 Ricorrenze)
-Blocco di 5 micro-feature a basso sforzo, massimo impatto UX, che sfruttano MovementCard già unificato:
-
-| # | Feature | Sforzo | Impatto | Dipendenze |
-|---|---------|--------|---------|------------|
-| 1 | Ricerca globale movimenti (F23) | Basso | Alto | MovementCard ✅ |
-| 2 | Preferiti rapidi (F12.1–F12.3) | Medio | Alto | MovementCard ✅ |
-| 3 | Aggiorna preferito esistente (F12.4) | Basso | Medio | F12.3 |
-| 4 | Categorie frequenti/suggerite | Basso | Medio | Nessuna |
-| 5 | Calendar Heatmap (F13) | Medio | Alto | V0.5 Foundation ✅ |
-
-### 2. V0.6 — Ricorrenze (F19)
-Movimenti automatici ricorrenti. Dipende da: date ✅, TimeFilter ✅, Calendario tab ✅.
-Sforzo più alto, pianificare dopo UX Booster.
-
-### 3. V0.7+ — Import CSV, Athena, Scenari
-Feature più complesse, da valutare dopo feedback utenti reali.
-
-## Note tecniche residue
-- iPhone app installata su device (`00008140-001E29803CD1801C`, iOS 26.5)
-- Free Apple Developer provisioning profile scade in 7 giorni
-- `flutter analyze`: 2 pre-existing (sqflite unused import, unused local `now` in test)
-- Test suite: 326 tests, esecuzione ~23s
+Solo dopo ha senso riprendere la prossima feature di prodotto.

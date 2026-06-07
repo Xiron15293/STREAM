@@ -23,6 +23,7 @@
 | V0.5.5 | Archivio Filtrato per Data | ✅ COMPLETATO | 2026-06-07 |
 | V0.5.6 | Dashboard Filtrata per Periodo | ✅ COMPLETATO | 2026-06-07 |
 | — | MovementCard unico (refactor architetturale) | ✅ COMPLETATO | 2026-06-07 |
+| — | Backup & Restore in Impostazioni | ✅ COMPLETATO | 2026-06-08 |
 
 ## Approvate / Future
 
@@ -35,6 +36,7 @@
 | V0.7 | Athena Foundation (Budget, AI, Insight) | 💡 IDEA |
 | V0.8 | Import CSV | 💡 IDEA |
 | V0.9 | Scenari | 💡 IDEA |
+| V1.1 | Cloud Sync (backup premium, multi-dispositivo) | 💡 IDEA |
 
 Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per censimento completo (32 feature, tutte classificate).
 
@@ -58,7 +60,6 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 | V0.5+ | UI Inspiration Review (🔄) — revisione pattern esterni |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
 | V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
-| V1.1 | Backup Locale (⏳) — export/import SQLite, restore |
 | V1.2 | Cloud Sync (⏳) — backup premium, multi-dispositivo |
 
 ---
@@ -274,4 +275,3 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 - Palette STREAM esistente (StreamColors) per colori heatmap
 
 ---
-
