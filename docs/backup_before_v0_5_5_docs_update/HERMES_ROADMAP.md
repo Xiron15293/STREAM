@@ -15,26 +15,28 @@
 | V0.4 | Design System STREAM | ✅ COMPLETATO | 2026-06-06 |
 | V0.4.1 | Account Icon/Color Refresh | ✅ COMPLETATO | 2026-06-06 |
 | V0.4.2 | Navigation Refactor: Archivio | ✅ COMPLETATO | 2026-06-06 |
-| V0.5 | Calendario Foundation | ✅ COMPLETATO | 2026-06-07 |
-| V0.5.1 | Movement Date | ✅ COMPLETATO | 2026-06-06 |
-| V0.5.2 | StreamDatePicker | ✅ COMPLETATO | 2026-06-06 |
-| V0.5.3 | TimeFilter Foundation | ✅ COMPLETATO | 2026-06-06 |
-| V0.5.4 | Calendario Tab | ✅ COMPLETATO | 2026-06-07 |
-| V0.5.5 | Archivio Filtrato per Data | ✅ COMPLETATO | 2026-06-07 |
-| V0.5.6 | Dashboard Filtrata per Periodo | ✅ COMPLETATO | 2026-06-07 |
-| — | MovementCard unico (refactor architetturale) | ✅ COMPLETATO | 2026-06-07 |
+
+## Corrente
+
+| Versione | Nome | Stato |
+|----------|------|-------|
+| V0.5.1 | Movement Date | ✅ COMPLETATO |
+| V0.5.2 | StreamDatePicker | ✅ COMPLETATO |
+| V0.5.3 | TimeFilter Foundation | ✅ COMPLETATO |
+| V0.5.4 | Calendario Tab | ✅ COMPLETATO |
+| V0.5.5 | Archivio Filtrato per Data | ✅ COMPLETATO |
+| V0.5.6 | Dashboard Filtrata per Periodo | ✅ COMPLETATO |
 
 ## Approvate / Future
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.5.6 | UX Booster (Ricerca Globale, Preferiti, Categorie Frequenti, Heatmap) | 💡 PROPOSTO |
 | V0.4.3 | Quick/Favorite Movement Library UX | 📋 APPROVATA |
 | — | Calendar Heatmap / Category Heatmap | 📋 APPROVATA |
-| V0.6 | Ricorrenze | 💡 IDEA |
-| V0.7 | Athena Foundation (Budget, AI, Insight) | 💡 IDEA |
-| V0.8 | Import CSV | 💡 IDEA |
-| V0.9 | Scenari | 💡 IDEA |
+| V0.5.4 | Calendario Tab | ✅ COMPLETATO |
+| V0.5.5 | Archivio Filtrato per Data | ✅ COMPLETATO |
+| V0.5.6 | Dashboard Filtrata per Periodo | ✅ COMPLETATO |
+| V0.6+ | Ricorrenze, Athena, CSV, Scenari, Beta | 💡 / ⏳ |
 
 Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per censimento completo (32 feature, tutte classificate).
 
@@ -47,13 +49,13 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 
 | Versione | Focus |
 |----------|-------|
-| V0.5 | Calendario Foundation — ✅ COMPLETATO (6 sub-features) |
-| V0.5.6 | UX Booster (💡) — Ricerca Globale, Preferiti Rapid, Categorie Frequenti, Calendar Heatmap |
+| V0.5 | Calendario Foundation — TimeFilter (✅), Calendario tab (✅), Archivio filtrato (✅), Dashboard filtrata (✅) |
+| V0.4.3 | Quick/Favorite Movement Library UX (📋) — ricerca, filtri, salva da manuale, aggiorna preferito |
+| V0.5.4+ | Calendar Heatmap / Category Heatmap (📋) — griglia mensile con intensità colore |
 | V0.6 | Ricorrenze (💡) — movimenti automatici ricorrenti |
 | V0.7 | Athena Foundation (💡) — Budget, AI categorization, insight |
 | V0.8 | Import CSV (💡) — import movimenti da home banking |
 | V0.9 | Scenari (💡) — proiezioni what-if, pianificazione |
-| V0.4.3 | Quick/Favorite Movement Library UX (📋) — ricerca, filtri, salva da manuale, aggiorna preferito |
 | V0.4.x | Inline Form Validation (📋) — errori inline nei form |
 | V0.5+ | UI Inspiration Review (🔄) — revisione pattern esterni |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |

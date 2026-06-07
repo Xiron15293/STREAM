@@ -423,7 +423,6 @@
 | **Feature future** | 7 (F19–F24, F31) |
 | **Feature post-MVP** | 5 (F25–F27 restano, F28–F29) |
 | **Feature escluse** | 9 (E01–E09) |
-| **Refactor architetturale** | 1 (MovementCard unico ✅, non è feature ma prepara F12, F13, F21, F23) |
 
 ---
 
@@ -431,25 +430,14 @@
 
 Basate sul criterio: **massimo impatto utente per minimo sforzo tecnico.**
 
-### Novità architetturale: MovementCard unico
-Il refactor MovementCard (`lib/widgets/movement_card.dart`) ha eliminato 4 classi duplicate e prepara tecnicamente le feature che richiedono renderizzazione movimenti:
+### 🥇 Priorità Alta (V0.6 — prossima sessione)
 
-| Feature | Dipendenza da MovementCard |
-|---------|---------------------------|
-| F12 — Quick/Favorite UX | Mostrare template rapidi/preferiti come card |
-| F13 — Calendar Heatmap | Detail-on-tap del giorno |
-| F21 — Import CSV Preview | Preview movimenti importati |
-| F23 — Ricerca Globale | Risultati ricerca come card |
-
-### 🥇 Priorità Alta (V0.5.6 UX Booster — prossima sessione)
-
-| Ordine | Feature | Impatto | Sforzo | Note |
-|--------|---------|---------|--------|------|
-| 1 | F23 — Ricerca Globale Movimenti | Alto | Basso | MovementCard pronto ✅ |
-| 2 | F12 — V0.4.3 UX Rapidi/Preferiti | Alto | Basso-Medio | MovementCard pronto ✅ |
-| 3 | F13 — Calendar Heatmap | Medio | Basso | V0.5 Foundation ✅ |
-| 4 | F30 — Inline Form Validation | Medio | Basso | |
-| 5 | F17 — Category Sorting | Medio | Basso | |
+| Ordine | Feature | Impatto | Sforzo |
+|--------|---------|---------|--------|
+| 1 | F19 — Ricorrenze | Alto | Alto |
+| 2 | F12 — V0.4.3 UX Rapidi/Preferiti | Alto | Basso-Medio |
+| 3 | F30 — Inline Form Validation | Medio | Basso |
+| 4 | F17 — Category Sorting | Medio | Basso |
 
 ### 🥈 Priorità Media (V0.6–V0.7)
 

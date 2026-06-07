@@ -19,9 +19,8 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 4.1 | Hermes V0.4.1 — Account Icon/Color | ✅ COMPLETATO | TBD | Colore/icona conti salvati, ColorPicker funzionante |
 | 4.2 | Hermes V0.4.2 — Navigation Refactor | ✅ COMPLETATO | TBD | Archivio: Movimenti, Conti, Categorie in unica tab |
 | 4.3 | Hermes V0.4.3 — Quick/Favorite Library UX | 📋 APPROVATA | TBD | Ricerca, filtri categoria, salva da manuale, aggiorna preferito |
-| 5 | Hermes V0.5 — Calendario Foundation | ✅ COMPLETATO | V0.5.6 | Date movimenti (✅), TimeFilter (✅), Calendario tab (✅), Archivio filtrato (✅), Dashboard filtrata (✅), MovementCard unico (✅) |
+| 5 | Hermes V0.5 — Calendario Foundation | ✅ COMPLETATO | V0.5.6 | Date movimenti (✅), TimeFilter (✅), Calendario tab (✅), Archivio filtrato (✅), Dashboard filtrata (✅) |
 | 5.4 | Calendar Heatmap / Category Heatmap | 📋 APPROVATA | TBD | Griglia mensile con intensità colore, filtro categoria |
-| 5.6 | UX Booster — Ricerca Globale, Preferiti, Categorie Frequenti | 💡 PROPOSTO | TBD | Micro-feature post V0.5, basso sforzo, sfruttano MovementCard |
 | 6 | Hermes V0.6 — Ricorrenze | 💡 IDEA | TBD | Movimenti automatici ricorrenti |
 | 7 | Hermes V0.7 — Athena Foundation | 💡 IDEA | TBD | Budget, AI categorization, insight |
 | 8 | Hermes V0.8 — Import CSV | 💡 IDEA | TBD | Import da banche, export dati |
@@ -59,13 +58,6 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 ### Category summary ordering (V0.5+)
 Opzioni ordinamento analisi categorie: Ordine manuale, Nome A-Z, Nome Z-A, Spesa crescente, Spesa decrescente, Entrata crescente, Entrata decrescente, Conteggio movimenti crescente, Conteggio movimenti decrescente.
 - **Nota**: Ordine manuale = gestione categorie. Ordine automatico = vista analisi. Non confondere.
-
-### MovementCard unico (refactor architetturale) ✅
-- **Problema**: 4 classi private duplicate (_MovementTile, _CalendarMovementCard, _MovementCard, _PopupMenu) in 3 schermate, ~376 righe duplicate
-- **Soluzione**: `lib/widgets/movement_card.dart` — widget unico, riutilizzabile, con callback per azioni UI. Non scrive su DB.
-- **API**: movement, category, account, onTap, onEdit/onDuplicate/onSaveAsFavorite/onDelete, showNotes, showDate
-- **Test**: 14 nuovi widget test
-- **Prepara**: Ricerca Globale (F23), Preferiti (F12), Import Preview (F21), Heatmap detail-on-tap (F13)
 
 ### Calendar Heatmap / Category Heatmap 📋 APPROVATA
 > Evoluzione visuale di V0.5. Dipende da: date nei movimenti + TimeFilter globale.

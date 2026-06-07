@@ -1,92 +1,69 @@
-# NEXT SESSION — Hermes V0.5 Calendario
+# NEXT SESSION — Post V0.5.6 & MovementCard Refactor
 
-> Stato: 🔜 NEXT
-> Dipende da: Hermes V0.4.2 Navigation Refactor: Archivio = COMPLETATO
+> Stato: ✅ V0.5 COMPLETATO (tutte le 6 sotto-feature) + MovementCard unico
 
-## Stato attuale
+## Ultimo risultato (V0.5.6 + Refactor)
 
-Hermes V0.4 Design System STREAM ✅ COMPLETATO:
-- 193 test preserved, 0 analyze issues
-- Tema scuro Material 3 con `lib/theme.dart`
-- Dashboard, Movimenti, Conti, Categorie, Form completamente restilizzati
-- Android APK e iOS IPA build OK
-- App installata su iPhone (`com.mattiasironi.flow` v1.0.0)
+| Metrica | Valore |
+|---------|--------|
+| File nuovi | `lib/widgets/movement_card.dart` |
+| File modificati | `lib/screens/dashboard_screen.dart`, `calendar_screen.dart`, `movements_screen.dart` |
+| Componenti duplicati rimossi | 4 classi private (~376 righe eliminate) |
+| Test aggiunti (Dashboard Filtrata) | 13 (10 in-memory + 3 widget) |
+| Test aggiunti (MovementCard) | 14 (widget test) |
+| Test totali | **326/326 pass** |
+| flutter analyze | **0 nuovi issue** (2 pre-esistenti) |
 
-Hermes V0.4.1 Account Icon/Color Refresh ✅ COMPLETATO:
-- **Root cause**: Account model senza campo `color`. ColorPicker decorativo.
-- **Fix**: `int color` in Account model, SQLite V5 migration, `updateAccount()` con color opzionale.
-- **Test**: 15 nuovi test (account_icon_color_test.dart)
-- **Total tests**: 235/235 | flutter analyze: 0 errors
-- **Builds**: APK e iOS OK, tutte le regressioni passano
+## Componenti riutilizzati (V0.5.6)
+- `TimeFilter` — invariato
+- `TimeFilterBar` — già usata in CalendarScreen
+- `filterByTime()` — già implementata su `List<Movement>`
 
-Hermes V0.4.2 Navigation Refactor: Archivio ✅ COMPLETATO:
-- **Refactor**: Tab Movimenti, Conti, Categorie consolidate in unica tab "Archivio"
-- **Nuova schermata**: `lib/screens/archive_screen.dart` — SegmentedButton + IndexedStack
-- **Bottom nav**: ora 2 elementi — Dashboard, Archivio
-- **Rapidi e Preferiti** restano sotto Movimenti
-- **235 test preserved** | flutter analyze: 0 errors in lib/
-- **Nessuna migrazione database**
+## KPI Dashboard dopo V0.5.6
 
-## Obiettivo
+**Filtrati** (dipendono dal periodo selezionato):
+- Entrate periodo, Spese periodo, Saldo periodo, Numero movimenti
 
-V0.5 — Calendario: vista mensile con navigazione date e movimenti giornalieri:
+**Non filtrati** (globali/strutturali):
+- Patrimonio totale, Saldi conti
 
-- Vista calendario mensile con indicatori di movimenti
-- Navigazione tra mesi (swipe o frecce)
-- Tap su giorno → lista movimenti del giorno
-- Inserimento movimento con data preselezionata
-- Test coverage per calendario
+## MovementCard unico — posizionamento architetturale
 
-## Prerequisiti
+`lib/widgets/movement_card.dart` è ora la **fonte di verità unica** per renderizzare un movimento nell'intera app. Questo prepara tecnicamente le feature future:
 
-- [x] Hermes V0.4 Design System STREAM — COMPLETATO
-- [x] Hermes V0.4.1 Account Icon/Color Refresh — COMPLETATO
-- [x] Hermes V0.4.2 Navigation Refactor: Archivio — COMPLETATO
-- [ ] Uso reale app per 2-3 giorni (raccogliere feedback su V0.3-V0.4)
+| Feature futura | Cosa riusa di MovementCard |
+|----------------|---------------------------|
+| Ricerca Globale (F23) | Card per mostrare risultati |
+| Preferiti rapidi (F12) | Card per template preferiti |
+| Import Preview (F21) | Card per preview movimenti importati |
+| Heatmap Calendario (F13) | Card nel detail-on-tap del giorno |
 
-## Uso reale consigliato
+MovementCard è **solo vista** (UI/callback). Non scrive su DB, non modifica Actual, non calcola aggregati.
 
-Prima di iniziare V0.5, usare l'app con dati reali per 2-3 giorni:
-- Validare UI/UX del nuovo design system
-- Verificare che conti, categorie, movimenti funzionino correttamente
-- Raccogliere feedback su cosa migliorare
+## Prossimi step suggeriti
 
-## Backlog completo
+Con V0.5 completato, la priorità consigliata è:
 
-Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
-📋 **`docs/STREAM_FEATURE_BACKLOG.md`** — 32 feature classificate.
+### 1. V0.5.6 — UX Booster (prima di V0.6 Ricorrenze)
+Blocco di 5 micro-feature a basso sforzo, massimo impatto UX, che sfruttano MovementCard già unificato:
 
-## Prossime priorità
+| # | Feature | Sforzo | Impatto | Dipendenze |
+|---|---------|--------|---------|------------|
+| 1 | Ricerca globale movimenti (F23) | Basso | Alto | MovementCard ✅ |
+| 2 | Preferiti rapidi (F12.1–F12.3) | Medio | Alto | MovementCard ✅ |
+| 3 | Aggiorna preferito esistente (F12.4) | Basso | Medio | F12.3 |
+| 4 | Categorie frequenti/suggerite | Basso | Medio | Nessuna |
+| 5 | Calendar Heatmap (F13) | Medio | Alto | V0.5 Foundation ✅ |
 
-Dettaglio completo in `docs/STREAM_FEATURE_BACKLOG.md` sezione 8.
+### 2. V0.6 — Ricorrenze (F19)
+Movimenti automatici ricorrenti. Dipende da: date ✅, TimeFilter ✅, Calendario tab ✅.
+Sforzo più alto, pianificare dopo UX Booster.
 
-### V0.5.4 — Calendario Tab (🔄 IN VALUTAZIONE)
-- Nuova tab nella bottom nav con vista mensile
-- Griglia giorni con indicatori movimenti
-- Navigazione swipe/frecce tra mesi
-- Tap giorno → lista movimenti del giorno
+### 3. V0.7+ — Import CSV, Athena, Scenari
+Feature più complesse, da valutare dopo feedback utenti reali.
 
-### V0.5.5 — Archivio Filtrato per Data (🔄 IN VALUTAZIONE)
-- Filtro periodo nella tab Movimenti di Archivio
-- Usa TimeFilter (F11 ✅ già pronto)
-
-### V0.5.6 — Dashboard Filtrata per Periodo (🔄 IN VALUTAZIONE)
-- KPI calcolati su periodo selezionato
-- Hero card e KPI grid filtrate
-
-## To-do prossima sessione
-
-- [ ] V0.5.4 — Calendario Tab: vista mensile + navigazione
-- [ ] V0.5.5 — Archivio Filtrato per Data
-- [ ] V0.5.6 — Dashboard Filtrata per Periodo
-- [ ] V0.4.3 — Quick/Favorite UX (da valutare priorità vs Calendario)
-- [ ] Verificare rebuild iOS (scadenza 7 giorni)
-
-## Riferimenti
-
-- `docs/STREAM_FEATURE_BACKLOG.md` — backlog completo (32 feature)
-- `docs/HERMES_ROADMAP.md` — roadmap versioni
-- `docs/STREAM_PRODUCT_ROADMAP.md` — visione prodotto
-- `docs/STREAM_TECH_NOTES.md` — note tecniche
-- `lib/models/time_filter.dart` — F11 TimeFilter Foundation (✅ pronto)
-- `lib/screens/archive_screen.dart` — Archivio (base per F15)
+## Note tecniche residue
+- iPhone app installata su device (`00008140-001E29803CD1801C`, iOS 26.5)
+- Free Apple Developer provisioning profile scade in 7 giorni
+- `flutter analyze`: 2 pre-existing (sqflite unused import, unused local `now` in test)
+- Test suite: 326 tests, esecuzione ~23s
