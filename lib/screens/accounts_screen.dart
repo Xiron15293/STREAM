@@ -42,6 +42,7 @@ class AccountsScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'accounts_fab',
         onPressed: () => _showAddEditDialog(context, db),
         child: const Icon(Icons.add),
       ),
