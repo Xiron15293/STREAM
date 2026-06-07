@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../models/movement.dart';
-import '../models/category.dart';
-import '../models/account.dart';
-import '../design/stream_icon_library.dart';
+import '../models/time_filter.dart';
 import '../theme.dart';
 import '../widgets/movement_picker.dart';
+import '../widgets/movement_card.dart';
 
 class CalendarScreen extends StatefulWidget {
   final AppDatabase db;
@@ -17,7 +16,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  late DateTime _focusedMonth;
+  late TimeFilter _filter;
   DateTime? _selectedDay;
 
   static const _weekdays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -26,69 +25,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _focusedMonth = DateTime(now.year, now.month, 1);
+    _filter = TimeFilter.month(now.year, now.month);
     _selectedDay = now;
   }
 
   void _prevMonth() {
     setState(() {
-      _focusedMonth = _focusedMonth.month == 1
-          ? DateTime(_focusedMonth.year - 1, 12, 1)
-          : DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+      _filter = _filter.previous();
+      _ensureSelectedDayInMonth();
     });
   }
 
   void _nextMonth() {
     setState(() {
-      _focusedMonth = _focusedMonth.month == 12
-          ? DateTime(_focusedMonth.year + 1, 1, 1)
-          : DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+      _filter = _filter.next();
+      _ensureSelectedDayInMonth();
     });
+  }
+
+  void _ensureSelectedDayInMonth() {
+    final year = _filter.startDate.year;
+    final month = _filter.startDate.month;
+    if (_selectedDay == null ||
+        _selectedDay!.year != year ||
+        _selectedDay!.month != month) {
+      final now = DateTime.now();
+      final daysInMonth = DateTime(year, month + 1, 0).day;
+      if (now.year == year && now.month == month) {
+        final day = now.day.clamp(1, daysInMonth);
+        _selectedDay = DateTime(year, month, day);
+      } else {
+        _selectedDay = DateTime(year, month, 1);
+      }
+    }
   }
 
   void _goToToday() {
     final now = DateTime.now();
     setState(() {
-      _focusedMonth = DateTime(now.year, now.month, 1);
+      _filter = TimeFilter.month(now.year, now.month);
       _selectedDay = now;
     });
-  }
-
-  int _daysInMonth(int year, int month) {
-    if (month == 12) {
-      return DateTime(year + 1, 1, 0).day;
-    }
-    return DateTime(year, month + 1, 0).day;
-  }
-
-  String _monthLabel(int year, int month) {
-    const names = [
-      'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
-    ];
-    return '${names[month - 1]} $year';
-  }
-
-  void _showDayMovements(BuildContext context, DateTime day, List<Movement> movements) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => _DayMovementsSheet(
-        day: day,
-        movements: movements,
-        db: widget.db,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final year = _focusedMonth.year;
-    final month = _focusedMonth.month;
-    final daysInMonth = _daysInMonth(year, month);
-    final firstWeekday = DateTime(year, month, 1).weekday; // 1=Mon ... 7=Sun
 
     return Scaffold(
       appBar: AppBar(
@@ -99,25 +82,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
         listenable: widget.db,
         builder: (context, _) {
           final allMovements = widget.db.movements;
-          final selectedDayFilter = _selectedDay != null
-              ? allMovements.where((m) =>
-                  m.date.year == _selectedDay!.year &&
-                  m.date.month == _selectedDay!.month &&
-                  m.date.day == _selectedDay!.day)
+          final selectedDayMovements = _selectedDay != null
+              ? allMovements.filterByTime(TimeFilter.day(_selectedDay!))
               : <Movement>[];
-          final selectedDayMovements = selectedDayFilter.toList()
-            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           return Column(
             children: [
               _buildHeader(context),
               _buildWeekdayHeaders(),
               Expanded(
-                child: Column(
+                child: ListView(
+                  padding: EdgeInsets.zero,
                   children: [
                     _buildGrid(allMovements, today),
                     if (_selectedDay != null) ...[
                       const Divider(height: 1, color: StreamColors.divider),
+                      _buildDayHeader(selectedDayMovements),
                       _buildDayMovementsList(selectedDayMovements),
                     ],
                   ],
@@ -128,6 +108,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'calendar_fab',
         onPressed: () => _showPicker(context),
         child: const Icon(Icons.add),
       ),
@@ -148,7 +129,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           GestureDetector(
             onTap: _goToToday,
             child: Text(
-              _monthLabel(_focusedMonth.year, _focusedMonth.month),
+              _filter.label,
               style: StreamTypography.h2,
             ),
           ),
@@ -185,10 +166,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildGrid(List<Movement> allMovements, DateTime today) {
-    final year = _focusedMonth.year;
-    final month = _focusedMonth.month;
-    final daysInMonth = _daysInMonth(year, month);
+    final year = _filter.startDate.year;
+    final month = _filter.startDate.month;
+    final daysInMonth = DateTime(year, month + 1, 0).day;
     final firstWeekday = DateTime(year, month, 1).weekday; // 1=Mon
+    final leadingEmpty = firstWeekday - 1;
 
     final daysWithMovements = <int>{};
     for (final m in allMovements) {
@@ -198,7 +180,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     final cells = <Widget>[];
-    for (int i = 1; i < firstWeekday; i++) {
+    for (int i = 0; i < leadingEmpty; i++) {
       cells.add(const SizedBox(width: 40, height: 44));
     }
 
@@ -263,13 +245,41 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
+    final trailingEmpty = (7 - cells.length % 7) % 7;
+    for (int i = 0; i < trailingEmpty; i++) {
+      cells.add(const SizedBox(width: 40, height: 44));
+    }
+
+    final rows = <Widget>[];
+    for (int i = 0; i < cells.length; i += 7) {
+      rows.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: cells.sublist(i, i + 7),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: StreamSpacing.lg, vertical: StreamSpacing.sm),
-      child: Wrap(
-        spacing: 0,
-        runSpacing: 0,
-        alignment: WrapAlignment.spaceAround,
-        children: cells,
+      child: Column(children: rows),
+    );
+  }
+
+  Widget _buildDayHeader(List<Movement> movements) {
+    final dateLabel = TimeFilter.day(_selectedDay!).label;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.md, StreamSpacing.lg, StreamSpacing.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(dateLabel, style: StreamTypography.bodyBold),
+          if (movements.isNotEmpty)
+            Text(
+              '${movements.length} moviment${movements.length == 1 ? 'o' : 'i'}',
+              style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+            ),
+        ],
       ),
     );
   }
@@ -287,24 +297,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    return Expanded(
-      child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.md, StreamSpacing.lg, 80),
-        itemCount: movements.length,
-        separatorBuilder: (_, __) => const SizedBox(height: StreamSpacing.xs),
-        itemBuilder: (context, index) {
-          final m = movements[index];
-          final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
-          final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-          return _CalendarMovementCard(
-            movement: m,
-            category: cat,
-            account: acc,
-            db: widget.db,
-            onEdit: () => _showPicker(context, prefill: m),
-          );
-        },
-      ),
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.md, StreamSpacing.lg, 80),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: movements.length,
+      separatorBuilder: (_, i) => const SizedBox(height: StreamSpacing.xs),
+      itemBuilder: (context, index) {
+        final m = movements[index];
+        final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
+        final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
+        return MovementCard(
+          movement: m,
+          category: cat,
+          account: acc,
+          onTap: () => _showPicker(context, prefill: m),
+        );
+      },
     );
   }
 
@@ -313,157 +322,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => MovementPicker(db: widget.db, prefill: prefill),
-    );
-  }
-}
-
-class _DayMovementsSheet extends StatelessWidget {
-  final DateTime day;
-  final List<Movement> movements;
-  final AppDatabase db;
-
-  const _DayMovementsSheet({
-    required this.day,
-    required this.movements,
-    required this.db,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.85,
-      expand: false,
-      builder: (context, scrollController) => Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.md, StreamSpacing.lg, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${day.day} ${_monthName(day.month)} ${day.year}',
-                  style: StreamTypography.h3,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: StreamColors.divider),
-          if (movements.isEmpty)
-            Expanded(
-              child: Center(
-                child: Text(
-                  'Nessun movimento',
-                  style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView.separated(
-                controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.md, StreamSpacing.lg, StreamSpacing.xxl),
-                itemCount: movements.length,
-                separatorBuilder: (_, __) => const SizedBox(height: StreamSpacing.xs),
-                itemBuilder: (context, index) {
-                  final m = movements[index];
-                  final cat = db.categories.where((c) => c.id == m.categoryId).firstOrNull;
-                  final acc = db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-                  return _CalendarMovementCard(
-                    movement: m,
-                    category: cat,
-                    account: acc,
-                    db: db,
-                    onEdit: () {
-                      Navigator.of(context).pop();
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => MovementPicker(db: db, prefill: m),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _monthName(int month) {
-    const names = [
-      'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
-    ];
-    return names[month - 1];
-  }
-}
-
-class _CalendarMovementCard extends StatelessWidget {
-  final Movement movement;
-  final Category? category;
-  final Account? account;
-  final AppDatabase db;
-  final VoidCallback onEdit;
-
-  const _CalendarMovementCard({
-    required this.movement,
-    required this.category,
-    required this.account,
-    required this.db,
-    required this.onEdit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconData = category != null
-        ? StreamIconLibrary.getIcon(category!.iconKey)
-        : Icons.help_outline;
-    return Container(
-      padding: const EdgeInsets.all(StreamSpacing.md),
-      decoration: BoxDecoration(
-        color: StreamColors.surface,
-        borderRadius: BorderRadius.circular(StreamRadius.md),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: Color(category?.color ?? 0xFF636366),
-              borderRadius: BorderRadius.circular(StreamRadius.sm),
-            ),
-            child: Icon(iconData, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: StreamSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(movement.title, style: StreamTypography.bodyBold),
-                const SizedBox(height: 2),
-                Text(
-                  category?.name ?? movement.categoryId,
-                  style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${movement.type == MovementType.expense ? '-' : '+'}${movement.amount.toStringAsFixed(2)} €',
-            style: StreamTypography.amount.copyWith(
-              color: movement.type == MovementType.expense ? StreamColors.expense : StreamColors.income,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
-import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
-import '../models/category.dart';
-import '../models/account.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
+import '../widgets/movement_card.dart';
 
 class MovementsScreen extends StatefulWidget {
   final AppDatabase db;
@@ -119,6 +117,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'movements_fab',
         onPressed: () => _showPicker(context),
         child: const Icon(Icons.add),
       ),
@@ -178,220 +177,30 @@ class _MovementsScreenState extends State<MovementsScreen> {
         final m = movements[index];
         final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
         final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-        return _MovementCard(
+        return MovementCard(
           movement: m,
           category: cat,
           account: acc,
           showNotes: _showNotes,
-          db: widget.db,
+          showDate: true,
           onEdit: () => _showPicker(context, prefill: m),
-        );
-      },
-    );
-  }
-}
-
-class _MovementCard extends StatelessWidget {
-  final Movement movement;
-  final Category? category;
-  final Account? account;
-  final bool showNotes;
-  final AppDatabase db;
-  final VoidCallback onEdit;
-
-  const _MovementCard({
-    required this.movement,
-    required this.category,
-    required this.account,
-    required this.showNotes,
-    required this.db,
-    required this.onEdit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconData = category != null
-        ? StreamIconLibrary.getIcon(category!.iconKey)
-        : Icons.help_outline;
-    return Container(
-      padding: const EdgeInsets.all(StreamSpacing.md),
-      decoration: BoxDecoration(
-        color: StreamColors.surface,
-        borderRadius: BorderRadius.circular(StreamRadius.md),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Color(category?.color ?? 0xFF636366),
-                  borderRadius: BorderRadius.circular(StreamRadius.sm),
-                ),
-                child: Icon(iconData, color: Colors.white, size: 16),
-              ),
-              const SizedBox(width: StreamSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(movement.title, style: StreamTypography.bodyBold),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (account != null) ...[
-                          Icon(StreamIconLibrary.getAccountIcon(account!.iconKey), size: 12, color: Color(account!.color)),
-                          const SizedBox(width: 4),
-                        ],
-                        Flexible(
-                          child: Text(
-                            [category?.name ?? movement.categoryId, if (account != null) account!.name, _formatDate(movement.date)].join(' • '),
-                            style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: StreamSpacing.sm),
-              Text(
-                '${movement.type == MovementType.expense ? '-' : '+'}${movement.amount.toStringAsFixed(2)} €',
-                style: StreamTypography.amount.copyWith(
-                  color: movement.type == MovementType.expense ? StreamColors.expense : StreamColors.income,
-                ),
-              ),
-              const SizedBox(width: StreamSpacing.xs),
-              _PopupMenu(movement: movement, db: db, onEdit: onEdit),
-            ],
-          ),
-          if (showNotes && movement.note != null && movement.note!.isNotEmpty) ...[
-            const SizedBox(height: StreamSpacing.sm),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(StreamSpacing.sm),
-              decoration: BoxDecoration(
-                color: StreamColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(StreamRadius.sm),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.notes_rounded, size: 14, color: StreamColors.textMuted),
-                  const SizedBox(width: StreamSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      movement.note!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime d) {
-    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-  }
-}
-
-class _PopupMenu extends StatelessWidget {
-  final Movement movement;
-  final AppDatabase db;
-  final VoidCallback onEdit;
-
-  const _PopupMenu({required this.movement, required this.db, required this.onEdit});
-
-  void _confirmDelete(BuildContext context, Movement m) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminare movimento?'),
-        content: const Text('Questa operazione non può essere annullata.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
-          ),
-          TextButton(
-            onPressed: () {
-              db.deleteMovement(m.id);
-              Navigator.pop(ctx);
-            },
-            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_horiz, size: 20, color: StreamColors.textMuted),
-      onSelected: (value) {
-        switch (value) {
-          case 'modifica':
-            onEdit();
-          case 'duplica':
-            db.duplicateMovement(movement);
+          onDuplicate: () {
+            widget.db.duplicateMovement(m);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Movimento duplicato')),
             );
-          case 'preferito':
-            db.saveMovementAsFavorite(movement);
+          },
+          onSaveAsFavorite: () {
+            widget.db.saveMovementAsFavorite(m);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Salvato nei preferiti')),
             );
-          case 'elimina':
-            _confirmDelete(context, movement);
-        }
+          },
+          onDelete: () {
+            widget.db.deleteMovement(m.id);
+          },
+        );
       },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'modifica',
-          child: ListTile(
-            leading: Icon(Icons.edit, size: 20),
-            title: Text('Modifica'),
-            dense: true,
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'duplica',
-          child: ListTile(
-            leading: Icon(Icons.copy, size: 20),
-            title: Text('Duplica'),
-            dense: true,
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'preferito',
-          child: ListTile(
-            leading: Icon(Icons.favorite_border, size: 20),
-            title: Text('Salva preferito'),
-            dense: true,
-          ),
-        ),
-        PopupMenuItem(
-          value: 'elimina',
-          child: ListTile(
-            leading: Icon(Icons.delete_outline, size: 20, color: StreamColors.expense),
-            title: Text('Elimina', style: TextStyle(color: StreamColors.expense)),
-            dense: true,
-          ),
-        ),
-      ],
     );
   }
 }

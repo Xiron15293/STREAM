@@ -15,6 +15,13 @@ String _monthLabel(int year, int month) {
   return '${months[month - 1]} $year';
 }
 
+Future<void> _openCalendar(WidgetTester tester) async {
+  await tester.tap(find.text('Archivio'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Calendario'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   SharedPreferences.setMockInitialValues({});
 
@@ -26,8 +33,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Calendario'));
-      await tester.pumpAndSettle();
+      await _openCalendar(tester);
 
       final now = DateTime.now();
       expect(find.text(_monthLabel(now.year, now.month)), findsOneWidget);
@@ -40,8 +46,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Calendario'));
-      await tester.pumpAndSettle();
+      await _openCalendar(tester);
 
       expect(find.text('Lun'), findsOneWidget);
       expect(find.text('Mar'), findsOneWidget);
@@ -56,8 +61,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Calendario'));
-      await tester.pumpAndSettle();
+      await _openCalendar(tester);
 
       await tester.tap(find.byIcon(Icons.chevron_right));
       await tester.pumpAndSettle();
@@ -86,8 +90,7 @@ void main() {
         createdAt: now,
       ));
 
-      await tester.tap(find.text('Calendario'));
-      await tester.pumpAndSettle();
+      await _openCalendar(tester);
 
       // Day number should be rendered (may have multiple widgets with same number)
       expect(find.text('${now.day}'), findsAtLeastNWidgets(1));
@@ -111,8 +114,7 @@ void main() {
         createdAt: now,
       ));
 
-      await tester.tap(find.text('Calendario'));
-      await tester.pumpAndSettle();
+      await _openCalendar(tester);
 
       await tester.tap(find.text('${now.day}').first);
       await tester.pumpAndSettle();
@@ -125,8 +127,8 @@ void main() {
       await tester.pumpWidget(StreamApp(db: db));
 
       expect(find.text('Dashboard'), findsOneWidget);
-      expect(find.text('Calendario'), findsOneWidget);
       expect(find.text('Archivio'), findsOneWidget);
+      expect(find.text('Impostazioni'), findsOneWidget);
     });
 
     testWidgets('tapping month label resets to today', (WidgetTester tester) async {
@@ -136,8 +138,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Calendario'));
-      await tester.pumpAndSettle();
+      await _openCalendar(tester);
 
       final now = DateTime.now();
 
