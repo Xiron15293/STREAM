@@ -1,0 +1,402 @@
+import 'dart:convert';
+import 'package:sqflite/sqflite.dart';
+import '../data/database.dart';
+import '../data/categories_data.dart';
+import '../data/preferences_service.dart';
+import '../design/stream_icon_library.dart';
+import '../models/account.dart';
+import '../models/backup_data.dart';
+import '../models/category.dart';
+import '../models/favorite_movement.dart';
+import '../models/movement.dart';
+import '../models/quick_movement.dart';
+
+class ValidationResult {
+  final bool isValid;
+  final String? error;
+  final BackupData? data;
+
+  const ValidationResult._({required this.isValid, this.error, this.data});
+
+  factory ValidationResult.valid(BackupData data) =>
+      ValidationResult._(isValid: true, data: data);
+
+  factory ValidationResult.invalid(String error) =>
+      ValidationResult._(isValid: false, error: error);
+}
+
+class BackupService {
+  static const int currentVersion = 1;
+
+  static Future<String> exportToJson(AppDatabase db) async {
+    final showNotes = await PreferencesService.loadShowNotes();
+    final data = BackupData(
+      version: currentVersion,
+      createdAt: DateTime.now().toIso8601String(),
+      accounts: db.accounts.toList(),
+      categories: db.categories.toList(),
+      movements: db.movements.toList(),
+      quickMovements: db.quickMovements.toList(),
+      favoriteMovements: db.favoriteMovements.toList(),
+      settings: BackupSettings(showNotes: showNotes),
+    );
+
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(data.toJson());
+  }
+
+  static ValidationResult validate(String jsonString) {
+    try {
+      final parsed = jsonDecode(jsonString);
+      if (parsed is! Map<String, dynamic>) {
+        return ValidationResult.invalid('Formato non valido: root non è un oggetto JSON');
+      }
+
+      final version = parsed['version'];
+      if (version == null) {
+        return ValidationResult.invalid('Campo "version" mancante');
+      }
+      if (version is! int) {
+        return ValidationResult.invalid('"version" deve essere un numero intero');
+      }
+      if (version < 1 || version > currentVersion) {
+        return ValidationResult.invalid(
+            'Versione $version non supportata. Versione massima: $currentVersion');
+      }
+
+      final requiredFields = ['accounts', 'categories', 'movements'];
+      for (final field in requiredFields) {
+        if (!parsed.containsKey(field)) {
+          return ValidationResult.invalid('Campo obbligatorio "$field" mancante');
+        }
+        if (parsed[field] is! List) {
+          return ValidationResult.invalid('Campo "$field" deve essere una lista');
+        }
+      }
+
+      return ValidationResult.valid(BackupData.fromJson(parsed));
+    } on FormatException {
+      return ValidationResult.invalid('File JSON non valido: formato errato');
+    } catch (e) {
+      return ValidationResult.invalid('Errore di lettura: $e');
+    }
+  }
+
+  static Future<void> restore(AppDatabase db, BackupData data) async {
+    final snapshot = _buildSnapshot(data);
+    final sqlite = db.sqliteService;
+
+    if (sqlite != null) {
+      await sqlite.transaction((txn) async {
+        await txn.delete('movements');
+        await txn.delete('categories');
+        await txn.delete('quick_movements');
+        await txn.delete('favorite_movements');
+        await txn.delete('accounts');
+
+        for (final acc in snapshot.accounts) {
+          await txn.insert(
+            'accounts',
+            _accountToRow(acc),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        for (final cat in snapshot.categories) {
+          await txn.insert(
+            'categories',
+            _categoryToRow(cat),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        for (final m in snapshot.movements) {
+          await txn.insert(
+            'movements',
+            _movementToRow(m),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        for (final qm in snapshot.quickMovements) {
+          await txn.insert(
+            'quick_movements',
+            _quickMovementToRow(qm),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        for (final fm in snapshot.favoriteMovements) {
+          await txn.insert(
+            'favorite_movements',
+            _favoriteMovementToRow(fm),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      });
+    }
+
+    db.replaceState(
+      movements: snapshot.movements,
+      categories: snapshot.categories,
+      quickMovements: snapshot.quickMovements,
+      favoriteMovements: snapshot.favoriteMovements,
+      accounts: snapshot.accounts,
+    );
+
+    if (data.settings != null) {
+      await PreferencesService.saveShowNotes(data.settings!.showNotes);
+    }
+
+    db.notify();
+  }
+
+  static List<Category> _defaultCategories() {
+    return List<Category>.from(DefaultCategories.all);
+  }
+
+  static List<QuickMovement> _defaultQuickMovements() {
+    return [
+      const QuickMovement(
+        id: 'qm_1',
+        title: 'Caffè',
+        amount: 1.50,
+        type: MovementType.expense,
+        categoryId: 'exp_4',
+      ),
+      const QuickMovement(
+        id: 'qm_2',
+        title: 'Benzina',
+        amount: 50.0,
+        type: MovementType.expense,
+        categoryId: 'exp_3',
+      ),
+      const QuickMovement(
+        id: 'qm_3',
+        title: 'Spesa',
+        amount: 80.0,
+        type: MovementType.expense,
+        categoryId: 'exp_1',
+      ),
+      const QuickMovement(
+        id: 'qm_4',
+        title: 'Stipendio',
+        amount: 2500.0,
+        type: MovementType.income,
+        categoryId: 'inc_1',
+      ),
+    ];
+  }
+
+  static _RestoreSnapshot _buildSnapshot(BackupData data) {
+    final accountMap = <String, Account>{
+      defaultAccountId: _defaultAccount(),
+    };
+    for (final acc in data.accounts) {
+      if (acc.id == defaultAccountId) continue;
+      accountMap[acc.id] = acc;
+    }
+
+    final categoryMap = <String, Category>{
+      for (final category in _defaultCategories()) category.id: category,
+    };
+    for (final cat in data.categories) {
+      categoryMap[cat.id] = cat;
+    }
+
+    final accounts = accountMap.values.toList();
+    final categories = categoryMap.values.toList();
+    final quickMovementMap = <String, QuickMovement>{
+      for (final quickMovement in _defaultQuickMovements())
+        quickMovement.id: quickMovement,
+    };
+    for (final quickMovement in data.quickMovements) {
+      quickMovementMap[quickMovement.id] = quickMovement;
+    }
+    final movements = data.movements
+        .map((m) => _normalizeMovement(m, accountMap, categoryMap))
+        .toList();
+    final quickMovements = quickMovementMap.values
+        .map((q) => _normalizeQuickMovement(q, accountMap, categoryMap))
+        .toList();
+    final favoriteMovements = data.favoriteMovements
+        .map((f) => _normalizeFavoriteMovement(f, accountMap, categoryMap))
+        .toList();
+
+    return _RestoreSnapshot(
+      accounts: accounts,
+      categories: categories,
+      movements: movements,
+      quickMovements: quickMovements,
+      favoriteMovements: favoriteMovements,
+    );
+  }
+
+  static Account _defaultAccount() {
+    return Account(
+      id: defaultAccountId,
+      name: 'Principale',
+      type: AccountType.bank,
+      iconKey: StreamIconLibrary.defaultAccountIcon,
+      color: StreamColorPalette.defaultColor,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  static Movement _normalizeMovement(
+    Movement movement,
+    Map<String, Account> accounts,
+    Map<String, Category> categories,
+  ) {
+    final accountId = accounts.containsKey(movement.accountId)
+        ? movement.accountId
+        : defaultAccountId;
+    final category = categories[movement.categoryId];
+    final categoryId = category != null && category.type == movement.type
+        ? category.id
+        : _defaultCategoryIdForType(movement.type);
+
+    return movement.copyWith(
+      accountId: accountId,
+      categoryId: categoryId,
+    );
+  }
+
+  static QuickMovement _normalizeQuickMovement(
+    QuickMovement quickMovement,
+    Map<String, Account> accounts,
+    Map<String, Category> categories,
+  ) {
+    final accountId = accounts.containsKey(quickMovement.accountId)
+        ? quickMovement.accountId
+        : defaultAccountId;
+    final category = categories[quickMovement.categoryId];
+    final categoryId = category != null && category.type == quickMovement.type
+        ? category.id
+        : _defaultCategoryIdForType(quickMovement.type);
+
+    return QuickMovement(
+      id: quickMovement.id,
+      title: quickMovement.title,
+      amount: quickMovement.amount,
+      type: quickMovement.type,
+      categoryId: categoryId,
+      accountId: accountId,
+      note: quickMovement.note,
+    );
+  }
+
+  static FavoriteMovement _normalizeFavoriteMovement(
+    FavoriteMovement favoriteMovement,
+    Map<String, Account> accounts,
+    Map<String, Category> categories,
+  ) {
+    final accountId = accounts.containsKey(favoriteMovement.accountId)
+        ? favoriteMovement.accountId
+        : defaultAccountId;
+    final category = categories[favoriteMovement.categoryId];
+    final categoryId = category != null && category.type == favoriteMovement.type
+        ? category.id
+        : _defaultCategoryIdForType(favoriteMovement.type);
+
+    return FavoriteMovement(
+      id: favoriteMovement.id,
+      title: favoriteMovement.title,
+      amount: favoriteMovement.amount,
+      type: favoriteMovement.type,
+      categoryId: categoryId,
+      accountId: accountId,
+      note: favoriteMovement.note,
+    );
+  }
+
+  static String _defaultCategoryIdForType(MovementType type) {
+    return type == MovementType.income ? 'inc_1' : 'exp_1';
+  }
+
+  static Map<String, dynamic> _accountToRow(Account account) => {
+        'id': account.id,
+        'name': account.name,
+        'type': account.type.name,
+        'initial_balance': account.initialBalance,
+        'icon_key': account.iconKey,
+        'color': account.color,
+        'archived': account.archived ? 1 : 0,
+        'created_at': account.createdAt.toIso8601String(),
+        'updated_at': account.updatedAt.toIso8601String(),
+      };
+
+  static Map<String, dynamic> _categoryToRow(Category category) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': category.id,
+      'name': category.name,
+      'type': category.type.name,
+      'color': category.color,
+      'icon_key': category.iconKey,
+      'archived': category.archived ? 1 : 0,
+      'created_at': now,
+      'updated_at': now,
+    };
+  }
+
+  static Map<String, dynamic> _movementToRow(Movement movement) => {
+        'id': movement.id,
+        'title': movement.title,
+        'amount': movement.amount,
+        'type': movement.type.name,
+        'category_id': movement.categoryId,
+        'account_id': movement.accountId,
+        'date': movement.date.toIso8601String(),
+        'note': movement.note,
+        'created_at': movement.createdAt.toIso8601String(),
+        'updated_at': movement.updatedAt.toIso8601String(),
+      };
+
+  static Map<String, dynamic> _quickMovementToRow(QuickMovement quickMovement) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': quickMovement.id,
+      'title': quickMovement.title,
+      'amount': quickMovement.amount,
+      'type': quickMovement.type.name,
+      'category_id': quickMovement.categoryId,
+      'account_id': quickMovement.accountId,
+      'note': quickMovement.note,
+      'created_at': now,
+      'updated_at': now,
+    };
+  }
+
+  static Map<String, dynamic> _favoriteMovementToRow(
+      FavoriteMovement favoriteMovement) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': favoriteMovement.id,
+      'title': favoriteMovement.title,
+      'amount': favoriteMovement.amount,
+      'type': favoriteMovement.type.name,
+      'category_id': favoriteMovement.categoryId,
+      'account_id': favoriteMovement.accountId,
+      'note': favoriteMovement.note,
+      'created_at': now,
+      'updated_at': now,
+    };
+  }
+}
+
+class _RestoreSnapshot {
+  final List<Account> accounts;
+  final List<Category> categories;
+  final List<Movement> movements;
+  final List<QuickMovement> quickMovements;
+  final List<FavoriteMovement> favoriteMovements;
+
+  const _RestoreSnapshot({
+    required this.accounts,
+    required this.categories,
+    required this.movements,
+    required this.quickMovements,
+    required this.favoriteMovements,
+  });
+}

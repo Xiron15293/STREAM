@@ -1,0 +1,172 @@
+import '../design/stream_icon_library.dart';
+import 'account.dart';
+import 'category.dart';
+import 'movement.dart';
+import 'quick_movement.dart';
+import 'favorite_movement.dart';
+
+class BackupSettings {
+  final bool showNotes;
+
+  const BackupSettings({required this.showNotes});
+
+  Map<String, dynamic> toJson() => {'showNotes': showNotes};
+
+  static BackupSettings fromJson(Map<String, dynamic> json) {
+    return BackupSettings(showNotes: json['showNotes'] as bool? ?? false);
+  }
+}
+
+class BackupData {
+  final int version;
+  final String createdAt;
+  final List<Account> accounts;
+  final List<Category> categories;
+  final List<Movement> movements;
+  final List<QuickMovement> quickMovements;
+  final List<FavoriteMovement> favoriteMovements;
+  final BackupSettings? settings;
+
+  const BackupData({
+    required this.version,
+    required this.createdAt,
+    required this.accounts,
+    required this.categories,
+    required this.movements,
+    this.quickMovements = const [],
+    this.favoriteMovements = const [],
+    this.settings,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'version': version,
+        'createdAt': createdAt,
+        'accounts': accounts.map((a) => _accountToMap(a)).toList(),
+        'categories': categories.map((c) => _categoryToMap(c)).toList(),
+        'movements': movements.map((m) => _movementToMap(m)).toList(),
+        'quickMovements': quickMovements.map((q) => _quickMovementToMap(q)).toList(),
+        'favoriteMovements': favoriteMovements.map((f) => _favoriteMovementToMap(f)).toList(),
+        'settings': settings?.toJson(),
+      };
+
+  factory BackupData.fromJson(Map<String, dynamic> json) {
+    return BackupData(
+      version: json['version'] as int,
+      createdAt: json['createdAt'] as String? ?? '',
+      accounts: (json['accounts'] as List<dynamic>?)?.map((e) => _accountFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      categories: (json['categories'] as List<dynamic>?)?.map((e) => _categoryFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      movements: (json['movements'] as List<dynamic>?)?.map((e) => _movementFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      quickMovements: (json['quickMovements'] as List<dynamic>?)?.map((e) => _quickMovementFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      favoriteMovements: (json['favoriteMovements'] as List<dynamic>?)?.map((e) => _favoriteMovementFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      settings: json['settings'] != null ? BackupSettings.fromJson(json['settings'] as Map<String, dynamic>) : null,
+    );
+  }
+
+  static Map<String, dynamic> _accountToMap(Account a) => {
+        'id': a.id,
+        'name': a.name,
+        'type': a.type.name,
+        'initialBalance': a.initialBalance,
+        'iconKey': a.iconKey,
+        'color': a.color,
+        'archived': a.archived,
+        'createdAt': a.createdAt.toIso8601String(),
+        'updatedAt': a.updatedAt.toIso8601String(),
+      };
+
+  static Account _accountFromMap(Map<String, dynamic> m) => Account(
+        id: m['id'] as String,
+        name: m['name'] as String,
+        type: AccountType.values.byName(m['type'] as String),
+        initialBalance: (m['initialBalance'] as num?)?.toDouble() ?? 0.0,
+        iconKey: m['iconKey'] as String? ?? StreamIconLibrary.defaultAccountIcon,
+        color: m['color'] as int? ?? StreamColorPalette.defaultColor,
+        archived: m['archived'] as bool? ?? false,
+        createdAt: DateTime.parse(m['createdAt'] as String),
+        updatedAt: m['updatedAt'] != null ? DateTime.parse(m['updatedAt'] as String) : null,
+      );
+
+  static Map<String, dynamic> _categoryToMap(Category c) => {
+        'id': c.id,
+        'name': c.name,
+        'type': c.type.name,
+        'color': c.color,
+        'iconKey': c.iconKey,
+        'archived': c.archived,
+      };
+
+  static Category _categoryFromMap(Map<String, dynamic> m) => Category(
+        id: m['id'] as String,
+        name: m['name'] as String,
+        type: MovementType.values.byName(m['type'] as String),
+        color: m['color'] as int? ?? StreamColorPalette.defaultColor,
+        iconKey: m['iconKey'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
+        archived: m['archived'] as bool? ?? false,
+      );
+
+  static Map<String, dynamic> _movementToMap(Movement m) => {
+        'id': m.id,
+        'title': m.title,
+        'amount': m.amount,
+        'type': m.type.name,
+        'date': m.date.toIso8601String(),
+        'categoryId': m.categoryId,
+        'accountId': m.accountId,
+        'note': m.note,
+        'createdAt': m.createdAt.toIso8601String(),
+        'updatedAt': m.updatedAt.toIso8601String(),
+      };
+
+  static Movement _movementFromMap(Map<String, dynamic> m) => Movement(
+        id: m['id'] as String,
+        title: m['title'] as String,
+        amount: (m['amount'] as num).toDouble(),
+        type: MovementType.values.byName(m['type'] as String),
+        date: DateTime.parse(m['date'] as String),
+        categoryId: m['categoryId'] as String,
+        accountId: m['accountId'] as String?,
+        note: m['note'] as String?,
+        createdAt: DateTime.parse(m['createdAt'] as String),
+        updatedAt: m['updatedAt'] != null ? DateTime.parse(m['updatedAt'] as String) : null,
+      );
+
+  static Map<String, dynamic> _quickMovementToMap(QuickMovement q) => {
+        'id': q.id,
+        'title': q.title,
+        'amount': q.amount,
+        'type': q.type.name,
+        'categoryId': q.categoryId,
+        'accountId': q.accountId,
+        'note': q.note,
+      };
+
+  static QuickMovement _quickMovementFromMap(Map<String, dynamic> m) => QuickMovement(
+        id: m['id'] as String,
+        title: m['title'] as String,
+        amount: (m['amount'] as num).toDouble(),
+        type: MovementType.values.byName(m['type'] as String),
+        categoryId: m['categoryId'] as String,
+        accountId: m['accountId'] as String? ?? defaultAccountId,
+        note: m['note'] as String?,
+      );
+
+  static Map<String, dynamic> _favoriteMovementToMap(FavoriteMovement f) => {
+        'id': f.id,
+        'title': f.title,
+        'amount': f.amount,
+        'type': f.type.name,
+        'categoryId': f.categoryId,
+        'accountId': f.accountId,
+        'note': f.note,
+      };
+
+  static FavoriteMovement _favoriteMovementFromMap(Map<String, dynamic> m) => FavoriteMovement(
+        id: m['id'] as String,
+        title: m['title'] as String,
+        amount: (m['amount'] as num).toDouble(),
+        type: MovementType.values.byName(m['type'] as String),
+        categoryId: m['categoryId'] as String,
+        accountId: m['accountId'] as String? ?? defaultAccountId,
+        note: m['note'] as String?,
+      );
+}
