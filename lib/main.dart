@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'data/database.dart';
 import 'data/sqlite_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/archive_screen.dart';
-import 'screens/calendar_screen.dart';
+import 'screens/settings_screen.dart';
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final sqlite = SQLiteService();
   await sqlite.open();
   final db = AppDatabase(sqlite: sqlite);
@@ -48,8 +50,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final screens = [
       DashboardScreen(db: _db),
-      CalendarScreen(db: _db),
       ArchiveScreen(db: _db),
+      SettingsScreen(db: _db),
     ];
 
     return Scaffold(
@@ -68,8 +70,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           onTap: (i) => setState(() => _currentIndex = i),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendario'),
             BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Archivio'),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Impostazioni'),
           ],
         ),
       ),

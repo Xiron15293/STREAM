@@ -16,6 +16,7 @@ void main() {
 
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Archivio'), findsOneWidget);
+    expect(find.text('Impostazioni'), findsOneWidget);
   });
 
   test('AppDatabase saves and retrieves movements', () {
@@ -152,5 +153,27 @@ void main() {
     expect(find.text('Stipendio'), findsAtLeastNWidgets(1));
     expect(find.text('ENTRATE'), findsAtLeastNWidgets(1));
     expect(find.text('2000.00 €'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('Backup & Restore is reachable from settings', (WidgetTester tester) async {
+    final db = AppDatabase();
+    await tester.pumpWidget(MaterialApp(
+      home: MainScaffold(db: db),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Impostazioni'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Import'), findsOneWidget);
+    expect(find.text('Export'), findsOneWidget);
+    expect(find.text('Preferenze'), findsOneWidget);
+    expect(find.text('Info app'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ListTile, 'Backup & Restore'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FilledButton, 'Esporta backup'), findsOneWidget);
+    expect(find.text('Importa backup'), findsOneWidget);
   });
 }

@@ -3,6 +3,7 @@ import '../data/database.dart';
 import 'movements_screen.dart';
 import 'accounts_screen.dart';
 import 'categories_screen.dart';
+import 'calendar_screen.dart';
 
 class ArchiveScreen extends StatefulWidget {
   final AppDatabase db;
@@ -16,19 +17,21 @@ class ArchiveScreen extends StatefulWidget {
 class _ArchiveScreenState extends State<ArchiveScreen> {
   int _selectedSection = 0;
 
-  static const _sections = ['Movimenti', 'Conti', 'Categorie'];
+  static const _sections = ['Movimenti', 'Conti', 'Categorie', 'Calendario'];
   static const _icons = [
     Icons.swap_vert,
     Icons.account_balance,
     Icons.category,
+    Icons.calendar_month,
   ];
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
+    final screens = <Widget>[
       MovementsScreen(db: widget.db),
       AccountsScreen(db: widget.db),
       CategoriesScreen(db: widget.db),
+      CalendarScreen(db: widget.db),
     ];
 
     return SafeArea(
@@ -39,7 +42,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             child: SizedBox(
               width: double.infinity,
               child: SegmentedButton<int>(
-                segments: List.generate(3, (i) {
+                segments: List.generate(4, (i) {
                   return ButtonSegment<int>(
                     value: i,
                     label: Text(_sections[i]),
