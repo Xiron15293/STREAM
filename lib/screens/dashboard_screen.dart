@@ -1,44 +1,109 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
-import '../design/stream_icon_library.dart';
-import '../models/movement.dart';
 import '../models/category.dart';
+import '../models/time_filter.dart';
 import '../theme.dart';
+import '../widgets/time_filter_bar.dart';
+import '../widgets/movement_card.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   final AppDatabase db;
 
   const DashboardScreen({super.key, required this.db});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late TimeFilter _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _filter = TimeFilter.month(now.year, now.month);
+  }
+
+  void _onFilterChanged(TimeFilter filter) {
+    setState(() {
+      _filter = filter;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('STREAM')),
       body: ListenableBuilder(
-        listenable: db,
+        listenable: widget.db,
         builder: (context, _) {
-          final income = db.totalIncome;
-          final expenses = db.totalExpenses;
-          final balance = db.balance;
-          final accountsBalance = db.totalAccountsBalance;
-          final last = db.lastMovements;
+          final allMovements = widget.db.movements;
+          final filteredMovements = allMovements.filterByTime(_filter);
+
+          double filteredIncome = 0;
+          double filteredExpenses = 0;
+          for (final m in filteredMovements) {
+            if (m.type == MovementType.income) {
+              filteredIncome += m.amount;
+            } else {
+              filteredExpenses += m.amount;
+            }
+          }
+          final filteredBalance = filteredIncome - filteredExpenses;
+          final filteredCount = filteredMovements.length;
+          final accountsBalance = widget.db.totalAccountsBalance;
+          final lastFiltered = filteredMovements.take(5).toList();
+          final hasAnyMovements = allMovements.isNotEmpty;
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.xxl),
             children: [
-              _BalanceHero(accountsBalance: accountsBalance, income: income, expenses: expenses),
-              const SizedBox(height: StreamSpacing.lg),
-              _KpiGrid(income: income, expenses: expenses, balance: balance),
-              const SizedBox(height: StreamSpacing.section),
-              const Text('Ultime transazioni', style: StreamTypography.h3),
+              TimeFilterBar(activeFilter: _filter, onChanged: _onFilterChanged),
               const SizedBox(height: StreamSpacing.md),
-              if (last.isEmpty)
+              _BalanceHero(
+                accountsBalance: accountsBalance,
+                income: filteredIncome,
+                expenses: filteredExpenses,
+              ),
+              const SizedBox(height: StreamSpacing.lg),
+              _KpiGrid(
+                income: filteredIncome,
+                expenses: filteredExpenses,
+                balance: filteredBalance,
+                count: filteredCount,
+              ),
+              const SizedBox(height: StreamSpacing.section),
+              if (lastFiltered.isNotEmpty) ...[
+                Text('Ultime transazioni', style: StreamTypography.h3),
+                const SizedBox(height: StreamSpacing.md),
+                ...lastFiltered.map((m) {
+                  final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
+                  final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                    child: MovementCard(
+                      movement: m,
+                      category: cat,
+                      account: acc,
+                    ),
+                  );
+                }),
+              ] else if (hasAnyMovements) ...[
+                _EmptyState(
+                  icon: Icons.search_off,
+                  message: 'Nessun movimento nel periodo selezionato',
+                  subtitle: 'Prova a cambiare periodo o filtro',
+                ),
+              ] else ...[
+                Text('Ultime transazioni', style: StreamTypography.h3),
+                const SizedBox(height: StreamSpacing.md),
                 _EmptyState(
                   icon: Icons.receipt_long_outlined,
                   message: 'Nessun movimento',
                   subtitle: 'Tocca + per aggiungerne uno',
-                )
-              else
-                ...last.map((m) => _MovementTile(movement: m, db: db)),
+                ),
+              ],
             ],
           );
         },
@@ -118,23 +183,40 @@ class _KpiGrid extends StatelessWidget {
   final double income;
   final double expenses;
   final double balance;
+  final int count;
 
-  const _KpiGrid({required this.income, required this.expenses, required this.balance});
+  const _KpiGrid({required this.income, required this.expenses, required this.balance, required this.count});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(child: _KpiCard(label: 'Entrate', value: '${income.toStringAsFixed(2)} €', color: StreamColors.income)),
-        const SizedBox(width: StreamSpacing.sm),
-        Expanded(child: _KpiCard(label: 'Uscite', value: '${expenses.toStringAsFixed(2)} €', color: StreamColors.expense)),
-        const SizedBox(width: StreamSpacing.sm),
-        Expanded(
-          child: _KpiCard(
-            label: 'Saldo',
-            value: '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
-            color: balance >= 0 ? StreamColors.income : StreamColors.expense,
-          ),
+        Row(
+          children: [
+            Expanded(child: _KpiCard(label: 'Entrate', value: '${income.toStringAsFixed(2)} €', color: StreamColors.income)),
+            const SizedBox(width: StreamSpacing.sm),
+            Expanded(child: _KpiCard(label: 'Uscite', value: '${expenses.toStringAsFixed(2)} €', color: StreamColors.expense)),
+          ],
+        ),
+        const SizedBox(height: StreamSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _KpiCard(
+                label: 'Saldo',
+                value: '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
+                color: balance >= 0 ? StreamColors.income : StreamColors.expense,
+              ),
+            ),
+            const SizedBox(width: StreamSpacing.sm),
+            Expanded(
+              child: _KpiCard(
+                label: 'Movimenti',
+                value: '$count',
+                color: StreamColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -164,68 +246,6 @@ class _KpiCard extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(value, style: StreamTypography.captionBold.copyWith(color: color)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MovementTile extends StatelessWidget {
-  final Movement movement;
-  final AppDatabase db;
-
-  const _MovementTile({required this.movement, required this.db});
-
-  @override
-  Widget build(BuildContext context) {
-    final cat = db.categories.where((c) => c.id == movement.categoryId).firstOrNull;
-    final acc = db.accounts.where((a) => a.id == movement.accountId).firstOrNull;
-    final iconData = cat != null ? StreamIconLibrary.getIcon(cat.iconKey) : Icons.help_outline;
-    return Container(
-      margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Color(cat?.color ?? 0xFF636366),
-              borderRadius: BorderRadius.circular(StreamRadius.md),
-            ),
-            child: Icon(iconData, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: StreamSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(movement.title, style: StreamTypography.bodyBold),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    if (acc != null) ...[
-                      Icon(StreamIconLibrary.getAccountIcon(acc.iconKey), size: 12, color: Color(acc.color)),
-                      const SizedBox(width: 4),
-                    ],
-                    Flexible(
-                      child: Text(
-                        [cat?.name ?? movement.categoryId, if (acc != null) acc.name].join(' • '),
-                        style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${movement.type == MovementType.expense ? '-' : '+'}${movement.amount.toStringAsFixed(2)} €',
-            style: StreamTypography.amount.copyWith(
-              color: movement.type == MovementType.expense ? StreamColors.expense : StreamColors.income,
-            ),
           ),
         ],
       ),
