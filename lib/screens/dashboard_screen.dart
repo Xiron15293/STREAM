@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
+import '../design/stream_icon_library.dart';
+import '../models/account.dart';
 import '../models/category.dart';
+import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../widgets/time_filter_bar.dart';
-import '../widgets/movement_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   final AppDatabase db;
@@ -40,9 +42,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, _) {
           final allMovements = widget.db.movements;
           final filteredMovements = allMovements.filterByTime(_filter);
+          final previousFilter = _filter.mode == TimeFilterMode.customRange
+              ? null
+              : _filter.previous();
+          final previousMovements = previousFilter != null
+              ? allMovements.filterByTime(previousFilter)
+              : <Movement>[];
 
           double filteredIncome = 0;
           double filteredExpenses = 0;
+          double previousExpenses = 0;
           for (final m in filteredMovements) {
             if (m.type == MovementType.income) {
               filteredIncome += m.amount;
@@ -50,21 +59,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
               filteredExpenses += m.amount;
             }
           }
+          for (final m in previousMovements) {
+            if (m.type == MovementType.expense) {
+              previousExpenses += m.amount;
+            }
+          }
           final filteredBalance = filteredIncome - filteredExpenses;
           final filteredCount = filteredMovements.length;
           final accountsBalance = widget.db.totalAccountsBalance;
-          final lastFiltered = filteredMovements.take(5).toList();
-          final hasAnyMovements = allMovements.isNotEmpty;
+          final activeAccounts = widget.db.accounts
+              .where((a) => !a.archived)
+              .toList();
+          final categoryExpenses = _buildCategoryExpenses(
+            filteredMovements,
+            widget.db.categories,
+          );
+          final expenseComparison = previousFilter != null
+              ? filteredExpenses - previousExpenses
+              : null;
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.xxl),
+            padding: const EdgeInsets.fromLTRB(
+              StreamSpacing.lg,
+              StreamSpacing.lg,
+              StreamSpacing.lg,
+              StreamSpacing.xxl,
+            ),
             children: [
               TimeFilterBar(activeFilter: _filter, onChanged: _onFilterChanged),
               const SizedBox(height: StreamSpacing.md),
               _BalanceHero(
                 accountsBalance: accountsBalance,
-                income: filteredIncome,
-                expenses: filteredExpenses,
+                accounts: activeAccounts,
+                db: widget.db,
               ),
               const SizedBox(height: StreamSpacing.lg),
               _KpiGrid(
@@ -72,38 +99,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 expenses: filteredExpenses,
                 balance: filteredBalance,
                 count: filteredCount,
+                expenseComparison: expenseComparison,
               ),
               const SizedBox(height: StreamSpacing.section),
-              if (lastFiltered.isNotEmpty) ...[
-                Text('Ultime transazioni', style: StreamTypography.h3),
-                const SizedBox(height: StreamSpacing.md),
-                ...lastFiltered.map((m) {
-                  final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
-                  final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
-                    child: MovementCard(
-                      movement: m,
-                      category: cat,
-                      account: acc,
-                    ),
-                  );
-                }),
-              ] else if (hasAnyMovements) ...[
-                _EmptyState(
-                  icon: Icons.search_off,
-                  message: 'Nessun movimento nel periodo selezionato',
-                  subtitle: 'Prova a cambiare periodo o filtro',
-                ),
-              ] else ...[
-                Text('Ultime transazioni', style: StreamTypography.h3),
-                const SizedBox(height: StreamSpacing.md),
-                _EmptyState(
-                  icon: Icons.receipt_long_outlined,
-                  message: 'Nessun movimento',
-                  subtitle: 'Tocca + per aggiungerne uno',
-                ),
-              ],
+              _CategoryExpensesSection(
+                items: categoryExpenses,
+                totalExpenses: filteredExpenses,
+              ),
             ],
           );
         },
@@ -114,10 +116,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class _BalanceHero extends StatelessWidget {
   final double accountsBalance;
-  final double income;
-  final double expenses;
+  final List<Account> accounts;
+  final AppDatabase db;
 
-  const _BalanceHero({required this.accountsBalance, required this.income, required this.expenses});
+  const _BalanceHero({
+    required this.accountsBalance,
+    required this.accounts,
+    required this.db,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -137,21 +143,85 @@ class _BalanceHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('PATRIMONIO', style: StreamTypography.micro.copyWith(color: StreamColors.textSecondary)),
+          Text(
+            'PATRIMONIO',
+            style: StreamTypography.micro.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: StreamSpacing.xs),
           Text(
             '${accountsBalance >= 0 ? '+' : ''}${accountsBalance.toStringAsFixed(2)} €',
             style: StreamTypography.display.copyWith(
-              color: accountsBalance >= 0 ? StreamColors.income : StreamColors.expense,
+              color: accountsBalance >= 0
+                  ? StreamColors.income
+                  : StreamColors.expense,
             ),
           ),
           const SizedBox(height: StreamSpacing.sm),
-          Row(
-            children: [
-              _LabeledValue(label: 'Entrate', value: '${income.toStringAsFixed(2)} €', color: StreamColors.income),
-              const SizedBox(width: StreamSpacing.xxl),
-              _LabeledValue(label: 'Uscite', value: '${expenses.toStringAsFixed(2)} €', color: StreamColors.expense),
-            ],
+          Text(
+            'Situazione attuale, non filtrata dal periodo',
+            style: StreamTypography.caption.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+          if (accounts.isNotEmpty) ...[
+            const SizedBox(height: StreamSpacing.md),
+            Wrap(
+              spacing: StreamSpacing.sm,
+              runSpacing: StreamSpacing.sm,
+              children: accounts.take(3).map((account) {
+                return _AccountBalancePill(
+                  account: account,
+                  balance: db.getAccountBalance(account),
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountBalancePill extends StatelessWidget {
+  final Account account;
+  final double balance;
+
+  const _AccountBalancePill({required this.account, required this.balance});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StreamSpacing.sm,
+        vertical: StreamSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: StreamColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(StreamRadius.full),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            StreamIconLibrary.getAccountIcon(account.iconKey),
+            size: 14,
+            color: Color(account.color),
+          ),
+          const SizedBox(width: StreamSpacing.xs),
+          Text(
+            account.name,
+            style: StreamTypography.caption.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: StreamSpacing.xs),
+          Text(
+            '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
+            style: StreamTypography.captionBold.copyWith(
+              color: balance >= 0 ? StreamColors.income : StreamColors.expense,
+            ),
           ),
         ],
       ),
@@ -159,22 +229,184 @@ class _BalanceHero extends StatelessWidget {
   }
 }
 
-class _LabeledValue extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+List<_CategoryExpense> _buildCategoryExpenses(
+  List<Movement> movements,
+  List<Category> categories,
+) {
+  final totalsByCategory = <String, double>{};
+  for (final movement in movements) {
+    if (movement.type != MovementType.expense) continue;
+    totalsByCategory.update(
+      movement.categoryId,
+      (value) => value + movement.amount,
+      ifAbsent: () => movement.amount,
+    );
+  }
 
-  const _LabeledValue({required this.label, required this.value, required this.color});
+  final items = totalsByCategory.entries.where((entry) => entry.value > 0).map((
+    entry,
+  ) {
+    final category = categories.where((c) => c.id == entry.key).firstOrNull;
+    return _CategoryExpense(
+      categoryId: entry.key,
+      category: category,
+      total: entry.value,
+    );
+  }).toList()..sort((a, b) => b.total.compareTo(a.total));
+
+  return items;
+}
+
+class _CategoryExpense {
+  final String categoryId;
+  final Category? category;
+  final double total;
+
+  const _CategoryExpense({
+    required this.categoryId,
+    required this.category,
+    required this.total,
+  });
+}
+
+class _CategoryExpensesSection extends StatelessWidget {
+  final List<_CategoryExpense> items;
+  final double totalExpenses;
+
+  const _CategoryExpensesSection({
+    required this.items,
+    required this.totalExpenses,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return _EmptyState(
+        icon: Icons.receipt_long_outlined,
+        message: 'Nessuna spesa nel periodo selezionato',
+        subtitle: 'Le categorie appariranno quando registri uscite nel periodo',
+      );
+    }
+
+    final visibleItems = items.take(5).toList();
+    final hiddenCount = items.length - visibleItems.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: StreamTypography.micro.copyWith(color: StreamColors.textSecondary)),
-        const SizedBox(height: 2),
-        Text(value, style: StreamTypography.captionBold.copyWith(color: color)),
+        Text('Spese per categoria', style: StreamTypography.h3),
+        const SizedBox(height: StreamSpacing.md),
+        Card(
+          color: StreamColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(StreamSpacing.md),
+            child: Column(
+              children: [
+                ...visibleItems.asMap().entries.map((entry) {
+                  return _CategoryExpenseRow(
+                    item: entry.value,
+                    totalExpenses: totalExpenses,
+                    isTopCategory: entry.key == 0,
+                  );
+                }),
+                if (hiddenCount > 0) ...[
+                  const Divider(height: StreamSpacing.lg),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Mostra tutte: altre $hiddenCount categorie in Archivio',
+                      style: StreamTypography.caption.copyWith(
+                        color: StreamColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _CategoryExpenseRow extends StatelessWidget {
+  final _CategoryExpense item;
+  final double totalExpenses;
+  final bool isTopCategory;
+
+  const _CategoryExpenseRow({
+    required this.item,
+    required this.totalExpenses,
+    required this.isTopCategory,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final category = item.category;
+    final categoryColor = category != null
+        ? Color(category.color)
+        : Color(StreamColorPalette.defaultColor);
+    final iconData = category != null
+        ? StreamIconLibrary.getIcon(category.iconKey)
+        : StreamIconLibrary.fallbackIcon;
+    final percentage = totalExpenses > 0
+        ? (item.total / totalExpenses) * 100
+        : null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
+      padding: const EdgeInsets.all(StreamSpacing.sm),
+      decoration: BoxDecoration(
+        color: isTopCategory
+            ? categoryColor.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(StreamRadius.md),
+        border: isTopCategory
+            ? Border.all(color: categoryColor.withValues(alpha: 0.35))
+            : null,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: categoryColor,
+              borderRadius: BorderRadius.circular(StreamRadius.sm),
+            ),
+            child: Icon(iconData, color: Colors.white, size: 16),
+          ),
+          const SizedBox(width: StreamSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category?.name ?? item.categoryId,
+                  style: StreamTypography.bodyBold,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (percentage != null)
+                  Text(
+                    '${percentage.round()}% del totale spese',
+                    style: StreamTypography.caption.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: StreamSpacing.sm),
+          Text(
+            '${item.total.toStringAsFixed(2)} €',
+            style: StreamTypography.amount.copyWith(
+              color: StreamColors.expense,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -184,8 +416,15 @@ class _KpiGrid extends StatelessWidget {
   final double expenses;
   final double balance;
   final int count;
+  final double? expenseComparison;
 
-  const _KpiGrid({required this.income, required this.expenses, required this.balance, required this.count});
+  const _KpiGrid({
+    required this.income,
+    required this.expenses,
+    required this.balance,
+    required this.count,
+    required this.expenseComparison,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -193,9 +432,24 @@ class _KpiGrid extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: _KpiCard(label: 'Entrate', value: '${income.toStringAsFixed(2)} €', color: StreamColors.income)),
+            Expanded(
+              child: _KpiCard(
+                label: 'Entrate',
+                value: '${income.toStringAsFixed(2)} €',
+                color: StreamColors.income,
+              ),
+            ),
             const SizedBox(width: StreamSpacing.sm),
-            Expanded(child: _KpiCard(label: 'Uscite', value: '${expenses.toStringAsFixed(2)} €', color: StreamColors.expense)),
+            Expanded(
+              child: _KpiCard(
+                label: 'Uscite',
+                value: '${expenses.toStringAsFixed(2)} €',
+                color: StreamColors.expense,
+                subtitle: expenseComparison != null
+                    ? _formatExpenseComparison(expenseComparison!)
+                    : null,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: StreamSpacing.sm),
@@ -204,8 +458,11 @@ class _KpiGrid extends StatelessWidget {
             Expanded(
               child: _KpiCard(
                 label: 'Saldo',
-                value: '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
-                color: balance >= 0 ? StreamColors.income : StreamColors.expense,
+                value:
+                    '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
+                color: balance >= 0
+                    ? StreamColors.income
+                    : StreamColors.expense,
               ),
             ),
             const SizedBox(width: StreamSpacing.sm),
@@ -221,19 +478,34 @@ class _KpiGrid extends StatelessWidget {
       ],
     );
   }
+
+  String _formatExpenseComparison(double value) {
+    if (value == 0) return 'In linea col periodo precedente';
+    final sign = value > 0 ? '+' : '-';
+    return '$sign${value.abs().toStringAsFixed(2)} € rispetto al periodo precedente';
+  }
 }
 
 class _KpiCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final String? subtitle;
 
-  const _KpiCard({required this.label, required this.value, required this.color});
+  const _KpiCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: StreamSpacing.md, horizontal: StreamSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        vertical: StreamSpacing.md,
+        horizontal: StreamSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: StreamColors.surface,
         borderRadius: BorderRadius.circular(StreamRadius.md),
@@ -241,12 +513,31 @@ class _KpiCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: StreamTypography.micro.copyWith(color: StreamColors.textSecondary)),
+          Text(
+            label.toUpperCase(),
+            style: StreamTypography.micro.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: StreamSpacing.xs),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(value, style: StreamTypography.captionBold.copyWith(color: color)),
+            child: Text(
+              value,
+              style: StreamTypography.captionBold.copyWith(color: color),
+            ),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: StreamSpacing.xs),
+            Text(
+              subtitle!,
+              style: StreamTypography.micro.copyWith(
+                color: StreamColors.textMuted,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );
@@ -258,7 +549,11 @@ class _EmptyState extends StatelessWidget {
   final String message;
   final String subtitle;
 
-  const _EmptyState({required this.icon, required this.message, required this.subtitle});
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,9 +567,19 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(icon, size: 48, color: StreamColors.textMuted),
           const SizedBox(height: StreamSpacing.md),
-          Text(message, style: StreamTypography.bodyBold.copyWith(color: StreamColors.textSecondary)),
+          Text(
+            message,
+            style: StreamTypography.bodyBold.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: StreamSpacing.xs),
-          Text(subtitle, style: StreamTypography.caption.copyWith(color: StreamColors.textMuted)),
+          Text(
+            subtitle,
+            style: StreamTypography.caption.copyWith(
+              color: StreamColors.textMuted,
+            ),
+          ),
         ],
       ),
     );

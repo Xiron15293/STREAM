@@ -26,17 +26,29 @@ void main() {
     });
 
     test('1.2 Entrate filtrate per mese corrente', () {
-      db.addMovement(Movement(
-        id: 'm1', title: 'Income', amount: 500,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Income',
+          amount: 500,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
       final prev = DateTime(now.year, now.month - 1, 15);
-      db.addMovement(Movement(
-        id: 'm2', title: 'Old Income', amount: 300,
-        type: MovementType.income, date: prev,
-        categoryId: 'inc_1', createdAt: prev,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Old Income',
+          amount: 300,
+          type: MovementType.income,
+          date: prev,
+          categoryId: 'inc_1',
+          createdAt: prev,
+        ),
+      );
 
       final filter = TimeFilter.month(now.year, now.month);
       final filtered = db.movements.filterByTime(filter);
@@ -51,17 +63,29 @@ void main() {
     });
 
     test('1.3 Spese filtrate per mese corrente', () {
-      db.addMovement(Movement(
-        id: 'm1', title: 'Expense', amount: 200,
-        type: MovementType.expense, date: now,
-        categoryId: 'exp_1', createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Expense',
+          amount: 200,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
       final prev = DateTime(now.year, now.month - 1, 15);
-      db.addMovement(Movement(
-        id: 'm2', title: 'Old Expense', amount: 100,
-        type: MovementType.expense, date: prev,
-        categoryId: 'exp_1', createdAt: prev,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Old Expense',
+          amount: 100,
+          type: MovementType.expense,
+          date: prev,
+          categoryId: 'exp_1',
+          createdAt: prev,
+        ),
+      );
 
       final filter = TimeFilter.month(now.year, now.month);
       final filtered = db.movements.filterByTime(filter);
@@ -76,16 +100,28 @@ void main() {
     });
 
     test('1.4 Saldo filtrato per mese corrente', () {
-      db.addMovement(Movement(
-        id: 'm1', title: 'Income', amount: 500,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', createdAt: now,
-      ));
-      db.addMovement(Movement(
-        id: 'm2', title: 'Expense', amount: 200,
-        type: MovementType.expense, date: now,
-        categoryId: 'exp_1', createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Income',
+          amount: 500,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Expense',
+          amount: 200,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
 
       final filter = TimeFilter.month(now.year, now.month);
       final filtered = db.movements.filterByTime(filter);
@@ -104,16 +140,28 @@ void main() {
 
     test('1.5 Cambio giorno: KPI filtrati correttamente', () {
       final yesterday = DateTime(now.year, now.month, now.day - 1);
-      db.addMovement(Movement(
-        id: 'm1', title: 'Today', amount: 100,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', createdAt: now,
-      ));
-      db.addMovement(Movement(
-        id: 'm2', title: 'Yesterday', amount: 50,
-        type: MovementType.income, date: yesterday,
-        categoryId: 'inc_1', createdAt: yesterday,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Today',
+          amount: 100,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Yesterday',
+          amount: 50,
+          type: MovementType.income,
+          date: yesterday,
+          categoryId: 'inc_1',
+          createdAt: yesterday,
+        ),
+      );
 
       final todayFilter = TimeFilter.day(now);
       expect(db.movements.filterByTime(todayFilter).length, 1);
@@ -125,19 +173,34 @@ void main() {
     });
 
     test('1.6 Cambio anno: KPI filtrati per anno', () {
-      db.addMovement(Movement(
-        id: 'm1', title: 'This Year', amount: 1000,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', createdAt: now,
-      ));
-      db.addMovement(Movement(
-        id: 'm2', title: 'Last Year', amount: 500,
-        type: MovementType.income, date: DateTime(now.year - 1, 6, 15),
-        categoryId: 'inc_1', createdAt: DateTime(now.year - 1, 6, 15),
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'This Year',
+          amount: 1000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Last Year',
+          amount: 500,
+          type: MovementType.income,
+          date: DateTime(now.year - 1, 6, 15),
+          categoryId: 'inc_1',
+          createdAt: DateTime(now.year - 1, 6, 15),
+        ),
+      );
 
       expect(db.movements.filterByTime(TimeFilter.year(now.year)).length, 1);
-      expect(db.movements.filterByTime(TimeFilter.year(now.year - 1)).length, 1);
+      expect(
+        db.movements.filterByTime(TimeFilter.year(now.year - 1)).length,
+        1,
+      );
     });
 
     test('1.7 Periodo custom: range di 7 giorni', () {
@@ -145,24 +208,43 @@ void main() {
       final day3 = DateTime(now.year, now.month, 12);
       final day7 = DateTime(now.year, now.month, 16);
 
-      db.addMovement(Movement(
-        id: 'm1', title: 'Day1', amount: 10,
-        type: MovementType.expense, date: day1,
-        categoryId: 'exp_1', createdAt: day1,
-      ));
-      db.addMovement(Movement(
-        id: 'm2', title: 'Day3', amount: 20,
-        type: MovementType.expense, date: day3,
-        categoryId: 'exp_1', createdAt: day3,
-      ));
-      db.addMovement(Movement(
-        id: 'm3', title: 'Day7', amount: 30,
-        type: MovementType.expense, date: day7,
-        categoryId: 'exp_1', createdAt: day7,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Day1',
+          amount: 10,
+          type: MovementType.expense,
+          date: day1,
+          categoryId: 'exp_1',
+          createdAt: day1,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Day3',
+          amount: 20,
+          type: MovementType.expense,
+          date: day3,
+          categoryId: 'exp_1',
+          createdAt: day3,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm3',
+          title: 'Day7',
+          amount: 30,
+          type: MovementType.expense,
+          date: day7,
+          categoryId: 'exp_1',
+          createdAt: day7,
+        ),
+      );
 
       final range = TimeFilter.customRange(
-        day1, DateTime(now.year, now.month, 13),
+        day1,
+        DateTime(now.year, now.month, 13),
       );
       final filtered = db.movements.filterByTime(range);
       expect(filtered.length, 2);
@@ -172,23 +254,42 @@ void main() {
     });
 
     test('1.8 Patrimonio NON filtrato dal periodo', () {
-      db.addAccount(Account(
-        id: 'acc_test', name: 'Test', type: AccountType.bank,
-        initialBalance: 5000, createdAt: now,
-      ));
+      db.addAccount(
+        Account(
+          id: 'acc_test',
+          name: 'Test',
+          type: AccountType.bank,
+          initialBalance: 5000,
+          createdAt: now,
+        ),
+      );
 
-      db.addMovement(Movement(
-        id: 'm1', title: 'Income', amount: 1000,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', accountId: 'acc_test', createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Income',
+          amount: 1000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_test',
+          createdAt: now,
+        ),
+      );
 
       final prev = DateTime(now.year, now.month - 1, 15);
-      db.addMovement(Movement(
-        id: 'm2', title: 'Old', amount: 500,
-        type: MovementType.income, date: prev,
-        categoryId: 'inc_1', accountId: 'acc_test', createdAt: prev,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Old',
+          amount: 500,
+          type: MovementType.income,
+          date: prev,
+          categoryId: 'inc_1',
+          accountId: 'acc_test',
+          createdAt: prev,
+        ),
+      );
 
       expect(db.totalAccountsBalance, 6500);
 
@@ -199,11 +300,17 @@ void main() {
 
     test('1.9 Stato vuoto: movimenti in altro periodo', () {
       final prev = DateTime(now.year, now.month - 1, 15);
-      db.addMovement(Movement(
-        id: 'm1', title: 'Old', amount: 100,
-        type: MovementType.income, date: prev,
-        categoryId: 'inc_1', createdAt: prev,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Old',
+          amount: 100,
+          type: MovementType.income,
+          date: prev,
+          categoryId: 'inc_1',
+          createdAt: prev,
+        ),
+      );
 
       final nextMonth = now.month < 12 ? now.month + 1 : 1;
       final nextYear = now.month < 12 ? now.year : now.year + 1;
@@ -215,18 +322,30 @@ void main() {
 
     test('1.10 Movimenti count filtrato', () {
       for (int i = 0; i < 5; i++) {
-        db.addMovement(Movement(
-          id: 'm$i', title: 'Mov $i', amount: 10.0,
-          type: MovementType.expense, date: now,
-          categoryId: 'exp_1', createdAt: now,
-        ));
+        db.addMovement(
+          Movement(
+            id: 'm$i',
+            title: 'Mov $i',
+            amount: 10.0,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
       }
       final prev = DateTime(now.year, now.month - 1, 15);
-      db.addMovement(Movement(
-        id: 'm_old', title: 'Old', amount: 100,
-        type: MovementType.income, date: prev,
-        categoryId: 'inc_1', createdAt: prev,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm_old',
+          title: 'Old',
+          amount: 100,
+          type: MovementType.income,
+          date: prev,
+          categoryId: 'inc_1',
+          createdAt: prev,
+        ),
+      );
 
       final filter = TimeFilter.month(now.year, now.month);
       expect(db.movements.filterByTime(filter).length, 5);
@@ -236,9 +355,7 @@ void main() {
   group('2. Dashboard UI widget tests', () {
     testWidgets('2.1 TimeFilterBar and KPIs render correctly', (tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: DashboardScreen(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
       expect(find.text('Giorno'), findsOneWidget);
       expect(find.text('Mese'), findsOneWidget);
@@ -252,40 +369,108 @@ void main() {
       expect(find.text('PATRIMONIO'), findsOneWidget);
     });
 
-    testWidgets('2.2 Filtered values shown in UI', (tester) async {
+    testWidgets('2.2 Filtered values and category expenses shown in UI', (
+      tester,
+    ) async {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      db.addMovement(Movement(
-        id: 'm1', title: 'Stipendio', amount: 2500,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', createdAt: now,
-      ));
-      db.addMovement(Movement(
-        id: 'm2', title: 'Affitto', amount: 800,
-        type: MovementType.expense, date: now,
-        categoryId: 'exp_1', createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Stipendio',
+          amount: 2500,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Affitto',
+          amount: 800,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
 
-      await tester.pumpWidget(MaterialApp(
-        home: DashboardScreen(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
       expect(find.textContaining('2500.00'), findsWidgets);
       expect(find.textContaining('800.00'), findsWidgets);
       expect(find.textContaining('1700.00'), findsWidgets);
+      expect(find.text('Spese per categoria'), findsOneWidget);
+      expect(find.textContaining('800.00 €'), findsWidgets);
     });
 
-    testWidgets('2.3 Empty state when no movements', (tester) async {
+    testWidgets('2.3 Empty state when no expenses in selected period', (
+      tester,
+    ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: DashboardScreen(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
-      expect(find.text('Nessun movimento'), findsOneWidget);
-      expect(find.text('Tocca + per aggiungerne uno'), findsOneWidget);
+      expect(
+        find.text('Nessuna spesa nel periodo selezionato'),
+        findsOneWidget,
+      );
       expect(find.text('PATRIMONIO'), findsOneWidget);
       expect(find.text('Giorno'), findsOneWidget);
+    });
+
+    testWidgets('2.4 Category expenses exclude income and sort descending', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      db.addMovement(
+        Movement(
+          id: 'income',
+          title: 'Stipendio',
+          amount: 3000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'food',
+          title: 'Spesa',
+          amount: 320,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'fun',
+          title: 'Cinema',
+          amount: 80,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_4',
+          createdAt: now,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      expect(find.text('Spese per categoria'), findsOneWidget);
+      expect(find.text('Stipendio'), findsNothing);
+      expect(find.textContaining('320.00 €'), findsOneWidget);
+      expect(find.textContaining('80.00 €'), findsOneWidget);
+
+      final firstExpense = tester.getTopLeft(find.textContaining('320.00 €'));
+      final secondExpense = tester.getTopLeft(find.textContaining('80.00 €'));
+      expect(firstExpense.dy, lessThan(secondExpense.dy));
     });
   });
 }

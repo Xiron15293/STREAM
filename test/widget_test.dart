@@ -23,11 +23,17 @@ void main() {
     final db = AppDatabase();
     expect(db.movements.length, 0);
 
-    db.addMovement(Movement(
-      id: 'test_1', title: 'Test', amount: 100.0,
-      type: MovementType.income, date: DateTime(2026, 6, 1),
-      categoryId: 'inc_1', createdAt: DateTime(2026, 6, 1, 10, 0),
-    ));
+    db.addMovement(
+      Movement(
+        id: 'test_1',
+        title: 'Test',
+        amount: 100.0,
+        type: MovementType.income,
+        date: DateTime(2026, 6, 1),
+        categoryId: 'inc_1',
+        createdAt: DateTime(2026, 6, 1, 10, 0),
+      ),
+    );
 
     expect(db.movements.length, 1);
     expect(db.movements.first.title, 'Test');
@@ -38,16 +44,28 @@ void main() {
 
   test('AppDatabase computes totals correctly', () {
     final db = AppDatabase();
-    db.addMovement(Movement(
-      id: 'a', title: 'Inc', amount: 200.0,
-      type: MovementType.income, date: DateTime.now(),
-      categoryId: 'inc_1', createdAt: DateTime.now(),
-    ));
-    db.addMovement(Movement(
-      id: 'b', title: 'Exp', amount: 50.0,
-      type: MovementType.expense, date: DateTime.now(),
-      categoryId: 'exp_1', createdAt: DateTime.now(),
-    ));
+    db.addMovement(
+      Movement(
+        id: 'a',
+        title: 'Inc',
+        amount: 200.0,
+        type: MovementType.income,
+        date: DateTime.now(),
+        categoryId: 'inc_1',
+        createdAt: DateTime.now(),
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'b',
+        title: 'Exp',
+        amount: 50.0,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: 'exp_1',
+        createdAt: DateTime.now(),
+      ),
+    );
 
     expect(db.totalIncome, 200.0);
     expect(db.totalExpenses, 50.0);
@@ -62,11 +80,11 @@ void main() {
     expect(double.tryParse('10,50'.replaceAll(',', '.')), 10.50);
   });
 
-  testWidgets('MovementForm saves movement with dot and appears in list', (WidgetTester tester) async {
+  testWidgets('MovementForm saves movement with dot and appears in list', (
+    WidgetTester tester,
+  ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(
-      home: MainScaffold(db: db),
-    ));
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Archivio'));
@@ -76,8 +94,14 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Test salvataggio');
-    await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), '150');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo'),
+      'Test salvataggio',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Importo (€)'),
+      '150',
+    );
 
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
     await tester.pumpAndSettle();
@@ -89,11 +113,11 @@ void main() {
     expect(db.movements.first.amount, 150.0);
   });
 
-  testWidgets('MovementForm saves movement with comma decimal', (WidgetTester tester) async {
+  testWidgets('MovementForm saves movement with comma decimal', (
+    WidgetTester tester,
+  ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(
-      home: MainScaffold(db: db),
-    ));
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Archivio'));
@@ -102,8 +126,14 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Spesa con virgola');
-    await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), '10,50');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo'),
+      'Spesa con virgola',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Importo (€)'),
+      '10,50',
+    );
 
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
     await tester.pumpAndSettle();
@@ -115,15 +145,14 @@ void main() {
     expect(db.movements.first.amount, 10.50);
   });
 
-  testWidgets('Dashboard updates after saving movement', (WidgetTester tester) async {
+  testWidgets('Dashboard updates after saving movement', (
+    WidgetTester tester,
+  ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(
-      home: MainScaffold(db: db),
-    ));
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     expect(find.text('0.00 €'), findsWidgets);
-    expect(find.text('Nessun movimento'), findsWidgets);
 
     // Save a movement via form on Archivio tab → Movimenti section
     await tester.tap(find.text('Archivio'));
@@ -132,8 +161,14 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Stipendio');
-    await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), '2000');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo'),
+      'Stipendio',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Importo (€)'),
+      '2000',
+    );
 
     // Switch to income type
     await tester.tap(find.text('Entrata'));
@@ -150,16 +185,16 @@ void main() {
 
     // Dashboard should show updated values
     expect(find.text('+2000.00 €'), findsAtLeastNWidgets(1));
-    expect(find.text('Stipendio'), findsAtLeastNWidgets(1));
+    expect(find.text('Stipendio'), findsNothing);
     expect(find.text('ENTRATE'), findsAtLeastNWidgets(1));
     expect(find.text('2000.00 €'), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('Backup & Restore is reachable from settings', (WidgetTester tester) async {
+  testWidgets('Backup & Restore is reachable from settings', (
+    WidgetTester tester,
+  ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(
-      home: MainScaffold(db: db),
-    ));
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Impostazioni'));

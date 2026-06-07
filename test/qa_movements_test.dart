@@ -14,9 +14,7 @@ import 'package:stream_app/data/preferences_service.dart';
 Future<AppDatabase> pumpApp(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final db = AppDatabase();
-  await tester.pumpWidget(MaterialApp(
-    home: MainScaffold(db: db),
-  ));
+  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
   return db;
 }
 
@@ -44,7 +42,10 @@ Future<void> saveMovement(
   }
 
   if (note != null) {
-    await tester.enterText(find.widgetWithText(TextField, 'Nota (opzionale)'), note);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nota (opzionale)'),
+      note,
+    );
     await tester.pumpAndSettle();
   }
 
@@ -61,7 +62,12 @@ void main() {
 
   testWidgets('1. Crea entrata 100€', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Stipendio', amount: '100', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Stipendio',
+      amount: '100',
+      isIncome: true,
+    );
     expect(db.movements.length, 1);
     expect(db.movements.first.amount, 100.0);
     expect(db.movements.first.type, MovementType.income);
@@ -79,14 +85,24 @@ void main() {
 
   testWidgets('3. Crea entrata 100,50 (virgola)', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Rimborso', amount: '100,50', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Rimborso',
+      amount: '100,50',
+      isIncome: true,
+    );
     expect(db.movements.length, 1);
     expect(db.movements.first.amount, 100.50);
   });
 
   testWidgets('4. Crea entrata 100.50 (punto)', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Rimborso', amount: '100.50', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Rimborso',
+      amount: '100.50',
+      isIncome: true,
+    );
     expect(db.movements.length, 1);
     expect(db.movements.first.amount, 100.50);
   });
@@ -95,12 +111,21 @@ void main() {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Zero', amount: '0');
     expect(db.movements.length, 0, reason: 'importo <= 0 deve essere bloccato');
-    expect(find.text('Nuovo movimento'), findsOneWidget, reason: 'il form deve restare aperto');
+    expect(
+      find.text('Nuovo movimento'),
+      findsOneWidget,
+      reason: 'il form deve restare aperto',
+    );
   });
 
   testWidgets('6. Blocca entrata 0€', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Zero entrata', amount: '0', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Zero entrata',
+      amount: '0',
+      isIncome: true,
+    );
     expect(db.movements.length, 0);
   });
 
@@ -162,7 +187,9 @@ void main() {
     expect(db.movements.first.amount, 1.11);
   });
 
-  testWidgets('16. Crea movimento 1,111€ (3 decimali arrotondati)', (tester) async {
+  testWidgets('16. Crea movimento 1,111€ (3 decimali arrotondati)', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Tre decimali', amount: '1,111');
     expect(db.movements.length, 1);
@@ -177,9 +204,17 @@ void main() {
 
   test('17. Una sola entrata: totale entrate corretto', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 't1', title: 'Inc', amount: 500.0,
-        type: MovementType.income, date: DateTime.now(),
-        categoryId: 'inc_1', createdAt: DateTime.now()));
+    db.addMovement(
+      Movement(
+        id: 't1',
+        title: 'Inc',
+        amount: 500.0,
+        type: MovementType.income,
+        date: DateTime.now(),
+        categoryId: 'inc_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.totalIncome, 500.0);
     expect(db.totalExpenses, 0.0);
     expect(db.balance, 500.0);
@@ -187,9 +222,17 @@ void main() {
 
   test('18. Una sola uscita: totale uscite corretto', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 't1', title: 'Exp', amount: 300.0,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_1', createdAt: DateTime.now()));
+    db.addMovement(
+      Movement(
+        id: 't1',
+        title: 'Exp',
+        amount: 300.0,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: 'exp_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.totalExpenses, 300.0);
     expect(db.totalIncome, 0.0);
     expect(db.balance, -300.0);
@@ -198,10 +241,17 @@ void main() {
   test('19. Tre entrate: somma corretta', () {
     final db = AppDatabase();
     for (int i = 0; i < 3; i++) {
-      db.addMovement(Movement(
-          id: 'inc_$i', title: 'Inc $i', amount: 100.0,
-          type: MovementType.income, date: DateTime.now(),
-          categoryId: 'inc_1', createdAt: DateTime.now()));
+      db.addMovement(
+        Movement(
+          id: 'inc_$i',
+          title: 'Inc $i',
+          amount: 100.0,
+          type: MovementType.income,
+          date: DateTime.now(),
+          categoryId: 'inc_1',
+          createdAt: DateTime.now(),
+        ),
+      );
     }
     expect(db.totalIncome, 300.0);
     expect(db.balance, 300.0);
@@ -210,10 +260,17 @@ void main() {
   test('20. Tre uscite: somma corretta', () {
     final db = AppDatabase();
     for (int i = 0; i < 3; i++) {
-      db.addMovement(Movement(
-          id: 'exp_$i', title: 'Exp $i', amount: 50.0,
-          type: MovementType.expense, date: DateTime.now(),
-          categoryId: 'exp_1', createdAt: DateTime.now()));
+      db.addMovement(
+        Movement(
+          id: 'exp_$i',
+          title: 'Exp $i',
+          amount: 50.0,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: 'exp_1',
+          createdAt: DateTime.now(),
+        ),
+      );
     }
     expect(db.totalExpenses, 150.0);
     expect(db.balance, -150.0);
@@ -221,15 +278,39 @@ void main() {
 
   test('21. Entrate + uscite: saldo corretto', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 'i1', title: 'Stipendio', amount: 2000.0,
-        type: MovementType.income, date: DateTime.now(),
-        categoryId: 'inc_1', createdAt: DateTime.now()));
-    db.addMovement(Movement(id: 'e1', title: 'Affitto', amount: 800.0,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_2', createdAt: DateTime.now()));
-    db.addMovement(Movement(id: 'e2', title: 'Spesa', amount: 150.0,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_1', createdAt: DateTime.now()));
+    db.addMovement(
+      Movement(
+        id: 'i1',
+        title: 'Stipendio',
+        amount: 2000.0,
+        type: MovementType.income,
+        date: DateTime.now(),
+        categoryId: 'inc_1',
+        createdAt: DateTime.now(),
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'e1',
+        title: 'Affitto',
+        amount: 800.0,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: 'exp_2',
+        createdAt: DateTime.now(),
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'e2',
+        title: 'Spesa',
+        amount: 150.0,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: 'exp_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.totalIncome, 2000.0);
     expect(db.totalExpenses, 950.0);
     expect(db.balance, 1050.0);
@@ -237,41 +318,73 @@ void main() {
 
   test('22. Saldo negativo visualizzato correttamente', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 'e1', title: 'Uscita', amount: 100.0,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_1', createdAt: DateTime.now()));
+    db.addMovement(
+      Movement(
+        id: 'e1',
+        title: 'Uscita',
+        amount: 100.0,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: 'exp_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.balance, -100.0);
     expect(db.balance.isNegative, true);
     // Verifica formato con segno: codice dashboard usa '${balance >= 0 ? '+' : ''}...'
     // Per -100, usa '' (non +) quindi stampa "-100.00"
-    expect('${db.balance >= 0 ? '+' : ''}${db.balance.toStringAsFixed(2)} €', '-100.00 €');
+    expect(
+      '${db.balance >= 0 ? '+' : ''}${db.balance.toStringAsFixed(2)} €',
+      '-100.00 €',
+    );
   });
 
   test('23. Saldo positivo visualizzato correttamente', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 'i1', title: 'Entrata', amount: 200.0,
-        type: MovementType.income, date: DateTime.now(),
-        categoryId: 'inc_1', createdAt: DateTime.now()));
+    db.addMovement(
+      Movement(
+        id: 'i1',
+        title: 'Entrata',
+        amount: 200.0,
+        type: MovementType.income,
+        date: DateTime.now(),
+        categoryId: 'inc_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.balance, 200.0);
-    expect('${db.balance >= 0 ? '+' : ''}${db.balance.toStringAsFixed(2)} €', '+200.00 €');
+    expect(
+      '${db.balance >= 0 ? '+' : ''}${db.balance.toStringAsFixed(2)} €',
+      '+200.00 €',
+    );
   });
 
   test('24. Saldo zero visualizzato correttamente', () {
     final db = AppDatabase();
     expect(db.balance, 0.0);
-    expect('${db.balance >= 0 ? '+' : ''}${db.balance.toStringAsFixed(2)} €', '+0.00 €');
+    expect(
+      '${db.balance >= 0 ? '+' : ''}${db.balance.toStringAsFixed(2)} €',
+      '+0.00 €',
+    );
   });
 
-  testWidgets('25. Dashboard aggiornata subito dopo salvataggio', (tester) async {
+  testWidgets('25. Dashboard aggiornata subito dopo salvataggio', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     expect(find.text('+0.00 €'), findsAtLeastNWidgets(1));
 
-    await saveMovement(tester, title: 'Stipendio', amount: '3000', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Stipendio',
+      amount: '3000',
+      isIncome: true,
+    );
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
 
     expect(find.text('+3000.00 €'), findsAtLeastNWidgets(1));
-    expect(find.text('Stipendio'), findsAtLeastNWidgets(1));
+    expect(find.text('Stipendio'), findsNothing);
     expect(db.totalIncome, 3000.0);
     expect(db.balance, 3000.0);
   });
@@ -282,12 +395,28 @@ void main() {
 
   test('26. Ordine movimenti: più recente in alto', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 'old', title: 'Vecchio', amount: 10.0,
-        type: MovementType.income, date: DateTime(2026, 1, 1),
-        categoryId: 'inc_1', createdAt: DateTime(2026, 1, 1)));
-    db.addMovement(Movement(id: 'new', title: 'Nuovo', amount: 20.0,
-        type: MovementType.income, date: DateTime(2026, 6, 1),
-        categoryId: 'inc_1', createdAt: DateTime(2026, 6, 1)));
+    db.addMovement(
+      Movement(
+        id: 'old',
+        title: 'Vecchio',
+        amount: 10.0,
+        type: MovementType.income,
+        date: DateTime(2026, 1, 1),
+        categoryId: 'inc_1',
+        createdAt: DateTime(2026, 1, 1),
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'new',
+        title: 'Nuovo',
+        amount: 20.0,
+        type: MovementType.income,
+        date: DateTime(2026, 6, 1),
+        categoryId: 'inc_1',
+        createdAt: DateTime(2026, 6, 1),
+      ),
+    );
 
     final sorted = List<Movement>.from(db.movements)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -301,11 +430,17 @@ void main() {
     final db = await pumpApp(tester);
     final refDate = DateTime(2026, 6, 15, 12, 0);
     for (int i = 0; i < 10; i++) {
-      db.addMovement(Movement(
-          id: 'm$i', title: 'Movimento $i', amount: (i + 1) * 10.0,
+      db.addMovement(
+        Movement(
+          id: 'm$i',
+          title: 'Movimento $i',
+          amount: (i + 1) * 10.0,
           type: i.isEven ? MovementType.income : MovementType.expense,
-          date: refDate, categoryId: i.isEven ? 'inc_1' : 'exp_1',
-          createdAt: refDate.subtract(Duration(hours: i))));
+          date: refDate,
+          categoryId: i.isEven ? 'inc_1' : 'exp_1',
+          createdAt: refDate.subtract(Duration(hours: i)),
+        ),
+      );
     }
 
     await tester.tap(find.text('Archivio'));
@@ -329,11 +464,17 @@ void main() {
     await tester.pumpAndSettle();
 
     for (int i = 0; i < 50; i++) {
-      db.addMovement(Movement(
-          id: 'm$i', title: 'Mov $i', amount: 10.0,
-          type: MovementType.expense, date: DateTime.now(),
+      db.addMovement(
+        Movement(
+          id: 'm$i',
+          title: 'Mov $i',
+          amount: 10.0,
+          type: MovementType.expense,
+          date: DateTime.now(),
           categoryId: 'exp_1',
-          createdAt: DateTime.now().subtract(Duration(minutes: i))));
+          createdAt: DateTime.now().subtract(Duration(minutes: i)),
+        ),
+      );
     }
     await tester.pumpAndSettle();
 
@@ -343,7 +484,8 @@ void main() {
 
   testWidgets('31. Titolo movimento molto lungo', (tester) async {
     final db = await pumpApp(tester);
-    final longTitle = 'Acquisto di forniture per ufficio con materiale di cancelleria vario e accessori';
+    final longTitle =
+        'Acquisto di forniture per ufficio con materiale di cancelleria vario e accessori';
     await saveMovement(tester, title: longTitle, amount: '45,50');
     expect(db.movements.length, 1);
     expect(find.text(longTitle), findsOneWidget);
@@ -372,7 +514,11 @@ void main() {
 
   testWidgets('35. Caratteri speciali nel titolo', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Ingresso @ Museo + biglietto (€)', amount: '15');
+    await saveMovement(
+      tester,
+      title: 'Ingresso @ Museo + biglietto (€)',
+      amount: '15',
+    );
     expect(db.movements.length, 1);
     expect(find.text('Ingresso @ Museo + biglietto (€)'), findsOneWidget);
   });
@@ -443,7 +589,12 @@ void main() {
 
   testWidgets('39. Movimento categoria Stipendio (inc_1)', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Salario', amount: '2500', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Salario',
+      amount: '2500',
+      isIncome: true,
+    );
     expect(db.movements.length, 1);
     expect(db.movements.first.categoryId, 'inc_1');
   });
@@ -452,15 +603,22 @@ void main() {
     final db = AppDatabase();
     expect(db.categories.length, 10);
     expect(db.categories.where((c) => c.type == MovementType.income).length, 4);
-    expect(db.categories.where((c) => c.type == MovementType.expense).length, 6);
+    expect(
+      db.categories.where((c) => c.type == MovementType.expense).length,
+      6,
+    );
 
-    final incomeNames = db.categories.where((c) => c.type == MovementType.income).map((c) => c.name);
+    final incomeNames = db.categories
+        .where((c) => c.type == MovementType.income)
+        .map((c) => c.name);
     expect(incomeNames, contains('Stipendio'));
     expect(incomeNames, contains('Rimborso'));
     expect(incomeNames, contains('Vendita'));
     expect(incomeNames, contains('Altro'));
 
-    final expenseNames = db.categories.where((c) => c.type == MovementType.expense).map((c) => c.name);
+    final expenseNames = db.categories
+        .where((c) => c.type == MovementType.expense)
+        .map((c) => c.name);
     expect(expenseNames, contains('Spesa'));
     expect(expenseNames, contains('Casa'));
     expect(expenseNames, contains('Auto'));
@@ -473,16 +631,23 @@ void main() {
   // 44–45: Navigazione tab
   // ============================================================
 
-  testWidgets('44. Cambia tab Dashboard → Movimenti → Dashboard', (tester) async {
+  testWidgets('44. Cambia tab Dashboard → Movimenti → Dashboard', (
+    tester,
+  ) async {
     await pumpApp(tester);
 
-    await saveMovement(tester, title: 'Test nav', amount: '100', isIncome: true);
+    await saveMovement(
+      tester,
+      title: 'Test nav',
+      amount: '100',
+      isIncome: true,
+    );
 
     // Go to Dashboard
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
     expect(find.text('+100.00 €'), findsAtLeastNWidgets(1));
-    expect(find.text('Test nav'), findsAtLeastNWidgets(1));
+    expect(find.text('Test nav'), findsNothing);
 
     // Back to Archivio (Movimenti section)
     await tester.tap(find.text('Archivio'));
@@ -490,7 +655,9 @@ void main() {
     expect(find.text('Test nav'), findsOneWidget);
   });
 
-  testWidgets('45. Cambia tab Movimenti → Categorie → Movimenti', (tester) async {
+  testWidgets('45. Cambia tab Movimenti → Categorie → Movimenti', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Tab test', amount: '50');
 
@@ -513,9 +680,17 @@ void main() {
 
   test('46. Elimina movimento', () {
     final db = AppDatabase();
-    db.addMovement(Movement(id: 'del', title: 'Da eliminare', amount: 100.0,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_1', createdAt: DateTime.now()));
+    db.addMovement(
+      Movement(
+        id: 'del',
+        title: 'Da eliminare',
+        amount: 100.0,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: 'exp_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.movements.length, 1);
 
     db.deleteMovement('del');
@@ -543,7 +718,9 @@ void main() {
     expect(find.text('Da cancellare'), findsNothing);
   });
 
-  testWidgets('47b. Annulla eliminazione non cancella movimento', (tester) async {
+  testWidgets('47b. Annulla eliminazione non cancella movimento', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Da tenere', amount: '50');
 
@@ -574,7 +751,10 @@ void main() {
 
     // Dialog should show
     expect(find.text('Eliminare movimento?'), findsOneWidget);
-    expect(find.text('Questa operazione non può essere annullata.'), findsOneWidget);
+    expect(
+      find.text('Questa operazione non può essere annullata.'),
+      findsOneWidget,
+    );
 
     // Tap Annulla
     await tester.tap(find.widgetWithText(TextButton, 'Annulla'));
@@ -591,11 +771,17 @@ void main() {
   test('48. Inserisci 100 movimenti (db)', () {
     final db = AppDatabase();
     for (int i = 0; i < 100; i++) {
-      db.addMovement(Movement(
-          id: 's_$i', title: 'Stress $i', amount: (i + 1) * 1.0,
+      db.addMovement(
+        Movement(
+          id: 's_$i',
+          title: 'Stress $i',
+          amount: (i + 1) * 1.0,
           type: i.isEven ? MovementType.income : MovementType.expense,
-          date: DateTime.now(), categoryId: i.isEven ? 'inc_1' : 'exp_1',
-          createdAt: DateTime.now().subtract(Duration(minutes: i))));
+          date: DateTime.now(),
+          categoryId: i.isEven ? 'inc_1' : 'exp_1',
+          createdAt: DateTime.now().subtract(Duration(minutes: i)),
+        ),
+      );
     }
     expect(db.movements.length, 100);
     expect(db.balance, isNotNull);
@@ -617,16 +803,23 @@ void main() {
     expect(db.balance, expectedIncome - expectedExpenses);
   });
 
-  testWidgets('49-50. Lista con 100 movimenti e verifica scroll/performance',
-      (tester) async {
+  testWidgets('49-50. Lista con 100 movimenti e verifica scroll/performance', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     final refDate = DateTime(2026, 6, 15, 12, 0);
     for (int i = 0; i < 100; i++) {
-      db.addMovement(Movement(
-          id: 'p_$i', title: 'Performance $i', amount: 10.0,
-          type: MovementType.expense, date: refDate,
+      db.addMovement(
+        Movement(
+          id: 'p_$i',
+          title: 'Performance $i',
+          amount: 10.0,
+          type: MovementType.expense,
+          date: refDate,
           categoryId: 'exp_1',
-          createdAt: refDate.subtract(Duration(minutes: i))));
+          createdAt: refDate.subtract(Duration(minutes: i)),
+        ),
+      );
     }
 
     await tester.tap(find.text('Archivio'));
@@ -653,9 +846,13 @@ void main() {
   test('51. Duplica movimento via database', () {
     final db = AppDatabase();
     final original = Movement(
-      id: 'orig', title: 'Caffè', amount: 1.50,
-      type: MovementType.expense, date: DateTime(2026, 6, 1),
-      categoryId: 'exp_4', note: 'Mattina',
+      id: 'orig',
+      title: 'Caffè',
+      amount: 1.50,
+      type: MovementType.expense,
+      date: DateTime(2026, 6, 1),
+      categoryId: 'exp_4',
+      note: 'Mattina',
       createdAt: DateTime(2026, 6, 1, 8, 0),
     );
     db.addMovement(original);
@@ -672,11 +869,17 @@ void main() {
 
   test('52. Duplica movimento aggiorna dashboard', () {
     final db = AppDatabase();
-    db.addMovement(Movement(
-      id: 'a', title: 'Stipendio', amount: 2000.0,
-      type: MovementType.income, date: DateTime.now(),
-      categoryId: 'inc_1', createdAt: DateTime.now(),
-    ));
+    db.addMovement(
+      Movement(
+        id: 'a',
+        title: 'Stipendio',
+        amount: 2000.0,
+        type: MovementType.income,
+        date: DateTime.now(),
+        categoryId: 'inc_1',
+        createdAt: DateTime.now(),
+      ),
+    );
     expect(db.totalIncome, 2000.0);
 
     db.duplicateMovement(db.movements.first);
@@ -723,8 +926,7 @@ void main() {
     expect(db.movements.first.categoryId, 'exp_4');
   });
 
-  testWidgets('55. Dashboard aggiornata dopo movimento rapido',
-      (tester) async {
+  testWidgets('55. Dashboard aggiornata dopo movimento rapido', (tester) async {
     final db = await pumpApp(tester);
 
     await tester.tap(find.text('Archivio'));
@@ -749,10 +951,15 @@ void main() {
     final db = await pumpApp(tester);
 
     // Add a favorite first
-    db.addFavoriteMovement(FavoriteMovement(
-      id: 'fav_test', title: 'Affitto', amount: 800.0,
-      type: MovementType.expense, categoryId: 'exp_2',
-    ));
+    db.addFavoriteMovement(
+      FavoriteMovement(
+        id: 'fav_test',
+        title: 'Affitto',
+        amount: 800.0,
+        type: MovementType.expense,
+        categoryId: 'exp_2',
+      ),
+    );
 
     // Open picker and switch to Preferiti
     await tester.tap(find.text('Archivio'));
@@ -790,10 +997,15 @@ void main() {
 
   testWidgets('58. Dashboard aggiornata dopo preferito', (tester) async {
     final db = await pumpApp(tester);
-    db.addFavoriteMovement(FavoriteMovement(
-      id: 'fav_dash', title: 'Vendita', amount: 300.0,
-      type: MovementType.income, categoryId: 'inc_3',
-    ));
+    db.addFavoriteMovement(
+      FavoriteMovement(
+        id: 'fav_dash',
+        title: 'Vendita',
+        amount: 300.0,
+        type: MovementType.income,
+        categoryId: 'inc_3',
+      ),
+    );
 
     await tester.tap(find.text('Archivio'));
     await tester.pumpAndSettle();
@@ -816,11 +1028,17 @@ void main() {
   test('59. Suggerito appare dopo 5 movimenti simili', () {
     final db = AppDatabase();
     for (int i = 0; i < 5; i++) {
-      db.addMovement(Movement(
-        id: 's$i', title: 'Caffè', amount: 1.50,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_4', createdAt: DateTime.now(),
-      ));
+      db.addMovement(
+        Movement(
+          id: 's$i',
+          title: 'Caffè',
+          amount: 1.50,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: 'exp_4',
+          createdAt: DateTime.now(),
+        ),
+      );
     }
 
     final suggestions = db.getSuggestions();
@@ -833,11 +1051,17 @@ void main() {
   test('60. Nessun suggerito con meno di 5 movimenti', () {
     final db = AppDatabase();
     for (int i = 0; i < 4; i++) {
-      db.addMovement(Movement(
-        id: 's$i', title: 'Caffè', amount: 1.50,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_4', createdAt: DateTime.now(),
-      ));
+      db.addMovement(
+        Movement(
+          id: 's$i',
+          title: 'Caffè',
+          amount: 1.50,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: 'exp_4',
+          createdAt: DateTime.now(),
+        ),
+      );
     }
 
     expect(db.getSuggestions().length, 0);
@@ -846,16 +1070,28 @@ void main() {
   test('61. Suggeriti multipli con gruppi distinti', () {
     final db = AppDatabase();
     for (int i = 0; i < 5; i++) {
-      db.addMovement(Movement(
-        id: 'c$i', title: 'Caffè', amount: 1.50,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_4', createdAt: DateTime.now(),
-      ));
-      db.addMovement(Movement(
-        id: 'b$i', title: 'Benzina', amount: 50.0,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: 'exp_3', createdAt: DateTime.now(),
-      ));
+      db.addMovement(
+        Movement(
+          id: 'c$i',
+          title: 'Caffè',
+          amount: 1.50,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: 'exp_4',
+          createdAt: DateTime.now(),
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'b$i',
+          title: 'Benzina',
+          amount: 50.0,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: 'exp_3',
+          createdAt: DateTime.now(),
+        ),
+      );
     }
 
     expect(db.getSuggestions().length, 2);
@@ -863,16 +1099,16 @@ void main() {
     expect(db.getSuggestions().any((s) => s.title == 'Benzina'), true);
   });
 
-  testWidgets('62. Parsing virgola ancora funzionante dalla UI',
-      (tester) async {
+  testWidgets('62. Parsing virgola ancora funzionante dalla UI', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Virgola test', amount: '12,34');
     expect(db.movements.length, 1);
     expect(db.movements.first.amount, 12.34);
   });
 
-  testWidgets('63. Lista mostra movimenti da modalità diverse',
-      (tester) async {
+  testWidgets('63. Lista mostra movimenti da modalità diverse', (tester) async {
     final db = await pumpApp(tester);
 
     // Navigate to Archivio tab (Movimenti is default section)
@@ -899,10 +1135,15 @@ void main() {
     final db = await pumpApp(tester);
 
     // Add a custom quick movement via API
-    db.addQuickMovement(QuickMovement(
-      id: 'qm_custom', title: 'Netflix', amount: 15.99,
-      type: MovementType.expense, categoryId: 'exp_4',
-    ));
+    db.addQuickMovement(
+      QuickMovement(
+        id: 'qm_custom',
+        title: 'Netflix',
+        amount: 15.99,
+        type: MovementType.expense,
+        categoryId: 'exp_4',
+      ),
+    );
 
     await tester.tap(find.text('Archivio'));
     await tester.pumpAndSettle();
@@ -943,8 +1184,12 @@ void main() {
 
   testWidgets('66. Toggle OFF nasconde note', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Spesa con nota', amount: '25',
-        note: 'Nota importante');
+    await saveMovement(
+      tester,
+      title: 'Spesa con nota',
+      amount: '25',
+      note: 'Nota importante',
+    );
 
     // Navigate to Movimenti
     await tester.tap(find.byIcon(Icons.swap_vert));
@@ -958,8 +1203,12 @@ void main() {
 
   testWidgets('67. Toggle ON mostra note', (tester) async {
     await pumpApp(tester);
-    await saveMovement(tester, title: 'Cena', amount: '42',
-        note: 'Pizza e birra');
+    await saveMovement(
+      tester,
+      title: 'Cena',
+      amount: '42',
+      note: 'Pizza e birra',
+    );
 
     // Navigate to Movimenti
     await tester.tap(find.byIcon(Icons.swap_vert));
@@ -977,8 +1226,7 @@ void main() {
     expect(find.text('Pizza e birra'), findsOneWidget);
   });
 
-  testWidgets('68. Movimento senza nota non mostra riga extra',
-      (tester) async {
+  testWidgets('68. Movimento senza nota non mostra riga extra', (tester) async {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Senza nota', amount: '10');
 
@@ -1002,8 +1250,7 @@ void main() {
 
   testWidgets('69. Nota corta visibile con toggle ON', (tester) async {
     await pumpApp(tester);
-    await saveMovement(tester, title: 'Rimborso', amount: '15',
-        note: 'Amico');
+    await saveMovement(tester, title: 'Rimborso', amount: '15', note: 'Amico');
 
     await tester.tap(find.byIcon(Icons.swap_vert));
     await tester.pumpAndSettle();
@@ -1020,9 +1267,14 @@ void main() {
 
   testWidgets('70. Nota lunga con ellipsis', (tester) async {
     final db = await pumpApp(tester);
-    final longNote = 'Questa è una nota molto lunga che dovrebbe essere troncata con ellipsis perché supera le due righe consentite dal layout della lista movimenti di STREAM';
-    await saveMovement(tester, title: 'Nota lunga', amount: '99',
-        note: longNote);
+    final longNote =
+        'Questa è una nota molto lunga che dovrebbe essere troncata con ellipsis perché supera le due righe consentite dal layout della lista movimenti di STREAM';
+    await saveMovement(
+      tester,
+      title: 'Nota lunga',
+      amount: '99',
+      note: longNote,
+    );
 
     await tester.tap(find.byIcon(Icons.swap_vert));
     await tester.pumpAndSettle();
@@ -1037,12 +1289,13 @@ void main() {
     // Note should be visible (at least partially, up to 2 lines with ellipsis)
     expect(db.movements.first.note, longNote);
     // The text should be rendered (possibly truncated)
-    expect(find.textContaining('Questa è una nota molto lunga'),
-        findsOneWidget);
+    expect(
+      find.textContaining('Questa è una nota molto lunga'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('71. Persistenza impostazione showNotes',
-      (tester) async {
+  testWidgets('71. Persistenza impostazione showNotes', (tester) async {
     SharedPreferences.setMockInitialValues({'show_notes': true});
     final showNotes = await PreferencesService.loadShowNotes();
     expect(showNotes, true);
@@ -1056,11 +1309,15 @@ void main() {
     expect(afterSecondSave, true);
   });
 
-  testWidgets('72. Dashboard non influenzata da showNotes',
-      (tester) async {
+  testWidgets('72. Dashboard non influenzata da showNotes', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Stipendio', amount: '2000',
-        isIncome: true, note: 'Nota stipendio');
+    await saveMovement(
+      tester,
+      title: 'Stipendio',
+      amount: '2000',
+      isIncome: true,
+      note: 'Nota stipendio',
+    );
 
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
@@ -1074,8 +1331,12 @@ void main() {
 
   testWidgets('73. Nessun overflow UI con note', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Con nota', amount: '30',
-        note: 'Nota di test');
+    await saveMovement(
+      tester,
+      title: 'Con nota',
+      amount: '30',
+      note: 'Nota di test',
+    );
     await saveMovement(tester, title: 'Senza nota', amount: '20');
 
     await tester.tap(find.byIcon(Icons.swap_vert));
