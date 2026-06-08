@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_date_picker.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
 import '../models/account.dart';
@@ -9,6 +10,136 @@ import '../models/favorite_movement.dart';
 import '../theme.dart';
 
 enum AddMode { manuale, rapidi, preferiti }
+enum _TemplateDateChoice { today, yesterday, tomorrow, custom }
+
+DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+Future<DateTime?> _pickTemplateDate(BuildContext context) async {
+  final choice = await showModalBottomSheet<_TemplateDateChoice>(
+    context: context,
+    isScrollControlled: true,
+    builder: (sheetContext) {
+      Widget tile({
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required _TemplateDateChoice value,
+        required Key key,
+      }) {
+        return ListTile(
+          key: key,
+          leading: Icon(icon, color: StreamColors.primary),
+          title: Text(title),
+          subtitle: Text(subtitle),
+          onTap: () => Navigator.of(sheetContext).pop(value),
+        );
+      }
+
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            StreamSpacing.lg,
+            StreamSpacing.md,
+            StreamSpacing.lg,
+            StreamSpacing.xxl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Scegli data', style: StreamTypography.h3),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: StreamSpacing.sm),
+              tile(
+                icon: Icons.today,
+                title: 'Oggi',
+                subtitle: 'Data odierna',
+                value: _TemplateDateChoice.today,
+                key: const Key('quick_date_today'),
+              ),
+              tile(
+                icon: Icons.history,
+                title: 'Ieri',
+                subtitle: 'Data di ieri',
+                value: _TemplateDateChoice.yesterday,
+                key: const Key('quick_date_yesterday'),
+              ),
+              tile(
+                icon: Icons.update,
+                title: 'Domani',
+                subtitle: 'Data di domani',
+                value: _TemplateDateChoice.tomorrow,
+                key: const Key('quick_date_tomorrow'),
+              ),
+              tile(
+                icon: Icons.calendar_month,
+                title: 'Scegli data',
+                subtitle: 'Apri il selettore completo',
+                value: _TemplateDateChoice.custom,
+                key: const Key('quick_date_custom'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  if (choice == null) return null;
+
+  final today = _dateOnly(DateTime.now());
+  switch (choice) {
+    case _TemplateDateChoice.today:
+      return today;
+    case _TemplateDateChoice.yesterday:
+      return today.subtract(const Duration(days: 1));
+    case _TemplateDateChoice.tomorrow:
+      return today.add(const Duration(days: 1));
+    case _TemplateDateChoice.custom:
+      final picked = await StreamDatePicker.show(
+        // The choice sheet has already been dismissed before opening the picker.
+        // ignore: use_build_context_synchronously
+        context: context,
+        initialDate: today,
+      );
+      return picked == null ? null : _dateOnly(picked);
+  }
+}
+
+Future<void> _useTemplateMovement({
+  required BuildContext context,
+  required AppDatabase db,
+  required VoidCallback onUsed,
+  required String title,
+  required double amount,
+  required MovementType type,
+  required String categoryId,
+  required String accountId,
+  String? note,
+}) async {
+  final date = await _pickTemplateDate(context);
+  if (date == null) return;
+
+  await db.createMovementFromTemplate(
+    title: title,
+    amount: amount,
+    type: type,
+    categoryId: categoryId,
+    accountId: accountId,
+    note: note,
+    date: date,
+  );
+  if (!context.mounted) return;
+  onUsed();
+}
 
 class MovementPicker extends StatefulWidget {
   final AppDatabase db;
@@ -398,60 +529,94 @@ class _QuickPanel extends StatelessWidget {
             else
                   ...items.map((qm) {
                     final qmCat = db.categories.where((c) => c.id == qm.categoryId).firstOrNull;
-                    return Container(
-                    margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
-                    padding: const EdgeInsets.all(StreamSpacing.md),
-                    decoration: BoxDecoration(
-                      color: StreamColors.surface,
-                      borderRadius: BorderRadius.circular(StreamRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        _CategoryIcon(
-                          color: qmCat?.color ?? 0xFF636366,
-                          iconKey: qmCat?.iconKey ?? StreamIconLibrary.defaultCategoryIcon,
-                          size: 36,
-                        ),
-                        const SizedBox(width: StreamSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(qm.title, style: StreamTypography.bodyBold),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
-                                style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-                              ),
-                            ],
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                      child: Material(
+                        color: StreamColors.surface,
+                        borderRadius: BorderRadius.circular(StreamRadius.md),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(StreamRadius.md),
+                          onTap: () => _useTemplateMovement(
+                            context: context,
+                            db: db,
+                            onUsed: onUsed,
+                            title: qm.title,
+                            amount: qm.amount,
+                            type: qm.type,
+                            categoryId: qm.categoryId,
+                            accountId: qm.accountId,
+                            note: qm.note,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(StreamSpacing.md),
+                            child: Row(
+                              children: [
+                                _CategoryIcon(
+                                  color: qmCat?.color ?? 0xFF636366,
+                                  iconKey: qmCat?.iconKey ??
+                                      StreamIconLibrary.defaultCategoryIcon,
+                                  size: 36,
+                                ),
+                                const SizedBox(width: StreamSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        qm.title,
+                                        style: StreamTypography.bodyBold,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
+                                        style: StreamTypography.caption.copyWith(
+                                          color: StreamColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.edit,
+                                        size: 18,
+                                        color: StreamColors.textMuted,
+                                      ),
+                                      onPressed: () => _showQuickForm(
+                                        context,
+                                        db: db,
+                                        existing: qm,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.play_arrow,
+                                        size: 22,
+                                        color: StreamColors.primary,
+                                      ),
+                                      tooltip: 'Usa',
+                                      onPressed: () => _useTemplateMovement(
+                                        context: context,
+                                        db: db,
+                                        onUsed: onUsed,
+                                        title: qm.title,
+                                        amount: qm.amount,
+                                        type: qm.type,
+                                        categoryId: qm.categoryId,
+                                        accountId: qm.accountId,
+                                        note: qm.note,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, size: 18, color: StreamColors.textMuted),
-                              onPressed: () => _showQuickForm(context, db: db, existing: qm),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.play_arrow, size: 22, color: StreamColors.primary),
-                              tooltip: 'Usa',
-                              onPressed: () {
-                                db.createMovementFromTemplate(
-                                  title: qm.title,
-                                  amount: qm.amount,
-                                  type: qm.type,
-                                  categoryId: qm.categoryId,
-                                  accountId: qm.accountId,
-                                  note: qm.note,
-                                );
-                                onUsed();
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
                     );
                   }),
           ],
@@ -780,65 +945,100 @@ class _FavoriteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final favCat = db.categories.where((c) => c.id == fm.categoryId).firstOrNull;
     final catColor = favCat?.color ?? 0xFF636366;
-    return Container(
-      margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
-      padding: const EdgeInsets.all(StreamSpacing.md),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+      child: Material(
         color: StreamColors.surface,
         borderRadius: BorderRadius.circular(StreamRadius.md),
-      ),
-      child: Row(
-        children: [
-          _CategoryIcon(
-            color: catColor,
-            iconKey: favCat?.iconKey ?? StreamIconLibrary.defaultCategoryIcon,
-            size: 36,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(StreamRadius.md),
+          onTap: () => _useTemplateMovement(
+            context: context,
+            db: db,
+            onUsed: onUsed,
+            title: fm.title,
+            amount: fm.amount,
+            type: fm.type,
+            categoryId: fm.categoryId,
+            accountId: fm.accountId,
+            note: fm.note,
           ),
-          const SizedBox(width: StreamSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: Padding(
+            padding: const EdgeInsets.all(StreamSpacing.md),
+            child: Row(
               children: [
-                Text(fm.title, style: StreamTypography.bodyBold),
-                const SizedBox(height: 2),
-                Text(
-                  '${db.categories.where((c) => c.id == fm.categoryId).firstOrNull?.name ?? ''} • ${fm.type == MovementType.expense ? '-' : '+'}${fm.amount.toStringAsFixed(2)} €',
-                  style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+                _CategoryIcon(
+                  color: catColor,
+                  iconKey: favCat?.iconKey ??
+                      StreamIconLibrary.defaultCategoryIcon,
+                  size: 36,
+                ),
+                const SizedBox(width: StreamSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(fm.title, style: StreamTypography.bodyBold),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${db.categories.where((c) => c.id == fm.categoryId).firstOrNull?.name ?? ''} • ${fm.type == MovementType.expense ? '-' : '+'}${fm.amount.toStringAsFixed(2)} €',
+                        style: StreamTypography.caption.copyWith(
+                          color: StreamColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!isSuggestion) ...[
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: StreamColors.textMuted,
+                        ),
+                        onPressed: () => _showFavoriteForm(
+                          context,
+                          db: db,
+                          existing: fm,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: StreamColors.expense,
+                        ),
+                        onPressed: () => db.deleteFavoriteMovement(fm.id),
+                      ),
+                    ],
+                    IconButton(
+                      icon: const Icon(
+                        Icons.play_arrow,
+                        size: 22,
+                        color: StreamColors.primary,
+                      ),
+                      tooltip: 'Usa',
+                      onPressed: () => _useTemplateMovement(
+                        context: context,
+                        db: db,
+                        onUsed: onUsed,
+                        title: fm.title,
+                        amount: fm.amount,
+                        type: fm.type,
+                        categoryId: fm.categoryId,
+                        accountId: fm.accountId,
+                        note: fm.note,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isSuggestion) ...[
-                IconButton(
-                  icon: Icon(Icons.edit, size: 18, color: StreamColors.textMuted),
-                  onPressed: () => _showFavoriteForm(context, db: db, existing: fm),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete_outline, size: 18, color: StreamColors.expense),
-                  onPressed: () => db.deleteFavoriteMovement(fm.id),
-                ),
-              ],
-              IconButton(
-                icon: const Icon(Icons.play_arrow, size: 22, color: StreamColors.primary),
-                tooltip: 'Usa',
-                onPressed: () {
-                  db.createMovementFromTemplate(
-                    title: fm.title,
-                    amount: fm.amount,
-                    type: fm.type,
-                    categoryId: fm.categoryId,
-                    accountId: fm.accountId,
-                    note: fm.note,
-                  );
-                  onUsed();
-                },
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

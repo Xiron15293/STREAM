@@ -25,19 +25,50 @@ class StreamDatePicker {
     required DateTime initialDate,
   }) async {
     DateTime picked = initialDate;
-    await showModalBottomSheet(
+    return showModalBottomSheet<DateTime>(
       context: context,
-      builder: (ctx) => Container(
-        height: 260,
-        padding: const EdgeInsets.only(top: 16),
-        child: CupertinoDatePicker(
-          initialDateTime: initialDate,
-          mode: CupertinoDatePickerMode.date,
-          onDateTimeChanged: (d) => picked = d,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 220,
+                child: CupertinoDatePicker(
+                  initialDateTime: initialDate,
+                  mode: CupertinoDatePickerMode.date,
+                  onDateTimeChanged: (d) => picked = d,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      key: const Key('stream_date_picker_cancel'),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Annulla'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      key: const Key('stream_date_picker_ok'),
+                      onPressed: () => Navigator.of(ctx).pop(
+                        DateTime(picked.year, picked.month, picked.day),
+                      ),
+                      child: const Text('OK'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
-    return picked;
   }
 
   static String format(DateTime d) {

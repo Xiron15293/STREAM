@@ -56,6 +56,51 @@ Future<void> saveMovement(
   await tester.pumpAndSettle();
 }
 
+Future<void> openArchivePicker(WidgetTester tester) async {
+  await tester.tap(find.text('Archivio'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(FloatingActionButton));
+  await tester.pumpAndSettle();
+}
+
+Future<void> chooseQuickDate(
+  WidgetTester tester,
+  String choice, {
+  DateTime? customDate,
+}) async {
+  final choiceKey = switch (choice) {
+    'Oggi' => const Key('quick_date_today'),
+    'Ieri' => const Key('quick_date_yesterday'),
+    'Domani' => const Key('quick_date_tomorrow'),
+    'Scegli data' => const Key('quick_date_custom'),
+    _ => null,
+  };
+  final choiceFinder = choiceKey == null ? find.text(choice) : find.byKey(choiceKey);
+  await tester.tap(choiceFinder);
+  await tester.pumpAndSettle();
+
+  if (choice == 'Scegli data') {
+    final target = customDate ?? DateTime.now();
+    final dayText = target.day.toString();
+    await tester.tap(find.text(dayText).last);
+    await tester.pumpAndSettle();
+
+    final confirmCandidates = <Finder>[
+      find.byKey(const Key('stream_date_picker_ok')),
+      find.text('OK'),
+      find.text('Conferma'),
+      find.text('Applica'),
+    ];
+    for (final confirmFinder in confirmCandidates) {
+      if (confirmFinder.evaluate().isNotEmpty) {
+        await tester.tap(confirmFinder);
+        await tester.pumpAndSettle();
+        break;
+      }
+    }
+  }
+}
+
 void main() {
   // ============================================================
   // 1–10: Creazione movimenti
@@ -914,44 +959,101 @@ void main() {
   testWidgets('54. Movimento rapido crea movimento reale', (tester) async {
     final db = await pumpApp(tester);
 
-    // Open picker and switch to Rapidi tab
-    await tester.tap(find.text('Archivio'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
+    await openArchivePicker(tester);
     await tester.tap(find.text('Rapidi'));
     await tester.pumpAndSettle();
 
-    // Tap play button on Caffè (first quick movement)
+    // Tap play button on Caffè (first quick movement) and choose "Oggi"
     await tester.tap(find.byIcon(Icons.play_arrow).first);
     await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Oggi');
 
     expect(db.movements.length, 1);
     expect(db.movements.first.title, 'Caffè');
     expect(db.movements.first.amount, 1.50);
     expect(db.movements.first.categoryId, 'exp_4');
+    expect(
+      db.movements.first.date,
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    );
   });
 
   testWidgets('55. Dashboard aggiornata dopo movimento rapido', (tester) async {
     final db = await pumpApp(tester);
 
-    await tester.tap(find.text('Archivio'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
+    await openArchivePicker(tester);
     await tester.tap(find.text('Rapidi'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.play_arrow).first);
     await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Oggi');
 
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
 
     expect(find.text('-1.50 €'), findsAtLeastNWidgets(1));
     expect(db.movements.length, 1);
+  });
+
+  testWidgets('55b. Movimento rapido con Ieri usa data ieri', (tester) async {
+    final db = await pumpApp(tester);
+
+    await openArchivePicker(tester);
+    await tester.tap(find.text('Rapidi'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Ieri');
+
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    expect(db.movements.length, 1);
+    expect(db.movements.first.date.year, yesterday.year);
+    expect(db.movements.first.date.month, yesterday.month);
+    expect(db.movements.first.date.day, yesterday.day);
+  });
+
+  testWidgets('55c. Movimento rapido con Domani usa data domani', (tester) async {
+    final db = await pumpApp(tester);
+
+    await openArchivePicker(tester);
+    await tester.tap(find.text('Rapidi'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Domani');
+
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    expect(db.movements.length, 1);
+    expect(db.movements.first.date.year, tomorrow.year);
+    expect(db.movements.first.date.month, tomorrow.month);
+    expect(db.movements.first.date.day, tomorrow.day);
+  });
+
+  testWidgets('55d. Movimento rapido con Scegli data usa la data selezionata', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+
+    await openArchivePicker(tester);
+    await tester.tap(find.text('Rapidi'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    await tester.pumpAndSettle();
+    final picked = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      15,
+    );
+    await chooseQuickDate(tester, 'Scegli data', customDate: picked);
+
+    expect(db.movements.length, 1);
+    expect(db.movements.first.date.year, picked.year);
+    expect(db.movements.first.date.month, picked.month);
+    expect(db.movements.first.date.day, picked.day);
   });
 
   testWidgets('56. Preferito crea movimento reale', (tester) async {
@@ -968,21 +1070,73 @@ void main() {
       ),
     );
 
-    // Open picker and switch to Preferiti
-    await tester.tap(find.text('Archivio'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
+    await openArchivePicker(tester);
     await tester.tap(find.text('Preferiti'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.play_arrow).first);
     await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Oggi');
 
     expect(db.movements.length, 1);
     expect(db.movements.first.title, 'Affitto');
     expect(db.movements.first.amount, 800.0);
+    expect(
+      db.movements.first.date,
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+    );
+  });
+
+  testWidgets('56b. Preferito con Ieri usa data ieri', (tester) async {
+    final db = await pumpApp(tester);
+    db.addFavoriteMovement(
+      FavoriteMovement(
+        id: 'fav_yesterday',
+        title: 'Bollette',
+        amount: 120.0,
+        type: MovementType.expense,
+        categoryId: 'exp_2',
+      ),
+    );
+
+    await openArchivePicker(tester);
+    await tester.tap(find.text('Preferiti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Ieri');
+
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    expect(db.movements.length, 1);
+    expect(db.movements.first.date.year, yesterday.year);
+    expect(db.movements.first.date.month, yesterday.month);
+    expect(db.movements.first.date.day, yesterday.day);
+  });
+
+  testWidgets('56c. Preferito con Domani usa data domani', (tester) async {
+    final db = await pumpApp(tester);
+    db.addFavoriteMovement(
+      FavoriteMovement(
+        id: 'fav_tomorrow',
+        title: 'Bonus',
+        amount: 90.0,
+        type: MovementType.income,
+        categoryId: 'inc_3',
+      ),
+    );
+
+    await openArchivePicker(tester);
+    await tester.tap(find.text('Preferiti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Domani');
+
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    expect(db.movements.length, 1);
+    expect(db.movements.first.date.year, tomorrow.year);
+    expect(db.movements.first.date.month, tomorrow.month);
+    expect(db.movements.first.date.day, tomorrow.day);
   });
 
   testWidgets('57. Salva movimento come preferito', (tester) async {
@@ -1024,12 +1178,63 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.play_arrow).first);
     await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Oggi');
 
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
 
     expect(find.text('+300.00 €'), findsAtLeastNWidgets(1));
     expect(db.totalIncome, 300.0);
+  });
+
+  testWidgets('58b. Movimento futuro da rapido appare nel gruppo corretto', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+
+    db.addMovement(
+      Movement(
+        id: 'today_manual',
+        title: 'Oggi manuale',
+        amount: 10,
+        type: MovementType.expense,
+        date: DateTime(today.year, today.month, today.day),
+        categoryId: 'exp_1',
+        createdAt: today,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await openArchivePicker(tester);
+    await tester.tap(find.text('Rapidi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Domani');
+
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    final tomorrowHeader = find.text(tomorrow.day.toString().padLeft(2, '0'));
+    final todayHeader = find.text(today.day.toString().padLeft(2, '0'));
+    expect(tomorrowHeader, findsOneWidget);
+    expect(todayHeader, findsOneWidget);
+    expect(
+      tester.getTopLeft(tomorrowHeader).dy,
+      lessThan(tester.getTopLeft(todayHeader).dy),
+    );
+    expect(find.text('Caffè'), findsOneWidget);
+    final archiveScrollable = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(
+      find.text('Oggi manuale'),
+      300,
+      scrollable: archiveScrollable,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Oggi manuale'), findsOneWidget);
   });
 
   test('59. Suggerito appare dopo 5 movimenti simili', () {
@@ -1129,6 +1334,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.play_arrow).first);
     await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Oggi');
 
     // Create via Manuale (already on Movimenti tab)
     await saveMovement(tester, title: 'Manuale test', amount: '99');
@@ -1163,6 +1369,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.play_arrow).last);
     await tester.pumpAndSettle();
+    await chooseQuickDate(tester, 'Oggi');
 
     expect(db.movements.length, 1);
     expect(db.movements.first.title, 'Netflix');
