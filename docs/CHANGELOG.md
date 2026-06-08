@@ -7,12 +7,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- V0.6.0 — Raggruppamento Movimenti per Giorno
-- V0.6.1 — Ricerca Globale Movimenti
-- V0.6.2 — UX Movimenti Rapidi/Preferiti Data Picker
-- V0.6.3 — Calendar Heatmap
-- V0.6.4 — Beneficiario ed Etichette
-- V0.6.5 — Trasferimenti tra Conti
+- V0.6.2 — Ricerca Globale Movimenti
+- V0.6.3 — UX Movimenti Rapidi/Preferiti Data Picker
+- V0.6.4 — Calendar Heatmap
+- V0.6.5 — Beneficiario ed Etichette
+- V0.6.6 — Trasferimenti tra Conti
+
+---
+
+## [0.6.1] - 2026-06-08
+
+### Added
+- Raggruppamento Movimenti per Giorno in Archivio
+  - Header giornaliero: numero giorno (07), giorno settimana (SABATO), mese + anno (GIUGNO 2026)
+  - Riepilogo economico per giorno: Entrate, Uscite, Saldo (sempre visibili, anche a 0,00 €)
+  - Colori: entrate income, uscite expense, saldo positivo income, negativo expense, zero neutro
+  - Gruppi ordinati dal più recente al più vecchio
+  - Movimenti dentro ogni gruppo ordinati dal più recente al più vecchio
+- `DailyMovementGroup` model + `groupMovementsByDay()` helper
+- `DayHeader` widget — header giornaliero con riepilogo
+- Info app in Impostazioni (versione, build, ambiente, piattaforma, pacchetto)
+- `package_info_plus` dependency per lettura versione/build nativa
+
+### Changed
+- `MovementsScreen._buildMovementsList`: `ListView.separated` → `ListView.builder` con grouped layout
+- MovementCard ora usa `showDate: false` nei gruppi (la data è nell'header)
+- SettingsScreen: placeholder "Info app" → tappabile, apre bottom sheet informativo
+- SettingsScreen: `import 'dart:io'` e `package_info_plus` aggiunti
+
+### Performance
+- `groupMovementsByDay`: O(n) map + sort, target 1000+ movimenti
+- Nessun sort multiplo o raggruppamento ripetuto nel build
+
+### QA
+- 447 test pass (+11 unit daily_group + 10 widget raggruppamento/regression)
+- flutter analyze: 0 issues
+- Android release build PASS (66.2MB)
+- iOS release build PASS (32.6MB)
 
 ---
 

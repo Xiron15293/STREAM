@@ -403,3 +403,51 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 - Palette STREAM esistente (StreamColors) per colori heatmap
 
 ---
+
+## V0.6.1 — Raggruppamento Movimenti per Giorno ✅
+
+> **Feature**: V0.6.1 — Movimenti/Archivio raggruppati per giorno con header e riepilogo giornaliero
+> **Test**: 447 test pass (+21) | `flutter analyze` 0 issues
+> **Build**: APK 66.2MB ✅ | iOS 32.6MB ✅
+
+**Cosa è stato fatto (V0.6.1 completa):**
+
+### 1. DailyMovementGroup model + groupMovementsByDay helper
+- `lib/models/daily_group.dart`: classe `DailyMovementGroup` con `totalIncome`, `totalExpenses`, `balance`
+- `groupMovementsByDay(List<Movement>)`: O(n) HashMap raggruppamento per chiave `YYYY-MM-DD`, sort desc per data
+
+### 2. DayHeader widget
+- `lib/widgets/day_header.dart`: header giornaliero con:
+  - Numero giorno (07), giorno settimana (SABATO), mese + anno (GIUGNO 2026)
+  - Riepilogo: Entrate, Uscite, Saldo con colori income/expense/neutro
+  - Righe sempre visibili anche a 0,00 €
+
+### 3. MovementsScreen grouped layout
+- `_buildMovementsList` ora usa `ListView.builder` con grouped display
+- `DayHeader` + `MovementCard` intercalati
+- MovementCard con `showDate: false` (data già nell'header)
+- `allMovements.isEmpty` → empty state "Nessun movimento"
+- `filtered.isEmpty` → empty state "Nessun movimento in questo periodo"
+
+### 4. Info app in Impostazioni
+- Placeholder "Info app" attivato → bottom sheet con:
+  - Versione, Build, Ambiente (Debug/Release/Profile), Piattaforma (iOS/Android), Pacchetto
+  - `package_info_plus` per lettura nativa
+
+### 5. Performance
+- `groupMovementsByDay`: O(n) con HashMap, target 1000+ movimenti verificato con test
+
+### 6. Test aggiunti
+- `test/daily_group_test.dart`: 11 unit test (raggruppamento, ordinamento, totali, saldo)
+- `test/qa_movements_test.dart`: 10 widget test (header, multi-giorno, ordine, filtri, 1000 dataset, regressione)
+
+### File modificati/creati
+| File | Modifica |
+|------|----------|
+| `lib/models/daily_group.dart` | **NUOVO** — `DailyMovementGroup` + `groupMovementsByDay()` |
+| `lib/widgets/day_header.dart` | **NUOVO** — `DayHeader` widget |
+| `lib/screens/movements_screen.dart` | `ListView.separated` → `ListView.builder` grouped |
+| `lib/screens/settings_screen.dart` | Info app bottom sheet + `package_info_plus` |
+| `test/daily_group_test.dart` | **NUOVO** — 11 unit test |
+| `test/qa_movements_test.dart` | +10 widget test (test 74–83) |
+| `pubspec.yaml` | +`package_info_plus`
