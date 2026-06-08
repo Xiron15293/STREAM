@@ -22,7 +22,13 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 5 | Hermes V0.5 — Calendario Foundation | ✅ COMPLETATO | V0.5.6 | Date movimenti (✅), TimeFilter (✅), Calendario tab (✅), Archivio filtrato (✅), Dashboard filtrata (✅), MovementCard unico (✅) |
 | 5.4 | Calendar Heatmap / Category Heatmap | 📋 APPROVATA | TBD | Griglia mensile con intensità colore, filtro categoria |
 | 5.6 | UX Booster — Ricerca Globale, Preferiti, Categorie Frequenti | 💡 PROPOSTO | TBD | Micro-feature post V0.5, basso sforzo, sfruttano MovementCard |
-| 6 | Hermes V0.6 — Ricorrenze | 💡 IDEA | TBD | Movimenti automatici ricorrenti |
+| 6 | Hermes V0.6.1 — Raggruppamento Movimenti per Giorno | ✅ COMPLETATO | TBD | Grouped display, DayHeader, daily riepilogo |
+| 6.1 | Hermes V0.6.2 — Ordinamento Centralizzato + Fix | ✅ COMPLETATO | TBD | Comparator unico, updatedAt sort, fix gruppi giorno |
+| 6.2 | Hermes V0.6.3 — Ricerca Globale Movimenti | 📋 APPROVATA | TBD | Ricerca testo + filtro periodo + raggruppamento |
+| 6.3 | Hermes V0.6.4 — UX Rapidi/Preferiti Data Picker | 📋 APPROVATA | TBD | Oggi/Ieri/Domani/Scegli data |
+| 6.4 | Hermes V0.6.5 — Calendar Heatmap | 📋 APPROVATA | TBD | Intensità colore, filtro categoria, navigazione |
+| 6.5 | Hermes V0.6.6 — Beneficiario ed Etichette | 📋 APPROVATA | TBD | Model SQLite migration, UI, backup V2 |
+| 6.6 | Hermes V0.6.7 — Trasferimenti tra Conti | 📋 APPROVATA | TBD | MovementType.transfer, saldo duale, backup V3 |
 | 7 | Hermes V0.7 — Athena Foundation | 💡 IDEA | TBD | Budget, AI categorization, insight |
 | 8 | Hermes V0.8 — Import CSV | 💡 IDEA | TBD | Import da banche, export dati |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |

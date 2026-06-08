@@ -41,12 +41,16 @@
 | — | Backup & Restore in Impostazioni | V0.5.6 | 2026-06-08 |
 | — | Build release Android fix (file_picker + KGP) | V0.5.6 | 2026-06-08 |
 | — | Backup export condivisibile (share sheet) | V0.5.6 | 2026-06-08 |
+| F33 | V0.6.1 Raggruppamento Movimenti per Giorno | V0.6.1 | 2026-06-08 |
+| F34 | V0.6.0 Click Categoria Dashboard + IntervalPicker | V0.6.0 | 2026-06-08 |
+| F37 | V0.6.2 Comparator Centralizzato + Fix Ordinamento | V0.6.2 | 2026-06-08 |
+| F38 | V0.6.2 GroupedMovementsList riusabile | V0.6.2 | 2026-06-08 |
 
 ---
 
 ## 2. Feature approvate (📋)
 
-### F12 — V0.6.3 UX Movimenti Rapidi/Preferiti — Data Picker
+### F12 — V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker
 
 | Campo | Valore |
 |-------|--------|
@@ -54,7 +58,7 @@
 | **Motivazione** | Attualmente un rapido/preferito crea il movimento con la data corrente. L'utente vuole poter assegnare una data diversa senza passare dalla modifica |
 | **Priorità** | Alta |
 | **Dipendenze** | Nessuna |
-| **Versione candidata** | V0.6.3 |
+| **Versione candidata** | V0.6.4 |
 | **Stato** | 📋 APPROVATA |
 
 **Sotto-feature:**
@@ -69,7 +73,7 @@
 
 ---
 
-### F13 — V0.6.4 Calendar Heatmap / Category Heatmap
+### F13 — V0.6.5 Calendar Heatmap / Category Heatmap
 
 | Campo | Valore |
 |-------|--------|
@@ -77,7 +81,7 @@
 | **Motivazione** | La vista calendario testuale non dà colpo d'occhio immediato sulla distribuzione finanziaria nel mese |
 | **Priorità** | Alta |
 | **Dipendenze** | F09 (date movimenti) ✅, F11 (TimeFilter) ✅, F14 (Calendario tab) ✅ |
-| **Versione candidata** | V0.6.4 |
+| **Versione candidata** | V0.6.5 |
 | **Stato** | 📋 APPROVATA |
 
 **Sotto-feature:**
@@ -98,6 +102,33 @@
 
 ---
 
+### F23 — V0.6.3 Ricerca Globale Movimenti
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Campo di ricerca testuale permanente nella lista movimenti di Archivio. Cerca in: titolo, categoria, conto, nota, beneficiario (F35), etichette (F35). Filtro per giorno/mese/anno/periodo custom. Risultati raggruppati per data |
+| **Motivazione** | Con centinaia di movimenti, trovarne uno per scorrimento è impossibile. La ricerca testuale è il metodo più rapido |
+| **Priorità** | Alta |
+| **Dipendenze** | GroupedMovementsList (F38 ✅) riusabile per raggruppamento risultati |
+| **Versione candidata** | V0.6.3 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **Campo di ricerca** — TextField persistente nella testata della lista movimenti
+2. **Match parziale** — case-insensitive su titolo, importo (formattato), nome categoria, nome conto, nota
+3. **Estensione futura** — beneficiario (F35), etichette (F35) quando disponibili
+4. **Filtro periodo** — dropdown/combo per giorno/mese/anno/periodo custom, combinato con testo ricerca
+5. **Risultati raggruppati per data** — riusa `GroupedMovementsList` (F38 ✅)
+6. **Empty state** — "Nessun risultato per la ricerca"
+
+**Nota:** helper condivisi per logica di match.
+
+**Test richiesti:** ~18-22 test (ricerca per campo, combinazione con filtro periodo, raggruppamento, empty state, performance su 1000+ movimenti)
+
+**Rischio tecnico:** BASSO-MEDIO — solo UI/filtro in-memory, nessun cambiamento model/database
+
+---
+
 ### F30 — Inline Form Validation
 
 | Campo | Valore |
@@ -109,215 +140,69 @@
 | **Versione candidata** | V0.4.x / Pre-Beta |
 | **Stato** | 📋 APPROVATA |
 
-**Nota:** Si sovrappone parzialmente a F28 (Error Feedback Utente Migliorato, POST-MVP). F30 ha priorità più alta e ambito più specifico (solo form inline). Da unificare.
-
 ---
 
-### F33 — V0.6.0 Raggruppamento Movimenti per Giorno
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | Nelle viste Mese, Periodo e Anno di Archivio, mostrare un'intestazione data sopra i movimenti dello stesso giorno. Separazione chiara per ogni giornata |
-| **Motivazione** | La lista piatta di movimenti rende difficile capire la distribuzione temporale. Il raggruppamento per giorno dà contesto immediato |
-| **Priorità** | Alta |
-| **Dipendenze** | Nessuna |
-| **Versione candidata** | V0.6.0 |
-| **Stato** | 📋 APPROVATA |
-
-**Sotto-feature:**
-1. **Intestazione data** — label "Oggi", "ieri", "15/06/2026" sopra i movimenti del giorno
-2. **Separatore visivo** — linea sottile o padding extra tra gruppi di giorni diversi
-3. **Vista Mese** — raggruppamento naturale per giorno all'interno del mese selezionato
-4. **Vista Periodo/Anno** — raggruppamento per giorno con header data
-5. **Scroll** — header data sticky (opzionale, primo MVP senza sticky)
-
-**Test richiesti:** ~10-12 test (raggruppamento corretto, header data, scroll, cambio periodo)
-
-**Rischio tecnico:** BASSO — pura UI, nessuna modifica a model/database
-
-**MovementCard:** riusa widget esistente (`lib/widgets/movement_card.dart`) per ogni riga.
-**TimeFilter:** riusa filtro periodo esistente.
-**Beneficiario futuro:** F35 estenderà la card con nuovi campi.
-
----
-
-### F34 — V0.6.1 Click Categoria Dashboard
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | Cliccando una categoria dalla sezione "Spese per categoria" della Dashboard, aprire la schermata Archivio filtrata per quella categoria. Filtro per giorno/mese/anno/periodo custom |
-| **Motivazione** | L'utente vede "Ho speso 500€ in Svago" ma non può approfondire. Click → lista movimenti di Svago nel periodo |
-| **Priorità** | Alta |
-| **Dipendenze** | TimeFilter (F11) ✅, F33 (raggruppamento per giorno, riusato nella vista filtrata) |
-| **Versione candidata** | V0.6.1 |
-| **Stato** | 📋 APPROVATA |
-
-**Sotto-feature:**
-1. **Tap su categoria Dashboard** — naviga ad Archivio con filtro categoria attivo
-2. **Vista filtrata** — mostra solo movimenti della categoria selezionata
-3. **Filtro periodo** — giorno/mese/anno/periodo custom, si combina col filtro categoria
-4. **Back navigation** — "Torna alla Dashboard" o back button naturale
-5. **Empty state** — "Nessun movimento in [Categoria] nel periodo selezionato"
-
-**Test richiesti:** ~12-15 test (navigazione click, filtro categoria, combinazione con periodo, back navigation, empty state)
-
-**Rischio tecnico:** BASSO-MEDIO — navigazione + filtro in-memory, nessuna modifica a model/database
-
----
-
-### F35 — V0.6.5 Beneficiario ed Etichette
+### F35 — V0.6.6 Beneficiario ed Etichette
 
 | Campo | Valore |
 |-------|--------|
 | **Descrizione** | Aggiungere due nuovi campi opzionali al modello Movement: beneficiario (stringa) e etichette/tag (lista di stringhe). Campi disabilitabili da Impostazioni. Aggiornare model, SQLite, migration, backup/restore, UI e test |
 | **Motivazione** | "A chi ho pagato?" e "per cosa?" sono domande naturali. Beneficiario e tag arricchiscono il dato senza rompere la semplicità |
 | **Priorità** | Media |
-| **Dipendenze** | F33 (raggruppamento giorno — la card modificata riusa la stessa struttura) |
-| **Versione candidata** | V0.6.5 |
+| **Dipendenze** | GroupedMovementsList (F38) ✅ — MovementCard modificabile |
+| **Versione candidata** | V0.6.6 |
 | **Stato** | 📋 APPROVATA |
 
-**Sotto-feature:**
-1. **Modello Movement** — nuovi campi `beneficiary` (String?) e `tags` (List<String>)
-2. **SQLite migration V7** — nuove colonne `beneficiary TEXT`, `tags TEXT` (JSON serializzato)
-3. **Backup/Restore V2** — nuovo formato JSON con campi opzionali (backward compatible V1)
-4. **UI Movimenti** — campi editabili nel form (sotto "Nota")
-5. **UI MovementCard** — visualizzazione beneficiario e tags (se presenti)
-6. **Impostazioni** — toggle per abilitare/disabilitare i campi (nascondi se non usati)
-7. **Ricerca globale (F23)** — estende la ricerca a beneficiario e tags
-8. **Test** — model, CRUD, migration, backup/restore roundtrip, UI
+**Test richiesti:** ~25-30 test
 
-**Test richiesti:** ~25-30 test (model, CRUD, migration V6→V7, backup/restore con/senza campi, UI, toggle impostazioni, ricerca)
-
-**Rischio tecnico:** ALTO
-- **Migration SQLite**: modifica schema esistente. Dati esistenti devono sopravvivere senza perdite.
-- **Backup compatibilità**: file JSON V1 devono essere importabili anche senza i nuovi campi. File V2 devono essere aperti da app V1 (con perdita dati accettabile).
-- **Rollback**: se migration fallisce, AppDatabase deve rimanere in stato consistente.
-- **Performance**: tags come JSON serializzato in colonna TEXT — query per tag richiede `LIKE '%tag%'` (lento su grandi dataset). Valutare tabella separata `movement_tags` in futuro.
+**Rischio tecnico:** ALTO (migration SQLite, backup compatibilità)
 
 ---
 
-### F36 — V0.6.6 Trasferimenti tra Conti
+### F36 — V0.6.7 Trasferimenti tra Conti
 
 | Campo | Valore |
 |-------|--------|
 | **Descrizione** | Nuovo tipo movimento "Trasferimento" insieme a Entrata e Uscita. Richiede conto origine, conto destinazione e importo. Aggiorna saldo di entrambi i conti. Backup/restore e test dedicati |
-| **Motivazione** | Spostare denaro tra conti (es. CC → Carta) è un'operazione comune. Attualmente servono 2 movimenti (uscita + entrata). Un tipo "Trasferimento" nativo è più pulito |
+| **Motivazione** | Spostare denaro tra conti (es. CC → Carta) è un'operazione comune |
 | **Priorità** | Alta |
-| **Dipendenze** | F35 (beneficiario/tag aggiungono campi al form movimento, ma trasferimento può essere indipendente) |
-| **Versione candidata** | V0.6.6 |
+| **Dipendenze** | F35 (beneficiario/tag) |
+| **Versione candidata** | V0.6.7 |
 | **Stato** | 📋 APPROVATA |
 
-**Sotto-feature:**
-1. **MovementType.transfer** — nuovo enum value accanto a income/expense
-2. **Conto origine + conto destinazione** — due campi Account nel form (invece di uno)
-3. **Saldo duale** — conto origine: -importo, conto destinazione: +importo
-4. **Dashboard KPI** — trasferimenti esclusi da income/expense totals
-5. **Lista movimenti** — icona distintiva per trasferimenti ⇄
-6. **SQLite migration V8** — nuovo campo `transfer_destination_account_id TEXT`
-7. **Backup/Restore V3** — nuovo campo opzionale (backward compatible)
-8. **Vincolo** — conto origine ≠ conto destinazione
+**Test richiesti:** ~30-35 test
 
-**Test richiesti:** ~30-35 test (model, CRUD, saldo duale, migration V7→V8, backup/restore roundtrip, KPI esclusione, validazione conti, UI form, regressione income/expense)
-
-**Rischio tecnico:** ALTO
-- **Saldo duale**: operazione atomica — se fallisce l'aggiornamento del saldo del conto destinazione, bisogna rollbackare anche quello del conto origine. Necessita `sqlite.transaction()`.
-- **Migration SQLite**: modifica schema. Dati esistenti senza `transfer_destination_account_id` devono funzionare.
-- **KPI**: trasferimenti non devono apparire in totalIncome/totalExpenses. Nuovo getter `totalTransfers` o filtro esplicito in tutti i calcoli.
-- **Backward compatibilità**: file JSON senza `transferDestinationAccountId` devono essere importati come income/expense normali.
-- **UI**: il form movimento deve cambiare contestualmente — se tipo=transfer, mostra due campi conto invece di uno. Se tipo=income/expense, comportamento invariato.
-- **Export**: includere trasferimenti nel backup JSON con flag `type: "transfer"`.
+**Rischio tecnico:** ALTO (saldo duale atomico, migration SQLite, KPI esclusione)
 
 ---
 
 ## 3. Feature in valutazione (🔄)
 
-### F14 — V0.5.4 Calendario Tab (vista mensile)
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | Nuova tab "Calendario" nella bottom nav. Griglia mensile con indicatori di movimenti, navigazione swipe/frecce, tap giorno → lista |
-| **Motivazione** | Visione temporale dei movimenti. Base per heatmap e ricorrenze |
-| **Priorità** | Alta |
-| **Dipendenze** | F09 (date), F11 (TimeFilter) |
-| **Versione candidata** | V0.5.4 |
-| **Stato** | ✅ COMPLETATO (V0.5.4) |
-
-**Da definire:** UI esatta della cella giorno, navigazione, integrazione con Archivio/Dashboard.
-
----
-
-### F15 — V0.5.5 Archivio Filtrato per Data
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | Filtro periodo nella tab Movimenti di Archivio. Usa TimeFilter per mostrare solo movimenti nel range selezionato |
-| **Motivazione** | Senza filtro temporale, la lista movimenti cresce indefinitamente e diventa ingestibile |
-| **Priorità** | Alta |
-| **Dipendenze** | F11 (TimeFilter) |
-| **Versione candidata** | V0.5.5 |
-| **Stato** | ✅ COMPLETATO (V0.5.5) |
-
-**Realizzato**: TimeFilterBar in Archivio → filtra movimenti per periodo con `filterByTime()`. Navigazione Giorno/Mese/Anno/Periodo. Stato vuoto: "Nessun movimento nel periodo selezionato".
-
----
-
-### F16 — V0.5.6 Dashboard Filtrata per Periodo
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | KPI Dashboard (entrate, uscite, saldo) calcolati su periodo selezionato via TimeFilter. Hero card patrimonio filtrata |
-| **Motivazione** | La Dashboard mostra solo dati totali. L'utente vuole vedere "quanto ho speso questo mese" |
-| **Priorità** | Alta |
-| **Dipendenze** | F11 (TimeFilter) |
-| **Versione candidata** | V0.5.6 |
-| **Stato** | ✅ COMPLETATO (V0.5.6) |
-
-**Realizzato**: TimeFilterBar in Dashboard → KPI filtrati per periodo (Entrate, Spese, Saldo, Movimenti). Patrimonio globale non filtrato. Ultime transazioni filtrate. KPI grid 2×2.
-
----
-
 ### F17 — Category Manual Sorting
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Campo `sort_order` SQLite su categories. Drag per riordinare con `ReorderableListView` in schermata categorie |
-| **Motivazione** | L'ordine alfabetico non è significativo. L'utente vuole le categorie più usate in alto |
 | **Priorità** | Media |
-| **Dipendenze** | SQLite migration (nuova colonna) |
+| **Dipendenze** | SQLite migration |
 | **Versione candidata** | V0.5+ |
 | **Stato** | 🔄 IN VALUTAZIONE |
-
-**Rischio:** Conflitto con Category Summary Ordering (F18). Non implementare entrambi senza progettazione unificata.
-
----
 
 ### F18 — Category Summary Ordering
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Opzioni ordinamento analisi categorie: Nome A-Z/Z-A, Spesa crescente/decrescente, Entrata crescente/decrescente, Conteggio movimenti |
-| **Motivazione** | L'analisi per categoria richiede ordinamenti diversi in contesti diversi |
 | **Priorità** | Bassa |
-| **Dipendenze** | Nessuna (solo UI) |
+| **Dipendenze** | Nessuna |
 | **Versione candidata** | V0.5+ |
 | **Stato** | 🔄 IN VALUTAZIONE |
-
-**Nota:** Distinto da F17. Ordine manuale = gestione. Ordine automatico = vista analisi.
-
----
 
 ### F32 — UI Inspiration Review
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Revisionare la cartella `/Users/mattiasironi1/Documents/FLOW/UI inspiration/` per estrarre pattern utili a Dashboard, Budget, Fondi, Scenario, Categorie e Calendario |
-| **Motivazione** | I documenti STREAM citano questa cartella come fonte di ispirazione. Potrebbero emergere pattern non ancora catturati nel backlog |
 | **Priorità** | Bassa-Media |
-| **Dipendenze** | Nessuna (ricerca, non implementazione) |
-| **Versione candidata** | Prima dei refactor grafici avanzati |
+| **Dipendenze** | Nessuna |
 | **Stato** | 🔄 IN VALUTAZIONE |
-
-**Vincolo:** Non copiare UI esterne 1:1. Usare solo come ispirazione concettuale.
 
 ---
 
@@ -327,109 +212,44 @@
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Movimenti automatici ricorrenti: settimanali, mensili, annuali. Creazione automatica alla data prevista |
-| **Motivazione** | Canone affitto, stipendio, abbonamenti — movimenti che si ripetono sempre uguali |
 | **Priorità** | Media |
 | **Dipendenze** | F09 (date), F11 (TimeFilter), F14 (Calendario tab) |
 | **Versione candidata** | V0.6 |
 | **Stato** | 💡 IDEA FUTURA |
 
-**Da progettare:** Modello ricorrenza, generazione automatica, notifiche, gestione eccezioni.
-
----
-
 ### F20 — V0.7 Athena Foundation (Budget, AI, Insight)
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Budget mensili per categoria. Actual vs Budget. Delta. AI categorization automatica. Insight intelligenti |
-| **Motivazione** | L'utente vuole sapere se sta spendendo troppo. Assegnazione manuale categoria è faticosa |
 | **Priorità** | Media |
-| **Dipendenze** | F09 (date), F11 (TimeFilter), F16 (Dashboard filtrata) |
+| **Dipendenze** | F09, F11, F16 |
 | **Versione candidata** | V0.7 |
 | **Stato** | 💡 IDEA FUTURA |
-
-**Sotto-feature candidate:**
-1. Budget — impostazione budget mensile per categoria
-2. Actual — spesa reale nel periodo (riusa TimeFilter)
-3. Delta — differenza budget vs actual
-4. KPI mensili — risparmio, tasso di risparmio, categoria top spesa
-5. AI categorization — suggerimento automatico categoria basato su titolo e storico
-6. Insight automatici — "Questo mese hai speso 30% in più al ristorante"
-
----
 
 ### F21 — V0.8 Import CSV
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Import guidato movimenti da CSV home banking. Mapping colonne, fingerprint, deduplica intelligente |
-| **Motivazione** | Inserire decine/centinaia di movimenti a mano è improponibile all'onboarding |
 | **Priorità** | Media |
 | **Dipendenze** | F09 (date) |
 | **Versione candidata** | V0.8 |
 | **Stato** | 💡 IDEA FUTURA |
 
-**Sotto-feature candidate:**
-1. Import guidato — seleziona file, preview, conferma
-2. Mapping colonne — l'utente associa colonne CSV a campi STREAM
-3. Fingerprint — hash (conto + data + importo + titolo) per identificare univocamente
-4. ImportedFingerprintLedger — registro dei fingerprint importati
-5. Deduplica intelligente — stesso fingerprint → skip (anche su import multipli)
-6. Export dati — esporta movimenti in CSV
-
----
-
 ### F22 — V0.9 Scenari
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Proiezioni what-if: "Se risparmio 200€ al mese per 12 mesi, quanto ho?". Simulazioni e forecast semplici |
-| **Motivazione** | L'utente vuole pianificare il futuro, non solo registrare il passato |
 | **Priorità** | Bassa |
-| **Dipendenze** | F20 (Athena — per dati budget), F11 (TimeFilter) |
+| **Dipendenze** | F20, F11 |
 | **Versione candidata** | V0.9 |
 | **Stato** | 💡 IDEA FUTURA |
-
-**Da progettare:** UI scenari, motore di calcolo, salvataggio scenari.
-
----
-
-### F23 — V0.6.2 Ricerca Globale Movimenti
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | Campo di ricerca testuale permanente nella lista movimenti di Archivio. Cerca in: titolo, categoria, conto, nota, beneficiario (F35), etichette (F35). Filtro per giorno/mese/anno/periodo custom. Risultati raggruppati per data |
-| **Motivazione** | Con centinaia di movimenti, trovarne uno per scorrimento è impossibile. La ricerca testuale è il metodo più rapido |
-| **Priorità** | Alta |
-| **Dipendenze** | Nessuna (solo UI/filtro in-memory). Beneficiario/tag (F35) estendono la ricerca ma non la bloccano |
-| **Versione candidata** | V0.6.2 |
-| **Stato** | 📋 APPROVATA |
-
-**Sotto-feature:**
-1. **Campo di ricerca** — TextField persistente nella testata della lista movimenti
-2. **Match parziale** — case-insensitive su titolo, importo (formattato), nome categoria, nome conto, nota
-3. **Estensione futura** — beneficiario (F35), etichette (F35) quando disponibili
-4. **Filtro periodo** — dropdown/combo per giorno/mese/anno/periodo custom, combinato con testo ricerca
-5. **Risultati raggruppati per data** — intestazione data sopra i movimenti dello stesso giorno (riusa F33)
-6. **Empty state** — "Nessun risultato per la ricerca"
-
-**Nota:** Sostituisce e migliora la ricerca solo-Rapidi/Preferiti di F12. helper condivisi per logica di match.
-
-**Test richiesti:** ~18-22 test (ricerca per campo, combinazione con filtro periodo, raggruppamento, empty state, performance su 1000+ movimenti)
-
-**Rischio tecnico:** BASSO-MEDIO — solo UI/filtro in-memory, nessun cambiamento model/database
-
----
 
 ### F24 — Refactor Grafico Categorie
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Visualizzazione più visuale e moderna delle categorie: icone grandi, griglia anziché lista, colori prominenti |
-| **Motivazione** | UI categorie attuale è funzionale ma poco ispirata |
 | **Priorità** | Bassa |
-| **Dipendenze** | Nessuna (solo UI) |
+| **Dipendenze** | Nessuna |
 | **Versione candidata** | V0.5+ |
 | **Stato** | 💡 IDEA FUTURA |
 
@@ -437,14 +257,10 @@
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Adattare layout a tablet, schermi grandi e desktop. Esempi: layout a due colonne, sidebar su tablet, form più larghi, dashboard più spaziosa |
-| **Motivazione** | STREAM è Flutter multipiattaforma e potrà girare anche su tablet/desktop |
 | **Priorità** | Bassa |
 | **Dipendenze** | Beta mobile prima |
-| **Versione candidata** | Post-MVP / Tablet phase |
+| **Versione candidata** | Post-MVP |
 | **Stato** | 💡 IDEA FUTURA |
-
-**Nota:** Si sovrappone a F29 (Layout Tablet Adattivo, POST-MVP). Da unificare prima dell'implementazione.
 
 ---
 
@@ -454,85 +270,36 @@
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Distribuzione su App Store e Play Store. Pagina prodotto, screenshot, descrizione. Beta testing con utenti reali |
-| **Motivazione** | Raccogliere feedback, validare PMF, iniziare crescita utenti |
-| **Priorità** | Alta (per tempistiche) |
+| **Descrizione** | Distribuzione su App Store e Play Store |
+| **Priorità** | Alta |
 | **Dipendenze** | Tutte le feature prioritarie |
 | **Versione candidata** | V1.0 |
 | **Stato** | ⏳ POST-MVP |
 
-> **⚠️ QA/Build — Beta Build Checklist**
-> Le build beta distribuite devono essere **release build**, non debug.
-> Evitare APK/IPA debug con banner "DEBUG" per test esterni.
-> ```
-> flutter build apk --release
-> flutter build ios --release
-> ```
-> Il banner debug è accettabile solo per sviluppo locale/test su device proprio.
-> Non è una feature roadmap, ma un requisito QA per distribuzione beta.
-
----
-
-### F26 — Backup Locale
-
-| Campo | Valore |
-|-------|--------|
-| **Descrizione** | Export/import completo JSON (accounts, categories, movements, quickMovements, favoriteMovements, settings). Restore transazionale con rollback SQLite. Share sheet nativo per esportazione file |
-| **Motivazione** | L'utente può salvare e ripristinare i dati su/dispositivo o copiarli fuori dall'app |
-| **Priorità** | Alta |
-| **Dipendenze** | F09 (date) |
-| **Versione** | V0.5.6 |
-| **Stato** | ✅ COMPLETATO (V0.5.6) |
-
-**Dettaglio tecnico**:
-- File: `lib/services/backup_service.dart`, `lib/models/backup_data.dart`, `lib/screens/backup_screen.dart`
-- `BackupService.exportToJson()` → JSON con tutte le entità
-- Salvataggio interno: `getDatabasesPath()/backups/backup_YYYY_MM_DD_HH_mm.json`
-- Condivisione via `share_plus ^12.0.2` — SnackBar con "Condividi" + icona share in lista backup
-- Restore transazionale: `sqlite.transaction()` → DELETE + INSERT
-- Pre-restore backup automatico prima del restore
-- Import via `FilePicker.pickFiles(allowedExtensions: ['json'])`
-- Validazione: JSON, version (1–1), campi obbligatori
-- Orfani account/categoryId gestiti con fallback a default
-
----
+### F26 — Backup Locale (✅ completato in V0.5.6)
 
 ### F27 — V1.2 Cloud Sync
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Backup premium su cloud. Sincronizzazione multi-dispositivo. Criptato end-to-end |
-| **Motivazione** | Utenti con più dispositivi vogliono dati sempre aggiornati. Fonte di revenue (abbonamento opzionale) |
 | **Priorità** | Media |
 | **Dipendenze** | F26 (Backup Locale) |
 | **Versione candidata** | V1.2 |
 | **Stato** | ⏳ POST-MVP |
 
-**Modello di business:** Gratuito per funzioni base. Premium (abbonamento) per backup cloud e multi-dispositivo.
-
----
-
 ### F28 — Error Feedback Utente Migliorato
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Validazione visiva in tempo reale nei form. Messaggi di errore contestuali. SnackBar per operazioni riuscite |
-| **Motivazione** | La validazione attuale è silenziosa in alcuni casi. L'utente non sa perché un'azione fallisce |
 | **Priorità** | Bassa |
-| **Dipendenze** | Nessuna |
 | **Versione candidata** | V1.0+ |
 | **Stato** | ⏳ POST-MVP |
-
----
 
 ### F29 — Layout Tablet Adattivo
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Adaptive layout per tablet: split view, navigazione laterale, griglie più ampie |
-| **Motivazione** | Su tablet l'app appare vuota e sproporzionata |
 | **Priorità** | Bassa |
-| **Dipendenze** | Nessuna (solo UI) |
 | **Versione candidata** | V1.0+ |
 | **Stato** | ⏳ POST-MVP |
 
@@ -542,15 +309,15 @@
 
 | # | Feature | Motivazione |
 |---|---------|-------------|
-| E01 | Autenticazione / Login | L'app è offline-first e privacy-centrica. Login obbligherebbe account. Esclusa per sempre |
-| E02 | Pubblicità | Nessuna pubblicità in-app. Modello premium per cloud sync. Esclusa per sempre |
-| E03 | Profili utente multipli | Troppo complesso per MVP. Ogni dispositivo è un profilo. Cloud sync potrebbe abilitarlo in futuro |
-| E04 | Valute multiple | Non necessario per utenza italiana iniziale. Da rivalutare solo dopo Beta (V1.0+) |
-| E05 | Notifiche push | Richiede server backend. Troppo complesso pre-Beta. Da rivalutare solo dopo cloud sync |
-| E06 | Widget iOS/Android | Home screen widget potrebbe essere bello, ma non necessario. Posticipato a V1.0+ |
-| E07 | Apple Watch / WearOS | Niche. Priorità bassissima. Non prima di V2.0 |
-| E08 | Gamification (badge, streak) | Rischia di distrarre dal valore reale. Esclusa salvo richieste esplicite beta |
-| E09 | OCR scontrini/fatture | Troppo complesso, costo API alto, accuratezza variabile. Non pianificata |
+| E01 | Autenticazione / Login | L'app è offline-first e privacy-centrica. Esclusa per sempre |
+| E02 | Pubblicità | Nessuna pubblicità in-app. Esclusa per sempre |
+| E03 | Profili utente multipli | Troppo complesso per MVP |
+| E04 | Valute multiple | Non necessario per utenza italiana iniziale |
+| E05 | Notifiche push | Richiede server backend |
+| E06 | Widget iOS/Android | Posticipato a V1.0+ |
+| E07 | Apple Watch / WearOS | Priorità bassissima |
+| E08 | Gamification (badge, streak) | Rischia di distrarre dal valore reale |
+| E09 | OCR scontrini/fatture | Troppo complesso, costo API alto |
 
 ---
 
@@ -559,92 +326,58 @@
 | Metrica | Valore |
 |---------|--------|
 | **Totale feature censite** | 32 |
-| **Feature completate** | 15+ (F01–F11, F14–F16, F26; + MovementCard, Backup & Restore, Build fix, Share sheet) |
-| **Feature approvate** | 3 (F12–F13, F30) |
+| **Feature completate** | 20+ (F01–F11, F14–F16, F26, F33–F34, F37–F38; + MovementCard, Backup, Build fix, Share) |
+| **Feature approvate** | 4 (F12–F13, F23, F30) + 2 (F35–F36) |
 | **Feature in valutazione** | 3 (F17–F18, F32) |
-| **Feature future** | 6 (F19–F24 restano) |
-| **Feature post-MVP** | 4 (F25, F27–F29) |
+| **Feature future** | 5 (F19–F22, F24, F31) |
+| **Feature post-MVP** | 3 (F25, F27–F29) |
 | **Feature escluse** | 9 (E01–E09) |
-| **Refactor architetturale** | 1 (MovementCard unico ✅, non è feature ma prepara F12, F13, F21, F23) |
 
 ---
 
 ## 8. Priorità consigliate prima della Beta
 
-Basate sul criterio: **massimo impatto utente per minimo sforzo tecnico.**
-
-### Novità architetturale: MovementCard unico
-Il refactor MovementCard (`lib/widgets/movement_card.dart`) ha eliminato 4 classi duplicate e prepara tecnicamente le feature che richiedono renderizzazione movimenti:
-
-| Feature | Dipendenza da MovementCard |
-|---------|---------------------------|
-| F12 — Quick/Favorite UX | Mostrare template rapidi/preferiti come card |
-| F13 — Calendar Heatmap | Detail-on-tap del giorno |
-| F21 — Import CSV Preview | Preview movimenti importati |
-| F23 — Ricerca Globale | Risultati ricerca come card |
-
-### 🥇 Priorità Alta (prossima sessione — V0.6+)
+### 🥇 Priorità Alta (prossima sessione — V0.6.3)
 
 | Ordine | Feature | Impatto | Sforzo | Note |
 |--------|---------|---------|--------|------|
-| 1 | F23 — Ricerca Globale Movimenti | Alto | Basso | MovementCard pronto ✅ |
-| 2 | F12 — V0.4.3 UX Rapidi/Preferiti | Alto | Basso-Medio | MovementCard pronto ✅ |
+| 1 | F23 — Ricerca Globale Movimenti | Alto | Basso | GroupedMovementsList pronto ✅ |
+| 2 | F12 — UX Rapidi/Preferiti Data Picker | Alto | Basso-Medio | MovementCard pronto ✅ |
 | 3 | F13 — Calendar Heatmap | Medio | Basso | V0.5 Foundation ✅ |
 | 4 | F30 — Inline Form Validation | Medio | Basso | |
-| 5 | F17 — Category Sorting | Medio | Basso | |
 
-### 🥈 Priorità Media (V0.6–V0.7)
+### 🥈 Priorità Media (V0.6.6–V0.6.7)
 
 | Ordine | Feature | Impatto | Sforzo |
 |--------|---------|---------|--------|
-| 5 | F13 — Calendar Heatmap | Medio | Basso (dipende da F14 ✅) |
-| 6 | F23 — Ricerca Globale | Alto | Basso |
+| 5 | F35 — Beneficiario ed Etichette | Medio | Alto (migration) |
+| 6 | F36 — Trasferimenti tra Conti | Alto | Alto |
+
+### 🥉 Priorità Bassa (V0.7+)
+
+| Ordine | Feature | Impatto | Sforzo |
+|--------|---------|---------|--------|
 | 7 | F20 — Athena Foundation | Alto | Alto |
-
-### 🥉 Priorità Bassa (V0.8–V1.0)
-
-| Ordine | Feature | Impatto | Sforzo |
-|--------|---------|---------|--------|
-| 9 | F21 — Import CSV | Alto | Alto |
-| 10 | F22 — Scenari | Medio | Alto |
-| 11 | F24 — Refactor Grafico Categorie | Basso | Basso |
-| 12 | F28 — Error Feedback | Medio | Basso |
-| 13 | F29 / F31 — Layout Tablet | Basso | Alto |
+| 8 | F21 — Import CSV | Alto | Alto |
+| 9 | F22 — Scenari | Medio | Alto |
+| 10 | F24 — Refactor Grafico Categorie | Basso | Basso |
 
 ---
 
-## 9. Dipendenze grafico (semplificato)
-
-```
-V0.4.2 ✅
-  ├── V0.4.3 (F12) — nessuna dipendenza ✓
-  ├── V0.5 (F09–F11, F14–F16) ✅ COMPLETATO
-  │     ├── F09 ✅ → F10 ✅ → F11 ✅ → F14 ✅
-  │     ├── F15 ✅ (Archivio, riusa TimeFilter)
-  │     └── F16 ✅ (Dashboard, riusa TimeFilter)
-  ├── F13 (Heatmap) ← F14 + F11
-  ├── F19 (Ricorrenze) ← F14
-  ├── F20 (Athena) ← F16
-  ├── F21 (CSV) ← F09
-  └── F22 (Scenari) ← F20 + F11
-```
-
----
-
-## 10. Conflitti e duplicazioni individuati
+## 9. Conflitti e duplicazioni individuati
 
 | # | Descrizione | Risoluzione |
 |---|-------------|-------------|
-| C01 | F17 (Manual Sorting) vs F18 (Summary Ordering) — stessa UI categorie ma logica diversa | Tenere distinti. Manual sorting nella schermata gestione categorie. Summary ordering nella vista analisi. Documentare che non confliggono |
-| C02 | F12.1 (Ricerca Rapidi/Preferiti) vs F23 (Ricerca Globale) — motore di ricerca simile in contesti diversi | Condividere helper di ricerca/filtro. F23 è più generale (movimenti reali), F12 è su template. Non duplicare logica |
-| C03 | F15 (Archivio Filtrato) vs F16 (Dashboard Filtrata) — stesso TimeFilter, UI diversa | TimeFilter (F11) già condiviso. Le UI sono separate e indipendenti. Nessun vero conflitto |
-| C04 | V0.4.3 Calendar Heatmap menzionata sia come feature a sé stante sia come sotto-feature di V0.5 | Unificata in F13. È un'evoluzione visuale di V0.5 Calendario, non una feature parallela |
-| C05 | F28 (Error Feedback, POST-MVP) vs F30 (Inline Form Validation, APPROVATA) — stessa finalità ma priorità/ambito diversi | F30 ha priorità più alta e ambito specifico (solo form inline). Unificare: promuovere F30 a feature primaria, deprecare o assorbire F28 |
-| C06 | F29 (Layout Tablet Adattivo, POST-MVP) vs F31 (Adaptive / Tablet Layout, FUTURA) — feature identica | Unificare prima dell'implementazione. Tenere F29 come entry principale (POST-MVP). F31 è segnaposto per futura ri-prioritizzazione |
+| C01 | F17 vs F18 — stessa UI categorie ma logica diversa | Tenere distinti |
+| C02 | F12.1 (Ricerca Rapidi) vs F23 (Ricerca Globale) | Condividere helper di ricerca |
+| C03 | F15 vs F16 — stesso TimeFilter | TimeFilter già condiviso |
+| C04 | Calendar Heatmap come feature vs sotto-feature | Unificata in F13 |
+| C05 | F28 vs F30 — stessa finalità | F30 priorità più alta |
+| C06 | F29 vs F31 — feature identica tablet | Unificare prima dell'implementazione |
 
 ---
 
-## 11. Riferimenti
+## 10. Riferimenti
 
 - `docs/HERMES_ROADMAP.md` — cronologia versioni Hermes
 - `docs/NEXT_SESSION.md` — piano prossima sessione

@@ -55,7 +55,73 @@
 
 **File**: `lib/widgets/movement_card.dart`
 **Test**: `test/movement_card_test.dart` (14 widget test)
-**Versione**: Introdotto in V0.5.6+ (dopo Dashboard Filtrata)
+**Versione**: Introdotto in V0.5.6+
+
+### GroupedMovementsList Widget (V0.6.2)
+
+> Widget riusabile per visualizzare movimenti raggruppati per giorno.
+
+**File**: `lib/widgets/grouped_movements_list.dart`
+**Versione**: Introdotto in V0.6.2
+
+**API**:
+
+| Prop | Tipo | Default | Descrizione |
+|------|------|---------|-------------|
+| movements | List<Movement> | required | Movimenti da raggruppare e visualizzare |
+| db | AppDatabase | required | Database per risolvere categorie/conti |
+| showNotes | bool | false | Mostra note nei MovementCard |
+| scrollController | ScrollController? | null | Per DraggableScrollableSheet compatibilità |
+| onEdit | Function(Movement)? | null | Azione modifica movimento |
+| onDuplicate | Function(Movement)? | null | Azione duplica |
+| onSaveAsFavorite | Function(Movement)? | null | Salva come preferito |
+| onDelete | Function(Movement)? | null | Elimina movimento |
+
+**Comportamento**:
+- Chiama `groupMovementsByDay()` internamente
+- `ListView.builder` con DayHeader + MovementCard intercalati
+- MovementCard con `showDate: false` (data già nell'header)
+- Padding bottom 80px per spazio FAB
+
+**Utilizzo**: `MovementsScreen`, `_CategoryDetailSheet` (Dashboard)
+
+### Comparator Unico: compareMovementsForDisplay (V0.6.2)
+
+> Top-level function in `lib/models/movement.dart` che centralizza l'ordinamento display di tutti i movimenti.
+
+**Regola finale**:
+```
+updatedAt desc → createdAt desc → id asc
+categoryId, type, amount, title NON influenzano
+```
+
+**Sostituisce 3 implementazioni separate**:
+
+| File | Prima (V0.6.1) | Dopo (V0.6.2) |
+|------|----------------|----------------|
+| `daily_group.dart` (within-group) | `updatedAt desc → createdAt desc → id asc` | `compareMovementsForDisplay` |
+| `time_filter.dart` (filterByTime) | `date desc → createdAt desc` | `date desc → compareMovementsForDisplay` |
+| `database.dart` (lastMovements) | `date desc → createdAt desc` | `date desc → compareMovementsForDisplay` |
+
+**Metodo di istanza**: `Movement.compareForDisplay(other)` — delega alla top-level function.
+
+### Ordinamento Gruppi Giorno (V0.6.2 fix)
+
+- **Problema**: chiave `"2026-6-8" > "2026-6-12"` per confronto lessicografico (8 > 1 a parità di prefisso)
+- **Fix**: zero-padding con `padLeft(2, '0')` → `"2026-06-08" < "2026-06-12"`
+- **File**: `lib/models/daily_group.dart:35`
+
+### Dashboard insight-only (V0.6.2)
+
+- Rimosso `_FilteredMovementsList` dalla Dashboard
+- Resta solo: KPI periodici + Spese per categoria + dettaglio categoria bottom sheet (con `GroupedMovementsList`)
+- **Vincolo**: nessuna lista movimenti in Dashboard — V0.5.6 decision restored
+
+### DayHeader overflow fix (V0.6.2)
+
+- **Problema**: Row riepilogo (Entrate/Uscite/Saldo) overflowava in `DraggableScrollableSheet` stretto (iPhone)
+- **Fix**: `FittedBox(boxFit.scaleDown)` sul Row
+- **File**: `lib/widgets/day_header.dart:74`
 
 ### API
 
@@ -472,15 +538,10 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.1 | V0.2 | V0.3.2 | V0.3.3 | V0.4 | V0.4.1 | V0.4.2 | V0.5.4 | V0.5.5+refactor | V0.5.6 |
-|---------|------|------|--------|--------|------|--------|--------|--------|-----------------|--------|
-| Test | 50 | 65 | 166 | 193 | 193 | 235 | 235 | 299 | 326 | 363 |
-| Analyze issues | 0 | 0 | 1 warning | 0 | 0 | 0 | 0 | 2 pre-existing | 2 pre-existing | 0 |
-| Build APK debug | 13s | 5.8s | 8.1s | 5.7s | 5.5s | 5.5s | 5.5s | 5.5s | 5.5s | 5.5s |
-| Build APK release | — | — | — | — | — | — | — | — | — | **98.6s** (66.1MB) |
-| Build iOS debug | N/A | N/A | 12.3s | 10.2s | 12.8s | 12.8s | 12.8s | 20.7s | 20.7s | 44.1s |
-| Build iOS release | — | — | — | — | — | — | — | — | — | **44.1s** (32.7MB) |
-| APK size (debug) | N/A | N/A | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB |
-| APK size (release) | — | — | — | — | — | — | — | — | — | **66.1MB** |
-| IPA size (release) | — | — | — | — | — | — | — | — | — | **32.7MB** |
-| share_plus | — | — | — | — | — | — | — | — | — | ^12.0.2 |
+| Metrica | V0.1 | V0.2 | V0.3.2 | V0.3.3 | V0.4 | V0.4.1 | V0.4.2 | V0.5.4 | V0.5.5+refactor | V0.5.6 | V0.6.1 | V0.6.2 |
+|---------|------|------|--------|--------|------|--------|--------|--------|-----------------|--------|--------|--------|
+| Test | 50 | 65 | 166 | 193 | 193 | 235 | 235 | 299 | 326 | 363 | 447 | 457 |
+| Analyze issues | 0 | 0 | 1 warning | 0 | 0 | 0 | 0 | 2 pre-existing | 2 pre-existing | 0 | 0 | 0 |
+| Build APK release | — | — | — | — | — | — | — | — | — | 98.6s (66.1MB) | 24.0s (66.2MB) | 24.1s (66.2MB) |
+| Build iOS release | — | — | — | — | — | — | — | — | — | 44.1s (32.7MB) | 41.8s (32.6MB) | 22.9s (32.7MB) |
+| share_plus | — | — | — | — | — | — | — | — | — | ^12.0.2 | ^12.0.2 | ^12.0.2 |
