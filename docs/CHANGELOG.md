@@ -7,11 +7,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- V0.6.3 — Ricerca Globale Movimenti
-- V0.6.4 — UX Movimenti Rapidi/Preferiti Data Picker
-- V0.6.5 — Calendar Heatmap
-- V0.6.6 — Beneficiario ed Etichette
-- V0.6.7 — Trasferimenti tra Conti
+- V0.6.5 — Reset dati app
+- V0.6.6 — Trasferimenti tra Conti
+- V0.6.7 — Import CSV 1Money
+- V0.6.8 — Calendar Heatmap
+- V0.6.9 — Fondi / Obiettivi
+
+---
+
+## [0.6.4] - 2026-06-08
+
+### Added
+- Ricerca globale movimenti in `Archivio > Movimenti`
+  - ricerca case-insensitive e con trim
+  - match parziale su titolo, nota, nome categoria e nome conto
+  - combinabile con `TimeFilter` (giorno, mese, anno, periodo custom)
+  - risultati renderizzati con `GroupedMovementsList`
+- Movimenti rapidi / preferiti con scelta data rapida
+  - scelta immediata: `Oggi`, `Ieri`, `Domani`
+  - opzione `Scegli data` per aprire il date picker completo
+  - il movimento viene salvato con `Movement.date` valorizzata dalla scelta
+- `StreamDatePicker` riusato nel flusso data rapida / custom
+- `MovementPicker` e form manuale allineati al flusso rapido-preferiti
+
+### Fixed
+- Bottom sheet / date picker rapidi con `Key` stabili per i test widget
+- Test lazy list: `scrollUntilVisible` corretto con `Scrollable`, non con `ListView`
+- Label form movimento:
+  - Entrata / Uscita = `Conto`
+  - Trasferimento = `Conto origine`
+
+### QA
+- Test suite aggiornata: **492/492 pass**
+- `flutter analyze --no-pub`: PASS
+- `flutter build apk --release --no-pub`: PASS
+- `flutter build ios --release --no-codesign --no-pub`: da rilanciare localmente
+
+---
+
+## [0.6.3] - 2026-06-08
+
+### Added
+- Ricerca globale movimenti in-memory, senza modifiche a database/schema/model
+  - campi cercati: titolo, nota, categoria, conto
+  - ricerca parziale e case-insensitive
+  - combinazione con i filtri temporali già esistenti
+  - risultato finale raggruppato per giorno con `GroupedMovementsList`
+- UI Archivio aggiornata con barra di ricerca nella sezione Movimenti
+
+### QA
+- Test ricerca e regressioni: pass pass
+- `flutter analyze --no-pub`: PASS
 
 ---
 
