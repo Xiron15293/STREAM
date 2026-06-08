@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stream_app/main.dart';
 import 'package:stream_app/data/database.dart';
 import 'package:stream_app/models/movement.dart';
+import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/quick_movement.dart';
 import 'package:stream_app/models/favorite_movement.dart';
@@ -1374,6 +1375,49 @@ void main() {
     expect(db.movements.length, 1);
     expect(db.movements.first.title, 'Netflix');
     expect(db.movements.first.amount, 15.99);
+  });
+
+  testWidgets('64b. Movimento transfer manuale via UI', (tester) async {
+    final db = await pumpApp(tester);
+
+    await db.addAccount(
+      Account(
+        id: 'acc_risparmio',
+        name: 'Risparmio',
+        type: AccountType.bank,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    await openArchivePicker(tester);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Importo (€)'),
+      '25',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Trasferimento'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Categoria'), findsNothing);
+    expect(find.text('Conto origine'), findsOneWidget);
+    expect(find.text('Conto destinazione'), findsOneWidget);
+
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+    await tester.pumpAndSettle();
+
+    expect(db.movements.length, 1);
+    expect(db.movements.first.type, MovementType.transfer);
+    expect(db.movements.first.accountId, defaultAccountId);
+    expect(db.movements.first.destinationAccountId, 'acc_risparmio');
+    expect(
+      db.movements.first.title,
+      'Trasferimento: Principale → Risparmio',
+    );
+    expect(db.getAccountBalance(db.getAccount(defaultAccountId)), -25.0);
+    expect(db.getAccountBalance(db.getAccount('acc_risparmio')), 25.0);
   });
 
   testWidgets('65. Movimenti rapidi iniziali presenti', (tester) async {

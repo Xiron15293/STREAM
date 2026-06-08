@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
-import '../models/movement.dart';
 import '../models/category.dart';
+import '../models/movement.dart';
 import '../theme.dart';
 
 class MovementForm extends StatefulWidget {
@@ -22,6 +22,7 @@ class _MovementFormState extends State<MovementForm> {
   MovementType _type = MovementType.expense;
   String? _selectedCategoryId;
   String? _selectedAccountId;
+  String? _selectedDestinationAccountId;
   late DateTime _date;
 
   @override
@@ -29,14 +30,14 @@ class _MovementFormState extends State<MovementForm> {
     super.initState();
     final p = widget.prefill;
     _titleCtrl = TextEditingController(text: p?.title ?? '');
-    _amountCtrl =
-        TextEditingController(text: p != null ? p.amount.toString() : '');
+    _amountCtrl = TextEditingController(text: p != null ? p.amount.toString() : '');
     _noteCtrl = TextEditingController(text: p?.note ?? '');
     _date = p?.date ?? DateTime.now();
     if (p != null) {
       _type = p.type;
       _selectedCategoryId = p.categoryId;
       _selectedAccountId = p.accountId;
+      _selectedDestinationAccountId = p.destinationAccountId;
     }
   }
 
@@ -49,33 +50,78 @@ class _MovementFormState extends State<MovementForm> {
   }
 
   List<Category> get _availableCategories =>
-      widget.db.categories.where((c) => c.type == _type && !c.archived).toList();
+      _type == MovementType.transfer
+          ? const <Category>[]
+          : widget.db.categories.where((c) => c.type == _type && !c.archived).toList();
 
   void _submit() {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
-    if (title.isEmpty || amountText.isEmpty || _selectedCategoryId == null) return;
+    final isTransfer = _type == MovementType.transfer;
+
+    if (amountText.isEmpty || (!isTransfer && (title.isEmpty || _selectedCategoryId == null))) {
+      return;
+    }
 
     final amount = double.tryParse(amountText.replaceAll(',', '.'));
-    if (amount == null || amount <= 0) return;
+    if (amount == null || amount <= 0) {
+      return;
+    }
 
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
 
+    if (isTransfer) {
+      final origin = _selectedAccountId;
+      final destination = _selectedDestinationAccountId;
+      if (origin == null || destination == null || origin == destination) {
+        return;
+      }
+
+      if (widget.prefill != null) {
+        widget.db.updateMovement(
+          widget.prefill!.copyWith(
+            title: title.isEmpty ? widget.prefill!.title : title,
+            amount: amount,
+            type: _type,
+            date: _date,
+            categoryId: '',
+            accountId: origin,
+            destinationAccountId: destination,
+            note: note,
+            updatedAt: DateTime.now(),
+          ),
+        );
+      } else {
+        widget.db.createMovementFromTemplate(
+          title: title,
+          amount: amount,
+          type: _type,
+          date: _date,
+          categoryId: '',
+          accountId: origin,
+          destinationAccountId: destination,
+          note: note,
+        );
+      }
+      Navigator.of(context).pop();
+      return;
+    }
+
     if (widget.prefill != null) {
-      final updated = widget.prefill!.copyWith(
-        title: title,
-        amount: amount,
-        type: _type,
-        date: _date,
-        categoryId: _selectedCategoryId!,
-        accountId: _selectedAccountId,
-        note: note,
-        updatedAt: DateTime.now(),
+      widget.db.updateMovement(
+        widget.prefill!.copyWith(
+          title: title,
+          amount: amount,
+          type: _type,
+          date: _date,
+          categoryId: _selectedCategoryId!,
+          accountId: _selectedAccountId,
+          note: note,
+          updatedAt: DateTime.now(),
+        ),
       );
-      widget.db.updateMovement(updated);
     } else {
-      final movement = Movement(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+      widget.db.createMovementFromTemplate(
         title: title,
         amount: amount,
         type: _type,
@@ -83,9 +129,7 @@ class _MovementFormState extends State<MovementForm> {
         categoryId: _selectedCategoryId!,
         accountId: _selectedAccountId,
         note: note,
-        createdAt: DateTime.now(),
       );
-      widget.db.addMovement(movement);
     }
     Navigator.of(context).pop();
   }
@@ -100,8 +144,7 @@ class _MovementFormState extends State<MovementForm> {
     );
     if (picked != null) {
       setState(() {
-        _date = DateTime(picked.year, picked.month, picked.day,
-            _date.hour, _date.minute);
+        _date = DateTime(picked.year, picked.month, picked.day, _date.hour, _date.minute);
       });
     }
   }
@@ -112,13 +155,22 @@ class _MovementFormState extends State<MovementForm> {
 
   @override
   Widget build(BuildContext context) {
-    if (_selectedCategoryId == null && _availableCategories.isNotEmpty) {
+    final accountLabel = _type == MovementType.transfer ? 'Conto origine' : 'Conto';
+    if (_type != MovementType.transfer &&
+        _selectedCategoryId == null &&
+        _availableCategories.isNotEmpty) {
       _selectedCategoryId = _availableCategories.first.id;
     }
     if (_selectedAccountId == null) {
       final active = widget.db.accounts.where((a) => !a.archived).toList();
       if (active.isNotEmpty) {
         _selectedAccountId = active.first.id;
+      }
+    }
+    if (_type == MovementType.transfer && _selectedDestinationAccountId == null) {
+      final active = widget.db.accounts.where((a) => !a.archived).toList();
+      if (active.isNotEmpty) {
+        _selectedDestinationAccountId = active.length > 1 ? active[1].id : active.first.id;
       }
     }
 
@@ -138,7 +190,7 @@ class _MovementFormState extends State<MovementForm> {
             children: [
               Text(
                 widget.prefill != null ? 'Modifica movimento' : 'Nuovo movimento',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: StreamTypography.h3,
               ),
               IconButton(
                 icon: const Icon(Icons.close),
@@ -146,17 +198,21 @@ class _MovementFormState extends State<MovementForm> {
               ),
             ],
           ),
-          const SizedBox(height: StreamSpacing.lg),
+          const SizedBox(height: StreamSpacing.md),
           SegmentedButton<MovementType>(
             segments: const [
               ButtonSegment(value: MovementType.expense, label: Text('Uscita')),
               ButtonSegment(value: MovementType.income, label: Text('Entrata')),
+              ButtonSegment(value: MovementType.transfer, label: Text('Trasferimento')),
             ],
             selected: {_type},
             onSelectionChanged: (set) {
               setState(() {
                 _type = set.first;
                 _selectedCategoryId = null;
+                if (_type != MovementType.transfer) {
+                  _selectedDestinationAccountId = null;
+                }
               });
             },
           ),
@@ -183,64 +239,109 @@ class _MovementFormState extends State<MovementForm> {
             ),
           ),
           const SizedBox(height: StreamSpacing.md),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCategoryId,
-            decoration: const InputDecoration(
-              labelText: 'Categoria',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-                borderSide: BorderSide.none,
+          if (_type != MovementType.transfer) ...[
+            DropdownButtonFormField<String>(
+              initialValue: _selectedCategoryId,
+              decoration: const InputDecoration(
+                labelText: 'Categoria',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: StreamColors.surfaceElevated,
               ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
+              items: _availableCategories
+                  .map((c) => DropdownMenuItem(
+                        value: c.id,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Color(c.color),
+                                borderRadius: BorderRadius.circular(StreamRadius.sm),
+                              ),
+                              child: Icon(
+                                StreamIconLibrary.getIcon(c.iconKey),
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(c.name),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedCategoryId = v),
             ),
-            items: _availableCategories.map((c) => DropdownMenuItem(
-              value: c.id,
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Color(c.color),
-                      borderRadius: BorderRadius.circular(StreamRadius.sm),
+            const SizedBox(height: StreamSpacing.md),
+          ],
+        DropdownButtonFormField<String>(
+          initialValue: _selectedAccountId,
+          decoration: InputDecoration(
+            labelText: accountLabel,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: StreamColors.surfaceElevated,
+          ),
+          items: widget.db.accounts
+              .where((a) => !a.archived)
+              .map((a) => DropdownMenuItem(
+                    value: a.id,
+                    child: Row(
+                      children: [
+                        Icon(
+                          StreamIconLibrary.getAccountIcon(a.iconKey),
+                          size: 18,
+                          color: Color(a.color),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(a.name),
+                      ],
                     ),
-                    child: Icon(StreamIconLibrary.getIcon(c.iconKey), color: Colors.white, size: 12),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(c.name),
-                ],
+                  ))
+              .toList(),
+          onChanged: (v) => setState(() => _selectedAccountId = v),
+        ),
+          if (_type == MovementType.transfer) ...[
+            const SizedBox(height: StreamSpacing.md),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedDestinationAccountId,
+              decoration: const InputDecoration(
+                labelText: 'Conto destinazione',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: StreamColors.surfaceElevated,
               ),
-            )).toList(),
-            onChanged: (v) => setState(() => _selectedCategoryId = v),
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedAccountId,
-            decoration: const InputDecoration(
-              labelText: 'Conto',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
+              items: widget.db.accounts
+                  .where((a) => !a.archived)
+                  .map((a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Row(
+                          children: [
+                            Icon(
+                              StreamIconLibrary.getAccountIcon(a.iconKey),
+                              size: 18,
+                              color: Color(a.color),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(a.name),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedDestinationAccountId = v),
             ),
-            items: widget.db.accounts
-                .where((a) => !a.archived)
-                .map((a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Row(
-                        children: [
-                          Icon(StreamIconLibrary.getAccountIcon(a.iconKey), size: 18, color: Color(a.color)),
-                          const SizedBox(width: 8),
-                          Text(a.name),
-                        ],
-                      ),
-                    ))
-                .toList(),
-            onChanged: (v) => setState(() => _selectedAccountId = v),
-          ),
+          ],
           const SizedBox(height: StreamSpacing.md),
           TextField(
             controller: _noteCtrl,
