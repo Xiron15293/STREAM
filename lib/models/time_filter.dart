@@ -154,7 +154,7 @@ extension MovementFilter on List<Movement> {
     filtered.sort((a, b) {
       final dateCmp = b.date.compareTo(a.date);
       if (dateCmp != 0) return dateCmp;
-      return b.createdAt.compareTo(a.createdAt);
+      return compareMovementsForDisplay(a, b);
     });
     return filtered;
   }

@@ -186,7 +186,7 @@ void main() {
         expect(groups[0].movements[1].id, 'b_expense');
       });
 
-      test('14. Ordered by updatedAt desc, not createdAt', () {
+      test('14. Ordered by updatedAt desc, not createdAt/categoryId', () {
         final base = d(2026, 6, 7);
         // A: created 08:00, updated 09:50
         // B: created 09:20, never updated (updatedAt = createdAt)
@@ -228,7 +228,7 @@ void main() {
         expect(groups[0].movements[2].id, 'x');
       });
 
-      test('16. Type does NOT influence order — only updatedAt desc', () {
+      test('16. Type/categoryId do NOT influence order', () {
         final base = d(2026, 6, 7);
         final t1 = base.add(const Duration(hours: 8));
         final t2 = base.add(const Duration(hours: 9));
@@ -248,6 +248,47 @@ void main() {
         expect(groups[0].movements[0].type, MovementType.expense);
         expect(groups[0].movements[1].type, MovementType.income);
         expect(groups[0].movements[2].type, MovementType.expense);
+      });
+
+      test('17. categoryId does NOT influence order (same updatedAt, different categories)', () {
+        final base = d(2026, 6, 7);
+        final t1 = base.add(const Duration(hours: 8));
+        final t2 = base.add(const Duration(hours: 9));
+        final t3 = base.add(const Duration(hours: 10));
+        // D: different category, same date, updatedAt same as A but A created later
+        final movements = [
+          Movement(id: 'A', title: 'CatExp', amount: 10, type: MovementType.expense,
+              date: base, categoryId: 'cat_a', createdAt: t3),
+          Movement(id: 'B', title: 'CatInc', amount: 20, type: MovementType.income,
+              date: base, categoryId: 'cat_b', createdAt: t2),
+          Movement(id: 'C', title: 'CatExp2', amount: 30, type: MovementType.expense,
+              date: base, categoryId: 'cat_a', createdAt: t1),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].movements.length, 3);
+        // Order by createdAt desc (no updatedAt set): A (10:00) → B (09:00) → C (08:00)
+        expect(groups[0].movements[0].id, 'A');
+        expect(groups[0].movements[1].id, 'B');
+        expect(groups[0].movements[2].id, 'C');
+        // Categories are mixed: cat_a, cat_b, cat_a
+        expect(groups[0].movements[0].categoryId, 'cat_a');
+        expect(groups[0].movements[1].categoryId, 'cat_b');
+        expect(groups[0].movements[2].categoryId, 'cat_a');
+      });
+
+      test('18. compareMovementsForDisplay works directly', () {
+        final base = d(2026, 6, 7);
+        final t8 = base.add(const Duration(hours: 8));
+        final t9 = base.add(const Duration(hours: 9));
+        final a = makeMov(amount: 10, type: MovementType.expense, date: base, id: 'a', createdAt: t8);
+        final b = makeMov(amount: 20, type: MovementType.income, date: base, id: 'b', createdAt: t9, updatedAt: t9);
+        // a: updatedAt=08:00, b: updatedAt=09:00 → b before a
+        expect(compareMovementsForDisplay(a, b) > 0, true);
+        expect(compareMovementsForDisplay(b, a) < 0, true);
+        // same movement → 0
+        expect(compareMovementsForDisplay(a, a), 0);
+        // a and b have different categoryId, type, amount, title → no effect
+        expect(compareMovementsForDisplay(a, b), -compareMovementsForDisplay(b, a));
       });
     });
   });

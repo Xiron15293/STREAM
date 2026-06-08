@@ -133,7 +133,7 @@ class AppDatabase extends ChangeNotifier {
       ..sort((a, b) {
         final dateCmp = b.date.compareTo(a.date);
         if (dateCmp != 0) return dateCmp;
-        return b.createdAt.compareTo(a.createdAt);
+        return compareMovementsForDisplay(a, b);
       });
     return sorted.take(5).toList();
   }

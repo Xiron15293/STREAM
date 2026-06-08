@@ -291,7 +291,7 @@ void main() {
       expect(filtered.map((m) => m.id), containsAll(['a', 'd']));
     });
 
-    test('ordinamento: date DESC, createdAt DESC', () {
+    test('ordinamento: date DESC, within-day updatedAt DESC', () {
       final movements = [
         Movement(id: 'a', title: 'Giorno 1 tardi', amount: 10, type: MovementType.expense,
             date: DateTime(2026, 6, 15), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 15, 18)),
@@ -305,6 +305,7 @@ void main() {
       );
       expect(filtered.length, 3);
       expect(filtered[0].id, 'c');
+      // Same date: updatedAt = createdAt default → createdAt desc
       expect(filtered[1].id, 'a');
       expect(filtered[2].id, 'b');
     });

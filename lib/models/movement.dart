@@ -27,6 +27,10 @@ class Movement {
   })  : accountId = accountId ?? defaultAccountId,
         updatedAt = updatedAt ?? createdAt;
 
+  /// Orders by updatedAt desc → createdAt desc → id asc.
+  /// categoryId, type, amount, title do NOT affect order.
+  int compareForDisplay(Movement other) => compareMovementsForDisplay(this, other);
+
   Movement copyWith({
     String? id,
     String? title,
@@ -52,4 +56,15 @@ class Movement {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+}
+
+/// Shared comparator for all Movement display lists.
+/// Orders by updatedAt desc → createdAt desc → id asc.
+/// categoryId, type, amount, title do NOT affect order.
+int compareMovementsForDisplay(Movement a, Movement b) {
+  final updatedCmp = b.updatedAt.compareTo(a.updatedAt);
+  if (updatedCmp != 0) return updatedCmp;
+  final createdCmp = b.createdAt.compareTo(a.createdAt);
+  if (createdCmp != 0) return createdCmp;
+  return a.id.compareTo(b.id);
 }

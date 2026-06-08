@@ -43,13 +43,7 @@ List<DailyMovementGroup> groupMovementsByDay(List<Movement> movements) {
     final parts = key.split('-');
     final date = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
     final dayMovements = map[key]!;
-    dayMovements.sort((a, b) {
-      final cmp = b.updatedAt.compareTo(a.updatedAt);
-      if (cmp != 0) return cmp;
-      final createdCmp = b.createdAt.compareTo(a.createdAt);
-      if (createdCmp != 0) return createdCmp;
-      return a.id.compareTo(b.id);
-    });
+    dayMovements.sort(compareMovementsForDisplay);
     result.add(DailyMovementGroup(date: date, movements: dayMovements));
   }
   return result;
