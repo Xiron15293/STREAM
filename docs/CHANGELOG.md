@@ -7,11 +7,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- V0.6.2 — Ricerca Globale Movimenti
-- V0.6.3 — UX Movimenti Rapidi/Preferiti Data Picker
-- V0.6.4 — Calendar Heatmap
-- V0.6.5 — Beneficiario ed Etichette
-- V0.6.6 — Trasferimenti tra Conti
+- V0.6.3 — Ricerca Globale Movimenti
+- V0.6.4 — UX Movimenti Rapidi/Preferiti Data Picker
+- V0.6.5 — Calendar Heatmap
+- V0.6.6 — Beneficiario ed Etichette
+- V0.6.7 — Trasferimenti tra Conti
+
+---
+
+## [0.6.2] - 2026-06-08
+
+### Added
+- `compareMovementsForDisplay(a, b)` — comparator unico centralizzato per tutte le liste movimenti
+  - Ordine: `updatedAt desc → createdAt desc → id asc`
+  - `categoryId`, `type`, `amount`, `title` NON influenzano l'ordine
+  - Usato da: `groupMovementsByDay`, `filterByTime`, `lastMovements`
+- `GroupedMovementsList` widget riusabile con scrollController opzionale per `DraggableScrollableSheet`
+- `Movement.compareForDisplay()` — instance method per comodità
+
+### Changed
+- **Sort dentro gruppi giorno**: `createdAt desc` → `updatedAt desc`. Un movimento modificato dopo ora appare sopra.
+- **Chiave raggruppamento giorno**: zero-padded (`"2026-06-08"` invece di `"2026-6-8"`). Fix: gruppi con date 8, 12, 24 ora ordinati 24 → 12 → 8, non più 8 → 12 → 24.
+- **Dashboard**: rimosso `_FilteredMovementsList` — resta insight-only (KPI + spese per categoria)
+- **`_CategoryDetailSheet`**: ora usa `GroupedMovementsList` per lista movimenti raggruppata
+- `MovementsScreen._buildMovementsList`: usa `GroupedMovementsList`
+- `filterByTime` e `lastMovements`: tiebreaker `createdAt` → `compareMovementsForDisplay`
+- `DayHeader` summary Row avvolto in `FittedBox(boxFit.scaleDown)` per evitare overflow in narrow bottom sheet
+
+### Fixed
+- **CRITICAL** — Ordinamento gruppi giorno per data con string key non zero-padded: `"2026-6-8" > "2026-6-12"` per confronto lessicografico. Fix: `padLeft(2, '0')` su mese e giorno.
+- **HIGH** — Ordinamento dentro gruppi giorno usava `createdAt` invece di `updatedAt`. Un movimento modificato dopo restava sotto anche se più recente.
+- **HIGH** — 3 implementazioni separate di sort Movement: `daily_group.dart` (corretta), `time_filter.dart` (createdAt), `database.dart` (createdAt). Unificate in `compareMovementsForDisplay`.
+- DayHeader Row overflow in `DraggableScrollableSheet` ristretto (iPhone)
+
+### QA
+- 457 test pass (+10 da V0.6.1: +3 updatedAt sort, +2 categoryId ignored, +1 comparator direct, +2 mixed digit dates, +1 future dates, +1 widget UI order)
+- flutter analyze: 0 issues
+- Android release build PASS (66.2MB)
+- iOS release build PASS (32.7MB)
 
 ---
 

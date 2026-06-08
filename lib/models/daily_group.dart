@@ -32,7 +32,7 @@ List<DailyMovementGroup> groupMovementsByDay(List<Movement> movements) {
   final map = <String, List<Movement>>{};
   for (final m in movements) {
     final d = DateTime(m.date.year, m.date.month, m.date.day);
-    final key = '${d.year}-${d.month}-${d.day}';
+    final key = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
     map.putIfAbsent(key, () => []).add(m);
   }
 

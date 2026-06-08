@@ -290,6 +290,37 @@ void main() {
         // a and b have different categoryId, type, amount, title → no effect
         expect(compareMovementsForDisplay(a, b), -compareMovementsForDisplay(b, a));
       });
+
+      test('19. Mixed digit dates ordered correctly (e.g. 24, 12, 8, not 8, 12, 24)', () {
+        final d8 = d(2026, 6, 8);
+        final d12 = d(2026, 6, 12);
+        final d24 = d(2026, 6, 24);
+        final movements = [
+          makeMov(amount: 10, type: MovementType.expense, date: d8, id: 'm_8'),
+          makeMov(amount: 20, type: MovementType.income, date: d12, id: 'm_12'),
+          makeMov(amount: 30, type: MovementType.expense, date: d24, id: 'm_24'),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups.length, 3);
+        expect(groups[0].date.day, 24);
+        expect(groups[1].date.day, 12);
+        expect(groups[2].date.day, 8);
+      });
+
+      test('20. Future dates appear above today in group order', () {
+        final today = d(2026, 6, 8);
+        final future = d(2026, 6, 24);
+        final past = d(2026, 6, 1);
+        final movements = [
+          makeMov(amount: 10, type: MovementType.expense, date: past, id: 'past'),
+          makeMov(amount: 20, type: MovementType.income, date: today, id: 'today'),
+          makeMov(amount: 30, type: MovementType.expense, date: future, id: 'future'),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].date.day, 24);
+        expect(groups[1].date.day, 8);
+        expect(groups[2].date.day, 1);
+      });
     });
   });
 }

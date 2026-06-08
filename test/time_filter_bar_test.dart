@@ -342,5 +342,49 @@ void main() {
       );
     });
 
+    testWidgets('day groups ordered by date desc in real UI (24 before 12)',
+        (WidgetTester tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      final y = now.year;
+      final m = now.month;
+
+      db.addMovement(Movement(
+        id: 'mov_8', title: 'Mov8', amount: 10,
+        type: MovementType.expense, date: DateTime(y, m, 8),
+        categoryId: 'exp_1', createdAt: DateTime(y, m, 8),
+      ));
+      db.addMovement(Movement(
+        id: 'mov_12', title: 'Mov12', amount: 20,
+        type: MovementType.income, date: DateTime(y, m, 12),
+        categoryId: 'exp_1', createdAt: DateTime(y, m, 12),
+      ));
+      db.addMovement(Movement(
+        id: 'mov_24', title: 'Mov24', amount: 30,
+        type: MovementType.expense, date: DateTime(y, m, 24),
+        categoryId: 'exp_1', createdAt: DateTime(y, m, 24),
+      ));
+
+      await tester.pumpWidget(StreamApp(db: db));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Archivio'));
+      await tester.pumpAndSettle();
+
+      // DayHeader renders: _dayNumber = zero-padded day (08, 12, 24)
+      // First two DayHeaders (24, 12) should be visible initially
+      final pos24 = tester.getTopLeft(find.text('24'));
+      final pos12 = tester.getTopLeft(find.text('12'));
+      expect(pos24.dy, lessThan(pos12.dy),
+          reason: 'DayHeader 24 must appear above 12');
+
+      // Scroll down and verify DayHeader 08 exists
+      await tester.scrollUntilVisible(
+        find.text('08'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('08'), findsOneWidget);
+    });
   });
 }
