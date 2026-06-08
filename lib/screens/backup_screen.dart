@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart' show getDatabasesPath;
 import '../data/database.dart';
 import '../data/preferences_service.dart';
@@ -91,7 +92,16 @@ class _BackupScreenState extends State<BackupScreen> {
           _exporting = false;
         });
         _loadBackupFiles();
-        _showSnackBar('Backup creato con successo');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Backup creato. Puoi esportarlo o conservarlo sul dispositivo.'),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Condividi',
+              onPressed: () => _shareFile(file.path),
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -118,6 +128,19 @@ class _BackupScreenState extends State<BackupScreen> {
 
   Future<void> deleteFile(String path) async {
     await File(path).delete();
+  }
+
+  Future<void> _shareFile(String path) async {
+    try {
+      final file = XFile(path);
+      await SharePlus.instance.share(
+        ShareParams(files: [file], subject: 'Backup STREAM'),
+      );
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Errore durante la condivisione: $e');
+      }
+    }
   }
 
   Future<void> _importFromFile(String filePath) async {
@@ -353,24 +376,29 @@ class _BackupScreenState extends State<BackupScreen> {
                           return ListTile(
                             dense: true,
                             title: Text(filename, style: StreamTypography.body),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.restore, size: 20),
-                                  tooltip: 'Ripristina',
-                                  onPressed: () => _importFromFile(path),
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete_outline, size: 20, color: StreamColors.expense),
-                                  tooltip: 'Elimina',
-                                  onPressed: () async {
-                                    await deleteFile(path);
-                                    _loadBackupFiles();
-                                  },
-                                ),
-                              ],
-                            ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.share, size: 20),
+                                    tooltip: 'Condividi',
+                                    onPressed: () => _shareFile(path),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.restore, size: 20),
+                                    tooltip: 'Ripristina',
+                                    onPressed: () => _importFromFile(path),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete_outline, size: 20, color: StreamColors.expense),
+                                    tooltip: 'Elimina',
+                                    onPressed: () async {
+                                      await deleteFile(path);
+                                      _loadBackupFiles();
+                                    },
+                                  ),
+                                ],
+                              ),
                           );
                         }),
                       ],
