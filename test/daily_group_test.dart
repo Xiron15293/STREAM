@@ -13,7 +13,10 @@ void main() {
       required MovementType type,
       required DateTime date,
       String id = 'm1',
+      DateTime? createdAt,
+      DateTime? updatedAt,
     }) {
+      final c = createdAt ?? date;
       return Movement(
         id: id,
         title: 'Test',
@@ -21,7 +24,8 @@ void main() {
         type: type,
         date: date,
         categoryId: 'cat1',
-        createdAt: date,
+        createdAt: c,
+        updatedAt: updatedAt ?? c,
       );
     }
 
@@ -143,6 +147,107 @@ void main() {
         expect(groups[0].totalIncome, 100);
         expect(groups[0].totalExpenses, 60);
         expect(groups[0].balance, 40);
+      });
+
+      test('12. Type does NOT influence order — only createdAt desc', () {
+        final base = d(2026, 6, 7);
+        // createdAt: t1=08:00 expense, t2=09:00 income, t3=10:00 expense
+        final t1 = base.add(const Duration(hours: 8));
+        final t2 = base.add(const Duration(hours: 9));
+        final t3 = base.add(const Duration(hours: 10));
+        final movements = [
+          makeMov(amount: 45, type: MovementType.expense, date: base, id: 'spesa', createdAt: t1),
+          makeMov(amount: 1300, type: MovementType.income, date: base, id: 'stipendio', createdAt: t2),
+          makeMov(amount: 30, type: MovementType.expense, date: base, id: 'benzina', createdAt: t3),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].movements.length, 3);
+        // Most recent createdAt first
+        expect(groups[0].movements[0].id, 'benzina');
+        expect(groups[0].movements[1].id, 'stipendio');
+        expect(groups[0].movements[2].id, 'spesa');
+        // Types are mixed: expense, income, expense
+        expect(groups[0].movements[0].type, MovementType.expense);
+        expect(groups[0].movements[1].type, MovementType.income);
+        expect(groups[0].movements[2].type, MovementType.expense);
+      });
+
+      test('13. Same createdAt falls back to id order (stable)', () {
+        final base = d(2026, 6, 7);
+        final sameTime = base.add(const Duration(hours: 12));
+        final movements = [
+          makeMov(amount: 10, type: MovementType.expense, date: base, id: 'b_expense', createdAt: sameTime),
+          makeMov(amount: 20, type: MovementType.income, date: base, id: 'a_income', createdAt: sameTime),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].movements.length, 2);
+        // Same createdAt: sorted by id ascending
+        expect(groups[0].movements[0].id, 'a_income');
+        expect(groups[0].movements[1].id, 'b_expense');
+      });
+
+      test('14. Ordered by updatedAt desc, not createdAt', () {
+        final base = d(2026, 6, 7);
+        // A: created 08:00, updated 09:50
+        // B: created 09:20, never updated (updatedAt = createdAt)
+        // C: created 08:40, updated 10:30
+        final t8 = base.add(const Duration(hours: 8));
+        final t840 = base.add(const Duration(hours: 8, minutes: 40));
+        final t920 = base.add(const Duration(hours: 9, minutes: 20));
+        final t950 = base.add(const Duration(hours: 9, minutes: 50));
+        final t1030 = base.add(const Duration(hours: 10, minutes: 30));
+        final movements = [
+          makeMov(amount: 10, type: MovementType.expense, date: base, id: 'A', createdAt: t8, updatedAt: t950),
+          makeMov(amount: 20, type: MovementType.income, date: base, id: 'B', createdAt: t920),
+          makeMov(amount: 30, type: MovementType.expense, date: base, id: 'C', createdAt: t840, updatedAt: t1030),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].movements.length, 3);
+        // updatedAt desc: C (10:30) → A (09:50) → B (09:20 = createdAt)
+        expect(groups[0].movements[0].id, 'C');
+        expect(groups[0].movements[1].id, 'A');
+        expect(groups[0].movements[2].id, 'B');
+      });
+
+      test('15. updatedAt with same timestamp falls back to createdAt, then id', () {
+        final base = d(2026, 6, 7);
+        final sameTime = base.add(const Duration(hours: 12));
+        // X: updatedAt same as Y, but createdAt earlier → Y comes first
+        // Z: same updatedAt and createdAt as Y, but id 'z' > 'y' → Y before Z
+        final movements = [
+          makeMov(amount: 10, type: MovementType.expense, date: base, id: 'x', createdAt: base, updatedAt: sameTime),
+          makeMov(amount: 20, type: MovementType.income, date: base, id: 'y', createdAt: sameTime, updatedAt: sameTime),
+          makeMov(amount: 30, type: MovementType.expense, date: base, id: 'z', createdAt: sameTime, updatedAt: sameTime),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].movements.length, 3);
+        // same updatedAt → createdAt desc: y,z (sameTime) → x (base)
+        // y and z have same updatedAt and createdAt → id asc: y before z
+        expect(groups[0].movements[0].id, 'y');
+        expect(groups[0].movements[1].id, 'z');
+        expect(groups[0].movements[2].id, 'x');
+      });
+
+      test('16. Type does NOT influence order — only updatedAt desc', () {
+        final base = d(2026, 6, 7);
+        final t1 = base.add(const Duration(hours: 8));
+        final t2 = base.add(const Duration(hours: 9));
+        final t3 = base.add(const Duration(hours: 10));
+        final movements = [
+          makeMov(amount: 45, type: MovementType.expense, date: base, id: 'spesa', createdAt: t1),
+          makeMov(amount: 1300, type: MovementType.income, date: base, id: 'stipendio', createdAt: t2),
+          makeMov(amount: 30, type: MovementType.expense, date: base, id: 'benzina', createdAt: t3),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].movements.length, 3);
+        // No updatedAt set → fallback createdAt desc
+        expect(groups[0].movements[0].id, 'benzina');  // 10:00
+        expect(groups[0].movements[1].id, 'stipendio'); // 09:00
+        expect(groups[0].movements[2].id, 'spesa');     // 08:00
+        // Types are mixed
+        expect(groups[0].movements[0].type, MovementType.expense);
+        expect(groups[0].movements[1].type, MovementType.income);
+        expect(groups[0].movements[2].type, MovementType.expense);
       });
     });
   });
