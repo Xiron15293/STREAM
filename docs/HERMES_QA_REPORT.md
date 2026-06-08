@@ -106,8 +106,8 @@ COMPLETATO
 - [x] `Calendario` dentro `Archivio`
 - [x] `flutter analyze` ok
 - [x] `flutter test` ok
-- [ ] `flutter build apk --release` bloccato da errore `file_picker` nel registrant Android
-- [ ] `flutter build ios --release` bloccato da cache/permessi SwiftPM e CoreSimulator
+- [x] `flutter build apk --release` **PASS** (66.1MB) — fix KGP per `file_picker` in `android/build.gradle.kts`
+- [x] `flutter build ios --release --no-codesign` **PASS** (32.7MB)
 
 ## Decisioni architetturali registrate
 
@@ -121,10 +121,10 @@ COMPLETATO
 ## Esito build
 
 ```
-flutter analyze  → No issues found
-flutter test     → All tests passed
-flutter build apk --release → FAIL (file_picker / GeneratedPluginRegistrant)
-flutter build ios --release → FAIL (SwiftPM cache/permissions + CoreSimulator)
+flutter analyze               → No issues found
+flutter test                   → 363/363 All tests passed
+flutter build apk --release    → PASS (66.1MB)
+flutter build ios --release    → PASS (32.7MB, --no-codesign)
 ```
 
 ## 10. Tabella dei 50 test

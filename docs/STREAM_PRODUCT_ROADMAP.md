@@ -27,7 +27,7 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 8 | Hermes V0.8 — Import CSV | 💡 IDEA | TBD | Import da banche, export dati |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |
 | 10 | Hermes V1.0 — Prima Beta STREAM | ⏳ POST-MVP | TBD | Distribuzione pubblica beta |
-| 11 | Hermes V1.1 — Backup Locale | ⏳ POST-MVP | TBD | Export/import SQLite, restore |
+| 11 | Hermes V1.1 — Backup Locale | ✅ COMPLETATO | V0.5.6 | Export/import JSON, restore transazionale, share sheet nativo |
 | 12 | Hermes V1.2 — Cloud Sync | ⏳ POST-MVP | TBD | Backup premium, multi-dispositivo |
 | — | Inline Form Validation (F30) | 📋 APPROVATA | V0.4.x | Errori inline nei form invece di SnackBar |
 | — | UI Inspiration Review (F32) | 🔄 IN VALUTAZIONE | Pre-refactor | Revisione pattern esterni UI |
@@ -82,6 +82,6 @@ Opzioni ordinamento analisi categorie: Ordine manuale, Nome A-Z, Nome Z-A, Spesa
 
 ## Backlog completo
 
-Tutte le feature (32 totali) sono censite in:
+Tutte le feature (33 totali) sono censite in:
 📋 **`docs/STREAM_FEATURE_BACKLOG.md`**
 Include: 3 approvate, 6 in valutazione, 7 future, 5 post-MVP, 9 escluse con motivazione.

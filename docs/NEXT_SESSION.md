@@ -1,6 +1,6 @@
-# NEXT SESSION — After Dashboard Filtrata
+# NEXT SESSION — V0.5.6 Completato
 
-> Stato attuale: Dashboard filtrata, Backup/Restore in Impostazioni e refactor UI già allineati al codice reale.
+> Stato attuale: V0.5.6 completato. Build release native sbloccate. Backup esportabile via share sheet.
 
 ## COMPLETATO
 
@@ -12,50 +12,26 @@
 - `MovementCard` condivisa per le schermate operative
 - Fix `heroTag` FAB mantenuto
 - Backup/Restore spostato in `Impostazioni`
+- **Build release Android**: fix KGP per `file_picker` in `android/build.gradle.kts`
+- **Backup esportabile**: share sheet nativo via `share_plus` (post-export + lista backup)
+- **Build pipeline**: tutti e 4 i comandi PASS (`analyze`, `test`, `apk --release`, `ios --release`)
 
-## IN CORSO
-
-- Nessuna feature di prodotto aperta in questo file
-
-## FUTURO
-
-- Risolvere i blocchi delle build release native prima di riprendere nuove feature
-- Poi riprendere la roadmap V0.6, senza riaprire la Dashboard come lista movimenti
-
-## Ultimo stato verificato
+## STATO PIATTAFORMA
 
 | Metrica | Valore |
 |---------|--------|
 | Test totali | **363/363 pass** |
-| flutter analyze | **0 issue nuovi** |
-| `flutter build apk --release` | **FAIL**: errore plugin `file_picker` nel registrant Android |
-| `flutter build ios --release` | **FAIL**: risoluzione SPM/Xcode bloccata da cache/permessi e CoreSimulator |
+| flutter analyze | **0 issues** |
+| `flutter build apk --release` | **PASS** (66.1MB) |
+| `flutter build ios --release --no-codesign` | **PASS** (32.7MB) |
+| share_plus | `^12.0.2` aggiunto |
 
-## Componenti riutilizzati
+## PROSSIMO STEP REALE
 
-- `TimeFilter`
-- `TimeFilterBar`
-- `filterByTime()`
+Build release native sbloccate. Si può riprendere la roadmap feature V0.6+.
 
-## Dashboard filtrata
-
-**Filtrati**:
-- Entrate periodo
-- Spese periodo
-- Saldo periodo
-- Numero movimenti periodo
-- Spese per categoria nel periodo
-
-**Non filtrati**:
-- Patrimonio totale
-- Saldi conti
-- Fondi/situazione conti attuale
-
-## Prossimo step reale
-
-Sbloccare le build release native:
-
-1. sistemare il registrant Android di `file_picker`
-2. sistemare la cache/permessi SwiftPM e CoreSimulator per iOS
-
-Solo dopo ha senso riprendere la prossima feature di prodotto.
+Priorità candidate:
+1. **F12** — Quick/Favorite Movement Library UX (Ricerca, filtri, salva da Manuale)
+2. **F23** — Ricerca Globale Movimenti
+3. **F13** — Calendar Heatmap / Category Heatmap
+4. **F30** — Inline Form Validation

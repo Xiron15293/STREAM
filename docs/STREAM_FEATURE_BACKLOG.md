@@ -34,6 +34,13 @@
 | F09 | Movement Date — data movimento, SQLite V6 | V0.5.1 | 2026-06-06 |
 | F10 | StreamDatePicker — wrapper adattivo | V0.5.2 | 2026-06-06 |
 | F11 | TimeFilter Foundation — modello, enum, test | V0.5.3 | 2026-06-06 |
+| F14 | Calendario Tab — vista mensile | V0.5.4 | 2026-06-07 |
+| F15 | Archivio Filtrato per Data | V0.5.5 | 2026-06-07 |
+| F16 | Dashboard Filtrata per Periodo | V0.5.6 | 2026-06-07 |
+| — | MovementCard unico (refactor architetturale) | V0.5.6 | 2026-06-07 |
+| — | Backup & Restore in Impostazioni | V0.5.6 | 2026-06-08 |
+| — | Build release Android fix (file_picker + KGP) | V0.5.6 | 2026-06-08 |
+| — | Backup export condivisibile (share sheet) | V0.5.6 | 2026-06-08 |
 
 ---
 
@@ -334,24 +341,27 @@
 
 ---
 
-### F26 — V1.1 Backup Locale
+### F26 — Backup Locale
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Export completo SQLite + SharedPreferences. Import/restore da file. Backup automatico periodico. Condivisione DB tramite sistema (file export) |
-| **Motivazione** | L'utente deve poter salvare i dati prima di disinstallare o cambiare dispositivo. Oggi uninstall = perdita totale e irreversibile. Nessun export/backup implementato |
-| **Priorità** | Media (da riconsiderare come **Alta** prima di Beta pubblica con >10 utenti) |
+| **Descrizione** | Export/import completo JSON (accounts, categories, movements, quickMovements, favoriteMovements, settings). Restore transazionale con rollback SQLite. Share sheet nativo per esportazione file |
+| **Motivazione** | L'utente può salvare e ripristinare i dati su/dispositivo o copiarli fuori dall'app |
+| **Priorità** | Alta |
 | **Dipendenze** | F09 (date) |
-| **Versione candidata minima** | V0.9 (prima della Beta pubblica) |
-| **Stato** | ⏳ POST-MVP (da anticipare a PRE-BETA) |
+| **Versione** | V0.5.6 |
+| **Stato** | ✅ COMPLETATO (V0.5.6) |
 
-**Dettaglio tecnico** (da analisi Data Persistence):
-- `stream.db` → copia file SQLite (5 tabelle)
-- SharedPreferences → singola key `show_notes`
-- Export via `share` package o file system
-- Import tramite file picker + replace DB + reload
-- Nessuna criticità privacy (dati solo locali, nessun PII sensibile)
-- Backup automatico: timer o all'avvio con data nel filename
+**Dettaglio tecnico**:
+- File: `lib/services/backup_service.dart`, `lib/models/backup_data.dart`, `lib/screens/backup_screen.dart`
+- `BackupService.exportToJson()` → JSON con tutte le entità
+- Salvataggio interno: `getDatabasesPath()/backups/backup_YYYY_MM_DD_HH_mm.json`
+- Condivisione via `share_plus ^12.0.2` — SnackBar con "Condividi" + icona share in lista backup
+- Restore transazionale: `sqlite.transaction()` → DELETE + INSERT
+- Pre-restore backup automatico prima del restore
+- Import via `FilePicker.pickFiles(allowedExtensions: ['json'])`
+- Validazione: JSON, version (1–1), campi obbligatori
+- Orfani account/categoryId gestiti con fallback a default
 
 ---
 
@@ -417,11 +427,11 @@
 | Metrica | Valore |
 |---------|--------|
 | **Totale feature censite** | 32 |
-| **Feature completate** | 14 (F01–F11, F14–F16) |
+| **Feature completate** | 15+ (F01–F11, F14–F16, F26; + MovementCard, Backup & Restore, Build fix, Share sheet) |
 | **Feature approvate** | 3 (F12–F13, F30) |
 | **Feature in valutazione** | 3 (F17–F18, F32) |
-| **Feature future** | 7 (F19–F24, F31) |
-| **Feature post-MVP** | 5 (F25–F27 restano, F28–F29) |
+| **Feature future** | 6 (F19–F24 restano) |
+| **Feature post-MVP** | 4 (F25, F27–F29) |
 | **Feature escluse** | 9 (E01–E09) |
 | **Refactor architetturale** | 1 (MovementCard unico ✅, non è feature ma prepara F12, F13, F21, F23) |
 
@@ -441,7 +451,7 @@ Il refactor MovementCard (`lib/widgets/movement_card.dart`) ha eliminato 4 class
 | F21 — Import CSV Preview | Preview movimenti importati |
 | F23 — Ricerca Globale | Risultati ricerca come card |
 
-### 🥇 Priorità Alta (V0.5.6 UX Booster — prossima sessione)
+### 🥇 Priorità Alta (prossima sessione — V0.6+)
 
 | Ordine | Feature | Impatto | Sforzo | Note |
 |--------|---------|---------|--------|------|
@@ -456,11 +466,8 @@ Il refactor MovementCard (`lib/widgets/movement_card.dart`) ha eliminato 4 class
 | Ordine | Feature | Impatto | Sforzo |
 |--------|---------|---------|--------|
 | 5 | F13 — Calendar Heatmap | Medio | Basso (dipende da F14 ✅) |
-| 6 | **F26 — Backup Locale** | **Alto** (prima di Beta pubblica) | **Basso** |
-| 7 | F23 — Ricerca Globale | Alto | Basso |
-| 8 | F20 — Athena Foundation | Alto | Alto |
-
-> **Nota**: F26 (Backup Locale) è stato promosso da POST-MVP a Priorità Media. È l'unica feature che previene la perdita totale dei dati. Consigliato prima della Beta pubblica (>10 utenti).
+| 6 | F23 — Ricerca Globale | Alto | Basso |
+| 7 | F20 — Athena Foundation | Alto | Alto |
 
 ### 🥉 Priorità Bassa (V0.8–V1.0)
 

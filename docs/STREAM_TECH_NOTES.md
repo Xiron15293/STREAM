@@ -11,6 +11,7 @@
 | Database | sqflite (raw SQL) | ^2.4.2 |
 | ID | uuid v4 | ^4.5.1 |
 | Persistenza toggle | SharedPreferences | ^2.5.5 |
+| Share sheet | share_plus | ^12.0.2 |
 | Min SDK Android | 21 | |
 | Target iOS | 12.0 | |
 
@@ -108,68 +109,80 @@ MovementCard è **solo vista**:
 - **Periodo precedente**: confronto semplice per i filtri standard; saltato sui range custom per evitare logica fragile
 - **Vincolo**: nessuna lista movimenti in Dashboard, nessuna nuova ricerca o grafico complesso
 
-## Database (V5)
+## Database (V6)
 
-### Movimenti
+### Movimenti (V6: +date)
 ```sql
 CREATE TABLE movements (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   amount REAL NOT NULL,
   type TEXT NOT NULL,        -- 'income' | 'expense'
-  categoryId TEXT NOT NULL,
+  category_id TEXT NOT NULL,
+  account_id TEXT NOT NULL DEFAULT 'acc_default',
+  date TEXT NOT NULL,         -- ISO data (AAAA-MM-GG), V6
   note TEXT,
-  accountId TEXT,
-  createdAt TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 ```
 
 ### Conti (V0.4.1: +color, +iconKey)
 ```sql
-CREATE TABLE conti (
+CREATE TABLE accounts (
   id TEXT PRIMARY KEY,
-  nome TEXT NOT NULL,
-  tipo TEXT NOT NULL DEFAULT 'default',  -- 'default' | 'extra'
-  saldoIniziale REAL NOT NULL DEFAULT 0.0,
-  iconKey TEXT,
-  color INTEGER NOT NULL DEFAULT 4278230352  -- 0xFFEF5350
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,         -- 'bank' | 'cash' | 'card' | 'savings' | 'other'
+  initial_balance REAL NOT NULL DEFAULT 0.0,
+  icon_key TEXT NOT NULL DEFAULT 'account_balance',
+  color INTEGER NOT NULL DEFAULT 4278230352,
+  archived INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 ```
 
-### Categorie
+### Categorie (V4: +icon_key)
 ```sql
 CREATE TABLE categories (
   id TEXT PRIMARY KEY,
-  nome TEXT NOT NULL,
-  tipo TEXT NOT NULL,         -- 'income' | 'expense'
-  colore INTEGER NOT NULL,
-  archiviata INTEGER NOT NULL DEFAULT 0
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,         -- 'income' | 'expense'
+  color INTEGER NOT NULL,
+  icon_key TEXT NOT NULL DEFAULT 'category',
+  archived INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 ```
 
-### Movimenti Rapidi
+### Movimenti Rapidi (V3: +account_id)
 ```sql
 CREATE TABLE quick_movements (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   amount REAL NOT NULL,
   type TEXT NOT NULL,
-  categoryId TEXT NOT NULL,
+  category_id TEXT NOT NULL,
+  account_id TEXT NOT NULL DEFAULT 'acc_default',
   note TEXT,
-  accountId TEXT
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 ```
 
-### Movimenti Preferiti
+### Movimenti Preferiti (V3: +account_id)
 ```sql
 CREATE TABLE favorite_movements (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   amount REAL NOT NULL,
   type TEXT NOT NULL,
-  categoryId TEXT NOT NULL,
+  category_id TEXT NOT NULL,
+  account_id TEXT NOT NULL DEFAULT 'acc_default',
   note TEXT,
-  accountId TEXT
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 ```
 
@@ -273,10 +286,21 @@ Il tema STREAM è definito in `lib/theme.dart` con le classi:
 ### Backup & Restore (Impostazioni)
 
 - **Posizionamento UI**: card/sezione `Backup & Restore` dentro `Impostazioni`
-- **Backup**: export/import su file JSON con file picker nativo
-- **Restore**: transazionale, con rollback automatico se qualcosa fallisce
-- **Gestione dati mancanti**: orfani account/categorie gestiti senza rompere il restore
-- **Vincoli**: nessuna modifica al model o allo schema per aggiungere campi solo per il backup
+- **Backup**: export in JSON con `BackupService.exportToJson()`. Include: accounts, categories, movements, quickMovements, favoriteMovements, settings (showNotes)
+- **Salvataggio**: cartella interna `getDatabasesPath()/backups/` con nome `backup_YYYY_MM_DD_HH_mm.json`
+- **Share sheet esportazione**: dopo "Crea backup", SnackBar con "Condividi" apre share sheet nativo via `share_plus`. Ogni backup nella lista "Backup salvati" ha icona share.
+  - Android: `Intent.ACTION_SEND` → Drive, email, Downloads
+  - iOS: `UIActivityViewController` → Files, iCloud, Mail, AirDrop
+  - Se la condivisione fallisce, il backup interno resta salvato
+- **Restore**: transazionale (`sqlite.transaction()`). DELETE su tutte le tabelle → INSERT dati backup.
+  - **Rollback**: SQLite rollbacka se la transazione fallisce. `db.replaceState()` (in-memory) eseguito dopo il commit.
+  - **Orfani**: `_normalizeMovement/Quick/Favorite` gestisce accountId/categoryId mancanti → fallback a `defaultAccountId` o `_defaultCategoryIdForType`.
+  - **Pre-restore backup**: `createPreRestoreBackup()` salva stato corrente prima del restore.
+  - **Conferma**: dialog con conteggio entity (conti, categorie, movimenti, rapidi, preferiti).
+- **Import**: `FilePicker.pickFiles(allowedExtensions: ['json'])` — seleziona da qualsiasi posizione accessibile.
+- **Validazione**: `BackupService.validate()` controlla JSON, version (1–1), campi obbligatori (accounts, categories, movements).
+- **File sorgente**: `lib/services/backup_service.dart`, `lib/models/backup_data.dart`, `lib/screens/backup_screen.dart`
+- **Dipendenza**: `share_plus ^12.0.2`
 
 ### Quick/Favorite Movement Library UX (V0.4.3) 📋 APPROVATA
 
@@ -448,11 +472,15 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.1 | V0.2 | V0.3.2 | V0.3.3 | V0.4 | V0.4.1 | V0.4.2 | V0.5.4 | V0.5.5+refactor |
-|---------|------|------|--------|--------|------|--------|--------|--------|-----------------|
-| Test | 50 | 65 | 166 | 193 | 193 | 235 | 235 | 299 | 326 |
-| Analyze issues | 0 | 0 | 1 warning | 0 | 0 | 0 | 0 | 2 pre-existing | 2 pre-existing |
-| Build APK | 13s | 5.8s | 8.1s | 5.7s | 5.5s | 5.5s | 5.5s | 5.5s | 5.5s |
-| Build iOS | N/A | N/A | 12.3s | 10.2s | 12.8s | 12.8s | 12.8s | 20.7s | 20.7s |
-| APK size | N/A | N/A | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB |
-| IPA size | N/A | N/A | 31MB | 31MB | 31MB | 31MB | 31MB | 28.8MB | 28.8MB |
+| Metrica | V0.1 | V0.2 | V0.3.2 | V0.3.3 | V0.4 | V0.4.1 | V0.4.2 | V0.5.4 | V0.5.5+refactor | V0.5.6 |
+|---------|------|------|--------|--------|------|--------|--------|--------|-----------------|--------|
+| Test | 50 | 65 | 166 | 193 | 193 | 235 | 235 | 299 | 326 | 363 |
+| Analyze issues | 0 | 0 | 1 warning | 0 | 0 | 0 | 0 | 2 pre-existing | 2 pre-existing | 0 |
+| Build APK debug | 13s | 5.8s | 8.1s | 5.7s | 5.5s | 5.5s | 5.5s | 5.5s | 5.5s | 5.5s |
+| Build APK release | — | — | — | — | — | — | — | — | — | **98.6s** (66.1MB) |
+| Build iOS debug | N/A | N/A | 12.3s | 10.2s | 12.8s | 12.8s | 12.8s | 20.7s | 20.7s | 44.1s |
+| Build iOS release | — | — | — | — | — | — | — | — | — | **44.1s** (32.7MB) |
+| APK size (debug) | N/A | N/A | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB | 207MB |
+| APK size (release) | — | — | — | — | — | — | — | — | — | **66.1MB** |
+| IPA size (release) | — | — | — | — | — | — | — | — | — | **32.7MB** |
+| share_plus | — | — | — | — | — | — | — | — | — | ^12.0.2 |

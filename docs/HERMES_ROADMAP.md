@@ -24,6 +24,9 @@
 | V0.5.6 | Dashboard Filtrata per Periodo | ✅ COMPLETATO | 2026-06-07 |
 | — | MovementCard unico (refactor architetturale) | ✅ COMPLETATO | 2026-06-07 |
 | — | Backup & Restore in Impostazioni | ✅ COMPLETATO | 2026-06-08 |
+| — | Build release Android fix (file_picker + KGP) | ✅ COMPLETATO | 2026-06-08 |
+| — | Backup export condivisibile (share sheet) | ✅ COMPLETATO | 2026-06-08 |
+| — | Build pipeline: analyze + test + apk --release + ios --release tutti PASS | ✅ COMPLETATO | 2026-06-08 |
 
 ## Approvate / Future
 
@@ -50,7 +53,7 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 | Versione | Focus |
 |----------|-------|
 | V0.5 | Calendario Foundation — ✅ COMPLETATO (6 sub-features) |
-| V0.5.6 | UX Booster (💡) — Ricerca Globale, Preferiti Rapid, Categorie Frequenti, Calendar Heatmap |
+| V0.5.6 | Dashboard Filtrata — ✅ COMPLETATO. Build release sbloccate. Backup esportabile. |
 | V0.6 | Ricorrenze (💡) — movimenti automatici ricorrenti |
 | V0.7 | Athena Foundation (💡) — Budget, AI categorization, insight |
 | V0.8 | Import CSV (💡) — import movimenti da home banking |
@@ -148,7 +151,7 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 
 > **Feature**: F16 — Dashboard Filtrata per Periodo
 > **Test**: 363 test pass
-> **Risultato**: `flutter analyze` pulito; build release native bloccati da problemi esterni al codice
+> **Risultato**: `flutter analyze` pulito; build release native **PASS** dopo fix KGP per `file_picker`
 
 **Struttura reale attuale**
 - `Dashboard` = sintesi/insight del periodo selezionato, non lista movimenti
@@ -187,6 +190,22 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 - Nessuna lista movimenti in Dashboard
 - Nessuna modifica a Backup/Restore, navigazione o Archivio
 - DashboardScreen resta la fonte della sintesi del periodo
+
+### Build release Android fix
+
+**Root cause**: `file_picker 11.0.2/android/build.gradle` ha una condizione `if (!isAgp9OrAbove) apply plugin: 'org.jetbrains.kotlin.android'`. Con AGP 9.0.1, KGP non viene applicato. Flutter's `detectApplyingKotlinGradlePlugin` legge il testo del build file, trova `kotlin.android`, e salta l'applicazione. Risultato: sorgenti Kotlin non compilate → `FilePickerPlugin` assente.
+
+**Fix** (`android/build.gradle.kts`): `subprojects` block applica KGP a `file_picker` prima della sua evaluation, e forza `jvmTarget=17`.
+
+**Esito**: `flutter build apk --release` ✅ (66.1MB)
+
+### Backup export condivisibile (share sheet)
+
+**Aggiunta**: dipendenza `share_plus ^12.0.2`. Dopo "Crea backup", SnackBar con pulsante "Condividi" apre share sheet nativo. Ogni backup nella lista "Backup salvati" ha icona share.
+
+- **Android**: `Intent.ACTION_SEND` → Drive, email, Downloads
+- **iOS**: `UIActivityViewController` → Files, iCloud, Mail, AirDrop
+- Se la condivisione fallisce, il backup interno resta salvato
 
 ### Refactor: MovementCard unico (architetturale)
 
