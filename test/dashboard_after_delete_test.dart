@@ -60,137 +60,137 @@ void main() {
   // ── In-memory tests (pure logic, no UI) ──
 
   group('1. Dashboard KPI dopo deleteMovement (in-memory)', () {
-    test('1.1 Elimina entrata → dashboard entrate diminuisce', () {
+    test('1.1 Elimina entrata → dashboard entrate diminuisce', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Income', amount: 500,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
       ));
       expect(db.totalIncome, 500);
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.totalIncome, 0.0);
     });
 
-    test('1.2 Elimina uscita → dashboard uscite diminuisce', () {
+    test('1.2 Elimina uscita → dashboard uscite diminuisce', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Expense', amount: 200,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
       expect(db.totalExpenses, 200);
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.totalExpenses, 0.0);
     });
 
-    test('1.3 Elimina entrata → saldo totale diminuisce', () {
+    test('1.3 Elimina entrata → saldo totale diminuisce', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Income', amount: 500,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
       ));
       expect(db.balance, 500);
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.balance, 0.0);
     });
 
-    test('1.4 Elimina uscita → saldo totale aumenta', () {
+    test('1.4 Elimina uscita → saldo totale aumenta', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Expense', amount: 200,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
       expect(db.balance, -200);
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.balance, 0.0);
     });
 
-    test('1.5 Elimina movimento su conto A → saldo conto A aggiornato', () {
+    test('1.5 Elimina movimento su conto A → saldo conto A aggiornato', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addAccount(Account(
+      await db.addAccount(Account(
         id: 'acc_a', name: 'Conto A', type: AccountType.cash,
         initialBalance: 1000, createdAt: now,
       ));
       final accA = db.accounts.firstWhere((a) => a.id == 'acc_a');
       expect(db.getAccountBalance(accA), 1000);
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Spesa', amount: 300,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', accountId: 'acc_a', createdAt: now,
       ));
       expect(db.getAccountBalance(accA), 700);
 
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.getAccountBalance(accA), 1000);
     });
 
-    test('1.6 Elimina movimento su conto B → saldo conto B aggiornato', () {
+    test('1.6 Elimina movimento su conto B → saldo conto B aggiornato', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addAccount(Account(
+      await db.addAccount(Account(
         id: 'acc_b', name: 'Conto B', type: AccountType.bank,
         initialBalance: 2000, createdAt: now,
       ));
       final accB = db.accounts.firstWhere((a) => a.id == 'acc_b');
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Bonifico', amount: 100,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', accountId: 'acc_b', createdAt: now,
       ));
       expect(db.getAccountBalance(accB), 2100);
 
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.getAccountBalance(accB), 2000);
     });
 
-    test('1.7 totalAccountsBalance aggiornato dopo delete', () {
+    test('1.7 totalAccountsBalance aggiornato dopo delete', () async {
       final db = AppDatabase();
       final now = DateTime.now();
 
       expect(db.totalAccountsBalance, 0.0);
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Entrata', amount: 1000,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
       ));
       expect(db.totalAccountsBalance, 1000);
 
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.totalAccountsBalance, 0.0);
     });
 
-    test('1.8 Elimina movimento duplicato → dashboard aggiornata', () {
+    test('1.8 Elimina movimento duplicato → dashboard aggiornata', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'orig', title: 'Originale', amount: 50,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
-      db.duplicateMovement(db.movements.first);
+      await db.duplicateMovement(db.movements.first);
       expect(db.movements.length, 2);
       expect(db.totalExpenses, 100);
 
       final dup = db.movements.firstWhere((m) => m.id != 'orig');
-      db.deleteMovement(dup.id);
+      await db.deleteMovement(dup.id);
       expect(db.movements.length, 1);
       expect(db.totalExpenses, 50);
     });
 
-    test('1.9 Elimina movimento creato da Rapido → dashboard aggiornata', () {
+    test('1.9 Elimina movimento creato da Rapido → dashboard aggiornata', () async {
       final db = AppDatabase();
-      db.createMovementFromTemplate(
+      await db.createMovementFromTemplate(
         title: 'Caffè', amount: 1.50,
         type: MovementType.expense, categoryId: 'exp_4',
         accountId: defaultAccountId,
@@ -198,50 +198,50 @@ void main() {
       expect(db.movements.length, 1);
       expect(db.totalExpenses, 1.5);
 
-      db.deleteMovement(db.movements.first.id);
+      await db.deleteMovement(db.movements.first.id);
       expect(db.movements.length, 0);
       expect(db.totalExpenses, 0.0);
     });
 
-    test('1.10 Elimina movimento creato da Preferito → dashboard aggiornata', () {
+    test('1.10 Elimina movimento creato da Preferito → dashboard aggiornata', () async {
       final db = AppDatabase();
-      db.addFavoriteMovement(const FavoriteMovement(
+      await db.addFavoriteMovement(const FavoriteMovement(
         id: 'fm_test', title: 'Ripetibile', amount: 100,
         type: MovementType.expense, categoryId: 'exp_1',
       ));
-      db.createMovementFromTemplate(
+      await db.createMovementFromTemplate(
         title: 'Ripetibile', amount: 100,
         type: MovementType.expense, categoryId: 'exp_1',
       );
       expect(db.movements.length, 1);
       expect(db.totalExpenses, 100);
 
-      db.deleteMovement(db.movements.first.id);
+      await db.deleteMovement(db.movements.first.id);
       expect(db.movements.length, 0);
       expect(db.totalExpenses, 0.0);
     });
 
-    test('1.11 Elimina movimento dopo modifica → dashboard aggiornata', () {
+    test('1.11 Elimina movimento dopo modifica → dashboard aggiornata', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'edit_me', title: 'Prima', amount: 50,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
-      db.updateMovement(db.movements.first.copyWith(
+      await db.updateMovement(db.movements.first.copyWith(
         title: 'Dopo', amount: 200, updatedAt: DateTime.now(),
       ));
       expect(db.totalExpenses, 200);
 
-      db.deleteMovement('edit_me');
+      await db.deleteMovement('edit_me');
       expect(db.totalExpenses, 0.0);
     });
 
-    test('1.12 Annulla eliminazione → nessun saldo cambia', () {
+    test('1.12 Annulla eliminazione → nessun saldo cambia', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'keep', title: 'Trattenere', amount: 100,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
@@ -252,58 +252,58 @@ void main() {
       expect(db.totalIncome, 100);
     });
 
-    test('1.13 Elimina ultimo movimento → dashboard torna a zero', () {
+    test('1.13 Elimina ultimo movimento → dashboard torna a zero', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'last', title: 'Ultimo', amount: 75,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
       expect(db.totalExpenses, 75);
-      db.deleteMovement('last');
+      await db.deleteMovement('last');
       expect(db.movements.length, 0);
       expect(db.totalExpenses, 0.0);
       expect(db.totalIncome, 0.0);
       expect(db.balance, 0.0);
     });
 
-    test('1.14 Elimina movimento su conto default → saldo Principale aggiornato', () {
+    test('1.14 Elimina movimento su conto default → saldo Principale aggiornato', () async {
       final db = AppDatabase();
       final now = DateTime.now();
       final principale = db.accounts.first;
       expect(db.getAccountBalance(principale), 0);
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Stipendio', amount: 2500,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
       ));
       expect(db.getAccountBalance(principale), 2500);
 
-      db.deleteMovement('m1');
+      await db.deleteMovement('m1');
       expect(db.getAccountBalance(principale), 0);
     });
 
-    test('1.15 due eliminazioni consecutive → saldo corretto', () {
+    test('1.15 due eliminazioni consecutive → saldo corretto', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'a', title: 'A', amount: 100,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
       ));
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'b', title: 'B', amount: 50,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
       expect(db.balance, 50);
 
-      db.deleteMovement('a');
+      await db.deleteMovement('a');
       expect(db.balance, -50);
 
-      db.deleteMovement('b');
+      await db.deleteMovement('b');
       expect(db.balance, 0);
     });
   });
@@ -323,15 +323,13 @@ void main() {
       var db = await createDb(sqlite);
       final now = DateTime.now();
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'persistent', title: 'Test', amount: 100,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
-      await Future.delayed(const Duration(milliseconds: 100));
 
-      db.deleteMovement('persistent');
-      await Future.delayed(const Duration(milliseconds: 100));
+      await db.deleteMovement('persistent');
 
       // Reload
       db = await createDb(sqlite);
@@ -346,24 +344,22 @@ void main() {
       var db = await createDb(sqlite);
       final now = DateTime.now();
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'a', title: 'Entrata', amount: 500,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', createdAt: now,
       ));
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'b', title: 'Uscita', amount: 200,
         type: MovementType.expense, date: now,
         categoryId: 'exp_1', createdAt: now,
       ));
-      await Future.delayed(const Duration(milliseconds: 100));
 
       expect(db.totalIncome, 500);
       expect(db.totalExpenses, 200);
       expect(db.balance, 300);
 
-      db.deleteMovement('a');
-      await Future.delayed(const Duration(milliseconds: 100));
+      await db.deleteMovement('a');
 
       // Reload
       db = await createDb(sqlite);
@@ -380,20 +376,18 @@ void main() {
       var db = await createDb(sqlite);
       final now = DateTime.now();
 
-      db.addAccount(Account(
+      await db.addAccount(Account(
         id: 'acc_extra', name: 'Extra', type: AccountType.savings,
         initialBalance: 1000, createdAt: now,
       ));
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'm1', title: 'Deposito', amount: 500,
         type: MovementType.income, date: now,
         categoryId: 'inc_1', accountId: 'acc_extra', createdAt: now,
       ));
-      await Future.delayed(const Duration(milliseconds: 100));
 
-      db.deleteMovement('m1');
-      await Future.delayed(const Duration(milliseconds: 100));
+      await db.deleteMovement('m1');
 
       // Reload
       db = await createDb(sqlite);

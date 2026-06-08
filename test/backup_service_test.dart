@@ -32,7 +32,7 @@ void main() {
   group('BackupService — Export', () {
     test('generates valid JSON with all data types', () async {
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
 
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
@@ -49,7 +49,7 @@ void main() {
 
     test('includes all accounts', () async {
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
 
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
@@ -60,8 +60,8 @@ void main() {
 
     test('includes all categories', () async {
       final db = AppDatabase();
-      _populateTestData(db);
-      db.addCategory('CustomCat', MovementType.expense, 0xFFFF0000);
+      await _populateTestData(db);
+      await db.addCategory('CustomCat', MovementType.expense, 0xFFFF0000);
 
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
@@ -73,7 +73,7 @@ void main() {
 
     test('includes all movements', () async {
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
 
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
@@ -84,7 +84,7 @@ void main() {
 
     test('includes metadata fields', () async {
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
 
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
@@ -98,7 +98,7 @@ void main() {
 
     test('settings include showNotes', () async {
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
       await PreferencesService.saveShowNotes(true);
 
       final json = await BackupService.exportToJson(db);
@@ -169,7 +169,7 @@ void main() {
       final db = AppDatabase();
 
       // Add data to source db
-      _populateTestData(db);
+      await _populateTestData(db);
 
       // Export
       final json = await BackupService.exportToJson(db);
@@ -191,7 +191,7 @@ void main() {
       final db = AppDatabase();
 
       // Add initial data
-      _populateTestData(db);
+      await _populateTestData(db);
       expect(db.movements.length, equals(2));
 
       // Export
@@ -247,7 +247,7 @@ void main() {
       await PreferencesService.saveShowNotes(true);
 
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
 
       final json = await BackupService.exportToJson(db);
       final validation = BackupService.validate(json);
@@ -336,7 +336,7 @@ void main() {
   group('BackupService — pre-restore backup', () {
     test('creates backup before restore', () async {
       final db = AppDatabase();
-      _populateTestData(db);
+      await _populateTestData(db);
 
       // Simulate: we'd call createPreRestoreBackup
       // but we can't test file system in unit tests easily
@@ -354,7 +354,7 @@ void main() {
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
 
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'before_restore',
         title: 'Prima del restore',
         amount: 10.0,
@@ -478,14 +478,400 @@ void main() {
       await sqlite.close();
     });
   });
+
+  group('Stress test — restore safety', () {
+    test('restore with 1000 movements succeeds', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      for (int i = 0; i < 1000; i++) {
+        await db.addMovement(Movement(
+          id: 'stress_$i',
+          title: 'Movimento $i',
+          amount: (i % 100).toDouble(),
+          type: i.isEven ? MovementType.income : MovementType.expense,
+          date: DateTime(2026, 6, (i % 28) + 1),
+          categoryId: i.isEven ? 'inc_1' : 'exp_1',
+          createdAt: DateTime(2026, 6, (i % 28) + 1),
+        ));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      final json = await BackupService.exportToJson(db);
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+
+      final freshDb = AppDatabase(sqlite: sqlite);
+      await freshDb.initialize();
+      await BackupService.restore(freshDb, validation.data!);
+
+      expect(freshDb.movements.length, 1000);
+      expect(freshDb.accounts.length, 1);
+      await sqlite.close();
+    });
+
+    test('restore repeated 10 times produces consistent state', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final original = AppDatabase(sqlite: sqlite);
+      await original.initialize();
+
+      original.addMovement(Movement(
+        id: 'rep_m', title: 'Repeat', amount: 42.0,
+        type: MovementType.expense, date: DateTime(2026, 6, 15),
+        categoryId: 'exp_1', createdAt: DateTime(2026, 6, 15),
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final json = await BackupService.exportToJson(original);
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+
+      for (int i = 0; i < 10; i++) {
+        final target = AppDatabase(sqlite: sqlite);
+        await target.initialize();
+        await BackupService.restore(target, validation.data!);
+        expect(target.movements.length, 1);
+        expect(target.movements.first.title, 'Repeat');
+        expect(target.accounts.length, 1);
+      }
+      await sqlite.close();
+    });
+
+    test('restore after pre-restore backup succeeds', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+      await _populateTestData(db);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final json = await BackupService.exportToJson(db);
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+
+      final preRestoreJson = await BackupService.exportToJson(db);
+      final preValidation = BackupService.validate(preRestoreJson);
+      expect(preValidation.isValid, isTrue);
+
+      await BackupService.restore(db, validation.data!);
+      expect(db.movements.length, 2);
+      expect(db.movements.any((m) => m.id == 'export_test_1'), isTrue);
+      await sqlite.close();
+    });
+  });
+
+  group('Stress test — validation', () {
+    test('account id null fails validation', () {
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['accounts'] as List).first['id'] = null;
+      final result = BackupService.validate(jsonEncode(parsed));
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('Conto'));
+      expect(result.error, contains('id'));
+    });
+
+    test('movement amount string non-numeric fails validation', () {
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['movements'] as List).first['amount'] = 'not-a-number';
+      final result = BackupService.validate(jsonEncode(parsed));
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('amount'));
+    });
+
+    test('movement type sconosciuto fails validation', () {
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['movements'] as List).first['type'] = 'unknown';
+      final result = BackupService.validate(jsonEncode(parsed));
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('type'));
+    });
+
+    test('date invalida fails validation', () {
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['movements'] as List).first['date'] = 'not-a-date';
+      final result = BackupService.validate(jsonEncode(parsed));
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('date'));
+    });
+
+    test('version negativa fails validation', () {
+      final json = _validBackupJson(version: -1);
+      final result = BackupService.validate(json);
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('Versione'));
+    });
+
+    test('item not a Map fails validation', () {
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['movements'] as List).add('not a map');
+      final result = BackupService.validate(jsonEncode(parsed));
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('Movimento'));
+    });
+
+    test('category type mismatch fails validation', () {
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['categories'] as List).first['type'] = 'invalid_type';
+      final result = BackupService.validate(jsonEncode(parsed));
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('type'));
+    });
+  });
+
+  group('Stress test — DB writes persist after reload', () {
+    test('addMovement persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addMovement(Movement(
+        id: 'p_m', title: 'Persist', amount: 10.0,
+        type: MovementType.expense, date: DateTime(2026, 6, 1),
+        categoryId: 'exp_1', createdAt: DateTime(2026, 6, 1),
+      ));
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.movements.any((m) => m.id == 'p_m'), isTrue);
+      await sqlite.close();
+    });
+
+    test('deleteMovement persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addMovement(Movement(
+        id: 'd_m', title: 'Delete me', amount: 5.0,
+        type: MovementType.expense, date: DateTime(2026, 6, 1),
+        categoryId: 'exp_1', createdAt: DateTime(2026, 6, 1),
+      ));
+      await db.deleteMovement('d_m');
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.movements.any((m) => m.id == 'd_m'), isFalse);
+      await sqlite.close();
+    });
+
+    test('updateMovement persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addMovement(Movement(
+        id: 'u_m', title: 'Original', amount: 10.0,
+        type: MovementType.expense, date: DateTime(2026, 6, 1),
+        categoryId: 'exp_1', createdAt: DateTime(2026, 6, 1),
+      ));
+      await db.updateMovement(Movement(
+        id: 'u_m', title: 'Updated', amount: 20.0,
+        type: MovementType.income, date: DateTime(2026, 6, 2),
+        categoryId: 'inc_1', createdAt: DateTime(2026, 6, 1),
+        updatedAt: DateTime.now(),
+      ));
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      final m = db2.movements.firstWhere((m) => m.id == 'u_m');
+      expect(m.title, 'Updated');
+      expect(m.amount, 20.0);
+      expect(m.type, MovementType.income);
+      await sqlite.close();
+    });
+
+    test('addCategory persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addCategory('Test Cat', MovementType.expense, 0xFF00FF00);
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.categories.any((c) => c.name == 'Test Cat'), isTrue);
+      await sqlite.close();
+    });
+
+    test('archiveAccount persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addAccount(Account(id: 'arch_test', name: 'Arch Test', type: AccountType.bank, createdAt: DateTime.now()));
+      await db.archiveAccount('arch_test');
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      final acc = db2.accounts.firstWhere((a) => a.id == 'arch_test');
+      expect(acc.archived, isTrue);
+      await sqlite.close();
+    });
+
+    test('quickMovement persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addQuickMovement(QuickMovement(
+        id: 'qm_persist', title: 'Persist QM', amount: 3.0,
+        type: MovementType.expense, categoryId: 'exp_1',
+      ));
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.quickMovements.any((q) => q.id == 'qm_persist'), isTrue);
+      await sqlite.close();
+    });
+
+    test('favoriteMovement persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addFavoriteMovement(FavoriteMovement(
+        id: 'fm_persist', title: 'Persist FM', amount: 50.0,
+        type: MovementType.income, categoryId: 'inc_1',
+      ));
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.favoriteMovements.any((f) => f.id == 'fm_persist'), isTrue);
+      await sqlite.close();
+    });
+
+    test('saveMovementAsFavorite persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addMovement(Movement(
+        id: 'sav_fav', title: 'Save as fav', amount: 100.0,
+        type: MovementType.income, date: DateTime(2026, 6, 1),
+        categoryId: 'inc_1', createdAt: DateTime(2026, 6, 1),
+      ));
+      await db.saveMovementAsFavorite(db.movements.first);
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.favoriteMovements.any((f) => f.title == 'Save as fav'), isTrue);
+      await sqlite.close();
+    });
+
+    test('duplicateMovement persists after reload', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addMovement(Movement(
+        id: 'dup_orig', title: 'Original', amount: 25.0,
+        type: MovementType.expense, date: DateTime(2026, 6, 1),
+        categoryId: 'exp_1', createdAt: DateTime(2026, 6, 1),
+      ));
+      await db.duplicateMovement(db.movements.first);
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.movements.length, 2);
+      await sqlite.close();
+    });
+  });
+
+  group('Stress test — restore rejects malformed backup', () {
+    test('backup with null account id → restore rejected, existing data preserved', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      await db.addMovement(Movement(
+        id: 'safe_m', title: 'Safe', amount: 1.0,
+        type: MovementType.expense, date: DateTime(2026, 6, 1),
+        categoryId: 'exp_1', createdAt: DateTime(2026, 6, 1),
+      ));
+
+      final json = _validBackupJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      (parsed['accounts'] as List).first['id'] = null;
+      final badJson = jsonEncode(parsed);
+      final validation = BackupService.validate(badJson);
+      expect(validation.isValid, isFalse);
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.movements.any((m) => m.id == 'safe_m'), isTrue);
+      await sqlite.close();
+    });
+
+    test('restore with movements referencing missing accounts still works (graceful)', () async {
+      final json = jsonEncode({
+        'version': 1,
+        'createdAt': '2026-06-07T12:00:00',
+        'accounts': [],
+        'categories': [
+          {'id': 'exp_1', 'name': 'Spesa', 'type': 'expense', 'color': 0xFFEF5350, 'iconKey': 'shopping_cart', 'archived': false},
+        ],
+        'movements': [
+          {
+            'id': 'm_orphan',
+            'title': 'Orphan',
+            'amount': 50.0,
+            'type': 'expense',
+            'date': '2026-06-07T00:00:00.000',
+            'categoryId': 'exp_1',
+            'accountId': 'non_existent',
+            'note': null,
+            'createdAt': '2026-06-07T00:00:00.000',
+            'updatedAt': '2026-06-07T00:00:00.000',
+          }
+        ],
+        'quickMovements': [],
+        'favoriteMovements': [],
+        'settings': {'showNotes': true},
+      });
+
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+      await BackupService.restore(db, validation.data!);
+
+      expect(db.movements.length, 1);
+      expect(db.movements.first.accountId, defaultAccountId);
+      expect(db.movements.first.categoryId, 'exp_1');
+      await sqlite.close();
+    });
+  });
 }
 
 // ── Helpers ──
 
-void _populateTestData(AppDatabase db) {
+Future<void> _populateTestData(AppDatabase db) async {
   final now = DateTime.now();
 
-  db.addMovement(Movement(
+  await db.addMovement(Movement(
     id: 'export_test_1',
     title: 'Export test expense',
     amount: 25.50,
@@ -495,7 +881,7 @@ void _populateTestData(AppDatabase db) {
     createdAt: now,
   ));
 
-  db.addMovement(Movement(
+  await db.addMovement(Movement(
     id: 'export_test_2',
     title: 'Export test income',
     amount: 1000.0,
@@ -505,7 +891,7 @@ void _populateTestData(AppDatabase db) {
     createdAt: now,
   ));
 
-  db.saveMovementAsFavorite(db.movements.first);
+  await db.saveMovementAsFavorite(db.movements.first);
 }
 
 String _validBackupJson({int version = 1}) {

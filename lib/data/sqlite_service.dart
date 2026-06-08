@@ -254,6 +254,13 @@ class SQLiteService {
         'updated_at': m.updatedAt.toIso8601String(),
       };
 
+  static DateTime _parseDateSafe(dynamic value, {required DateTime fallback}) {
+    if (value is! String || value.isEmpty) return fallback;
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null && parsed.isAfter(DateTime(2000))) return parsed;
+    return fallback;
+  }
+
   Movement _movementFromMap(Map<String, dynamic> map) => Movement(
         id: map['id'] as String,
         title: map['title'] as String,
@@ -261,10 +268,10 @@ class SQLiteService {
         type: MovementType.values.byName(map['type'] as String),
         categoryId: map['category_id'] as String,
         accountId: map['account_id'] as String? ?? defaultAccountId,
-        date: DateTime.parse(map['date'] as String),
+        date: _parseDateSafe(map['date'], fallback: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1))),
         note: map['note'] as String?,
-        createdAt: DateTime.parse(map['created_at'] as String),
-        updatedAt: DateTime.parse(map['updated_at'] as String),
+        createdAt: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1)),
+        updatedAt: _parseDateSafe(map['updated_at'], fallback: DateTime(2020, 1, 1)),
       );
 
   // ── Categories ──

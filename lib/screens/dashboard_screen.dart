@@ -6,6 +6,8 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
+import '../widgets/movement_card.dart';
+import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -31,6 +33,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _filter = filter;
     });
+  }
+
+  void _showCategoryDetail(
+    BuildContext context,
+    _CategoryExpense item,
+    List<Movement> allFilteredMovements,
+  ) {
+    final categoryMovements = allFilteredMovements
+        .where((m) => m.categoryId == item.categoryId)
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _CategoryDetailSheet(
+        item: item,
+        movements: categoryMovements,
+        db: widget.db,
+        filter: _filter,
+      ),
+    );
   }
 
   @override
@@ -105,6 +128,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _CategoryExpensesSection(
                 items: categoryExpenses,
                 totalExpenses: filteredExpenses,
+                db: widget.db,
+                onCategoryTap: (item) => _showCategoryDetail(
+                  context,
+                  item,
+                  filteredMovements,
+                ),
+              ),
+              const SizedBox(height: StreamSpacing.section),
+              _FilteredMovementsList(
+                movements: filteredMovements,
+                db: widget.db,
               ),
             ],
           );
@@ -272,11 +306,26 @@ class _CategoryExpense {
 class _CategoryExpensesSection extends StatelessWidget {
   final List<_CategoryExpense> items;
   final double totalExpenses;
+  final AppDatabase db;
+  final void Function(_CategoryExpense)? onCategoryTap;
 
   const _CategoryExpensesSection({
     required this.items,
     required this.totalExpenses,
+    required this.db,
+    this.onCategoryTap,
   });
+
+  void _quickAdd(BuildContext context, _CategoryExpense item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => MovementPicker(
+        db: db,
+        categoryPreFill: item.categoryId,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -303,11 +352,15 @@ class _CategoryExpensesSection extends StatelessWidget {
             child: Column(
               children: [
                 ...visibleItems.asMap().entries.map((entry) {
-                  return _CategoryExpenseRow(
-                    item: entry.value,
-                    totalExpenses: totalExpenses,
-                    isTopCategory: entry.key == 0,
-                  );
+                    return _CategoryExpenseRow(
+                      item: entry.value,
+                      totalExpenses: totalExpenses,
+                      isTopCategory: entry.key == 0,
+                      onQuickAdd: () => _quickAdd(context, entry.value),
+                      onTap: onCategoryTap != null
+                          ? () => onCategoryTap!(entry.value)
+                          : null,
+                    );
                 }),
                 if (hiddenCount > 0) ...[
                   const Divider(height: StreamSpacing.lg),
@@ -334,11 +387,15 @@ class _CategoryExpenseRow extends StatelessWidget {
   final _CategoryExpense item;
   final double totalExpenses;
   final bool isTopCategory;
+  final VoidCallback? onQuickAdd;
+  final VoidCallback? onTap;
 
   const _CategoryExpenseRow({
     required this.item,
     required this.totalExpenses,
     required this.isTopCategory,
+    this.onQuickAdd,
+    this.onTap,
   });
 
   @override
@@ -356,7 +413,12 @@ class _CategoryExpenseRow extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
-      padding: const EdgeInsets.all(StreamSpacing.sm),
+      padding: const EdgeInsets.only(
+        left: StreamSpacing.sm,
+        top: StreamSpacing.sm,
+        bottom: StreamSpacing.sm,
+        right: StreamSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: isTopCategory
             ? categoryColor.withValues(alpha: 0.12)
@@ -368,43 +430,67 @@ class _CategoryExpenseRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: categoryColor,
-              borderRadius: BorderRadius.circular(StreamRadius.sm),
-            ),
-            child: Icon(iconData, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: StreamSpacing.md),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  category?.name ?? item.categoryId,
-                  style: StreamTypography.bodyBold,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (percentage != null)
-                  Text(
-                    '${percentage.round()}% del totale spese',
-                    style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+            child: GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: categoryColor,
+                      borderRadius: BorderRadius.circular(StreamRadius.sm),
+                    ),
+                    child: Icon(iconData, color: Colors.white, size: 16),
+                  ),
+                  const SizedBox(width: StreamSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category?.name ?? item.categoryId,
+                          style: StreamTypography.bodyBold,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (percentage != null)
+                          Text(
+                            '${percentage.round()}% del totale spese',
+                            style: StreamTypography.caption.copyWith(
+                              color: StreamColors.textSecondary,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-              ],
+                  const SizedBox(width: StreamSpacing.sm),
+                  Text(
+                    '${item.total.toStringAsFixed(2)} €',
+                    style: StreamTypography.amount.copyWith(
+                      color: StreamColors.expense,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: StreamSpacing.sm),
-          Text(
-            '${item.total.toStringAsFixed(2)} €',
-            style: StreamTypography.amount.copyWith(
-              color: StreamColors.expense,
+          if (onQuickAdd != null) ...[
+            const SizedBox(width: StreamSpacing.xs),
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 18,
+                icon: const Icon(Icons.add_circle_outline),
+                onPressed: onQuickAdd,
+                tooltip: 'Aggiungi movimento in questa categoria',
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -582,6 +668,202 @@ class _EmptyState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FilteredMovementsList extends StatelessWidget {
+  final List<Movement> movements;
+  final AppDatabase db;
+
+  const _FilteredMovementsList({
+    required this.movements,
+    required this.db,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (movements.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Movimenti del periodo', style: StreamTypography.h3),
+        const SizedBox(height: StreamSpacing.md),
+        ...movements.take(20).map((m) {
+          final cat = db.categories.where((c) => c.id == m.categoryId).firstOrNull;
+          final acc = db.accounts.where((a) => a.id == m.accountId).firstOrNull;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: StreamSpacing.xs),
+            child: MovementCard(
+              movement: m,
+              category: cat,
+              account: acc,
+              showNotes: false,
+              showDate: true,
+            ),
+          );
+        }),
+        if (movements.length > 20)
+          Padding(
+            padding: const EdgeInsets.only(top: StreamSpacing.sm),
+            child: Center(
+              child: Text(
+                'Mostra tutti: altri ${movements.length - 20} movimenti in Archivio',
+                style: StreamTypography.caption.copyWith(
+                  color: StreamColors.primary,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CategoryDetailSheet extends StatelessWidget {
+  final _CategoryExpense item;
+  final List<Movement> movements;
+  final AppDatabase db;
+  final TimeFilter filter;
+
+  const _CategoryDetailSheet({
+    required this.item,
+    required this.movements,
+    required this.db,
+    required this.filter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final category = item.category;
+    final color = category != null
+        ? Color(category.color)
+        : Color(StreamColorPalette.defaultColor);
+    final iconData = category != null
+        ? StreamIconLibrary.getIcon(category.iconKey)
+        : StreamIconLibrary.fallbackIcon;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: StreamColors.canvas,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(StreamRadius.xl),
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: StreamSpacing.sm),
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: StreamColors.textMuted,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(StreamSpacing.lg),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(StreamRadius.sm),
+                      ),
+                      child: Icon(iconData, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: StreamSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            category?.name ?? item.categoryId,
+                            style: StreamTypography.h3,
+                          ),
+                          const SizedBox(height: StreamSpacing.xs),
+                          Text(
+                            '${movements.length} movimenti · ${item.total.toStringAsFixed(2)} €',
+                            style: StreamTypography.caption.copyWith(
+                              color: StreamColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => MovementPicker(
+                            db: db,
+                            categoryPreFill: item.categoryId,
+                          ),
+                        );
+                      },
+                      tooltip: 'Aggiungi movimento in questa categoria',
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: StreamColors.divider),
+              Expanded(
+                child: movements.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(StreamSpacing.xl),
+                          child: Text(
+                            'Nessun movimento in questa categoria nel periodo',
+                            style: StreamTypography.body.copyWith(
+                              color: StreamColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(StreamSpacing.lg),
+                        itemCount: movements.length,
+                        itemBuilder: (context, index) {
+                          final m = movements[index];
+                          final cat = db.categories
+                              .where((c) => c.id == m.categoryId)
+                              .firstOrNull;
+                          final acc = db.accounts
+                              .where((a) => a.id == m.accountId)
+                              .firstOrNull;
+                          return Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: StreamSpacing.xs),
+                            child: MovementCard(
+                              movement: m,
+                              category: cat,
+                              account: acc,
+                              showNotes: false,
+                              showDate: true,
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

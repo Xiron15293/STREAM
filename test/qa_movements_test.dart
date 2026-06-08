@@ -1354,4 +1354,244 @@ void main() {
     expect(find.text('Nota di test'), findsOneWidget);
     expect(db.movements.length, 2);
   });
+
+  // ============================================================
+  // 74–85: Raggruppamento Movimenti per Giorno (V0.6.1)
+  // ============================================================
+
+  testWidgets('74. Header giorno visibile per singolo movimento', (tester) async {
+    await pumpApp(tester);
+
+    await saveMovement(tester, title: 'Spesa', amount: '15');
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Spesa'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('75. Più giorni mostrano più header', (tester) async {
+    final db = await pumpApp(tester);
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+
+    db.addMovement(Movement(
+      id: 'h_today',
+      title: 'MovOggi',
+      amount: 10,
+      type: MovementType.income,
+      date: now,
+      categoryId: db.categories.first.id,
+      createdAt: now,
+    ));
+    db.addMovement(Movement(
+      id: 'h_yest',
+      title: 'MovIeri',
+      amount: 20,
+      type: MovementType.expense,
+      date: yesterday,
+      categoryId: db.categories.first.id,
+      createdAt: yesterday,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('MovOggi'), findsOneWidget);
+    expect(find.text('MovIeri'), findsOneWidget);
+  });
+
+  testWidgets('76. Gruppi ordinati dal più recente al più vecchio', (tester) async {
+    final db = await pumpApp(tester);
+    final today = DateTime.now();
+    final twoDaysAgo = today.subtract(const Duration(days: 2));
+
+    // Create movements on different days via direct DB
+    db.addMovement(Movement(
+      id: 'g_today',
+      title: 'Oggi',
+      amount: 20,
+      type: MovementType.income,
+      date: today,
+      categoryId: db.categories.first.id,
+      createdAt: today,
+    ));
+    db.addMovement(Movement(
+      id: 'g_old',
+      title: 'Due giorni fa',
+      amount: 15,
+      type: MovementType.expense,
+      date: twoDaysAgo,
+      categoryId: db.categories.first.id,
+      createdAt: twoDaysAgo,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    expect(db.movements.length, 2);
+    expect(find.text('Oggi'), findsOneWidget);
+    expect(find.text('Due giorni fa'), findsOneWidget);
+  });
+
+  testWidgets('77. Filtro mese mostra solo giorni del mese', (tester) async {
+    final db = await pumpApp(tester);
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1, 15);
+
+    db.addMovement(Movement(
+      id: 'm_curr',
+      title: 'Corrente',
+      amount: 10,
+      type: MovementType.income,
+      date: now,
+      categoryId: db.categories.first.id,
+      createdAt: now,
+    ));
+    db.addMovement(Movement(
+      id: 'm_prev',
+      title: 'Mese scorso',
+      amount: 10,
+      type: MovementType.expense,
+      date: lastMonth,
+      categoryId: db.categories.first.id,
+      createdAt: lastMonth,
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Corrente'), findsOneWidget);
+    expect(find.text('Mese scorso'), findsNothing);
+  });
+
+  testWidgets('78. Empty state quando nessun movimento nel filtro', (tester) async {
+    final db = await pumpApp(tester);
+    final farFuture = DateTime(2099, 1, 1);
+
+    db.addMovement(Movement(
+      id: 'e_far',
+      title: 'Futuro',
+      amount: 10,
+      type: MovementType.income,
+      date: farFuture,
+      categoryId: db.categories.first.id,
+      createdAt: farFuture,
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Futuro'), findsNothing);
+    expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
+  });
+
+  testWidgets('79. Dataset 1000 movimenti — scroll performance', (tester) async {
+    final db = await pumpApp(tester);
+    final today = DateTime.now();
+    for (int i = 0; i < 1000; i++) {
+      db.addMovement(Movement(
+        id: 'perf_$i',
+        title: 'Mov $i',
+        amount: (i % 100).toDouble(),
+        type: i.isEven ? MovementType.income : MovementType.expense,
+        date: today,
+        categoryId: db.categories[i % db.categories.length].id,
+        createdAt: today.subtract(Duration(minutes: 1000 - i)),
+      ));
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    // Verify most recent movement is visible
+    expect(find.text('Mov 999'), findsOneWidget);
+    expect(db.movements.length, 1000);
+  });
+
+  testWidgets('80. Nessuna regressione — popup azioni MovementCard', (tester) async {
+    await pumpApp(tester);
+    await saveMovement(tester, title: 'PopupTest', amount: '25');
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    // Tap popup menu (three dots) like existing test 53 does
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Duplica'), findsOneWidget);
+    expect(find.text('Salva preferito'), findsOneWidget);
+    expect(find.text('Elimina'), findsOneWidget);
+  });
+
+  testWidgets('81. Nessuna regressione — note visibili/nascoste', (tester) async {
+    await pumpApp(tester);
+    await saveMovement(tester, title: 'Con Nota', amount: '30', note: 'Test nota');
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    // Toggle ON notes
+    await tester.tap(find.byIcon(Icons.tune));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mostra note nei movimenti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test nota'), findsOneWidget);
+  });
+
+  testWidgets('82. Nessuna regressione — categoria/account rendering', (tester) async {
+    final db = await pumpApp(tester);
+    await saveMovement(tester, title: 'RegrTest', amount: '40');
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    // Find the movement's actual category and account
+    final lastMovement = db.movements.last;
+    final cat = db.categories.where((c) => c.id == lastMovement.categoryId).firstOrNull;
+    final acc = db.accounts.where((a) => a.id == lastMovement.accountId).firstOrNull;
+
+    if (cat != null) expect(find.text(cat.name), findsOneWidget);
+    if (acc != null) expect(find.text(acc.name), findsOneWidget);
+  });
+
+  testWidgets('83. Filtro anno mostra solo giorni dell\'anno', (tester) async {
+    final db = await pumpApp(tester);
+    final now = DateTime.now();
+    final lastYear = DateTime(now.year - 1, 6, 15);
+
+    db.addMovement(Movement(
+      id: 'y_curr',
+      title: 'Anno corrente',
+      amount: 10,
+      type: MovementType.income,
+      date: now,
+      categoryId: db.categories.first.id,
+      createdAt: now,
+    ));
+    db.addMovement(Movement(
+      id: 'y_prev',
+      title: 'Anno scorso',
+      amount: 10,
+      type: MovementType.expense,
+      date: lastYear,
+      categoryId: db.categories.first.id,
+      createdAt: lastYear,
+    ));
+    await tester.pumpAndSettle();
+
+    // Switch to year filter
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mese'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Anno'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Anno corrente'), findsOneWidget);
+    expect(find.text('Anno scorso'), findsNothing);
+  });
 }

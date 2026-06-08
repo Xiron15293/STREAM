@@ -626,4 +626,242 @@ void main() {
       await sqlite.close();
     });
   });
+
+  group('C5 fix — date NULL/malformed non crasha loadMovements', () {
+    test('V6 with NULL date after migration → loadMovements non crasha', () async {
+      final path = _tempDbPath('c5_null_date.db');
+      // Creiamo DB V6 simulando un backfill fallito
+      var db = await openDatabase(path, version: 6, onCreate: (db, v) async {
+        await db.execute('''
+          CREATE TABLE movements (
+            id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+            type TEXT NOT NULL, category_id TEXT NOT NULL,
+            account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+            date TEXT, note TEXT,
+            created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+          )
+        ''');
+        // Inserisci movimento con date NULL
+        final now = DateTime.now().toIso8601String();
+        await db.rawInsert('''
+          INSERT INTO movements (id, title, amount, type, category_id, account_id, date, created_at, updated_at)
+          VALUES ('c5_null', 'Null Date', 10.0, 'expense', 'exp_1', '$defaultAccountId', NULL, '$now', '$now')
+        ''');
+      });
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+          color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS accounts (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+          initial_balance REAL NOT NULL DEFAULT 0.0,
+          icon_key TEXT NOT NULL DEFAULT 'wallet',
+          color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS quick_movements (
+          id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+          type TEXT NOT NULL, category_id TEXT,
+          account_id TEXT, note TEXT,
+          created_at TEXT, updated_at TEXT
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS favorite_movements (
+          id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+          type TEXT NOT NULL, category_id TEXT,
+          account_id TEXT, note TEXT,
+          created_at TEXT, updated_at TEXT
+        )
+      ''');
+      final now = DateTime.now().toIso8601String();
+      await db.insert('accounts', {
+        'id': defaultAccountId, 'name': 'Principale', 'type': 'bank',
+        'initial_balance': 0.0, 'archived': 0,
+        'created_at': now, 'updated_at': now,
+      });
+      await db.insert('categories', {
+        'id': 'exp_1', 'name': 'Spesa', 'type': 'expense',
+        'color': 0xFFEF5350, 'icon_key': 'shopping_cart',
+        'archived': 0, 'created_at': now, 'updated_at': now,
+      });
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      // Non deve crashare
+      expect(appDb.movements.length, 1);
+      expect(appDb.movements.first.id, 'c5_null');
+      // date deve essere fallback: created_at
+      expect(appDb.movements.first.date, isNotNull);
+
+      await sqlite.close();
+    });
+
+    test('V6 with NULL created_at → loadMovements non crasha (double fallback)', () async {
+      final path = _tempDbPath('c5_null_ca.db');
+      var db = await openDatabase(path, version: 6, onCreate: (db, v) async {
+        await db.execute('''
+          CREATE TABLE movements (
+            id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+            type TEXT NOT NULL, category_id TEXT NOT NULL,
+            account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+            date TEXT, note TEXT,
+            created_at TEXT, updated_at TEXT
+          )
+        ''');
+        // Inserisci movimento con date NULL e created_at NULL
+        await db.rawInsert('''
+          INSERT INTO movements (id, title, amount, type, category_id, account_id, date, created_at, updated_at)
+          VALUES ('c5_null_ca', 'Null Both', 10.0, 'expense', 'exp_1', '$defaultAccountId', NULL, NULL, NULL)
+        ''');
+      });
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+          color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS accounts (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+          initial_balance REAL NOT NULL DEFAULT 0.0,
+          icon_key TEXT NOT NULL DEFAULT 'wallet',
+          color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS quick_movements (
+          id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+          type TEXT NOT NULL, category_id TEXT,
+          account_id TEXT, note TEXT,
+          created_at TEXT, updated_at TEXT
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS favorite_movements (
+          id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+          type TEXT NOT NULL, category_id TEXT,
+          account_id TEXT, note TEXT,
+          created_at TEXT, updated_at TEXT
+        )
+      ''');
+      final now = DateTime.now().toIso8601String();
+      await db.insert('accounts', {
+        'id': defaultAccountId, 'name': 'Principale', 'type': 'bank',
+        'initial_balance': 0.0, 'archived': 0,
+        'created_at': now, 'updated_at': now,
+      });
+      await db.insert('categories', {
+        'id': 'exp_1', 'name': 'Spesa', 'type': 'expense',
+        'color': 0xFFEF5350, 'icon_key': 'shopping_cart',
+        'archived': 0, 'created_at': now, 'updated_at': now,
+      });
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      // Non deve crashare anche con doppio NULL
+      expect(appDb.movements.length, 1);
+      // Fallback estremo: DateTime(2020, 1, 1)
+      expect(appDb.movements.first.date, DateTime(2020, 1, 1));
+      expect(appDb.movements.first.createdAt, DateTime(2020, 1, 1));
+
+      await sqlite.close();
+    });
+
+    test('V6 with invalid date string → loadMovements non crasha', () async {
+      final path = _tempDbPath('c5_bad_date.db');
+      var db = await openDatabase(path, version: 6, onCreate: (db, v) async {
+        await db.execute('''
+          CREATE TABLE movements (
+            id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+            type TEXT NOT NULL, category_id TEXT NOT NULL,
+            account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+            date TEXT, note TEXT,
+            created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+          )
+        ''');
+        final now = DateTime.now().toIso8601String();
+        await db.rawInsert('''
+          INSERT INTO movements (id, title, amount, type, category_id, account_id, date, created_at, updated_at)
+          VALUES ('c5_bad', 'Bad Date', 10.0, 'expense', 'exp_1', '$defaultAccountId', 'not-a-date', '$now', '$now')
+        ''');
+      });
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+          color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS accounts (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+          initial_balance REAL NOT NULL DEFAULT 0.0,
+          icon_key TEXT NOT NULL DEFAULT 'wallet',
+          color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS quick_movements (
+          id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+          type TEXT NOT NULL, category_id TEXT,
+          account_id TEXT, note TEXT,
+          created_at TEXT, updated_at TEXT
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS favorite_movements (
+          id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+          type TEXT NOT NULL, category_id TEXT,
+          account_id TEXT, note TEXT,
+          created_at TEXT, updated_at TEXT
+        )
+      ''');
+      final now = DateTime.now().toIso8601String();
+      await db.insert('accounts', {
+        'id': defaultAccountId, 'name': 'Principale', 'type': 'bank',
+        'initial_balance': 0.0, 'archived': 0,
+        'created_at': now, 'updated_at': now,
+      });
+      await db.insert('categories', {
+        'id': 'exp_1', 'name': 'Spesa', 'type': 'expense',
+        'color': 0xFFEF5350, 'icon_key': 'shopping_cart',
+        'archived': 0, 'created_at': now, 'updated_at': now,
+      });
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      expect(appDb.movements.length, 1);
+      expect(appDb.movements.first.date, isNotNull);
+
+      await sqlite.close();
+    });
+  });
 }

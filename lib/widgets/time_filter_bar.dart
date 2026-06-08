@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/time_filter.dart';
 import '../design/stream_date_picker.dart';
 import '../theme.dart';
+import 'interval_picker_sheet.dart';
 
 class TimeFilterBar extends StatelessWidget {
   final TimeFilter activeFilter;
@@ -13,25 +14,22 @@ class TimeFilterBar extends StatelessWidget {
     required this.onChanged,
   });
 
-  void _onModeChanged(TimeFilterMode mode) {
+  void _onModeChanged(TimeFilterMode mode, BuildContext context) {
     final s = activeFilter.startDate;
-    TimeFilter newFilter;
     switch (mode) {
       case TimeFilterMode.day:
-        newFilter = TimeFilter.day(s);
+        onChanged(TimeFilter.day(s));
       case TimeFilterMode.month:
-        newFilter = TimeFilter.month(s.year, s.month);
+        onChanged(TimeFilter.month(s.year, s.month));
       case TimeFilterMode.year:
-        newFilter = TimeFilter.year(s.year);
+        onChanged(TimeFilter.year(s.year));
       case TimeFilterMode.customRange:
-        newFilter = TimeFilter.month(s.year, s.month);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _pickDate(context, forcedMode: TimeFilterMode.customRange));
     }
-    onChanged(newFilter);
   }
 
-  Future<void> _pickDate(BuildContext context) async {
-    final now = DateTime.now();
-    switch (activeFilter.mode) {
+  Future<void> _pickDate(BuildContext context, {TimeFilterMode? forcedMode}) async {
+    switch (forcedMode ?? activeFilter.mode) {
       case TimeFilterMode.day:
         final picked = await StreamDatePicker.show(
           context: context,
@@ -57,20 +55,13 @@ class TimeFilterBar extends StatelessWidget {
           onChanged(TimeFilter.year(picked.year));
         }
       case TimeFilterMode.customRange:
-        final range = await showDateRangePicker(
+        final range = await showIntervalPicker(
           context: context,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(now.year + 1, 12, 31),
-          initialDateRange: DateTimeRange(
-            start: activeFilter.startDate,
-            end: activeFilter.endDate.subtract(const Duration(days: 1)),
-          ),
+          initialStart: activeFilter.startDate,
+          initialEnd: activeFilter.endDate,
         );
         if (range != null) {
-          onChanged(TimeFilter.customRange(
-            range.start,
-            range.end.add(const Duration(days: 1)),
-          ));
+          onChanged(TimeFilter.customRange(range.start, range.end));
         }
     }
   }
@@ -98,12 +89,12 @@ class TimeFilterBar extends StatelessWidget {
               ),
               ButtonSegment(
                 value: TimeFilterMode.customRange,
-                label: Text('Periodo'),
+                label: Text('Intervallo'),
               ),
             ],
             selected: {activeFilter.mode},
             onSelectionChanged: (Set<TimeFilterMode> v) {
-              _onModeChanged(v.first);
+              _onModeChanged(v.first, context);
             },
             showSelectedIcon: false,
           ),

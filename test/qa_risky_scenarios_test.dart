@@ -16,11 +16,11 @@ void main() {
 
   // ── Conti ──
 
-  test('C1. Edit movimento sposta su conto B → saldi conti corretti', () {
+  test('C1. Edit movimento sposta su conto B → saldi conti corretti', () async {
     final db = AppDatabase();
-    db.addAccount(Account(id: 'conto_b', name: 'B', type: AccountType.bank, createdAt: DateTime.now()));
+    await db.addAccount(Account(id: 'conto_b', name: 'B', type: AccountType.bank, createdAt: DateTime.now()));
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'c1_m', title: 'Spesa', amount: 100,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: db.categories.firstWhere((c) => c.type == MovementType.expense).id,
@@ -31,7 +31,7 @@ void main() {
     final balanceA1 = db.getAccountBalance(db.getAccount(defaultAccountId));
     final balanceB1 = db.getAccountBalance(db.getAccount('conto_b'));
 
-    db.updateMovement(Movement(
+    await db.updateMovement(Movement(
       id: 'c1_m', title: 'Spesa', amount: 100,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: db.categories.firstWhere((c) => c.type == MovementType.expense).id,
@@ -46,11 +46,11 @@ void main() {
     expect(balanceB2, balanceB1 - 100); // conto B perde 100
   });
 
-  test('C2. Edit movimento cambia tipo (expense→income) → dashboard aggiornata', () {
+  test('C2. Edit movimento cambia tipo (expense→income) → dashboard aggiornata', () async {
     final db = AppDatabase();
     final expCat = db.categories.firstWhere((c) => c.type == MovementType.expense);
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'c2_m', title: 'Misto', amount: 200,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: expCat.id, createdAt: DateTime.now(),
@@ -59,7 +59,7 @@ void main() {
     final income1 = db.totalIncome;
     final expenses1 = db.totalExpenses;
 
-    db.updateMovement(Movement(
+    await db.updateMovement(Movement(
       id: 'c2_m', title: 'Misto', amount: 200,
       type: MovementType.income, date: DateTime.now(),
       categoryId: db.categories.firstWhere((c) => c.type == MovementType.income).id,
@@ -70,17 +70,17 @@ void main() {
     expect(db.totalExpenses, expenses1 - 200);
   });
 
-  test('C3. Edit movimento cambia importo → dashboard aggiornata', () {
+  test('C3. Edit movimento cambia importo → dashboard aggiornata', () async {
     final db = AppDatabase();
     final incCat = db.categories.firstWhere((c) => c.type == MovementType.income);
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'c3_m', title: 'Inc', amount: 100,
       type: MovementType.income, date: DateTime.now(),
       categoryId: incCat.id, createdAt: DateTime.now(),
     ));
 
-    db.updateMovement(Movement(
+    await db.updateMovement(Movement(
       id: 'c3_m', title: 'Inc', amount: 150,
       type: MovementType.income, date: DateTime.now(),
       categoryId: incCat.id, createdAt: DateTime.now(),
@@ -90,18 +90,18 @@ void main() {
     expect(db.balance, 150);
   });
 
-  test('C4. Elimina movimento → conto aggiornato', () {
+  test('C4. Elimina movimento → conto aggiornato', () async {
     final db = AppDatabase();
     final expCat = db.categories.firstWhere((c) => c.type == MovementType.expense);
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'c4_m', title: 'Da Eliminare', amount: 50,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: expCat.id, createdAt: DateTime.now(),
     ));
 
     final balBefore = db.getAccountBalance(db.getAccount(defaultAccountId));
-    db.deleteMovement('c4_m');
+    await db.deleteMovement('c4_m');
     final balAfter = db.getAccountBalance(db.getAccount(defaultAccountId));
 
     expect(balAfter, balBefore + 50);
@@ -115,13 +115,12 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 's1_m', title: 'Async Test', amount: 99,
       type: MovementType.income, date: DateTime.now(),
       categoryId: db.categories.first.id, createdAt: DateTime.now(),
     ));
 
-    await Future.delayed(const Duration(milliseconds: 100));
 
     // Reload
     final db2 = AppDatabase(sqlite: sqlite);
@@ -137,21 +136,20 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 's2_m', title: 'Originale', amount: 10,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: db.categories.firstWhere((c) => c.type == MovementType.expense).id,
       createdAt: DateTime.now(),
     ));
 
-    db.updateMovement(Movement(
+    await db.updateMovement(Movement(
       id: 's2_m', title: 'Modificata', amount: 20,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: db.categories.firstWhere((c) => c.type == MovementType.expense).id,
       createdAt: DateTime.now(), updatedAt: DateTime.now(),
     ));
 
-    await Future.delayed(const Duration(milliseconds: 100));
 
     final db2 = AppDatabase(sqlite: sqlite);
     await db2.initialize();
@@ -166,15 +164,14 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 's3_m', title: 'Da cancellare', amount: 5,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: db.categories.firstWhere((c) => c.type == MovementType.expense).id,
       createdAt: DateTime.now(),
     ));
 
-    db.deleteMovement('s3_m');
-    await Future.delayed(const Duration(milliseconds: 100));
+    await db.deleteMovement('s3_m');
 
     final db2 = AppDatabase(sqlite: sqlite);
     await db2.initialize();
@@ -184,13 +181,13 @@ void main() {
 
   // ── Suggeriti dopo rename ──
 
-  test('G1. Suggeriti dopo rename categoria → nome coerente', () {
+  test('G1. Suggeriti dopo rename categoria → nome coerente', () async {
     final db = AppDatabase();
     final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
     final catId = cat.id;
 
     for (int i = 0; i < 5; i++) {
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'g1_m$i', title: 'Caffe', amount: 1.50,
         type: MovementType.expense, date: DateTime.now(),
         categoryId: catId, createdAt: DateTime.now(),
@@ -198,7 +195,7 @@ void main() {
     }
 
     final sugBefore = db.getSuggestions();
-    db.updateCategory(catId, 'Bevande', cat.color);
+    await db.updateCategory(catId, 'Bevande', cat.color);
     final sugAfter = db.getSuggestions();
 
     expect(sugBefore.length, 1);
@@ -215,18 +212,18 @@ void main() {
 
   // ── Duplica scenari ──
 
-  test('D1. Duplica movimento con categoria custom → nuovo movimento ha stessa categoryId', () {
+  test('D1. Duplica movimento con categoria custom → nuovo movimento ha stessa categoryId', () async {
     final db = AppDatabase();
-    db.addCategory('Custom Duplica', MovementType.expense, 0xFFFF7043);
+    await db.addCategory('Custom Duplica', MovementType.expense, 0xFFFF7043);
     final customCat = db.categories.where((c) => c.name == 'Custom Duplica').first;
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'd1_orig', title: 'Originale', amount: 30,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: customCat.id, createdAt: DateTime.now(),
     ));
 
-    db.duplicateMovement(db.movements.first);
+    await db.duplicateMovement(db.movements.first);
 
     final clones = db.movements.where((m) => m.id != 'd1_orig').toList();
     expect(clones.length, 1);
@@ -237,19 +234,19 @@ void main() {
     expect(resolved?.name, 'Custom Duplica');
   });
 
-  test('D2. Duplica movimento con categoria archiviata → clone referenzia ancora', () {
+  test('D2. Duplica movimento con categoria archiviata → clone referenzia ancora', () async {
     final db = AppDatabase();
     final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
     final catId = cat.id;
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'd2_orig', title: 'Archiv Cat', amount: 20,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: catId, createdAt: DateTime.now(),
     ));
 
-    db.archiveCategory(catId);
-    db.duplicateMovement(db.movements.first);
+    await db.archiveCategory(catId);
+    await db.duplicateMovement(db.movements.first);
 
     final resolved = db.categories.where((c) => c.id == catId).firstOrNull;
     expect(resolved?.archived, true);
@@ -259,20 +256,20 @@ void main() {
 
   // ── Rapidi con rename ──
 
-  test('R1. Usa rapido dopo rename categoria → movimento creato ha categoryId corretto', () {
+  test('R1. Usa rapido dopo rename categoria → movimento creato ha categoryId corretto', () async {
     final db = AppDatabase();
     final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
     final catId = cat.id;
 
-    db.addQuickMovement(QuickMovement(
+    await db.addQuickMovement(QuickMovement(
       id: 'r1_qm', title: 'Test Rapido', amount: 15,
       type: MovementType.expense, categoryId: catId,
     ));
 
-    db.updateCategory(catId, 'Rinominata', cat.color);
+    await db.updateCategory(catId, 'Rinominata', cat.color);
 
     final qm = db.quickMovements.firstWhere((q) => q.id == 'r1_qm');
-    db.createMovementFromTemplate(
+    await db.createMovementFromTemplate(
       title: qm.title, amount: qm.amount, type: qm.type,
       categoryId: qm.categoryId,
     );
@@ -284,20 +281,20 @@ void main() {
 
   // ── Preferiti con rename ──
 
-  test('P1. Usa preferito dopo rename categoria → categoryId corretto', () {
+  test('P1. Usa preferito dopo rename categoria → categoryId corretto', () async {
     final db = AppDatabase();
     final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
     final catId = cat.id;
 
-    db.addFavoriteMovement(FavoriteMovement(
+    await db.addFavoriteMovement(FavoriteMovement(
       id: 'p1_fm', title: 'Test Preferito', amount: 25,
       type: MovementType.expense, categoryId: catId,
     ));
 
-    db.updateCategory(catId, 'Preferito Rename', cat.color);
+    await db.updateCategory(catId, 'Preferito Rename', cat.color);
 
     final fm = db.favoriteMovements.firstWhere((f) => f.id == 'p1_fm');
-    db.createMovementFromTemplate(
+    await db.createMovementFromTemplate(
       title: fm.title, amount: fm.amount, type: fm.type,
       categoryId: fm.categoryId,
     );
@@ -316,12 +313,12 @@ void main() {
 
   // ── Movimenti con conto non default ──
 
-  test('A1. Movimento su conto B → elimina → saldo conto B aggiornato', () {
+  test('A1. Movimento su conto B → elimina → saldo conto B aggiornato', () async {
     final db = AppDatabase();
-    db.addAccount(Account(id: 'conto_b1', name: 'B', type: AccountType.bank, createdAt: DateTime.now()));
+    await db.addAccount(Account(id: 'conto_b1', name: 'B', type: AccountType.bank, createdAt: DateTime.now()));
     final expCat = db.categories.firstWhere((c) => c.type == MovementType.expense);
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'a1_m', title: 'Su B', amount: 60,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: expCat.id, accountId: 'conto_b1',
@@ -329,31 +326,31 @@ void main() {
     ));
 
     final balB1 = db.getAccountBalance(db.getAccount('conto_b1'));
-    db.deleteMovement('a1_m');
+    await db.deleteMovement('a1_m');
     final balB2 = db.getAccountBalance(db.getAccount('conto_b1'));
 
     expect(balB2, balB1 + 60);
   });
 
-  test('A2. Due movimenti su conto B → modifica importo → saldo conto B corretto', () {
+  test('A2. Due movimenti su conto B → modifica importo → saldo conto B corretto', () async {
     final db = AppDatabase();
-    db.addAccount(Account(id: 'conto_b2', name: 'B2', type: AccountType.bank, createdAt: DateTime.now()));
+    await db.addAccount(Account(id: 'conto_b2', name: 'B2', type: AccountType.bank, createdAt: DateTime.now()));
     final incCat = db.categories.firstWhere((c) => c.type == MovementType.income);
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'a2_m1', title: 'Inc1', amount: 200,
       type: MovementType.income, date: DateTime.now(),
       categoryId: incCat.id, accountId: 'conto_b2',
       createdAt: DateTime.now(),
     ));
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'a2_m2', title: 'Inc2', amount: 300,
       type: MovementType.income, date: DateTime.now(),
       categoryId: incCat.id, accountId: 'conto_b2',
       createdAt: DateTime.now(),
     ));
 
-    db.updateMovement(Movement(
+    await db.updateMovement(Movement(
       id: 'a2_m1', title: 'Inc1 Mod', amount: 250,
       type: MovementType.income, date: DateTime.now(),
       categoryId: incCat.id, accountId: 'conto_b2',
@@ -375,10 +372,10 @@ void main() {
 
   // ── Categoria protezione eliminazione ──
 
-  test('CAT1. Categoria usata da movimento → eliminazione bloccata (già test 9)', () {
+  test('CAT1. Categoria usata da movimento → eliminazione bloccata (già test 9)', () async {
     final db = AppDatabase();
     final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'cat1_m', title: 'Test', amount: 10,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: cat.id, createdAt: DateTime.now(),

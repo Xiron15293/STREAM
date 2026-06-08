@@ -13,8 +13,9 @@ enum AddMode { manuale, rapidi, preferiti }
 class MovementPicker extends StatefulWidget {
   final AppDatabase db;
   final Movement? prefill;
+  final String? categoryPreFill;
 
-  const MovementPicker({super.key, required this.db, this.prefill});
+  const MovementPicker({super.key, required this.db, this.prefill, this.categoryPreFill});
 
   @override
   State<MovementPicker> createState() => _MovementPickerState();
@@ -89,6 +90,7 @@ class _MovementPickerState extends State<MovementPicker> {
         return _ManualForm(
           db: widget.db,
           prefill: widget.prefill,
+          categoryPreFill: widget.categoryPreFill,
           onSaved: () => Navigator.of(context).pop(),
         );
       case AddMode.rapidi:
@@ -112,11 +114,13 @@ class _MovementPickerState extends State<MovementPicker> {
 class _ManualForm extends StatefulWidget {
   final AppDatabase db;
   final Movement? prefill;
+  final String? categoryPreFill;
   final VoidCallback onSaved;
 
   const _ManualForm({
     required this.db,
     this.prefill,
+    this.categoryPreFill,
     required this.onSaved,
   });
 
@@ -146,6 +150,12 @@ class _ManualFormState extends State<_ManualForm> {
       _type = p.type;
       _selectedCategoryId = p.categoryId;
       _selectedAccountId = p.accountId;
+    } else if (widget.categoryPreFill != null) {
+      final cat = widget.db.categories.where((c) => c.id == widget.categoryPreFill).firstOrNull;
+      if (cat != null) {
+        _type = cat.type;
+        _selectedCategoryId = cat.id;
+      }
     }
   }
 

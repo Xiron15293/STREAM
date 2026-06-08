@@ -13,7 +13,7 @@ void main() {
       expect(f.mode, TimeFilterMode.day);
     });
 
-    test('endDate è esclusiva — giorno dopo non incluso', () {
+    test('giorno dopo non incluso', () {
       final f = TimeFilter.day(DateTime(2026, 6, 15));
       expect(f.contains(DateTime(2026, 6, 15, 23, 59, 59)), true);
       expect(f.contains(DateTime(2026, 6, 16)), false);
@@ -45,12 +45,12 @@ void main() {
       expect(f.contains(DateTime(2026, 7, 1)), false);
     });
 
-    test('endDate esclusiva — primo giorno del mese dopo non incluso', () {
+    test('mese dopo non incluso', () {
       final f = TimeFilter.month(2026, 6);
       expect(f.contains(DateTime(2026, 7, 1)), false);
     });
 
-    test('dicembre → endDate è gennaio anno+1', () {
+    test('dicembre → ultimo giorno di dicembre', () {
       final f = TimeFilter.month(2026, 12);
       expect(f.contains(DateTime(2026, 12, 31)), true);
       expect(f.contains(DateTime(2027, 1, 1)), false);
@@ -73,7 +73,7 @@ void main() {
       expect(f.contains(DateTime(2027, 1, 1)), false);
     });
 
-    test('endDate esclusiva — primo giorno anno+1 non incluso', () {
+    test('anno dopo non incluso', () {
       final f = TimeFilter.year(2026);
       expect(f.contains(DateTime(2027, 1, 1)), false);
     });
@@ -84,7 +84,7 @@ void main() {
   });
 
   group('TimeFilter.customRange', () {
-    test('contiene range corretto', () {
+    test('contiene range corretto (inclusivo)', () {
       final f = TimeFilter.customRange(
         DateTime(2026, 6, 15),
         DateTime(2026, 6, 30),
@@ -93,19 +93,21 @@ void main() {
       expect(f.contains(DateTime(2026, 6, 20)), true);
       expect(f.contains(DateTime(2026, 6, 29)), true);
       expect(f.contains(DateTime(2026, 6, 14)), false);
-      expect(f.contains(DateTime(2026, 6, 30)), false);
+      expect(f.contains(DateTime(2026, 6, 30)), true);
+      expect(f.contains(DateTime(2026, 7, 1)), false);
     });
 
-    test('endDate esclusiva nell\'intervallo custom', () {
+    test('endDate inclusiva nell\'intervallo custom', () {
       final f = TimeFilter.customRange(
         DateTime(2026, 6, 1),
         DateTime(2026, 7, 1),
       );
       expect(f.contains(DateTime(2026, 6, 30)), true);
-      expect(f.contains(DateTime(2026, 7, 1)), false);
+      expect(f.contains(DateTime(2026, 7, 1)), true);
+      expect(f.contains(DateTime(2026, 7, 2)), false);
     });
 
-    test('start == end → almeno 1 giorno di range', () {
+    test('endDate == startDate → range 1 giorno', () {
       final f = TimeFilter.customRange(
         DateTime(2026, 6, 15),
         DateTime(2026, 6, 15),
@@ -123,12 +125,12 @@ void main() {
       expect(f.contains(DateTime(2026, 6, 19)), false);
     });
 
-    test('label: "15 giugno 2026 - 30 giugno 2026"', () {
+    test('label: "15 giu → 30 giu"', () {
       final f = TimeFilter.customRange(
         DateTime(2026, 6, 15),
         DateTime(2026, 6, 30),
       );
-      expect(f.label, '15 giugno 2026 - 30 giugno 2026');
+      expect(f.label, '15 giu → 30 giu');
     });
   });
 
@@ -271,14 +273,14 @@ void main() {
       expect(filtered.first.id, 'a');
     });
 
-    test('filtra movimenti per range custom', () {
+    test('filtra movimenti per range custom (inclusivo)', () {
       final movements = [
         Movement(id: 'a', title: 'Dentro', amount: 10, type: MovementType.expense,
             date: DateTime(2026, 6, 15), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 15)),
         Movement(id: 'b', title: 'Fuori sx', amount: 20, type: MovementType.expense,
             date: DateTime(2026, 6, 10), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 10)),
         Movement(id: 'c', title: 'Fuori dx', amount: 30, type: MovementType.expense,
-            date: DateTime(2026, 6, 20), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 20)),
+            date: DateTime(2026, 6, 21), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 21)),
         Movement(id: 'd', title: 'Dentro 2', amount: 40, type: MovementType.expense,
             date: DateTime(2026, 6, 18), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 18)),
       ];
@@ -326,7 +328,7 @@ void main() {
     test('data con orario non zero è normalizzata', () {
       final f = TimeFilter.day(DateTime(2026, 6, 15, 14, 30, 45));
       expect(f.startDate, DateTime.utc(2026, 6, 15));
-      expect(f.endDate, DateTime.utc(2026, 6, 16));
+      expect(f.endDate, DateTime.utc(2026, 6, 15));
     });
 
     test('contains con data con orario non zero', () {

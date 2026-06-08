@@ -13,7 +13,7 @@ void main() {
   SharedPreferences.setMockInitialValues({});
 
   group('TimeFilterBar widget', () {
-    testWidgets('shows Giorno/Mese/Anno/Periodo segments and label',
+    testWidgets('shows Giorno/Mese/Anno/Intervallo segments and label',
         (WidgetTester tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Material(
@@ -27,7 +27,7 @@ void main() {
       expect(find.text('Giorno'), findsOneWidget);
       expect(find.text('Mese'), findsOneWidget);
       expect(find.text('Anno'), findsOneWidget);
-      expect(find.text('Periodo'), findsOneWidget);
+      expect(find.text('Intervallo'), findsOneWidget);
       expect(find.text('giugno 2026'), findsOneWidget);
     });
 

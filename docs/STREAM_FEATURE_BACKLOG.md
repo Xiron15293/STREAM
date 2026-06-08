@@ -46,51 +46,55 @@
 
 ## 2. Feature approvate (📋)
 
-### F12 — V0.4.3 Quick/Favorite Movement Library UX
+### F12 — V0.6.3 UX Movimenti Rapidi/Preferiti — Data Picker
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | UX avanzata per Rapidi e Preferiti: ricerca, filtri, salva da Manuale, aggiorna preferito esistente |
-| **Motivazione** | Con molti template (10+), la lista verticale non scala. L'utente fatica a trovare il template giusto |
+| **Descrizione** | UX avanzata per Rapidi e Preferiti: quando si usa un template, aprire scelta data (Oggi, Ieri, Domani, Scegli data) prima di salvare il movimento |
+| **Motivazione** | Attualmente un rapido/preferito crea il movimento con la data corrente. L'utente vuole poter assegnare una data diversa senza passare dalla modifica |
 | **Priorità** | Alta |
 | **Dipendenze** | Nessuna |
-| **Versione candidata** | V0.4.3 (prima o parallela a V0.5) |
+| **Versione candidata** | V0.6.3 |
 | **Stato** | 📋 APPROVATA |
 
 **Sotto-feature:**
-1. **Ricerca testuale** in Rapidi e Preferiti — match parziale case-insensitive su: nome, categoria, conto, note, importo
-2. **Filtro per categoria** — dropdown che limita la lista alla categoria selezionata
-3. **Salva da Manuale** — dal tab Manuale, opzione "Salva come Rapido" / "Salva come Preferito"
-4. **Aggiorna preferito esistente** — da modifica movimento, opzione per aggiornare un preferito senza duplicarlo
-5. **Helper condivisi** — ridurre duplicazione logica tra Rapidi e Preferiti
+1. **Data Picker al salvataggio** — quando si seleziona un rapido/preferito, mostrare schermata di scelta data prima di confermare
+2. **Tab rapide** — Oggi, Ieri, Domani (selezione istantanea senza calendario)
+3. **Tab "Scegli data"** — date picker a rotella (riusa StreamDatePicker)
+4. **Salvataggio** — crea movimento con data selezionata + tutti i campi del template
 
-**Architettura:** `docs/STREAM_TECH_NOTES.md` sezione dedicata + `docs/HERMES_ROADMAP.md` dettaglio completo.
+**Test richiesti:** ~15-20 test (date selection, quick tabs, custom date, backward compatibility)
 
-**Test richiesti:** ~15-20 test (ricerca, filtri, salvataggio, aggiornamento, regressione)
+**Rischio tecnico:** BASSO — solo UI, nessun cambiamento model/database
 
 ---
 
-### F13 — Calendar Heatmap / Category Heatmap
+### F13 — V0.6.4 Calendar Heatmap / Category Heatmap
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Griglia mensile con intensità colore per giorno basata su spese/entrate/saldo. Filtro per categoria. Tap giorno → movimenti o aggiunta |
+| **Descrizione** | Griglia mensile con intensità colore per giorno basata su spese/entrate/saldo. Filtro per categoria. Filtro per mese/anno/periodo custom. Navigazione mese prec/succ |
 | **Motivazione** | La vista calendario testuale non dà colpo d'occhio immediato sulla distribuzione finanziaria nel mese |
-| **Priorità** | Media |
-| **Dipendenze** | F09 (date movimenti), F11 (TimeFilter foundation) |
-| **Versione candidata** | V0.5.4+ (dopo Calendario tab) |
+| **Priorità** | Alta |
+| **Dipendenze** | F09 (date movimenti) ✅, F11 (TimeFilter) ✅, F14 (Calendario tab) ✅ |
+| **Versione candidata** | V0.6.4 |
 | **Stato** | 📋 APPROVATA |
 
 **Sotto-feature:**
-1. Griglia mensile 7 colonne con celle colorate
+1. Griglia mensile 7 colonne con celle colorate (intensità = spesa totale del giorno)
 2. 3 modalità: spese (rosso), entrate (verde), saldo netto (duale)
-3. Filtro per singola categoria
-4. Tap giorno → lista movimenti del giorno
-5. Tap rapido → aggiungi movimento con data precompilata
-6. Totale mese in basso
-7. Navigazione mese prec/succ
+3. Filtro per singola categoria — heatmap limitata a una categoria specifica
+4. Filtro per mese/anno/periodo custom
+5. Tap giorno → lista movimenti del giorno (riusa logica V0.5 ✅)
+6. Tap rapido → aggiungi movimento con data precompilata
+7. Totale mese in basso (entrate, spese, saldo)
+8. Navigazione mese prec/succ
 
-**Vincoli:** Nessuna nuova tabella SQLite. Palette STREAM esistente. Dopo V0.5 Foundation.
+**Vincoli:** Nessuna nuova tabella SQLite. Palette STREAM esistente.
+
+**Test richiesti:** ~12-15 test (intensità colore, filtri, navigazione, tap giorno)
+
+**Rischio tecnico:** MEDIO — UI complessa ma dati già disponibili, nessuna migration
 
 ---
 
@@ -106,6 +110,122 @@
 | **Stato** | 📋 APPROVATA |
 
 **Nota:** Si sovrappone parzialmente a F28 (Error Feedback Utente Migliorato, POST-MVP). F30 ha priorità più alta e ambito più specifico (solo form inline). Da unificare.
+
+---
+
+### F33 — V0.6.0 Raggruppamento Movimenti per Giorno
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Nelle viste Mese, Periodo e Anno di Archivio, mostrare un'intestazione data sopra i movimenti dello stesso giorno. Separazione chiara per ogni giornata |
+| **Motivazione** | La lista piatta di movimenti rende difficile capire la distribuzione temporale. Il raggruppamento per giorno dà contesto immediato |
+| **Priorità** | Alta |
+| **Dipendenze** | Nessuna |
+| **Versione candidata** | V0.6.0 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **Intestazione data** — label "Oggi", "ieri", "15/06/2026" sopra i movimenti del giorno
+2. **Separatore visivo** — linea sottile o padding extra tra gruppi di giorni diversi
+3. **Vista Mese** — raggruppamento naturale per giorno all'interno del mese selezionato
+4. **Vista Periodo/Anno** — raggruppamento per giorno con header data
+5. **Scroll** — header data sticky (opzionale, primo MVP senza sticky)
+
+**Test richiesti:** ~10-12 test (raggruppamento corretto, header data, scroll, cambio periodo)
+
+**Rischio tecnico:** BASSO — pura UI, nessuna modifica a model/database
+
+**MovementCard:** riusa widget esistente (`lib/widgets/movement_card.dart`) per ogni riga.
+**TimeFilter:** riusa filtro periodo esistente.
+**Beneficiario futuro:** F35 estenderà la card con nuovi campi.
+
+---
+
+### F34 — V0.6.1 Click Categoria Dashboard
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Cliccando una categoria dalla sezione "Spese per categoria" della Dashboard, aprire la schermata Archivio filtrata per quella categoria. Filtro per giorno/mese/anno/periodo custom |
+| **Motivazione** | L'utente vede "Ho speso 500€ in Svago" ma non può approfondire. Click → lista movimenti di Svago nel periodo |
+| **Priorità** | Alta |
+| **Dipendenze** | TimeFilter (F11) ✅, F33 (raggruppamento per giorno, riusato nella vista filtrata) |
+| **Versione candidata** | V0.6.1 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **Tap su categoria Dashboard** — naviga ad Archivio con filtro categoria attivo
+2. **Vista filtrata** — mostra solo movimenti della categoria selezionata
+3. **Filtro periodo** — giorno/mese/anno/periodo custom, si combina col filtro categoria
+4. **Back navigation** — "Torna alla Dashboard" o back button naturale
+5. **Empty state** — "Nessun movimento in [Categoria] nel periodo selezionato"
+
+**Test richiesti:** ~12-15 test (navigazione click, filtro categoria, combinazione con periodo, back navigation, empty state)
+
+**Rischio tecnico:** BASSO-MEDIO — navigazione + filtro in-memory, nessuna modifica a model/database
+
+---
+
+### F35 — V0.6.5 Beneficiario ed Etichette
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Aggiungere due nuovi campi opzionali al modello Movement: beneficiario (stringa) e etichette/tag (lista di stringhe). Campi disabilitabili da Impostazioni. Aggiornare model, SQLite, migration, backup/restore, UI e test |
+| **Motivazione** | "A chi ho pagato?" e "per cosa?" sono domande naturali. Beneficiario e tag arricchiscono il dato senza rompere la semplicità |
+| **Priorità** | Media |
+| **Dipendenze** | F33 (raggruppamento giorno — la card modificata riusa la stessa struttura) |
+| **Versione candidata** | V0.6.5 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **Modello Movement** — nuovi campi `beneficiary` (String?) e `tags` (List<String>)
+2. **SQLite migration V7** — nuove colonne `beneficiary TEXT`, `tags TEXT` (JSON serializzato)
+3. **Backup/Restore V2** — nuovo formato JSON con campi opzionali (backward compatible V1)
+4. **UI Movimenti** — campi editabili nel form (sotto "Nota")
+5. **UI MovementCard** — visualizzazione beneficiario e tags (se presenti)
+6. **Impostazioni** — toggle per abilitare/disabilitare i campi (nascondi se non usati)
+7. **Ricerca globale (F23)** — estende la ricerca a beneficiario e tags
+8. **Test** — model, CRUD, migration, backup/restore roundtrip, UI
+
+**Test richiesti:** ~25-30 test (model, CRUD, migration V6→V7, backup/restore con/senza campi, UI, toggle impostazioni, ricerca)
+
+**Rischio tecnico:** ALTO
+- **Migration SQLite**: modifica schema esistente. Dati esistenti devono sopravvivere senza perdite.
+- **Backup compatibilità**: file JSON V1 devono essere importabili anche senza i nuovi campi. File V2 devono essere aperti da app V1 (con perdita dati accettabile).
+- **Rollback**: se migration fallisce, AppDatabase deve rimanere in stato consistente.
+- **Performance**: tags come JSON serializzato in colonna TEXT — query per tag richiede `LIKE '%tag%'` (lento su grandi dataset). Valutare tabella separata `movement_tags` in futuro.
+
+---
+
+### F36 — V0.6.6 Trasferimenti tra Conti
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Nuovo tipo movimento "Trasferimento" insieme a Entrata e Uscita. Richiede conto origine, conto destinazione e importo. Aggiorna saldo di entrambi i conti. Backup/restore e test dedicati |
+| **Motivazione** | Spostare denaro tra conti (es. CC → Carta) è un'operazione comune. Attualmente servono 2 movimenti (uscita + entrata). Un tipo "Trasferimento" nativo è più pulito |
+| **Priorità** | Alta |
+| **Dipendenze** | F35 (beneficiario/tag aggiungono campi al form movimento, ma trasferimento può essere indipendente) |
+| **Versione candidata** | V0.6.6 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **MovementType.transfer** — nuovo enum value accanto a income/expense
+2. **Conto origine + conto destinazione** — due campi Account nel form (invece di uno)
+3. **Saldo duale** — conto origine: -importo, conto destinazione: +importo
+4. **Dashboard KPI** — trasferimenti esclusi da income/expense totals
+5. **Lista movimenti** — icona distintiva per trasferimenti ⇄
+6. **SQLite migration V8** — nuovo campo `transfer_destination_account_id TEXT`
+7. **Backup/Restore V3** — nuovo campo opzionale (backward compatible)
+8. **Vincolo** — conto origine ≠ conto destinazione
+
+**Test richiesti:** ~30-35 test (model, CRUD, saldo duale, migration V7→V8, backup/restore roundtrip, KPI esclusione, validazione conti, UI form, regressione income/expense)
+
+**Rischio tecnico:** ALTO
+- **Saldo duale**: operazione atomica — se fallisce l'aggiornamento del saldo del conto destinazione, bisogna rollbackare anche quello del conto origine. Necessita `sqlite.transaction()`.
+- **Migration SQLite**: modifica schema. Dati esistenti senza `transfer_destination_account_id` devono funzionare.
+- **KPI**: trasferimenti non devono apparire in totalIncome/totalExpenses. Nuovo getter `totalTransfers` o filtro esplicito in tutti i calcoli.
+- **Backward compatibilità**: file JSON senza `transferDestinationAccountId` devono essere importati come income/expense normali.
+- **UI**: il form movimento deve cambiare contestualmente — se tipo=transfer, mostra due campi conto invece di uno. Se tipo=income/expense, comportamento invariato.
+- **Export**: includere trasferimenti nel backup JSON con flag `type: "transfer"`.
 
 ---
 
@@ -275,18 +395,30 @@
 
 ---
 
-### F23 — Ricerca Globale Movimenti
+### F23 — V0.6.2 Ricerca Globale Movimenti
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Campo di ricerca testuale nella lista movimenti (e/o Archivio). Filtra per titolo, categoria, conto, note, importo |
-| **Motivazione** | Con centinaia di movimenti, trovarne uno per scorrimento è impossibile |
-| **Priorità** | Media |
-| **Dipendenze** | Nessuna (solo UI/filtro in-memory) |
-| **Versione candidata** | V0.5+ |
-| **Stato** | 💡 IDEA FUTURA |
+| **Descrizione** | Campo di ricerca testuale permanente nella lista movimenti di Archivio. Cerca in: titolo, categoria, conto, nota, beneficiario (F35), etichette (F35). Filtro per giorno/mese/anno/periodo custom. Risultati raggruppati per data |
+| **Motivazione** | Con centinaia di movimenti, trovarne uno per scorrimento è impossibile. La ricerca testuale è il metodo più rapido |
+| **Priorità** | Alta |
+| **Dipendenze** | Nessuna (solo UI/filtro in-memory). Beneficiario/tag (F35) estendono la ricerca ma non la bloccano |
+| **Versione candidata** | V0.6.2 |
+| **Stato** | 📋 APPROVATA |
 
-**Nota:** Più semplice di F12 (ricerca solo in Rapidi/Preferiti). Può essere implementata prima.
+**Sotto-feature:**
+1. **Campo di ricerca** — TextField persistente nella testata della lista movimenti
+2. **Match parziale** — case-insensitive su titolo, importo (formattato), nome categoria, nome conto, nota
+3. **Estensione futura** — beneficiario (F35), etichette (F35) quando disponibili
+4. **Filtro periodo** — dropdown/combo per giorno/mese/anno/periodo custom, combinato con testo ricerca
+5. **Risultati raggruppati per data** — intestazione data sopra i movimenti dello stesso giorno (riusa F33)
+6. **Empty state** — "Nessun risultato per la ricerca"
+
+**Nota:** Sostituisce e migliora la ricerca solo-Rapidi/Preferiti di F12. helper condivisi per logica di match.
+
+**Test richiesti:** ~18-22 test (ricerca per campo, combinazione con filtro periodo, raggruppamento, empty state, performance su 1000+ movimenti)
+
+**Rischio tecnico:** BASSO-MEDIO — solo UI/filtro in-memory, nessun cambiamento model/database
 
 ---
 

@@ -74,6 +74,13 @@ class BackupData {
         'updatedAt': a.updatedAt.toIso8601String(),
       };
 
+  static DateTime _parseDateSafe(dynamic value, {required DateTime fallback}) {
+    if (value is! String || value.isEmpty) return fallback;
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null && parsed.isAfter(DateTime(2000))) return parsed;
+    return fallback;
+  }
+
   static Account _accountFromMap(Map<String, dynamic> m) => Account(
         id: m['id'] as String,
         name: m['name'] as String,
@@ -82,8 +89,8 @@ class BackupData {
         iconKey: m['iconKey'] as String? ?? StreamIconLibrary.defaultAccountIcon,
         color: m['color'] as int? ?? StreamColorPalette.defaultColor,
         archived: m['archived'] as bool? ?? false,
-        createdAt: DateTime.parse(m['createdAt'] as String),
-        updatedAt: m['updatedAt'] != null ? DateTime.parse(m['updatedAt'] as String) : null,
+        createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
+        updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,
       );
 
   static Map<String, dynamic> _categoryToMap(Category c) => {
@@ -122,12 +129,12 @@ class BackupData {
         title: m['title'] as String,
         amount: (m['amount'] as num).toDouble(),
         type: MovementType.values.byName(m['type'] as String),
-        date: DateTime.parse(m['date'] as String),
+        date: _parseDateSafe(m['date'], fallback: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1))),
         categoryId: m['categoryId'] as String,
         accountId: m['accountId'] as String?,
         note: m['note'] as String?,
-        createdAt: DateTime.parse(m['createdAt'] as String),
-        updatedAt: m['updatedAt'] != null ? DateTime.parse(m['updatedAt'] as String) : null,
+        createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
+        updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,
       );
 
   static Map<String, dynamic> _quickMovementToMap(QuickMovement q) => {

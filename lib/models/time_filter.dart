@@ -18,11 +18,10 @@ class TimeFilter {
   factory TimeFilter.day(DateTime date) {
     final d = _normalize(date);
     final start = DateTime.utc(d.year, d.month, d.day);
-    final end = DateTime.utc(d.year, d.month, d.day + 1);
     return TimeFilter._(
       mode: TimeFilterMode.day,
       startDate: start,
-      endDate: end,
+      endDate: start,
       label: '${d.day} ${_monthNames[d.month - 1]} ${d.year}',
     );
   }
@@ -30,8 +29,8 @@ class TimeFilter {
   factory TimeFilter.month(int year, int month) {
     final start = DateTime.utc(year, month, 1);
     final end = month < 12
-        ? DateTime.utc(year, month + 1, 1)
-        : DateTime.utc(year + 1, 1, 1);
+        ? DateTime.utc(year, month + 1, 1).subtract(const Duration(days: 1))
+        : DateTime.utc(year + 1, 1, 1).subtract(const Duration(days: 1));
     return TimeFilter._(
       mode: TimeFilterMode.month,
       startDate: start,
@@ -44,33 +43,43 @@ class TimeFilter {
     return TimeFilter._(
       mode: TimeFilterMode.year,
       startDate: DateTime.utc(year, 1, 1),
-      endDate: DateTime.utc(year + 1, 1, 1),
+      endDate: DateTime.utc(year, 12, 31),
       label: '$year',
     );
   }
 
   factory TimeFilter.customRange(DateTime start, DateTime end) {
-    final s = _normalize(start);
-    final e = _normalize(end);
-    final startUtc = DateTime.utc(s.year, s.month, s.day);
-    final endUtc = e.isAfter(startUtc)
-        ? DateTime.utc(e.year, e.month, e.day)
-        : DateTime.utc(s.year, s.month, s.day + 1);
+    final startNormalized = _normalize(start);
+    final endNormalized = _normalize(end);
+    final startUtc = DateTime.utc(
+      startNormalized.year,
+      startNormalized.month,
+      startNormalized.day,
+    );
+    final endUtc = endNormalized.isBefore(startNormalized)
+        ? startUtc
+        : DateTime.utc(
+            endNormalized.year,
+            endNormalized.month,
+            endNormalized.day,
+          );
 
-    String fmt(DateTime d) =>
-        '${d.day} ${_monthNames[d.month - 1]} ${d.year}';
+    String shortFmt(DateTime d) =>
+        '${d.day} ${_shortMonthNames[d.month - 1]}';
     return TimeFilter._(
       mode: TimeFilterMode.customRange,
       startDate: startUtc,
       endDate: endUtc,
-      label: '${fmt(startUtc)} - ${fmt(endUtc)}',
+      label: '${shortFmt(startUtc)} → ${shortFmt(endUtc)}',
     );
   }
 
   bool contains(DateTime date) {
     final d = _normalize(date);
-    final cmp = DateTime.utc(d.year, d.month, d.day);
-    return !cmp.isBefore(startDate) && cmp.isBefore(endDate);
+    final cmp = DateTime(d.year, d.month, d.day);
+    final s = DateTime(startDate.year, startDate.month, startDate.day);
+    final e = DateTime(endDate.year, endDate.month, endDate.day);
+    return !cmp.isBefore(s) && !cmp.isAfter(e);
   }
 
   TimeFilter next() {
@@ -131,6 +140,11 @@ class TimeFilter {
   static const _monthNames = [
     'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
     'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+  ];
+
+  static const _shortMonthNames = [
+    'gen', 'feb', 'mar', 'apr', 'mag', 'giu',
+    'lug', 'ago', 'set', 'ott', 'nov', 'dic',
   ];
 }
 

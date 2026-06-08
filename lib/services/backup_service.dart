@@ -74,6 +74,11 @@ class BackupService {
         }
       }
 
+      final deepError = _deepValidate(parsed);
+      if (deepError != null) {
+        return ValidationResult.invalid(deepError);
+      }
+
       return ValidationResult.valid(BackupData.fromJson(parsed));
     } on FormatException {
       return ValidationResult.invalid('File JSON non valido: formato errato');
@@ -82,73 +87,185 @@ class BackupService {
     }
   }
 
+  static String? _fieldString(Map m, String key) {
+    final v = m[key];
+    if (v is! String || v.isEmpty) return null;
+    return v;
+  }
+
+  static String? _deepValidate(Map<String, dynamic> parsed) {
+    final validTypes = {'income', 'expense'};
+
+    // ── Validate accounts ──
+    final accounts = parsed['accounts'] as List;
+    for (var i = 0; i < accounts.length; i++) {
+      final item = accounts[i];
+      if (item is! Map) {
+        return 'Conto #${i + 1}: non è un oggetto valido';
+      }
+      if (_fieldString(item, 'id') == null) {
+        return 'Conto #${i + 1}: campo "id" mancante o vuoto';
+      }
+    }
+
+    // ── Validate categories ──
+    final categories = parsed['categories'] as List;
+    for (var i = 0; i < categories.length; i++) {
+      final item = categories[i];
+      if (item is! Map) {
+        return 'Categoria #${i + 1}: non è un oggetto valido';
+      }
+      if (_fieldString(item, 'id') == null) {
+        return 'Categoria #${i + 1}: campo "id" mancante o vuoto';
+      }
+      if (_fieldString(item, 'type') == null || !validTypes.contains(item['type'])) {
+        return 'Categoria #${i + 1}: campo "type" mancante o non valido (income/expense)';
+      }
+    }
+
+    // ── Validate movements ──
+    final movements = parsed['movements'] as List;
+    for (var i = 0; i < movements.length; i++) {
+      final item = movements[i];
+      if (item is! Map) {
+        return 'Movimento #${i + 1}: non è un oggetto valido';
+      }
+      if (_fieldString(item, 'id') == null) {
+        return 'Movimento #${i + 1}: campo "id" mancante o vuoto';
+      }
+      if (item['amount'] is! num) {
+        return 'Movimento #${i + 1}: campo "amount" mancante o non numerico';
+      }
+      if (!validTypes.contains(item['type'] as String?)) {
+        return 'Movimento #${i + 1}: campo "type" mancante o non valido (income/expense)';
+      }
+      final dateStr = item['date'] as String?;
+      if (dateStr == null || dateStr.isEmpty) {
+        return 'Movimento #${i + 1}: campo "date" mancante o vuoto';
+      }
+      try {
+        DateTime.parse(dateStr);
+      } catch (_) {
+        return 'Movimento #${i + 1}: campo "date" non è una data valida: "$dateStr"';
+      }
+    }
+
+    // ── Validate quickMovements (optional list) ──
+    if (parsed['quickMovements'] is List) {
+      final quickList = parsed['quickMovements'] as List;
+      for (var i = 0; i < quickList.length; i++) {
+        final item = quickList[i];
+        if (item is! Map) {
+          return 'Movimento rapido #${i + 1}: non è un oggetto valido';
+        }
+        if (_fieldString(item, 'id') == null) {
+          return 'Movimento rapido #${i + 1}: campo "id" mancante o vuoto';
+        }
+        if (item['amount'] is! num) {
+          return 'Movimento rapido #${i + 1}: campo "amount" mancante o non numerico';
+        }
+        if (!validTypes.contains(item['type'] as String?)) {
+          return 'Movimento rapido #${i + 1}: campo "type" mancante o non valido (income/expense)';
+        }
+      }
+    }
+
+    // ── Validate favoriteMovements (optional list) ──
+    if (parsed['favoriteMovements'] is List) {
+      final favList = parsed['favoriteMovements'] as List;
+      for (var i = 0; i < favList.length; i++) {
+        final item = favList[i];
+        if (item is! Map) {
+          return 'Movimento preferito #${i + 1}: non è un oggetto valido';
+        }
+        if (_fieldString(item, 'id') == null) {
+          return 'Movimento preferito #${i + 1}: campo "id" mancante o vuoto';
+        }
+        if (item['amount'] is! num) {
+          return 'Movimento preferito #${i + 1}: campo "amount" mancante o non numerico';
+        }
+        if (!validTypes.contains(item['type'] as String?)) {
+          return 'Movimento preferito #${i + 1}: campo "type" mancante o non valido (income/expense)';
+        }
+      }
+    }
+
+    return null; // valid
+  }
+
   static Future<void> restore(AppDatabase db, BackupData data) async {
     final snapshot = _buildSnapshot(data);
     final sqlite = db.sqliteService;
 
-    if (sqlite != null) {
-      await sqlite.transaction((txn) async {
-        await txn.delete('movements');
-        await txn.delete('categories');
-        await txn.delete('quick_movements');
-        await txn.delete('favorite_movements');
-        await txn.delete('accounts');
+    try {
+      if (sqlite != null) {
+        await sqlite.transaction((txn) async {
+          await txn.delete('movements');
+          await txn.delete('categories');
+          await txn.delete('quick_movements');
+          await txn.delete('favorite_movements');
+          await txn.delete('accounts');
 
-        for (final acc in snapshot.accounts) {
-          await txn.insert(
-            'accounts',
-            _accountToRow(acc),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          for (final acc in snapshot.accounts) {
+            await txn.insert(
+              'accounts',
+              _accountToRow(acc),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
 
-        for (final cat in snapshot.categories) {
-          await txn.insert(
-            'categories',
-            _categoryToRow(cat),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          for (final cat in snapshot.categories) {
+            await txn.insert(
+              'categories',
+              _categoryToRow(cat),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
 
-        for (final m in snapshot.movements) {
-          await txn.insert(
-            'movements',
-            _movementToRow(m),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          for (final m in snapshot.movements) {
+            await txn.insert(
+              'movements',
+              _movementToRow(m),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
 
-        for (final qm in snapshot.quickMovements) {
-          await txn.insert(
-            'quick_movements',
-            _quickMovementToRow(qm),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          for (final qm in snapshot.quickMovements) {
+            await txn.insert(
+              'quick_movements',
+              _quickMovementToRow(qm),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
 
-        for (final fm in snapshot.favoriteMovements) {
-          await txn.insert(
-            'favorite_movements',
-            _favoriteMovementToRow(fm),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
-      });
+          for (final fm in snapshot.favoriteMovements) {
+            await txn.insert(
+              'favorite_movements',
+              _favoriteMovementToRow(fm),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        });
+      }
+
+      db.replaceState(
+        movements: snapshot.movements,
+        categories: snapshot.categories,
+        quickMovements: snapshot.quickMovements,
+        favoriteMovements: snapshot.favoriteMovements,
+        accounts: snapshot.accounts,
+      );
+
+      if (data.settings != null) {
+        await PreferencesService.saveShowNotes(data.settings!.showNotes);
+      }
+
+      db.notify();
+    } catch (e) {
+      // Recovery: reload from DB to restore consistent state
+      await db.reloadFromDb();
+      rethrow;
     }
-
-    db.replaceState(
-      movements: snapshot.movements,
-      categories: snapshot.categories,
-      quickMovements: snapshot.quickMovements,
-      favoriteMovements: snapshot.favoriteMovements,
-      accounts: snapshot.accounts,
-    );
-
-    if (data.settings != null) {
-      await PreferencesService.saveShowNotes(data.settings!.showNotes);
-    }
-
-    db.notify();
   }
 
   static List<Category> _defaultCategories() {

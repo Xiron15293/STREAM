@@ -38,7 +38,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'persist_1',
       title: 'Persistente',
       amount: 100.0,
@@ -84,7 +84,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addQuickMovement(QuickMovement(
+    await db.addQuickMovement(QuickMovement(
       id: 'qm_persist',
       title: 'Palestra',
       amount: 49.99,
@@ -107,7 +107,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addFavoriteMovement(FavoriteMovement(
+    await db.addFavoriteMovement(FavoriteMovement(
       id: 'fav_persist',
       title: 'Netflix',
       amount: 15.99,
@@ -130,7 +130,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'orig',
       title: 'Caffè',
       amount: 1.50,
@@ -141,7 +141,7 @@ void main() {
       createdAt: DateTime(2026, 6, 1, 8, 0),
     ));
 
-    db.duplicateMovement(db.movements.first);
+    await db.duplicateMovement(db.movements.first);
 
     final db2 = await reloadDb(sqlite);
     expect(db2.movements.length, 2);
@@ -160,7 +160,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'note_test',
       title: 'Test nota',
       amount: 25.0,
@@ -176,7 +176,7 @@ void main() {
     expect(db2.movements.first.note, 'Nota importante di test');
 
     // Movement with null note
-    db2.addMovement(Movement(
+    await db2.addMovement(Movement(
       id: 'no_note',
       title: 'Senza nota',
       amount: 10.0,
@@ -203,7 +203,7 @@ void main() {
 
     // Add 5 identical movements to trigger suggestion
     for (int i = 0; i < 5; i++) {
-      db.addMovement(Movement(
+      await db.addMovement(Movement(
         id: 'sug_$i',
         title: 'Caffè',
         amount: 1.50,
@@ -253,7 +253,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'to_delete',
       title: 'Da eliminare',
       amount: 50.0,
@@ -264,7 +264,7 @@ void main() {
     ));
     expect(db.movements.length, 1);
 
-    db.deleteMovement('to_delete');
+    await db.deleteMovement('to_delete');
 
     final db2 = await reloadDb(sqlite);
     expect(db2.movements.length, 0);
@@ -280,7 +280,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'src',
       title: 'Palestra',
       amount: 50.0,
@@ -290,7 +290,7 @@ void main() {
       createdAt: DateTime.now(),
     ));
 
-    db.saveMovementAsFavorite(db.movements.first);
+    await db.saveMovementAsFavorite(db.movements.first);
 
     final db2 = await reloadDb(sqlite);
     expect(db2.favoriteMovements.length, 1);
@@ -307,7 +307,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.createMovementFromTemplate(
+    await db.createMovementFromTemplate(
       title: 'Template test',
       amount: 99.99,
       type: MovementType.income,
@@ -339,7 +339,7 @@ void main() {
       type: MovementType.expense,
       categoryId: 'exp_4',
     );
-    db.updateQuickMovement('qm_1', updated);
+    await db.updateQuickMovement('qm_1', updated);
 
     final db2 = await reloadDb(sqlite);
     final qm = db2.quickMovements.firstWhere((q) => q.id == 'qm_1');
@@ -357,7 +357,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.deleteQuickMovement('qm_1');
+    await db.deleteQuickMovement('qm_1');
 
     final db2 = await reloadDb(sqlite);
     expect(db2.quickMovements.length, 3);
@@ -373,7 +373,7 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addFavoriteMovement(FavoriteMovement(
+    await db.addFavoriteMovement(FavoriteMovement(
       id: 'fav_del',
       title: 'Da cancellare',
       amount: 10.0,
@@ -382,7 +382,7 @@ void main() {
     ));
     expect(db.favoriteMovements.length, 1);
 
-    db.deleteFavoriteMovement('fav_del');
+    await db.deleteFavoriteMovement('fav_del');
 
     final db2 = await reloadDb(sqlite);
     expect(db2.favoriteMovements.length, 0);
@@ -398,12 +398,12 @@ void main() {
     final db = AppDatabase(sqlite: sqlite);
     await db.initialize();
 
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'i1', title: 'Stipendio', amount: 2000.0,
       type: MovementType.income, date: DateTime.now(),
       categoryId: 'inc_1', createdAt: DateTime.now(),
     ));
-    db.addMovement(Movement(
+    await db.addMovement(Movement(
       id: 'e1', title: 'Affitto', amount: 800.0,
       type: MovementType.expense, date: DateTime.now(),
       categoryId: 'exp_2', createdAt: DateTime.now(),

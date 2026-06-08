@@ -1,6 +1,9 @@
 # HERMES ROADMAP
 
 > Cronologia versioni Hermes — rilasci e pianificazione.
+>
+> **Vedi `docs/CHANGELOG.md` per il dettaglio completo di ogni release (added, changed, fixed, QA).**
+> Il changelog è la fonte di verità per le release passate.
 
 ## Chiuso
 
@@ -27,15 +30,20 @@
 | — | Build release Android fix (file_picker + KGP) | ✅ COMPLETATO | 2026-06-08 |
 | — | Backup export condivisibile (share sheet) | ✅ COMPLETATO | 2026-06-08 |
 | — | Build pipeline: analyze + test + apk --release + ios --release tutti PASS | ✅ COMPLETATO | 2026-06-08 |
+| — | Async/Timing Audit + Fix (Audit sistemico per `void async`, fire-and-forget, race condizioni su 47 file) | ✅ COMPLETATO | 2026-06-08 |
+| V0.6 | Dashboard Filtrata per Periodo — V2 (lista movimenti, azione rapida per categoria, fix TimeFilterBar Periodo picker) | ✅ COMPLETATO | 2026-06-08 |
 
-## Approvate / Future
+## Approvate / Future (V0.6.x+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.5.6 | UX Booster (Ricerca Globale, Preferiti, Categorie Frequenti, Heatmap) | 💡 PROPOSTO |
-| V0.4.3 | Quick/Favorite Movement Library UX | 📋 APPROVATA |
-| — | Calendar Heatmap / Category Heatmap | 📋 APPROVATA |
-| V0.6 | Ricorrenze | 💡 IDEA |
+| V0.6.0 | Raggruppamento Movimenti per Giorno | 📋 APPROVATA |
+| V0.6.1 | Click Categoria Dashboard | 📋 APPROVATA |
+| V0.6.2 | Ricerca Globale Movimenti | 📋 APPROVATA |
+| V0.6.3 | UX Movimenti Rapidi/Preferiti — Data Picker | 📋 APPROVATA |
+| V0.6.4 | Calendar Heatmap | 📋 APPROVATA |
+| V0.6.5 | Beneficiario ed Etichette | 📋 APPROVATA |
+| V0.6.6 | Trasferimenti tra Conti | 📋 APPROVATA |
 | V0.7 | Athena Foundation (Budget, AI, Insight) | 💡 IDEA |
 | V0.8 | Import CSV | 💡 IDEA |
 | V0.9 | Scenari | 💡 IDEA |
@@ -52,15 +60,16 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 
 | Versione | Focus |
 |----------|-------|
-| V0.5 | Calendario Foundation — ✅ COMPLETATO (6 sub-features) |
-| V0.5.6 | Dashboard Filtrata — ✅ COMPLETATO. Build release sbloccate. Backup esportabile. |
-| V0.6 | Ricorrenze (💡) — movimenti automatici ricorrenti |
+| V0.6.0 | Raggruppamento Movimenti per Giorno (📋) — header data, separatore, scroll |
+| V0.6.1 | Click Categoria Dashboard (📋) — navigazione Dashboard→Archivio con filtro categoria |
+| V0.6.2 | Ricerca Globale Movimenti (📋) — ricerca testo + filtro periodo + raggruppamento |
+| V0.6.3 | UX Rapidi/Preferiti — Data Picker (📋) — Oggi/Ieri/Domani/Scegli data |
+| V0.6.4 | Calendar Heatmap (📋) — intensità colore, filtro categoria, navigazione |
+| V0.6.5 | Beneficiario ed Etichette (📋) — model SQLite migration, UI, backup V2 |
+| V0.6.6 | Trasferimenti tra Conti (📋) — MovementType.transfer, saldo duale, backup V3 |
 | V0.7 | Athena Foundation (💡) — Budget, AI categorization, insight |
 | V0.8 | Import CSV (💡) — import movimenti da home banking |
 | V0.9 | Scenari (💡) — proiezioni what-if, pianificazione |
-| V0.4.3 | Quick/Favorite Movement Library UX (📋) — ricerca, filtri, salva da manuale, aggiorna preferito |
-| V0.4.x | Inline Form Validation (📋) — errori inline nei form |
-| V0.5+ | UI Inspiration Review (🔄) — revisione pattern esterni |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
 | V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
 
@@ -306,6 +315,90 @@ Tutte le feature (approvate, in valutazione, future, post-MVP) sono censite in:
 **Vincoli**:
 - Prima implementare V0.5 Foundation: date nei movimenti e TimeFilter globale
 - Heatmap usa dati già disponibili, nessuna nuova tabella SQLite
+
+---
+
+## V0.6 — Dashboard Filtrata per Periodo V2 ✅
+
+> **Feature**: V0.6 — Evoluzione Dashboard con lista movimenti filtrata, azione rapida categorie, IntervalPickerSheet, dettaglio categoria
+> **Test**: 426 test pass (+14) | `flutter analyze` 0 issues
+> **Build**: APK 66.1MB ✅ | iOS 32.6MB ✅
+> **QA**: 500 scenari analizzati, 416 coperti, 84 gap, 14 nuovi test implementati
+
+**Cosa è stato fatto** (V0.6 completa):
+
+### 1. IntervalPickerSheet (sostituisce showDateRangePicker)
+- Nuovo widget `lib/widgets/interval_picker_sheet.dart`: bottom sheet dedicato
+- Header "Seleziona intervallo", Da/A cards tappabili, Annulla/Applica
+- Tap su Da o A apre `StreamDatePicker.show()` individualmente
+- Validazione: "Applica" disabilitato se A < Da; Annulla non modifica filtro attivo
+- Label intervallo: formato breve "15 giu → 30 giu" (compact per SegmentedButton)
+- "Periodo" rinominato in "Intervallo" nel SegmentedButton
+
+### 2. Lista movimenti filtrata in Dashboard
+- Nuova sezione `_FilteredMovementsList` sotto le spese per categoria
+- Mostra fino a 20 movimenti del periodo selezionato
+- Usa `MovementCard` con `showDate: true` per data visibile
+- Se >20 movimenti, mostra "Mostra tutti: altri N movimenti in Archivio"
+- Si aggiorna in tempo reale al cambio filtro (ListenableBuilder)
+- Non appare se il periodo non ha movimenti (SizedBox.shrink)
+
+### 3. Fix CRITICAL — IntervalPickerSheet mai aperto
+- **Problema**: `_onModeChanged(customRange)` non chiamava `onChanged`, quindi `_pickDate` leggeva `activeFilter.mode == month` e apriva il picker mese.
+- **Fix**: `_pickDate` accetta `forcedMode` parametro. `_onModeChanged(customRange)` passa `forcedMode: TimeFilterMode.customRange`.
+- **Prima**: Tap "Intervallo" → month picker (BUG)
+- **Dopo**: Tap "Intervallo" → IntervalPickerSheet con Da/A cards
+
+### 4. Categoria dettaglio bottom sheet
+- `_CategoryExpenseRow` tappabile (Expanded+GesterDetector layout fix)
+- `_CategoryDetailSheet`: nome, totale, conteggio, movimenti filtrati nel periodo
+
+### 4. Azione rapida "+" per categoria
+- Ogni riga "Spese per categoria" ha icona `add_circle_outline`
+- Apre `MovementPicker` con categoria pre-selezionata
+- Nuovo parametro `categoryPreFill` in `MovementPicker` → `_ManualForm`
+- Dopo salvataggio, il movimento appare subito nella lista se rientra nel periodo
+- Form precompilato: tipo (entrata/uscite) e categoria già impostati
+
+### 5. TimeFilter.contains() fix
+- `contains()` ora usa `!cmp.isBefore(startDate) && !cmp.isAfter(endDate)`
+- Normalizzazione timezone: tutti tre i DateTime convertiti a `DateTime(year,month,day)` (local time)
+- `customRange` preserva la data esatta scelta dall'utente (no +1 day offset)
+- Comportamento inclusivo: `endDate` incluso nel range
+
+### 6. Test aggiunti
+- `dashboard_filtered_test.dart`: +22 test
+  - 2.5–2.8: Lista movimenti filtrata, limite 20, cambio filtro
+  - 3.1: Pulsante "Intervallo" esiste ed è tappabile
+  - 4.1–4.3: Stress test 1000 movimenti (mese, patrimonio invariato, custom range)
+- `time_filter_bar_test.dart`: label "Intervallo" aggiornata
+- `time_filter_test.dart`: label customRange + contains() inclusivo
+
+### 7. Dettaglio implementazione
+
+**File modificati:**
+| File | Modifica |
+|------|----------|
+| `lib/widgets/interval_picker_sheet.dart` | **NUOVO** — `showIntervalPicker()` + `_IntervalPickerSheet` |
+| `lib/screens/dashboard_screen.dart` | +MovementPicker, +_FilteredMovementsList, +quickAdd, +_CategoryDetailSheet |
+| `lib/widgets/time_filter_bar.dart` | "Periodo"→"Intervallo", `showDateRangePicker`→`showIntervalPicker` |
+| `lib/models/time_filter.dart` | customRange label formato breve, `_shortMonthNames`, contains() fix |
+| `test/time_filter_bar_test.dart` | label "Intervallo" |
+| `test/time_filter_test.dart` | label customRange + contains assert |
+| `test/dashboard_filtered_test.dart` | +22 test completi |
+| `docs/CHANGELOG.md` | **NUOVO** — release history V0.1–V0.6 |
+
+**API MovementPicker** (aggiunta):
+| Parametro | Tipo | Default | Scopo |
+|-----------|------|---------|-------|
+| `categoryPreFill` | `String?` | null | Pre-seleziona categoria nel form manuale |
+
+**Vincoli rispettati:**
+- Nessuna modifica a model, database, SQLite migration
+- Nessuna duplicazione logica di creazione movimento
+- Nessuna modifica ad altre schermate (Calendar, Archivio, Movimenti, Impostazioni)
+- Tutti i KPI non filtrati (patrimonio, saldi conti) restano globali
+- MovementCard riusato per ogni riga movimento
 - UI originale STREAM — non copiare app esterne
 - Palette STREAM esistente (StreamColors) per colori heatmap
 

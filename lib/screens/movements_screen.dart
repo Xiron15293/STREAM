@@ -3,10 +3,12 @@ import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
+import '../models/daily_group.dart';
 import '../theme.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 import '../widgets/movement_card.dart';
+import '../widgets/day_header.dart';
 
 class MovementsScreen extends StatefulWidget {
   final AppDatabase db;
@@ -65,8 +67,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 subtitle: const Text('Visualizza la nota sotto ogni movimento nella lista'),
                 value: _showNotes,
                 onChanged: (value) {
-                  _toggleShowNotes(value);
+                  _showNotes = value;
                   setSheetState(() {});
+                  _toggleShowNotes(value);
                 },
               ),
             ],
@@ -169,37 +172,51 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }
 
   Widget _buildMovementsList(List<Movement> movements) {
-    return ListView.separated(
+    final groups = groupMovementsByDay(movements);
+    final totalItems = groups.fold<int>(0, (sum, g) => sum + 1 + g.movements.length);
+
+    return ListView.builder(
       padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, 0, StreamSpacing.lg, 80),
-      itemCount: movements.length,
-      separatorBuilder: (context, index) => const SizedBox(height: StreamSpacing.xs),
+      itemCount: totalItems,
       itemBuilder: (context, index) {
-        final m = movements[index];
-        final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
-        final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-        return MovementCard(
-          movement: m,
-          category: cat,
-          account: acc,
-          showNotes: _showNotes,
-          showDate: true,
-          onEdit: () => _showPicker(context, prefill: m),
-          onDuplicate: () {
-            widget.db.duplicateMovement(m);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Movimento duplicato')),
+        int cursor = 0;
+        for (final group in groups) {
+          final groupTotal = 1 + group.movements.length;
+          if (index < cursor + groupTotal) {
+            final localIdx = index - cursor;
+            if (localIdx == 0) {
+              return DayHeader(group: group);
+            }
+            final m = group.movements[localIdx - 1];
+            final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
+            final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
+            return MovementCard(
+              movement: m,
+              category: cat,
+              account: acc,
+              showNotes: _showNotes,
+              showDate: false,
+              onEdit: () => _showPicker(context, prefill: m),
+              onDuplicate: () {
+                widget.db.duplicateMovement(m);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Movimento duplicato')),
+                );
+              },
+              onSaveAsFavorite: () {
+                widget.db.saveMovementAsFavorite(m);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Salvato nei preferiti')),
+                );
+              },
+              onDelete: () {
+                widget.db.deleteMovement(m.id);
+              },
             );
-          },
-          onSaveAsFavorite: () {
-            widget.db.saveMovementAsFavorite(m);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Salvato nei preferiti')),
-            );
-          },
-          onDelete: () {
-            widget.db.deleteMovement(m.id);
-          },
-        );
+          }
+          cursor += groupTotal;
+        }
+        return null;
       },
     );
   }

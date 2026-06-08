@@ -146,7 +146,7 @@ class _BackupScreenState extends State<BackupScreen> {
   Future<void> _importFromFile(String filePath) async {
     try {
       final json = await readFile(filePath);
-      _import(json);
+      await _import(json);
     } catch (e) {
       _showSnackBar('Errore di lettura file: $e');
     }

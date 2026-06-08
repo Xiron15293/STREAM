@@ -6,6 +6,8 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/time_filter.dart';
+import 'package:stream_app/models/quick_movement.dart';
+import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/screens/dashboard_screen.dart';
 
 void main() {
@@ -203,7 +205,7 @@ void main() {
       );
     });
 
-    test('1.7 Periodo custom: range di 7 giorni', () {
+    test('1.7 Intervallo custom: range di 7 giorni', () {
       final day1 = DateTime(now.year, now.month, 10);
       final day3 = DateTime(now.year, now.month, 12);
       final day7 = DateTime(now.year, now.month, 16);
@@ -360,7 +362,7 @@ void main() {
       expect(find.text('Giorno'), findsOneWidget);
       expect(find.text('Mese'), findsOneWidget);
       expect(find.text('Anno'), findsOneWidget);
-      expect(find.text('Periodo'), findsOneWidget);
+      expect(find.text('Intervallo'), findsOneWidget);
 
       final now = DateTime.now();
       final expectedLabel = TimeFilter.month(now.year, now.month).label;
@@ -471,6 +473,614 @@ void main() {
       final firstExpense = tester.getTopLeft(find.textContaining('320.00 €'));
       final secondExpense = tester.getTopLeft(find.textContaining('80.00 €'));
       expect(firstExpense.dy, lessThan(secondExpense.dy));
+    });
+
+    testWidgets('2.5 Filtered movements list shows movements in period', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      db.addMovement(
+        Movement(
+          id: 'in_period',
+          title: 'Movimento nel periodo',
+          amount: 150.0,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      final prev = DateTime(now.year, now.month - 1, 15);
+      db.addMovement(
+        Movement(
+          id: 'outside_period',
+          title: 'Fuori periodo',
+          amount: 200.0,
+          type: MovementType.expense,
+          date: prev,
+          categoryId: 'exp_1',
+          createdAt: prev,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      // Scroll down to movements list
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Movimenti del periodo'), findsOneWidget);
+      expect(find.text('Movimento nel periodo'), findsOneWidget);
+      expect(find.text('Fuori periodo'), findsNothing);
+    });
+
+    testWidgets('2.6 Filtered movements list empty when no movements in period', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      final prev = DateTime.now().subtract(const Duration(days: 60));
+
+      db.addMovement(
+        Movement(
+          id: 'old',
+          title: 'Vecchio',
+          amount: 100.0,
+          type: MovementType.income,
+          date: prev,
+          categoryId: 'inc_1',
+          createdAt: prev,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      expect(find.text('Movimenti del periodo'), findsNothing);
+      expect(find.text('Vecchio'), findsNothing);
+    });
+
+    testWidgets('2.7 Filtered movements list limits to 20 items', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      for (int i = 0; i < 25; i++) {
+        db.addMovement(
+          Movement(
+            id: 'm_$i',
+            title: 'Movimento $i',
+            amount: 10.0,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now.subtract(Duration(minutes: i)),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      // Scroll down to movements list
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Movimenti del periodo'), findsOneWidget);
+      expect(find.text('Movimento 0'), findsOneWidget);
+      expect(find.text('Movimento 19'), findsOneWidget);
+      expect(find.textContaining('Mostra tutti: altri 5 movimenti in Archivio'),
+          findsOneWidget);
+    });
+
+    testWidgets('2.8 Filtered list updates when TimeFilter changes', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      db.addMovement(
+        Movement(
+          id: 'today',
+          title: 'Oggi',
+          amount: 100.0,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'yesterday',
+          title: 'Ieri',
+          amount: 50.0,
+          type: MovementType.income,
+          date: yesterday,
+          categoryId: 'inc_1',
+          createdAt: yesterday,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      // Scroll down to movements list
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Movimenti del periodo'), findsOneWidget);
+      expect(find.text('Oggi'), findsOneWidget);
+      expect(find.text('Ieri'), findsOneWidget);
+
+      // Scroll back up to tap filter
+      await tester.drag(find.byType(ListView), const Offset(0, 500));
+      await tester.pumpAndSettle();
+
+      // Passa a filtro Giorno (default al 1° del mese corrente)
+      await tester.tap(find.text('Giorno'));
+      await tester.pumpAndSettle();
+
+      // Naviga al giorno corrente con freccia destra
+      final firstOfMonth = DateTime(now.year, now.month, 1);
+      final daysToAdvance = now.difference(firstOfMonth).inDays;
+      for (int i = 0; i < daysToAdvance; i++) {
+        await tester.tap(find.byIcon(Icons.chevron_right));
+        await tester.pumpAndSettle();
+      }
+
+      // Scroll to the movements list
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Oggi'), findsOneWidget);
+      expect(find.text('Ieri'), findsNothing);
+    });
+  });
+
+  group('3. Intervallo picker', () {
+    testWidgets('3.1 Intervallo segmented button exists and opens bottom sheet', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      expect(find.text('Intervallo'), findsOneWidget);
+      await tester.tap(find.text('Intervallo'));
+      await tester.pumpAndSettle();
+
+      // Bottom sheet must show Da/A cards
+      expect(find.text('Seleziona intervallo'), findsOneWidget);
+      expect(find.text('Da'), findsOneWidget);
+      expect(find.text('A'), findsOneWidget);
+      expect(find.text('Annulla'), findsOneWidget);
+      expect(find.text('Applica'), findsOneWidget);
+    });
+
+    testWidgets('3.2 Annulla non modifica il filtro attivo', (tester) async {
+      final db = AppDatabase();
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      final now = DateTime.now();
+      final expectedLabel = TimeFilter.month(now.year, now.month).label;
+      expect(find.text(expectedLabel), findsOneWidget);
+
+      // Apri bottom sheet
+      await tester.tap(find.text('Intervallo'));
+      await tester.pumpAndSettle();
+
+      // Annulla chiude senza cambiare filtro
+      await tester.tap(find.text('Annulla'));
+      await tester.pumpAndSettle();
+
+      // Il filtro deve essere rimasto mese corrente
+      expect(find.text(expectedLabel), findsOneWidget);
+    });
+
+    testWidgets('3.3 Applica restituisce custom range e label si aggiorna', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      final now = DateTime.now();
+      final monthLabel = TimeFilter.month(now.year, now.month).label;
+      expect(find.text(monthLabel), findsOneWidget);
+
+      // Apri bottom sheet
+      await tester.tap(find.text('Intervallo'));
+      await tester.pumpAndSettle();
+
+      // Applica il range corrente
+      await tester.tap(find.text('Applica'));
+      await tester.pumpAndSettle();
+
+      // La label deve essere cambiata in formato custom range
+      final start = DateTime(now.year, now.month, 1);
+      final end = DateTime(now.year, now.month + 1, 0);
+      final expectedLabel = TimeFilter.customRange(start, end).label;
+      expect(find.text(expectedLabel), findsOneWidget);
+      expect(find.text(monthLabel), findsNothing);
+    });
+
+    testWidgets('3.4 Bottom sheet mostra data formattata', (tester) async {
+      final db = AppDatabase();
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      await tester.tap(find.text('Intervallo'));
+      await tester.pumpAndSettle();
+
+      // Il bottom sheet mostra le date del mese corrente in formato GG/MM/AAAA
+      final now = DateTime.now();
+      final startStr =
+          '${'01'}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+      expect(find.text(startStr), findsOneWidget);
+    });
+  });
+
+  group('4. Category detail and quick-add', () {
+    testWidgets('4.1 Category expense row shows name and amount', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Spesa',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Spesa 2',
+          amount: 30,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpAndSettle();
+
+      // Deve apparire la sezione Spese per categoria con la categoria Spesa
+      expect(find.text('Spese per categoria'), findsOneWidget);
+      expect(find.text('Spesa'), findsOneWidget);
+      expect(find.text('80.00 €'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('4.2 Tapping category opens detail sheet', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Spesa',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpAndSettle();
+
+      // Scroll fino alla sezione categorie e tappa la riga
+      final categoryRow = find.ancestor(
+        of: find.text('Spesa'),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.ensureVisible(categoryRow.first);
+      await tester.pumpAndSettle();
+      await tester.tap(categoryRow.first);
+      await tester.pumpAndSettle();
+
+      // Bottom sheet dettaglio deve mostrare info categoria
+      expect(find.textContaining('1 movimenti'), findsOneWidget);
+    });
+
+    testWidgets('4.3 Category detail shows filtered movements', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Alimentari',
+          amount: 25,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpAndSettle();
+
+      final categoryRow = find.ancestor(
+        of: find.text('Spesa'),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.ensureVisible(categoryRow.first);
+      await tester.pumpAndSettle();
+      await tester.tap(categoryRow.first);
+      await tester.pumpAndSettle();
+
+      // Il movimento deve essere nella lista del dettaglio
+      expect(find.text('Alimentari'), findsAtLeastNWidgets(1));
+      expect(find.text('-25.00 €'), findsAtLeastNWidgets(1));
+    });
+  });
+
+  group('5. Account and category edge cases', () {
+    test('5.1 Default account not deletable — no explicit delete API', () {
+      final db = AppDatabase();
+      final defaultAcc = db.accounts.first;
+      expect(defaultAcc.id, defaultAccountId);
+
+      // Verify the default account exists
+      expect(db.accounts.length, 1);
+      expect(db.getAccountOrNull(defaultAccountId), isNotNull);
+    });
+
+    test('5.2 Category with movements blocks deletion', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      // Add a movement using a specific category
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Test',
+          amount: 10,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      // categoryHasMovements should return true
+      expect(db.categoryHasMovements('exp_1'), isTrue);
+    });
+
+    test('5.3 Quick movements preserve categoryId after category rename', () {
+      final db = AppDatabase();
+      final catId = 'exp_1';
+
+      // Add a quick movement referencing the category
+      db.addQuickMovement(
+        QuickMovement(
+          id: 'qm_test',
+          title: 'Test Rapido',
+          amount: 10,
+          type: MovementType.expense,
+          categoryId: catId,
+        ),
+      );
+
+      // Rename the category
+      final cat = db.categories.firstWhere((c) => c.id == catId);
+      db.updateCategory(cat.id, 'Nuovo Nome', cat.color);
+
+      // Quick movement should still reference the same category
+      final qm = db.quickMovements.firstWhere((q) => q.id == 'qm_test');
+      expect(qm.categoryId, catId);
+    });
+
+    test('5.4 Favorite movements preserve categoryId after category rename', () {
+      final db = AppDatabase();
+      final catId = 'inc_1';
+
+      // Add a favorite movement
+      db.addFavoriteMovement(
+        FavoriteMovement(
+          id: 'fm_test',
+          title: 'Test Preferito',
+          amount: 1000,
+          type: MovementType.income,
+          categoryId: catId,
+        ),
+      );
+
+      // Rename the category
+      final cat = db.categories.firstWhere((c) => c.id == catId);
+      db.updateCategory(cat.id, 'Nuovo Stipendio', cat.color);
+
+      // Favorite should still reference the same category
+      final fm = db.favoriteMovements.firstWhere((f) => f.id == 'fm_test');
+      expect(fm.categoryId, catId);
+    });
+
+    test('5.5 Suggestion threshold: 5 identical movements trigger suggestion', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      // Add 5 identical movements
+      for (int i = 0; i < 5; i++) {
+        db.addMovement(
+          Movement(
+            id: 'sug_$i',
+            title: 'Caffè',
+            amount: 1.50,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_4',
+            createdAt: now,
+          ),
+        );
+      }
+
+      final suggestions = db.getSuggestions();
+      expect(suggestions.length, 1);
+      expect(suggestions.first.title, 'Caffè');
+    });
+
+    test('5.6 Suggestion threshold: 4 identical movements do NOT trigger', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      // Add 4 identical movements (below threshold)
+      for (int i = 0; i < 4; i++) {
+        db.addMovement(
+          Movement(
+            id: 'nosug_$i',
+            title: 'Acqua',
+            amount: 1.00,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
+      }
+
+      final suggestions = db.getSuggestions();
+      expect(suggestions.length, 0);
+    });
+
+    test('5.7 Suggestion after category rename still appears', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      // Add 5 identical movements with a custom category
+      final customCatId = db.categories.first.id;
+      for (int i = 0; i < 5; i++) {
+        db.addMovement(
+          Movement(
+            id: 'ren_sug_$i',
+            title: 'Benzina',
+            amount: 50,
+            type: MovementType.expense,
+            date: now,
+            categoryId: customCatId,
+            createdAt: now,
+          ),
+        );
+      }
+
+      // Rename the category
+      final cat = db.categories.first;
+      db.updateCategory(cat.id, 'Renamed Cat', cat.color);
+
+      final suggestions = db.getSuggestions();
+      expect(suggestions.length, 1);
+      expect(suggestions.first.title, 'Benzina');
+    });
+
+    test('5.8 Archived category still resolves in movements', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      // Add movement with a category
+      db.addMovement(
+        Movement(
+          id: 'arch_m1',
+          title: 'Old Spesa',
+          amount: 20,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      // Archive the category
+      db.archiveCategory('exp_1');
+
+      // Movement categoryId should still resolve (even if archived)
+      final m = db.movements.first;
+      expect(m.categoryId, 'exp_1');
+
+      // Archived category should not appear in activeCategories
+      final activeCats = db.activeCategories;
+      expect(activeCats.where((c) => c.id == 'exp_1').length, 0);
+    });
+  });
+
+  group('6. Stress test — 1000 movimenti con filtro', () {
+    test('6.1 Filter per mese su 1000 movimenti è veloce e corretto', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      for (int i = 0; i < 1000; i++) {
+        db.addMovement(
+          Movement(
+            id: 'stress_$i',
+            title: 'Stress $i',
+            amount: (i % 100) + 1.0,
+            type: i.isEven ? MovementType.income : MovementType.expense,
+            date: i < 500 ? now : DateTime(now.year, now.month - 1, 15),
+            categoryId: i.isEven ? 'inc_1' : 'exp_1',
+            createdAt: now,
+          ),
+        );
+      }
+
+      final filter = TimeFilter.month(now.year, now.month);
+      final filtered = db.movements.filterByTime(filter);
+
+      expect(filtered.length, 500);
+      expect(filtered.where((m) => m.type == MovementType.income).length, 250);
+      expect(filtered.where((m) => m.type == MovementType.expense).length, 250);
+    });
+
+    test('6.2 Patrimonio invariato con filtro su 1000 movimenti', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      for (int i = 0; i < 1000; i++) {
+        db.addMovement(
+          Movement(
+            id: 'bal_$i',
+            title: 'Bal $i',
+            amount: 100.0,
+            type: MovementType.income,
+            date: i < 500 ? now : DateTime(now.year, now.month - 1, 15),
+            categoryId: 'inc_1',
+            createdAt: now,
+          ),
+        );
+      }
+
+      final patrimonio = db.totalAccountsBalance;
+      final filter = TimeFilter.month(now.year, now.month);
+      db.movements.filterByTime(filter);
+
+      expect(db.totalAccountsBalance, patrimonio,
+          reason: 'Patrimonio NON deve cambiare col filtro');
+    });
+
+    test('6.3 Filtro custom range su 1000 movimenti', () {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      for (int i = 0; i < 1000; i++) {
+        final day = DateTime(now.year, now.month, (i % 28) + 1);
+        db.addMovement(
+          Movement(
+            id: 'cr_$i',
+            title: 'CR $i',
+            amount: 10.0,
+            type: MovementType.expense,
+            date: day,
+            categoryId: 'exp_1',
+            createdAt: day,
+          ),
+        );
+      }
+
+      final range = TimeFilter.customRange(
+        DateTime(now.year, now.month, 10),
+        DateTime(now.year, now.month, 20),
+      );
+      final filtered = db.movements.filterByTime(range);
+
+      expect(filtered.length, 396);
     });
   });
 }

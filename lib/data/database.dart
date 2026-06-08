@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart' hide Category;
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
@@ -72,9 +71,13 @@ class AppDatabase extends ChangeNotifier {
     }
 
     _categories = await _sqlite.loadCategories();
-    _movements.addAll(await _sqlite.loadMovements());
+    _movements
+      ..clear()
+      ..addAll(await _sqlite.loadMovements());
     _quickMovements = await _sqlite.loadQuickMovements();
-    _favoriteMovements.addAll(await _sqlite.loadFavoriteMovements());
+    _favoriteMovements
+      ..clear()
+      ..addAll(await _sqlite.loadFavoriteMovements());
     _accounts = await _sqlite.loadAccounts();
     notifyListeners();
   }
@@ -94,8 +97,18 @@ class AppDatabase extends ChangeNotifier {
       List.unmodifiable(_favoriteMovements);
   List<Account> get accounts => List.unmodifiable(_accounts);
 
+  Account? getAccountOrNull(String id) {
+    final idx = _accounts.indexWhere((a) => a.id == id);
+    return idx >= 0 ? _accounts[idx] : null;
+  }
+
   Account getAccount(String id) {
-    return _accounts.firstWhere((a) => a.id == id);
+    return _accounts.firstWhere((a) => a.id == id, orElse: () => Account(
+      id: id,
+      name: 'Conto eliminato',
+      type: AccountType.bank,
+      createdAt: DateTime(2020),
+    ));
   }
 
   double getAccountBalance(Account a) {
@@ -139,77 +152,107 @@ class AppDatabase extends ChangeNotifier {
 
   double get balance => totalIncome - totalExpenses;
 
-  void addMovement(Movement movement) {
+  Future<void> addMovement(Movement movement) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertMovement(movement);
+      } catch (_) {
+        return;
+      }
+    }
     _movements.add(movement);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertMovement(movement));
-    }
     notifyListeners();
   }
 
-  void deleteMovement(String id) {
+  Future<void> deleteMovement(String id) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.deleteMovement(id);
+      } catch (_) {
+        return;
+      }
+    }
     _movements.removeWhere((m) => m.id == id);
-    if (_sqlite != null) {
-      unawaited(_sqlite.deleteMovement(id));
-    }
     notifyListeners();
   }
 
-  void updateMovement(Movement updated) {
+  Future<void> updateMovement(Movement updated) async {
     final index = _movements.indexWhere((m) => m.id == updated.id);
-    if (index >= 0) {
-      _movements[index] = updated;
-      if (_sqlite != null) {
-        unawaited(_sqlite.updateMovement(updated));
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateMovement(updated);
+      } catch (_) {
+        return;
       }
-      notifyListeners();
     }
+    _movements[index] = updated;
+    notifyListeners();
   }
 
-  void addQuickMovement(QuickMovement qm) {
+  Future<void> addQuickMovement(QuickMovement qm) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertQuickMovement(qm);
+      } catch (_) {
+        return;
+      }
+    }
     _quickMovements.add(qm);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertQuickMovement(qm));
-    }
     notifyListeners();
   }
 
-  void updateQuickMovement(String id, QuickMovement updated) {
+  Future<void> updateQuickMovement(String id, QuickMovement updated) async {
     final index = _quickMovements.indexWhere((q) => q.id == id);
-    if (index >= 0) {
-      _quickMovements[index] = updated;
-      if (_sqlite != null) {
-        unawaited(_sqlite.updateQuickMovement(id, updated));
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateQuickMovement(id, updated);
+      } catch (_) {
+        return;
       }
-      notifyListeners();
     }
+    _quickMovements[index] = updated;
+    notifyListeners();
   }
 
-  void deleteQuickMovement(String id) {
+  Future<void> deleteQuickMovement(String id) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.deleteQuickMovement(id);
+      } catch (_) {
+        return;
+      }
+    }
     _quickMovements.removeWhere((q) => q.id == id);
-    if (_sqlite != null) {
-      unawaited(_sqlite.deleteQuickMovement(id));
-    }
     notifyListeners();
   }
 
-  void addFavoriteMovement(FavoriteMovement fm) {
+  Future<void> addFavoriteMovement(FavoriteMovement fm) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertFavoriteMovement(fm);
+      } catch (_) {
+        return;
+      }
+    }
     _favoriteMovements.add(fm);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertFavoriteMovement(fm));
-    }
     notifyListeners();
   }
 
-  void deleteFavoriteMovement(String id) {
+  Future<void> deleteFavoriteMovement(String id) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.deleteFavoriteMovement(id);
+      } catch (_) {
+        return;
+      }
+    }
     _favoriteMovements.removeWhere((f) => f.id == id);
-    if (_sqlite != null) {
-      unawaited(_sqlite.deleteFavoriteMovement(id));
-    }
     notifyListeners();
   }
 
-  void duplicateMovement(Movement m) {
+  Future<void> duplicateMovement(Movement m) async {
     final clone = Movement(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: m.title,
@@ -221,14 +264,18 @@ class AppDatabase extends ChangeNotifier {
       note: m.note,
       createdAt: DateTime.now(),
     );
-    _movements.add(clone);
     if (_sqlite != null) {
-      unawaited(_sqlite.insertMovement(clone));
+      try {
+        await _sqlite.insertMovement(clone);
+      } catch (_) {
+        return;
+      }
     }
+    _movements.add(clone);
     notifyListeners();
   }
 
-  void saveMovementAsFavorite(Movement m) {
+  Future<void> saveMovementAsFavorite(Movement m) async {
     final fav = FavoriteMovement(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: m.title,
@@ -238,14 +285,18 @@ class AppDatabase extends ChangeNotifier {
       accountId: m.accountId,
       note: m.note,
     );
-    _favoriteMovements.add(fav);
     if (_sqlite != null) {
-      unawaited(_sqlite.insertFavoriteMovement(fav));
+      try {
+        await _sqlite.insertFavoriteMovement(fav);
+      } catch (_) {
+        return;
+      }
     }
+    _favoriteMovements.add(fav);
     notifyListeners();
   }
 
-  Movement createMovementFromTemplate({
+  Future<Movement> createMovementFromTemplate({
     required String title,
     required double amount,
     required MovementType type,
@@ -253,7 +304,7 @@ class AppDatabase extends ChangeNotifier {
     String? note,
     String? accountId,
     DateTime? date,
-  }) {
+  }) async {
     final movement = Movement(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
@@ -265,10 +316,14 @@ class AppDatabase extends ChangeNotifier {
       note: note,
       createdAt: DateTime.now(),
     );
-    _movements.add(movement);
     if (_sqlite != null) {
-      unawaited(_sqlite.insertMovement(movement));
+      try {
+        await _sqlite.insertMovement(movement);
+      } catch (_) {
+        return movement;
+      }
     }
+    _movements.add(movement);
     notifyListeners();
     return movement;
   }
@@ -282,17 +337,21 @@ class AppDatabase extends ChangeNotifier {
   List<Category> get activeCategories =>
       _categories.where((c) => !c.archived).toList();
 
-  void addCategory(String name, MovementType type, int color, {String iconKey = StreamIconLibrary.defaultCategoryIcon}) {
+  Future<void> addCategory(String name, MovementType type, int color, {String iconKey = StreamIconLibrary.defaultCategoryIcon}) async {
     final id = 'cat_${DateTime.now().microsecondsSinceEpoch.toString()}';
     final c = Category(id: id, name: name, type: type, color: color, iconKey: iconKey);
-    _categories.add(c);
     if (_sqlite != null) {
-      unawaited(_sqlite.insertCategory(c));
+      try {
+        await _sqlite.insertCategory(c);
+      } catch (_) {
+        return;
+      }
     }
+    _categories.add(c);
     notifyListeners();
   }
 
-  void updateCategory(String id, String name, int color, {bool? archived, MovementType? type, String? iconKey}) {
+  Future<void> updateCategory(String id, String name, int color, {bool? archived, MovementType? type, String? iconKey}) async {
     final index = _categories.indexWhere((c) => c.id == id);
     if (index < 0) return;
     final old = _categories[index];
@@ -304,81 +363,100 @@ class AppDatabase extends ChangeNotifier {
       iconKey: iconKey ?? old.iconKey,
       archived: archived ?? old.archived,
     );
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateCategory(updated);
+      } catch (_) {
+        return;
+      }
+    }
     _categories[index] = updated;
-    if (_sqlite != null) {
-      unawaited(_sqlite.updateCategory(updated));
-    }
     notifyListeners();
   }
 
-  void deleteCategory(String id) {
+  Future<void> deleteCategory(String id) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.deleteCategory(id);
+      } catch (_) {
+        return;
+      }
+    }
     _categories.removeWhere((c) => c.id == id);
-    if (_sqlite != null) {
-      unawaited(_sqlite.deleteCategory(id));
-    }
     notifyListeners();
   }
 
-  void archiveCategory(String id) {
-    updateCategory(id, _categories.firstWhere((c) => c.id == id).name,
-        _categories.firstWhere((c) => c.id == id).color, archived: true);
+  Future<void> archiveCategory(String id) async {
+    final cat = _categories.firstWhere((c) => c.id == id);
+    await updateCategory(id, cat.name, cat.color, archived: true);
   }
 
-  void restoreCategory(String id) {
-    updateCategory(id, _categories.firstWhere((c) => c.id == id).name,
-        _categories.firstWhere((c) => c.id == id).color, archived: false);
+  Future<void> restoreCategory(String id) async {
+    final cat = _categories.firstWhere((c) => c.id == id);
+    await updateCategory(id, cat.name, cat.color, archived: false);
   }
 
   // ── Accounts ──
 
-  void addAccount(Account a) {
-    _accounts.add(a);
+  Future<void> addAccount(Account a) async {
     if (_sqlite != null) {
-      unawaited(_sqlite.insertAccount(a));
+      try {
+        await _sqlite.insertAccount(a);
+      } catch (_) {
+        return;
+      }
     }
+    _accounts.add(a);
     notifyListeners();
   }
 
-  void archiveAccount(String id) {
+  Future<void> archiveAccount(String id) async {
     final index = _accounts.indexWhere((a) => a.id == id);
-    if (index >= 0) {
-      _accounts[index] = Account(
-        id: _accounts[index].id,
-        name: _accounts[index].name,
-        type: _accounts[index].type,
-        initialBalance: _accounts[index].initialBalance,
-        iconKey: _accounts[index].iconKey,
-        color: _accounts[index].color,
-        archived: true,
-        createdAt: _accounts[index].createdAt,
-        updatedAt: DateTime.now(),
-      );
-      if (_sqlite != null) {
-        unawaited(_sqlite.archiveAccount(id));
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.archiveAccount(id);
+      } catch (_) {
+        return;
       }
-      notifyListeners();
     }
+    _accounts[index] = Account(
+      id: _accounts[index].id,
+      name: _accounts[index].name,
+      type: _accounts[index].type,
+      initialBalance: _accounts[index].initialBalance,
+      iconKey: _accounts[index].iconKey,
+      color: _accounts[index].color,
+      archived: true,
+      createdAt: _accounts[index].createdAt,
+      updatedAt: DateTime.now(),
+    );
+    notifyListeners();
   }
 
-  void updateAccount(String id, String name, AccountType type, double initialBalance, {String? iconKey, int? color}) {
+  Future<void> updateAccount(String id, String name, AccountType type, double initialBalance, {String? iconKey, int? color}) async {
     final index = _accounts.indexWhere((a) => a.id == id);
-    if (index >= 0) {
-      _accounts[index] = Account(
-        id: id,
-        name: name,
-        type: type,
-        initialBalance: initialBalance,
-        iconKey: iconKey ?? _accounts[index].iconKey,
-        color: color ?? _accounts[index].color,
-        archived: _accounts[index].archived,
-        createdAt: _accounts[index].createdAt,
-        updatedAt: DateTime.now(),
-      );
-      if (_sqlite != null) {
-        unawaited(_sqlite.updateAccount(id, _accounts[index]));
+    if (index < 0) return;
+    final updated = Account(
+      id: id,
+      name: name,
+      type: type,
+      initialBalance: initialBalance,
+      iconKey: iconKey ?? _accounts[index].iconKey,
+      color: color ?? _accounts[index].color,
+      archived: _accounts[index].archived,
+      createdAt: _accounts[index].createdAt,
+      updatedAt: DateTime.now(),
+    );
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateAccount(id, updated);
+      } catch (_) {
+        return;
       }
-      notifyListeners();
     }
+    _accounts[index] = updated;
+    notifyListeners();
   }
 
   List<FavoriteMovement> getSuggestions() {
@@ -407,28 +485,22 @@ class AppDatabase extends ChangeNotifier {
     return suggestions;
   }
 
-  void reloadFromDb() {
+  Future<void> reloadFromDb() async {
     if (_sqlite == null) return;
-    _sqlite.loadMovements().then((movements) {
+    try {
       _movements
         ..clear()
-        ..addAll(movements);
-      return _sqlite.loadCategories();
-    }).then((categories) {
-      _categories = categories;
-      return _sqlite.loadQuickMovements();
-    }).then((quickMovements) {
-      _quickMovements = quickMovements;
-      return _sqlite.loadFavoriteMovements();
-    }).then((favoriteMovements) {
+        ..addAll(await _sqlite.loadMovements());
+      _categories = await _sqlite.loadCategories();
+      _quickMovements = await _sqlite.loadQuickMovements();
       _favoriteMovements
         ..clear()
-        ..addAll(favoriteMovements);
-      return _sqlite.loadAccounts();
-    }).then((accounts) {
-      _accounts = accounts;
-      notifyListeners();
-    });
+        ..addAll(await _sqlite.loadFavoriteMovements());
+      _accounts = await _sqlite.loadAccounts();
+    } catch (e) {
+      debugPrint('reloadFromDb error: $e');
+    }
+    notifyListeners();
   }
 
   void notify() {
@@ -465,53 +537,79 @@ class AppDatabase extends ChangeNotifier {
     _accounts = List.from(accounts);
   }
 
-  void internalAddAccount(Account a) {
+  Future<void> internalAddAccount(Account a) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertAccount(a);
+      } catch (_) {
+        return;
+      }
+    }
     _accounts.add(a);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertAccount(a));
-    }
   }
 
-  void internalAddCategory(Category c) {
+  Future<void> internalAddCategory(Category c) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertCategory(c);
+      } catch (_) {
+        return;
+      }
+    }
     _categories.add(c);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertCategory(c));
-    }
   }
 
-  void internalAddOrUpdateCategory(Category c) {
+  Future<void> internalAddOrUpdateCategory(Category c) async {
+    if (_sqlite != null) {
+      try {
+        final idx = _categories.indexWhere((x) => x.id == c.id);
+        if (idx >= 0) {
+          await _sqlite.updateCategory(c);
+        } else {
+          await _sqlite.insertCategory(c);
+        }
+      } catch (_) {
+        return;
+      }
+    }
     final idx = _categories.indexWhere((x) => x.id == c.id);
     if (idx >= 0) {
       _categories[idx] = c;
-      if (_sqlite != null) {
-        unawaited(_sqlite.updateCategory(c));
-      }
     } else {
       _categories.add(c);
-      if (_sqlite != null) {
-        unawaited(_sqlite.insertCategory(c));
+    }
+  }
+
+  Future<void> internalAddMovement(Movement m) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertMovement(m);
+      } catch (_) {
+        return;
       }
     }
-  }
-
-  void internalAddMovement(Movement m) {
     _movements.add(m);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertMovement(m));
-    }
   }
 
-  void internalAddQuickMovement(QuickMovement qm) {
+  Future<void> internalAddQuickMovement(QuickMovement qm) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertQuickMovement(qm);
+      } catch (_) {
+        return;
+      }
+    }
     _quickMovements.add(qm);
-    if (_sqlite != null) {
-      unawaited(_sqlite.insertQuickMovement(qm));
-    }
   }
 
-  void internalAddFavoriteMovement(FavoriteMovement fm) {
-    _favoriteMovements.add(fm);
+  Future<void> internalAddFavoriteMovement(FavoriteMovement fm) async {
     if (_sqlite != null) {
-      unawaited(_sqlite.insertFavoriteMovement(fm));
+      try {
+        await _sqlite.insertFavoriteMovement(fm);
+      } catch (_) {
+        return;
+      }
     }
+    _favoriteMovements.add(fm);
   }
 }
