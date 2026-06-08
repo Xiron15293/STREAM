@@ -4,6 +4,7 @@ import '../data/preferences_service.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
+import '../utils/movement_search.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 import '../widgets/grouped_movements_list.dart';
@@ -18,8 +19,10 @@ class MovementsScreen extends StatefulWidget {
 }
 
 class _MovementsScreenState extends State<MovementsScreen> {
+  final TextEditingController _searchCtrl = TextEditingController();
   bool _showNotes = false;
   late TimeFilter _activeFilter;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -34,6 +37,12 @@ class _MovementsScreenState extends State<MovementsScreen> {
     if (mounted) setState(() => _showNotes = showNotes);
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _toggleShowNotes(bool value) async {
     await PreferencesService.saveShowNotes(value);
     if (mounted) setState(() => _showNotes = value);
@@ -44,7 +53,12 @@ class _MovementsScreenState extends State<MovementsScreen> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setSheetState) => Padding(
-          padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.xxl),
+          padding: const EdgeInsets.fromLTRB(
+            StreamSpacing.lg,
+            StreamSpacing.lg,
+            StreamSpacing.lg,
+            StreamSpacing.xxl,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -62,7 +76,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
               const SizedBox(height: StreamSpacing.md),
               SwitchListTile(
                 title: const Text('Mostra note nei movimenti'),
-                subtitle: const Text('Visualizza la nota sotto ogni movimento nella lista'),
+                subtitle: const Text(
+                  'Visualizza la nota sotto ogni movimento nella lista',
+                ),
                 value: _showNotes,
                 onChanged: (value) {
                   _showNotes = value;
@@ -97,22 +113,57 @@ class _MovementsScreenState extends State<MovementsScreen> {
         listenable: widget.db,
         builder: (context, _) {
           final allMovements = widget.db.movements;
-          final filtered = allMovements.filterByTime(_activeFilter);
+          final filtered = searchMovements(
+            movements: allMovements,
+            query: _searchQuery,
+            filter: _activeFilter,
+            categories: widget.db.categories,
+            accounts: widget.db.accounts,
+          );
+          final hasQuery = _searchQuery.trim().isNotEmpty;
+          final body = allMovements.isEmpty
+              ? _buildEmptyAll()
+              : filtered.isEmpty
+              ? hasQuery
+                    ? _buildEmptySearch()
+                    : _buildEmptyPeriod()
+              : _buildMovementsList(filtered);
 
           return Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  StreamSpacing.lg,
+                  StreamSpacing.lg,
+                  StreamSpacing.lg,
+                  StreamSpacing.sm,
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Cerca titolo, nota, categoria o conto',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Pulisci ricerca',
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          ),
+                  ),
+                ),
+              ),
               TimeFilterBar(
                 activeFilter: _activeFilter,
                 onChanged: (f) => setState(() => _activeFilter = f),
               ),
               const SizedBox(height: StreamSpacing.sm),
-              Expanded(
-                child: allMovements.isEmpty
-                    ? _buildEmptyAll()
-                    : filtered.isEmpty
-                        ? _buildEmptyPeriod()
-                        : _buildMovementsList(filtered),
-              ),
+              Expanded(child: body),
             ],
           );
         },
@@ -138,13 +189,19 @@ class _MovementsScreenState extends State<MovementsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.receipt_long_outlined, size: 64, color: StreamColors.textMuted),
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 64,
+            color: StreamColors.textMuted,
+          ),
           const SizedBox(height: StreamSpacing.lg),
           const Text('Nessun movimento', style: StreamTypography.h2),
           const SizedBox(height: StreamSpacing.sm),
           Text(
             'Tocca + per aggiungerne uno',
-            style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+            style: StreamTypography.body.copyWith(
+              color: StreamColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -158,11 +215,37 @@ class _MovementsScreenState extends State<MovementsScreen> {
         children: [
           Icon(Icons.event_busy, size: 64, color: StreamColors.textMuted),
           const SizedBox(height: StreamSpacing.lg),
-          const Text('Nessun movimento in questo periodo', style: StreamTypography.h2),
+          const Text(
+            'Nessun movimento in questo periodo',
+            style: StreamTypography.h2,
+          ),
           const SizedBox(height: StreamSpacing.sm),
           Text(
             'Prova a cambiare periodo',
-            style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+            style: StreamTypography.body.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySearch() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off, size: 64, color: StreamColors.textMuted),
+          const SizedBox(height: StreamSpacing.lg),
+          const Text('Nessun risultato', style: StreamTypography.h2),
+          const SizedBox(height: StreamSpacing.sm),
+          Text(
+            'Prova con un termine diverso o cambia periodo',
+            style: StreamTypography.body.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -173,19 +256,19 @@ class _MovementsScreenState extends State<MovementsScreen> {
     return GroupedMovementsList(
       movements: movements,
       db: widget.db,
-      showNotes: _showNotes,
+      showNotes: _showNotes || _searchQuery.trim().isNotEmpty,
       onEdit: (m) => _showPicker(context, prefill: m),
       onDuplicate: (m) {
         widget.db.duplicateMovement(m);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Movimento duplicato')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Movimento duplicato')));
       },
       onSaveAsFavorite: (m) {
         widget.db.saveMovementAsFavorite(m);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Salvato nei preferiti')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Salvato nei preferiti')));
       },
       onDelete: (m) {
         widget.db.deleteMovement(m.id);
