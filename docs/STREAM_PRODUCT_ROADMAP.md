@@ -24,11 +24,13 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 5.6 | UX Booster — Ricerca Globale, Preferiti, Categorie Frequenti | 💡 PROPOSTO | TBD | Micro-feature post V0.5, basso sforzo, sfruttano MovementCard |
 | 6 | Hermes V0.6.1 — Raggruppamento Movimenti per Giorno | ✅ COMPLETATO | TBD | Grouped display, DayHeader, daily riepilogo |
 | 6.1 | Hermes V0.6.2 — Ordinamento Centralizzato + Fix | ✅ COMPLETATO | TBD | Comparator unico, updatedAt sort, fix gruppi giorno |
-| 6.2 | Hermes V0.6.3 — Ricerca Globale Movimenti | 📋 APPROVATA | TBD | Ricerca testo + filtro periodo + raggruppamento |
-| 6.3 | Hermes V0.6.4 — UX Rapidi/Preferiti Data Picker | 📋 APPROVATA | TBD | Oggi/Ieri/Domani/Scegli data |
-| 6.4 | Hermes V0.6.5 — Calendar Heatmap | 📋 APPROVATA | TBD | Intensità colore, filtro categoria, navigazione |
-| 6.5 | Hermes V0.6.6 — Beneficiario ed Etichette | 📋 APPROVATA | TBD | Model SQLite migration, UI, backup V2 |
-| 6.6 | Hermes V0.6.7 — Trasferimenti tra Conti | 📋 APPROVATA | TBD | MovementType.transfer, saldo duale, backup V3 |
+| 6.2 | Hermes V0.6.3 — Ricerca Globale Movimenti | ✅ COMPLETATO | TBD | Ricerca testo + filtro periodo + raggruppamento |
+| 6.3 | Hermes V0.6.4 — UX Rapidi/Preferiti Data Picker | ✅ COMPLETATO | TBD | Oggi/Ieri/Domani/Scegli data |
+| 6.4 | Hermes V0.6.5 — Reset dati app | 📋 APPROVATA | TBD | Reset controllato, conferma, ripartenza pulita |
+| 6.5 | Hermes V0.6.6 — Trasferimenti tra Conti | 📋 APPROVATA | TBD | MovementType.transfer, saldo duale, backup compatibile |
+| 6.6 | Hermes V0.6.7 — Import CSV 1Money | 📋 APPROVATA | TBD | Import dopo supporto transfer, molti record "Trasferimento" |
+| 6.7 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
+| 6.8 | Hermes V0.6.9 — Fondi / Obiettivi | 💡 IDEA | TBD | Evoluzione area insight e goal |
 | 7 | Hermes V0.7 — Athena Foundation | 💡 IDEA | TBD | Budget, AI categorization, insight |
 | 8 | Hermes V0.8 — Import CSV | 💡 IDEA | TBD | Import da banche, export dati |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |
@@ -71,9 +73,9 @@ Opzioni ordinamento analisi categorie: Ordine manuale, Nome A-Z, Nome Z-A, Spesa
 - **Soluzione**: `lib/widgets/movement_card.dart` — widget unico, riutilizzabile, con callback per azioni UI. Non scrive su DB.
 - **API**: movement, category, account, onTap, onEdit/onDuplicate/onSaveAsFavorite/onDelete, showNotes, showDate
 - **Test**: 14 nuovi widget test
-- **Prepara**: Ricerca Globale (F23), Preferiti (F12), Import Preview (F21), Heatmap detail-on-tap (F13)
+- **Prepara**: Import Preview (F21), Heatmap detail-on-tap (F13), supporto ai flussi futuri Reset dati / Trasferimenti / CSV
 
-### Calendar Heatmap / Category Heatmap 📋 APPROVATA
+### Calendar Heatmap / Category Heatmap 💡 IDEA
 > Evoluzione visuale di V0.5. Dipende da: date nei movimenti + TimeFilter globale.
 
 - Griglia mensile con intensità colore per giorno basata su spese/entrate/saldo
@@ -84,10 +86,20 @@ Opzioni ordinamento analisi categorie: Ordine manuale, Nome A-Z, Nome Z-A, Spesa
 - Totale mese in basso, navigazione mese prec/succ
 - Palette STREAM esistente, nessuna nuova tabella SQLite
 
+### Reset dati app 📋 APPROVATA
+- Ripristino controllato dei dati locali per iniziare da zero
+- Conferma esplicita prima dell'azione
+- Preserva la struttura app, non modifica schema
+
+### Import CSV 1Money 📋 APPROVATA
+- Importazione prevista dopo il supporto ai trasferimenti
+- Il CSV contiene numerosi movimenti classificati come trasferimento
+- Il flusso dovrà riconoscere e normalizzare questi record prima del mapping finale
+
 ---
 
 ## Backlog completo
 
-Tutte le feature (33 totali) sono censite in:
+Tutte le feature sono censite in:
 📋 **`docs/STREAM_FEATURE_BACKLOG.md`**
-Include: 3 approvate, 6 in valutazione, 7 future, 5 post-MVP, 9 escluse con motivazione.
+Il backlog contiene lo stato aggiornato di completate, approvate, in valutazione, future, post-MVP ed escluse.

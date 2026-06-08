@@ -2,6 +2,8 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
+**Stato:** Hermes V0.6.4 completato | **Test:** 492 | **Analyze:** 0 issues | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
+
 ## Stack
 
 | Layer | Tecnologia | Versione |
@@ -117,11 +119,47 @@ categoryId, type, amount, title NON influenzano
 - Resta solo: KPI periodici + Spese per categoria + dettaglio categoria bottom sheet (con `GroupedMovementsList`)
 - **Vincolo**: nessuna lista movimenti in Dashboard — V0.5.6 decision restored
 
+### Ricerca Globale Movimenti (V0.6.3)
+
+- Helper: `lib/utils/movement_search.dart`
+- Ricerca in-memory, senza FTS / SQLite full-text search
+- Campi cercati:
+  - title
+  - note
+  - category name
+  - account name
+- Match case-insensitive, con trim e matching parziale
+- Combinabile con `TimeFilter` già esistente
+- Risultati renderizzati con `GroupedMovementsList`
+
+### Rapidi / Preferiti con scelta data (V0.6.4)
+
+- La scelta data avviene prima del salvataggio del template
+- Opzioni UX:
+  - Oggi
+  - Ieri
+  - Domani
+  - Scegli data
+- `StreamDatePicker` riusato per la scelta custom
+- `Movement.date` viene valorizzata dalla scelta utente
+- `createdAt` / `updatedAt` restano la data tecnica di creazione o modifica
+
+### Form movimento: label condizionale
+
+- Entrata / Uscita → `Conto`
+- Trasferimento → `Conto origine`
+- La label dinamica evita ambiguità nel form manuale senza introdurre un secondo flusso
+
 ### DayHeader overflow fix (V0.6.2)
 
 - **Problema**: Row riepilogo (Entrate/Uscite/Saldo) overflowava in `DraggableScrollableSheet` stretto (iPhone)
 - **Fix**: `FittedBox(boxFit.scaleDown)` sul Row
 - **File**: `lib/widgets/day_header.dart:74`
+
+### Note tecniche aperte
+
+- Migration V6: rumore `duplicate column name: date` nei test, ma non blocca
+- Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
 
 ### API
 

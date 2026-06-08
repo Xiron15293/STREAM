@@ -2,6 +2,57 @@
 
 > Contiene QA per Hermes V0.1 (conclusa), V0.2 (conclusa), V0.3.1 e V0.3.2 (COMPLETATO), V0.3.3 (COMPLETATO), V0.4 (COMPLETATO), V0.4.1 (COMPLETATO), V0.4.2 (COMPLETATO), V0.5.5 (COMPLETATO), V0.5.6 (COMPLETATO), MovementCard Refactor (COMPLETATO), Backup/Restore in Impostazioni (COMPLETATO), V0.6.0 QA Completa 500 scenari (COMPLETATO).
 
+---
+
+## Hermes V0.6.3 / V0.6.4 — QA recente
+
+### Stato sintetico
+
+- `flutter analyze --no-pub`: **No issues found**
+- `flutter test --no-pub`: **492/492 pass**
+- `flutter build apk --release --no-pub`: **PASS**
+- `flutter build ios --release --no-codesign --no-pub`: **da rilanciare localmente**
+
+### Cosa è stato validato
+
+- Ricerca globale movimenti in Archivio > Movimenti
+- Ricerca case-insensitive e con trim
+- Ricerca parziale su titolo, nota, categoria e conto
+- Combinazione ricerca + `TimeFilter`
+- Risultati con `GroupedMovementsList`
+- Movimenti rapidi / preferiti con scelta data rapida
+- Form movimento con label corretta:
+  - Entrata / Uscita = `Conto`
+  - Trasferimento = `Conto origine`
+
+### Test rapidi / preferiti sistemati
+
+I test widget che avevano fallito sono stati ricondotti a regressioni di test, non a bug del comportamento app.
+
+#### Cause osservate
+- Finder ambiguo su `Scegli data`
+- Bottom sheet lasciato aperto tra le interazioni
+- Lazy rendering della `ListView` non ancora in viewport
+- `scrollUntilVisible` usato con `ListView` invece di `Scrollable`
+
+#### Risoluzione
+- `Key` stabili per:
+  - `quick_date_today`
+  - `quick_date_yesterday`
+  - `quick_date_tomorrow`
+  - `quick_date_custom`
+  - `stream_date_picker_cancel`
+  - `stream_date_picker_ok`
+- Chiusura sempre esplicita dei bottom sheet / picker
+- `pumpAndSettle` dopo ogni interazione con sheet o picker
+- Uso corretto di `Scrollable` nei test di scroll
+
+### Conclusione
+
+- I problemi finali erano regressioni di test
+- Il comportamento app è rimasto coerente
+- La suite è tornata verde a 492 test
+
 ## 1. Data test
 
 2026-06-08 (V0.6.0 QA)

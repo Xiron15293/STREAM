@@ -34,32 +34,34 @@
 | V0.6 | Dashboard Filtrata per Periodo V2 | ✅ COMPLETATO | 2026-06-08 |
 | V0.6.1 | Raggruppamento Movimenti per Giorno | ✅ COMPLETATO | 2026-06-08 |
 | V0.6.2 | Ordinamento Centralizzato + Fix Gruppi Giorno | ✅ COMPLETATO | 2026-06-08 |
+| V0.6.3 | Ricerca Globale Movimenti | ✅ COMPLETATO | 2026-06-08 |
+| V0.6.4 | UX Movimenti Rapidi/Preferiti — Data Picker | ✅ COMPLETATO | 2026-06-08 |
 
 ## Approvate / Future (V0.6.x+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.6.3 | Ricerca Globale Movimenti | 📋 APPROVATA |
-| V0.6.4 | UX Movimenti Rapidi/Preferiti — Data Picker | 📋 APPROVATA |
-| V0.6.5 | Calendar Heatmap | 📋 APPROVATA |
-| V0.6.6 | Beneficiario ed Etichette | 📋 APPROVATA |
-| V0.6.7 | Trasferimenti tra Conti | 📋 APPROVATA |
+| V0.6.5 | Reset dati app | 📋 APPROVATA |
+| V0.6.6 | Trasferimenti tra Conti | 📋 APPROVATA |
+| V0.6.7 | Import CSV 1Money | 📋 APPROVATA |
+| V0.6.8 | Calendar Heatmap | 💡 IDEA |
+| V0.6.9 | Fondi / Obiettivi | 💡 IDEA |
 | V0.7 | Athena Foundation (Budget, AI, Insight) | 💡 IDEA |
 | V0.8 | Import CSV | 💡 IDEA |
 | V0.9 | Scenari | 💡 IDEA |
 | V1.1 | Cloud Sync (backup premium, multi-dispositivo) | 💡 IDEA |
 
-Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per censimento completo (32 feature, tutte classificate).
+Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato aggiornato delle feature.
 
 ## Visione futura  
 
 | Versione | Focus |
 |----------|-------|
-| V0.6.3 | Ricerca Globale Movimenti (📋) — ricerca testo + filtro periodo + raggruppamento |
-| V0.6.4 | UX Rapidi/Preferiti — Data Picker (📋) — Oggi/Ieri/Domani/Scegli data |
-| V0.6.5 | Calendar Heatmap (📋) — intensità colore, filtro categoria, navigazione |
-| V0.6.6 | Beneficiario ed Etichette (📋) — model SQLite migration, UI, backup V2 |
-| V0.6.7 | Trasferimenti tra Conti (📋) — MovementType.transfer, saldo duale, backup V3 |
+| V0.6.5 | Reset dati app (📋) — reset controllato e ripartenza pulita |
+| V0.6.6 | Trasferimenti tra Conti (📋) — saldo duale, backup compatibile |
+| V0.6.7 | Import CSV 1Money (📋) — import dopo supporto transfer |
+| V0.6.8 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
+| V0.6.9 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
 | V0.7 | Athena Foundation (💡) — Budget, AI categorization, insight |
 | V0.8 | Import CSV (💡) — import movimenti da home banking |
 | V0.9 | Scenari (💡) — proiezioni what-if, pianificazione |
@@ -122,6 +124,89 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per censimento completo (32 feature, t
 | `lib/screens/dashboard_screen.dart` | Rimosso `_FilteredMovementsList` |
 | `test/daily_group_test.dart` | +8 test (14–20) |
 | `test/time_filter_bar_test.dart` | +1 widget test real UI order |
+
+---
+
+### V0.6.3 — Ricerca Globale Movimenti ✅
+
+> **Interventi**: ricerca in-memory in Archivio > Movimenti, combinazione con `TimeFilter`, risultati raggruppati con `GroupedMovementsList`
+> **Test**: 492 test pass | `flutter analyze` 0 issues
+> **Build**: APK release PASS ✅ | iOS release no-codesign da rilanciare localmente
+
+**Cosa è stato fatto (V0.6.3 completa):**
+
+### 1. Ricerca globale in-memory
+- Helper condiviso `lib/utils/movement_search.dart`
+- Ricerca case-insensitive e con trim
+- Match parziale su:
+  - titolo
+  - nota
+  - nome categoria
+  - nome conto
+- Nessun FTS / SQLite full-text search
+
+### 2. Integrazione con Archivio
+- La sezione `Movimenti` in Archivio ospita la ricerca globale
+- Risultati combinati con `TimeFilter` esistente:
+  - giorno
+  - mese
+  - anno
+  - periodo custom
+- Risultati renderizzati con `GroupedMovementsList`
+
+### 3. Regole di display
+- Nessuna nuova `MovementCard`
+- Ordine mantenuto tramite `compareMovementsForDisplay`
+- Raggruppamento per giorno invariato
+
+### 4. Test introdotti / aggiornati
+- Ricerca per titolo
+- Ricerca case-insensitive
+- Ricerca parziale
+- Ricerca per nota
+- Ricerca per categoria
+- Ricerca per conto
+- Query vuota / empty state
+- Query con spazi iniziali/finali
+- Ricerca combinata con filtro mese
+- Ricerca combinata con periodo custom
+- Risultati raggruppati per giorno
+- Ordinamento coerente con comparator unico
+- Dataset grande (1000+ movimenti) con performance ragionevole
+
+---
+
+### V0.6.4 — UX Movimenti Rapidi/Preferiti — Data Picker ✅
+
+> **Interventi**: scelta data rapida per template, fix bottom sheet/date picker, fix label `Conto` / `Conto origine`
+> **Test**: 492 test pass | `flutter analyze` 0 issues
+> **Build**: APK release PASS ✅ | iOS release no-codesign da rilanciare localmente
+
+**Cosa è stato fatto (V0.6.4 completa):**
+
+### 1. Scelta data rapida per Rapidi / Preferiti
+- Quando si usa un rapido o preferito, il flusso apre una scelta data prima del salvataggio
+- Opzioni:
+  - Oggi
+  - Ieri
+  - Domani
+  - Scegli data
+- `Scegli data` riusa `StreamDatePicker`
+
+### 2. Stabilità test widget
+- `Key` stabili per i bottoni del bottom sheet
+- Chiusura corretta dei bottom sheet e dei picker
+- `scrollUntilVisible` usato con `Scrollable` valido nei test lazy list
+
+### 3. Form movimento
+- Label condizionale del conto:
+  - Entrata / Uscita = `Conto`
+  - Trasferimento = `Conto origine`
+
+### 4. QA
+- Test rapidi / preferiti sistemati
+- I problemi finali erano regressioni di test, non del comportamento app
+- `flutter test` aggiornato a 492 pass
 
 ---
 

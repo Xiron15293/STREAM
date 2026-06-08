@@ -43,14 +43,26 @@
 | — | Backup export condivisibile (share sheet) | V0.5.6 | 2026-06-08 |
 | F33 | V0.6.1 Raggruppamento Movimenti per Giorno | V0.6.1 | 2026-06-08 |
 | F34 | V0.6.0 Click Categoria Dashboard + IntervalPicker | V0.6.0 | 2026-06-08 |
+| F23 | V0.6.3 Ricerca Globale Movimenti | V0.6.3 | 2026-06-08 |
+| F12 | V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker | V0.6.4 | 2026-06-08 |
 | F37 | V0.6.2 Comparator Centralizzato + Fix Ordinamento | V0.6.2 | 2026-06-08 |
 | F38 | V0.6.2 GroupedMovementsList riusabile | V0.6.2 | 2026-06-08 |
 
 ---
 
+## Priorità prossime
+
+1. Reset dati app controllato
+2. Trasferimenti tra conti
+3. Import CSV 1Money
+4. Calendar Heatmap
+5. Fondi / Obiettivi
+
+---
+
 ## 2. Feature approvate (📋)
 
-### F12 — V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker
+### F12 — V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker ✅ COMPLETATA
 
 | Campo | Valore |
 |-------|--------|
@@ -59,7 +71,7 @@
 | **Priorità** | Alta |
 | **Dipendenze** | Nessuna |
 | **Versione candidata** | V0.6.4 |
-| **Stato** | 📋 APPROVATA |
+| **Stato** | ✅ COMPLETATA |
 
 **Sotto-feature:**
 1. **Data Picker al salvataggio** — quando si seleziona un rapido/preferito, mostrare schermata di scelta data prima di confermare
@@ -73,7 +85,7 @@
 
 ---
 
-### F13 — V0.6.5 Calendar Heatmap / Category Heatmap
+### F13 — V0.6.8 Calendar Heatmap / Category Heatmap
 
 | Campo | Valore |
 |-------|--------|
@@ -81,8 +93,8 @@
 | **Motivazione** | La vista calendario testuale non dà colpo d'occhio immediato sulla distribuzione finanziaria nel mese |
 | **Priorità** | Alta |
 | **Dipendenze** | F09 (date movimenti) ✅, F11 (TimeFilter) ✅, F14 (Calendario tab) ✅ |
-| **Versione candidata** | V0.6.5 |
-| **Stato** | 📋 APPROVATA |
+| **Versione candidata** | V0.6.8 |
+| **Stato** | 💡 IDEA FUTURA |
 
 **Sotto-feature:**
 1. Griglia mensile 7 colonne con celle colorate (intensità = spesa totale del giorno)
@@ -102,7 +114,7 @@
 
 ---
 
-### F23 — V0.6.3 Ricerca Globale Movimenti
+### F23 — V0.6.3 Ricerca Globale Movimenti ✅ COMPLETATA
 
 | Campo | Valore |
 |-------|--------|
@@ -111,7 +123,7 @@
 | **Priorità** | Alta |
 | **Dipendenze** | GroupedMovementsList (F38 ✅) riusabile per raggruppamento risultati |
 | **Versione candidata** | V0.6.3 |
-| **Stato** | 📋 APPROVATA |
+| **Stato** | ✅ COMPLETATA |
 
 **Sotto-feature:**
 1. **Campo di ricerca** — TextField persistente nella testata della lista movimenti
@@ -326,10 +338,10 @@
 | Metrica | Valore |
 |---------|--------|
 | **Totale feature censite** | 32 |
-| **Feature completate** | 20+ (F01–F11, F14–F16, F26, F33–F34, F37–F38; + MovementCard, Backup, Build fix, Share) |
-| **Feature approvate** | 4 (F12–F13, F23, F30) + 2 (F35–F36) |
+| **Feature completate** | 22+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F38; + MovementCard, Backup, Build fix, Share) |
+| **Feature approvate** | 4 (F13, F30, F35–F36) |
 | **Feature in valutazione** | 3 (F17–F18, F32) |
-| **Feature future** | 5 (F19–F22, F24, F31) |
+| **Feature future** | 6 (F19–F22, F24, F31) |
 | **Feature post-MVP** | 3 (F25, F27–F29) |
 | **Feature escluse** | 9 (E01–E09) |
 
@@ -337,14 +349,15 @@
 
 ## 8. Priorità consigliate prima della Beta
 
-### 🥇 Priorità Alta (prossima sessione — V0.6.3)
+### 🥇 Priorità Alta (prossima sessione — V0.6.5)
 
 | Ordine | Feature | Impatto | Sforzo | Note |
 |--------|---------|---------|--------|------|
-| 1 | F23 — Ricerca Globale Movimenti | Alto | Basso | GroupedMovementsList pronto ✅ |
-| 2 | F12 — UX Rapidi/Preferiti Data Picker | Alto | Basso-Medio | MovementCard pronto ✅ |
-| 3 | F13 — Calendar Heatmap | Medio | Basso | V0.5 Foundation ✅ |
-| 4 | F30 — Inline Form Validation | Medio | Basso | |
+| 1 | Reset dati app | Alto | Medio | Ripartenza pulita prima di nuove importazioni |
+| 2 | F36 — Trasferimenti tra Conti | Alto | Alto | Prerequisito pratico per CSV 1Money |
+| 3 | F21 — Import CSV 1Money | Alto | Alto | Va fatto dopo il supporto ai transfer |
+| 4 | F13 — Calendar Heatmap | Medio | Basso | V0.5 Foundation ✅ |
+| 5 | Fondi / Obiettivi | Medio | Medio | Nuova area insight/goal da definire |
 
 ### 🥈 Priorità Media (V0.6.6–V0.6.7)
 
@@ -369,7 +382,7 @@
 | # | Descrizione | Risoluzione |
 |---|-------------|-------------|
 | C01 | F17 vs F18 — stessa UI categorie ma logica diversa | Tenere distinti |
-| C02 | F12.1 (Ricerca Rapidi) vs F23 (Ricerca Globale) | Condividere helper di ricerca |
+| C02 | F23 ricerca globale vs test rapidi/preferiti | Usare `Key` stabili e helper condivisi |
 | C03 | F15 vs F16 — stesso TimeFilter | TimeFilter già condiviso |
 | C04 | Calendar Heatmap come feature vs sotto-feature | Unificata in F13 |
 | C05 | F28 vs F30 — stessa finalità | F30 priorità più alta |
