@@ -475,7 +475,7 @@ void main() {
       expect(firstExpense.dy, lessThan(secondExpense.dy));
     });
 
-    testWidgets('2.5 Filtered movements list shows movements in period', (
+    testWidgets('2.5 Dashboard non mostra più lista movimenti (rimossa V0.6.1)', (
       tester,
     ) async {
       final db = AppDatabase();
@@ -493,31 +493,15 @@ void main() {
         ),
       );
 
-      final prev = DateTime(now.year, now.month - 1, 15);
-      db.addMovement(
-        Movement(
-          id: 'outside_period',
-          title: 'Fuori periodo',
-          amount: 200.0,
-          type: MovementType.expense,
-          date: prev,
-          categoryId: 'exp_1',
-          createdAt: prev,
-        ),
-      );
-
       await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
-      // Scroll down to movements list
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Movimenti del periodo'), findsOneWidget);
-      expect(find.text('Movimento nel periodo'), findsOneWidget);
-      expect(find.text('Fuori periodo'), findsNothing);
+      // Dashboard must NOT show a flat movement list
+      expect(find.text('Movimenti del periodo'), findsNothing);
+      // Dashboard still shows KPI and categories
+      expect(find.text('Spese per categoria'), findsOneWidget);
     });
 
-    testWidgets('2.6 Filtered movements list empty when no movements in period', (
+    testWidgets('2.6 Dashboard empty period — no KPI crash', (
       tester,
     ) async {
       final db = AppDatabase();
@@ -537,11 +521,12 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
+      // No movement list section
       expect(find.text('Movimenti del periodo'), findsNothing);
       expect(find.text('Vecchio'), findsNothing);
     });
 
-    testWidgets('2.7 Filtered movements list limits to 20 items', (tester) async {
+    testWidgets('2.7 Dashboard con 25 movimenti — nessuna lista movimenti', (tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
 
@@ -561,18 +546,13 @@ void main() {
 
       await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
-      // Scroll down to movements list
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Movimenti del periodo'), findsOneWidget);
-      expect(find.text('Movimento 0'), findsOneWidget);
-      expect(find.text('Movimento 19'), findsOneWidget);
-      expect(find.textContaining('Mostra tutti: altri 5 movimenti in Archivio'),
-          findsOneWidget);
+      // No movement list on Dashboard
+      expect(find.text('Movimenti del periodo'), findsNothing);
+      // But KPI should show 25 movements
+      expect(find.text('25'), findsOneWidget);
     });
 
-    testWidgets('2.8 Filtered list updates when TimeFilter changes', (tester) async {
+    testWidgets('2.8 TimeFilter changes update KPI only (no movement list)', (tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
@@ -582,9 +562,9 @@ void main() {
           id: 'today',
           title: 'Oggi',
           amount: 100.0,
-          type: MovementType.income,
+          type: MovementType.expense,
           date: now,
-          categoryId: 'inc_1',
+          categoryId: 'exp_1',
           createdAt: now,
         ),
       );
@@ -593,45 +573,19 @@ void main() {
           id: 'yesterday',
           title: 'Ieri',
           amount: 50.0,
-          type: MovementType.income,
+          type: MovementType.expense,
           date: yesterday,
-          categoryId: 'inc_1',
+          categoryId: 'exp_1',
           createdAt: yesterday,
         ),
       );
 
       await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
-      // Scroll down to movements list
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Movimenti del periodo'), findsOneWidget);
-      expect(find.text('Oggi'), findsOneWidget);
-      expect(find.text('Ieri'), findsOneWidget);
-
-      // Scroll back up to tap filter
-      await tester.drag(find.byType(ListView), const Offset(0, 500));
-      await tester.pumpAndSettle();
-
-      // Passa a filtro Giorno (default al 1° del mese corrente)
-      await tester.tap(find.text('Giorno'));
-      await tester.pumpAndSettle();
-
-      // Naviga al giorno corrente con freccia destra
-      final firstOfMonth = DateTime(now.year, now.month, 1);
-      final daysToAdvance = now.difference(firstOfMonth).inDays;
-      for (int i = 0; i < daysToAdvance; i++) {
-        await tester.tap(find.byIcon(Icons.chevron_right));
-        await tester.pumpAndSettle();
-      }
-
-      // Scroll to the movements list
-      await tester.drag(find.byType(ListView), const Offset(0, -500));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Oggi'), findsOneWidget);
-      expect(find.text('Ieri'), findsNothing);
+      // No movement list on Dashboard
+      expect(find.text('Movimenti del periodo'), findsNothing);
+      // KPI and category section must be present
+      expect(find.text('Spese per categoria'), findsOneWidget);
     });
   });
 

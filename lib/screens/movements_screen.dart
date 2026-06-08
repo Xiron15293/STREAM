@@ -3,12 +3,10 @@ import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
-import '../models/daily_group.dart';
 import '../theme.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
-import '../widgets/movement_card.dart';
-import '../widgets/day_header.dart';
+import '../widgets/grouped_movements_list.dart';
 
 class MovementsScreen extends StatefulWidget {
   final AppDatabase db;
@@ -172,51 +170,25 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }
 
   Widget _buildMovementsList(List<Movement> movements) {
-    final groups = groupMovementsByDay(movements);
-    final totalItems = groups.fold<int>(0, (sum, g) => sum + 1 + g.movements.length);
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, 0, StreamSpacing.lg, 80),
-      itemCount: totalItems,
-      itemBuilder: (context, index) {
-        int cursor = 0;
-        for (final group in groups) {
-          final groupTotal = 1 + group.movements.length;
-          if (index < cursor + groupTotal) {
-            final localIdx = index - cursor;
-            if (localIdx == 0) {
-              return DayHeader(group: group);
-            }
-            final m = group.movements[localIdx - 1];
-            final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
-            final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-            return MovementCard(
-              movement: m,
-              category: cat,
-              account: acc,
-              showNotes: _showNotes,
-              showDate: false,
-              onEdit: () => _showPicker(context, prefill: m),
-              onDuplicate: () {
-                widget.db.duplicateMovement(m);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Movimento duplicato')),
-                );
-              },
-              onSaveAsFavorite: () {
-                widget.db.saveMovementAsFavorite(m);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Salvato nei preferiti')),
-                );
-              },
-              onDelete: () {
-                widget.db.deleteMovement(m.id);
-              },
-            );
-          }
-          cursor += groupTotal;
-        }
-        return null;
+    return GroupedMovementsList(
+      movements: movements,
+      db: widget.db,
+      showNotes: _showNotes,
+      onEdit: (m) => _showPicker(context, prefill: m),
+      onDuplicate: (m) {
+        widget.db.duplicateMovement(m);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Movimento duplicato')),
+        );
+      },
+      onSaveAsFavorite: (m) {
+        widget.db.saveMovementAsFavorite(m);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Salvato nei preferiti')),
+        );
+      },
+      onDelete: (m) {
+        widget.db.deleteMovement(m.id);
       },
     );
   }

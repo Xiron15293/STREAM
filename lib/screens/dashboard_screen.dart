@@ -6,9 +6,9 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
-import '../widgets/movement_card.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
+import '../widgets/grouped_movements_list.dart';
 
 class DashboardScreen extends StatefulWidget {
   final AppDatabase db;
@@ -134,11 +134,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   item,
                   filteredMovements,
                 ),
-              ),
-              const SizedBox(height: StreamSpacing.section),
-              _FilteredMovementsList(
-                movements: filteredMovements,
-                db: widget.db,
               ),
             ],
           );
@@ -672,57 +667,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _FilteredMovementsList extends StatelessWidget {
-  final List<Movement> movements;
-  final AppDatabase db;
-
-  const _FilteredMovementsList({
-    required this.movements,
-    required this.db,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (movements.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Movimenti del periodo', style: StreamTypography.h3),
-        const SizedBox(height: StreamSpacing.md),
-        ...movements.take(20).map((m) {
-          final cat = db.categories.where((c) => c.id == m.categoryId).firstOrNull;
-          final acc = db.accounts.where((a) => a.id == m.accountId).firstOrNull;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: StreamSpacing.xs),
-            child: MovementCard(
-              movement: m,
-              category: cat,
-              account: acc,
-              showNotes: false,
-              showDate: true,
-            ),
-          );
-        }),
-        if (movements.length > 20)
-          Padding(
-            padding: const EdgeInsets.only(top: StreamSpacing.sm),
-            child: Center(
-              child: Text(
-                'Mostra tutti: altri ${movements.length - 20} movimenti in Archivio',
-                style: StreamTypography.caption.copyWith(
-                  color: StreamColors.primary,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 class _CategoryDetailSheet extends StatelessWidget {
   final _CategoryExpense item;
   final List<Movement> movements;
@@ -834,30 +778,11 @@ class _CategoryDetailSheet extends StatelessWidget {
                           ),
                         ),
                       )
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(StreamSpacing.lg),
-                        itemCount: movements.length,
-                        itemBuilder: (context, index) {
-                          final m = movements[index];
-                          final cat = db.categories
-                              .where((c) => c.id == m.categoryId)
-                              .firstOrNull;
-                          final acc = db.accounts
-                              .where((a) => a.id == m.accountId)
-                              .firstOrNull;
-                          return Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: StreamSpacing.xs),
-                            child: MovementCard(
-                              movement: m,
-                              category: cat,
-                              account: acc,
-                              showNotes: false,
-                              showDate: true,
-                            ),
-                          );
-                        },
+                    : GroupedMovementsList(
+                        movements: movements,
+                        db: db,
+                        showNotes: false,
+                        scrollController: scrollController,
                       ),
               ),
             ],

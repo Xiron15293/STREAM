@@ -31,7 +31,8 @@ List<DailyMovementGroup> groupMovementsByDay(List<Movement> movements) {
 
   final map = <String, List<Movement>>{};
   for (final m in movements) {
-    final key = '${m.date.year}-${m.date.month}-${m.date.day}';
+    final d = DateTime(m.date.year, m.date.month, m.date.day);
+    final key = '${d.year}-${d.month}-${d.day}';
     map.putIfAbsent(key, () => []).add(m);
   }
 
@@ -39,14 +40,10 @@ List<DailyMovementGroup> groupMovementsByDay(List<Movement> movements) {
 
   final result = <DailyMovementGroup>[];
   for (final key in keys) {
+    final parts = key.split('-');
+    final date = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
     final dayMovements = map[key]!;
-    final first = dayMovements.first;
-    final date = DateTime(first.date.year, first.date.month, first.date.day);
-    dayMovements.sort((a, b) {
-      final dateCmp = b.date.compareTo(a.date);
-      if (dateCmp != 0) return dateCmp;
-      return b.createdAt.compareTo(a.createdAt);
-    });
+    dayMovements.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     result.add(DailyMovementGroup(date: date, movements: dayMovements));
   }
   return result;
