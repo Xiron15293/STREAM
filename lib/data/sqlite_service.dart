@@ -14,7 +14,7 @@ class SQLiteService {
   Future<void> open({String? path}) async {
     _db = await openDatabase(
       path ?? join(await getDatabasesPath(), 'stream.db'),
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -43,6 +43,7 @@ class SQLiteService {
         type TEXT NOT NULL,
         category_id TEXT NOT NULL,
         account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+        destination_account_id TEXT,
         date TEXT NOT NULL,
         note TEXT,
         created_at TEXT NOT NULL,
@@ -194,6 +195,15 @@ class SQLiteService {
         debugPrint('Migration V6 fallback date error: $e');
       }
     }
+    if (oldVersion < 7) {
+      await _addColumnIfMissing(
+        db,
+        table: 'movements',
+        column: 'destination_account_id',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V7 add destination_account_id to movements',
+      );
+    }
   }
 
   Future<void> _insertDefaultAccount(Database db) async {
@@ -248,6 +258,7 @@ class SQLiteService {
         'type': m.type.name,
         'category_id': m.categoryId,
         'account_id': m.accountId,
+        'destination_account_id': m.destinationAccountId,
         'date': _toDateOnly(m.date),
         'note': m.note,
         'created_at': m.createdAt.toIso8601String(),
@@ -268,6 +279,7 @@ class SQLiteService {
         type: MovementType.values.byName(map['type'] as String),
         categoryId: map['category_id'] as String,
         accountId: map['account_id'] as String? ?? defaultAccountId,
+        destinationAccountId: map['destination_account_id'] as String?,
         date: _parseDateSafe(map['date'], fallback: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1))),
         note: map['note'] as String?,
         createdAt: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1)),
@@ -516,5 +528,22 @@ class SQLiteService {
     await db.delete('quick_movements');
     await db.delete('favorite_movements');
     await db.delete('accounts');
+  }
+
+  Future<void> _addColumnIfMissing(
+    Database db, {
+    required String table,
+    required String column,
+    required String definition,
+    required String migrationLabel,
+  }) async {
+    final info = await db.rawQuery('PRAGMA table_info($table)');
+    final exists = info.any((row) => row['name'] == column);
+    if (exists) return;
+    try {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+    } catch (e) {
+      debugPrint('$migrationLabel error: $e');
+    }
   }
 }

@@ -49,10 +49,14 @@ class GroupedMovementsList extends StatelessWidget {
             final m = group.movements[localIdx - 1];
             final cat = db.categories.where((c) => c.id == m.categoryId).firstOrNull;
             final acc = db.accounts.where((a) => a.id == m.accountId).firstOrNull;
+            final destinationAcc = m.destinationAccountId == null
+                ? null
+                : db.accounts.where((a) => a.id == m.destinationAccountId).firstOrNull;
             return MovementCard(
               movement: m,
               category: cat,
               account: acc,
+              destinationAccount: destinationAcc,
               showNotes: showNotes,
               showDate: false,
               onEdit: onEdit != null ? () => onEdit!(m) : null,

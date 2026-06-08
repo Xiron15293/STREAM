@@ -81,6 +81,66 @@ void main() {
       expect(db.totalAccountsBalance, 1200.0); // 0 + 200 + 1000
     });
 
+    test('5b. Transfer between accounts keeps total balance unchanged', () async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      await db.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Destinazione',
+        type: AccountType.bank,
+        initialBalance: 300.0,
+        createdAt: now,
+      ));
+
+      await db.addMovement(Movement(
+        id: 'tr1',
+        title: 'Trasferimento',
+        amount: 150,
+        type: MovementType.transfer,
+        date: now,
+        categoryId: '',
+        accountId: 'acc_default',
+        destinationAccountId: 'acc_dest',
+        createdAt: now,
+      ));
+
+      expect(db.getAccountBalance(db.getAccount('acc_default')), -150.0);
+      expect(db.getAccountBalance(db.getAccount('acc_dest')), 450.0);
+      expect(db.totalAccountsBalance, 300.0);
+    });
+
+    test('5c. Multiple transfers on the same day aggregate correctly', () async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      await db.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Destinazione',
+        type: AccountType.bank,
+        initialBalance: 0.0,
+        createdAt: now,
+      ));
+
+      for (var i = 0; i < 3; i++) {
+        await db.addMovement(Movement(
+          id: 'tr_$i',
+          title: 'T$i',
+          amount: 10.0 * (i + 1),
+          type: MovementType.transfer,
+          date: now,
+          categoryId: '',
+          accountId: 'acc_default',
+          destinationAccountId: 'acc_dest',
+          createdAt: now,
+        ));
+      }
+
+      expect(db.getAccountBalance(db.getAccount('acc_default')), -60.0);
+      expect(db.getAccountBalance(db.getAccount('acc_dest')), 60.0);
+      expect(db.totalAccountsBalance, 0.0);
+    });
+
     test('6. Update account details', () async {
       final db = AppDatabase();
       await db.updateAccount('acc_default', 'Banca Principale', AccountType.bank, 500);
@@ -168,6 +228,41 @@ void main() {
       await db2.initialize();
       final acc = db2.getAccount('acc_default');
       expect(db2.getAccountBalance(acc), 3000.0);
+
+      await sqlite.close();
+    });
+
+    test('11b. Transfer survives reload and updates both account balances', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+      final now = DateTime.now();
+
+      await db.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Secondo',
+        type: AccountType.bank,
+        initialBalance: 100.0,
+        createdAt: now,
+      ));
+      await db.addMovement(Movement(
+        id: 'tr_reload',
+        title: 'Trasferimento',
+        amount: 40,
+        type: MovementType.transfer,
+        date: now,
+        categoryId: '',
+        accountId: 'acc_default',
+        destinationAccountId: 'acc_dest',
+        createdAt: now,
+      ));
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.getAccountBalance(db2.getAccount('acc_default')), -40.0);
+      expect(db2.getAccountBalance(db2.getAccount('acc_dest')), 140.0);
+      expect(db2.totalAccountsBalance, 100.0);
 
       await sqlite.close();
     });

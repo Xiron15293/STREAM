@@ -112,11 +112,10 @@ class AppDatabase extends ChangeNotifier {
   }
 
   double getAccountBalance(Account a) {
-    final movementsSum = _movements
-        .where((m) => m.accountId == a.id)
-        .fold<double>(0.0, (sum, m) {
-      return m.type == MovementType.income ? sum + m.amount : sum - m.amount;
-    });
+    final movementsSum = _movements.fold<double>(
+      0.0,
+      (sum, m) => sum + m.impactForAccount(a.id),
+    );
     return a.initialBalance + movementsSum;
   }
 
@@ -303,16 +302,25 @@ class AppDatabase extends ChangeNotifier {
     required String categoryId,
     String? note,
     String? accountId,
+    String? destinationAccountId,
     DateTime? date,
   }) async {
+    final sanitizedTitle = title.trim();
+    final originAccountId = accountId ?? defaultAccountId;
+    final finalTitle = sanitizedTitle.isNotEmpty
+        ? sanitizedTitle
+        : type == MovementType.transfer
+            ? _buildTransferTitle(originAccountId, destinationAccountId)
+            : title;
     final movement = Movement(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
-      title: title,
+      title: finalTitle,
       amount: amount,
       type: type,
       date: date ?? DateTime.now(),
       categoryId: categoryId,
-      accountId: accountId,
+      accountId: originAccountId,
+      destinationAccountId: destinationAccountId,
       note: note,
       createdAt: DateTime.now(),
     );
@@ -326,6 +334,14 @@ class AppDatabase extends ChangeNotifier {
     _movements.add(movement);
     notifyListeners();
     return movement;
+  }
+
+  String _buildTransferTitle(String originAccountId, String? destinationAccountId) {
+    final origin = getAccount(originAccountId).name;
+    final destination = destinationAccountId == null
+        ? 'Conto destinazione'
+        : getAccount(destinationAccountId).name;
+    return 'Trasferimento: $origin → $destination';
   }
 
   // ── Categories CRUD ──

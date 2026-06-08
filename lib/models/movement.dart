@@ -9,6 +9,7 @@ class Movement {
   final DateTime date;
   final String categoryId;
   final String accountId;
+  final String? destinationAccountId;
   final String? note;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -21,6 +22,7 @@ class Movement {
     required this.date,
     required this.categoryId,
     String? accountId,
+    this.destinationAccountId,
     this.note,
     required this.createdAt,
     DateTime? updatedAt,
@@ -39,6 +41,7 @@ class Movement {
     DateTime? date,
     String? categoryId,
     String? accountId,
+    String? destinationAccountId,
     String? note,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -51,10 +54,25 @@ class Movement {
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
       accountId: accountId ?? this.accountId,
+      destinationAccountId: destinationAccountId ?? this.destinationAccountId,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  double impactForAccount(String accountId) {
+    switch (type) {
+      case MovementType.income:
+        return this.accountId == accountId ? amount : 0.0;
+      case MovementType.expense:
+        return this.accountId == accountId ? -amount : 0.0;
+      case MovementType.transfer:
+        double impact = 0.0;
+        if (this.accountId == accountId) impact -= amount;
+        if (destinationAccountId == accountId) impact += amount;
+        return impact;
+    }
   }
 }
 

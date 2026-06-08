@@ -27,7 +27,13 @@ List<Movement> searchMovements({
     return _matches(normalizedQuery, movement.title) ||
         _matches(normalizedQuery, movement.note) ||
         _matches(normalizedQuery, categoryNamesById[movement.categoryId]) ||
-        _matches(normalizedQuery, accountNamesById[movement.accountId]);
+        _matches(normalizedQuery, accountNamesById[movement.accountId]) ||
+        _matches(
+          normalizedQuery,
+          movement.destinationAccountId == null
+              ? null
+              : accountNamesById[movement.destinationAccountId!],
+        );
   }).toList();
 }
 

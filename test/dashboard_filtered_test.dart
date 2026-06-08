@@ -140,6 +140,64 @@ void main() {
       expect(db.balance, 300);
     });
 
+    test('1.4b Transfer non altera KPI entrate/spese e resta neutro sul saldo', () {
+      db.addAccount(
+        Account(
+          id: 'acc_dest',
+          name: 'Destinazione',
+          type: AccountType.bank,
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Income',
+          amount: 500,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'tr1',
+          title: 'Transfer',
+          amount: 120,
+          type: MovementType.transfer,
+          date: now,
+          categoryId: '',
+          accountId: defaultAccountId,
+          destinationAccountId: 'acc_dest',
+          createdAt: now,
+        ),
+      );
+      db.addMovement(
+        Movement(
+          id: 'm2',
+          title: 'Expense',
+          amount: 200,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+
+      final filter = TimeFilter.month(now.year, now.month);
+      final filtered = db.movements.filterByTime(filter);
+      final income = filtered.where((m) => m.type == MovementType.income).fold<double>(0, (sum, m) => sum + m.amount);
+      final expenses = filtered.where((m) => m.type == MovementType.expense).fold<double>(0, (sum, m) => sum + m.amount);
+      final transferCount = filtered.where((m) => m.type == MovementType.transfer).length;
+
+      expect(income, 500);
+      expect(expenses, 200);
+      expect(transferCount, 1);
+      expect(db.balance, 300);
+      expect(db.totalAccountsBalance, 300);
+    });
+
     test('1.5 Cambio giorno: KPI filtrati correttamente', () {
       final yesterday = DateTime(now.year, now.month, now.day - 1);
       db.addMovement(

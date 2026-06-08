@@ -37,6 +37,18 @@ void main() {
     createdAt: now,
   );
 
+  final transferMovement = Movement(
+    id: 'm3',
+    title: 'Trasferimento conto',
+    amount: 120,
+    type: MovementType.transfer,
+    date: now,
+    categoryId: '',
+    accountId: 'acc_1',
+    destinationAccountId: 'acc_2',
+    createdAt: now,
+  );
+
   final category = Category(
     id: 'inc_1',
     name: 'Lavoro',
@@ -155,6 +167,26 @@ void main() {
       ));
       expect(find.text('Stipendio'), findsOneWidget);
       expect(find.text('inc_1'), findsOneWidget);
+    });
+
+    testWidgets('renderizza transfer con origine e destinazione', (tester) async {
+      final destAccount = Account(
+        id: 'acc_2',
+        name: 'Carta',
+        type: AccountType.card,
+        color: 0xFF4B7BFF,
+        createdAt: now,
+      );
+      await tester.pumpWidget(wrapWithTheme(
+        MovementCard(
+          movement: transferMovement,
+          account: account,
+          destinationAccount: destAccount,
+        ),
+      ));
+      expect(find.text('Trasferimento conto'), findsOneWidget);
+      expect(find.textContaining('Da Conto Corrente → Carta'), findsOneWidget);
+      expect(find.textContaining('120.00'), findsOneWidget);
     });
 
     testWidgets('onTap viene chiamato al tap', (tester) async {

@@ -149,6 +149,31 @@ void main() {
         expect(groups[0].balance, 40);
       });
 
+      test('11b. Transfer non influisce sui totali del gruppo', () {
+        final date = d(2026, 6, 7);
+        final movements = [
+          makeMov(amount: 100, type: MovementType.income, date: date, id: 'm1'),
+          Movement(
+            id: 'tr1',
+            title: 'Trasferimento',
+            amount: 75,
+            type: MovementType.transfer,
+            date: date,
+            categoryId: '',
+            accountId: 'acc_a',
+            destinationAccountId: 'acc_b',
+            createdAt: date.add(const Duration(hours: 1)),
+            updatedAt: date.add(const Duration(hours: 1)),
+          ),
+          makeMov(amount: 60, type: MovementType.expense, date: date, id: 'm2'),
+        ];
+        final groups = groupMovementsByDay(movements);
+        expect(groups[0].totalIncome, 100);
+        expect(groups[0].totalExpenses, 60);
+        expect(groups[0].balance, 40);
+        expect(groups[0].movements.first.type, MovementType.transfer);
+      });
+
       test('12. Type does NOT influence order — only createdAt desc', () {
         final base = d(2026, 6, 7);
         // createdAt: t1=08:00 expense, t2=09:00 income, t3=10:00 expense

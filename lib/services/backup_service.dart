@@ -26,7 +26,7 @@ class ValidationResult {
 }
 
 class BackupService {
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   static Future<String> exportToJson(AppDatabase db) async {
     final showNotes = await PreferencesService.loadShowNotes();
@@ -94,7 +94,8 @@ class BackupService {
   }
 
   static String? _deepValidate(Map<String, dynamic> parsed) {
-    final validTypes = {'income', 'expense'};
+    final validCategoryTypes = {'income', 'expense'};
+    final validMovementTypes = {'income', 'expense', 'transfer'};
 
     // ── Validate accounts ──
     final accounts = parsed['accounts'] as List;
@@ -118,7 +119,7 @@ class BackupService {
       if (_fieldString(item, 'id') == null) {
         return 'Categoria #${i + 1}: campo "id" mancante o vuoto';
       }
-      if (_fieldString(item, 'type') == null || !validTypes.contains(item['type'])) {
+      if (_fieldString(item, 'type') == null || !validCategoryTypes.contains(item['type'])) {
         return 'Categoria #${i + 1}: campo "type" mancante o non valido (income/expense)';
       }
     }
@@ -136,8 +137,12 @@ class BackupService {
       if (item['amount'] is! num) {
         return 'Movimento #${i + 1}: campo "amount" mancante o non numerico';
       }
-      if (!validTypes.contains(item['type'] as String?)) {
-        return 'Movimento #${i + 1}: campo "type" mancante o non valido (income/expense)';
+      if (!validMovementTypes.contains(item['type'] as String?)) {
+        return 'Movimento #${i + 1}: campo "type" mancante o non valido (income/expense/transfer)';
+      }
+      if (item['type'] == 'transfer' &&
+          _fieldString(item, 'destinationAccountId') == null) {
+        return 'Movimento #${i + 1}: campo "destinationAccountId" mancante o vuoto per un transfer';
       }
       final dateStr = item['date'] as String?;
       if (dateStr == null || dateStr.isEmpty) {
@@ -164,8 +169,8 @@ class BackupService {
         if (item['amount'] is! num) {
           return 'Movimento rapido #${i + 1}: campo "amount" mancante o non numerico';
         }
-        if (!validTypes.contains(item['type'] as String?)) {
-          return 'Movimento rapido #${i + 1}: campo "type" mancante o non valido (income/expense)';
+        if (!validMovementTypes.contains(item['type'] as String?)) {
+          return 'Movimento rapido #${i + 1}: campo "type" mancante o non valido (income/expense/transfer)';
         }
       }
     }
@@ -184,8 +189,8 @@ class BackupService {
         if (item['amount'] is! num) {
           return 'Movimento preferito #${i + 1}: campo "amount" mancante o non numerico';
         }
-        if (!validTypes.contains(item['type'] as String?)) {
-          return 'Movimento preferito #${i + 1}: campo "type" mancante o non valido (income/expense)';
+        if (!validMovementTypes.contains(item['type'] as String?)) {
+          return 'Movimento preferito #${i + 1}: campo "type" mancante o non valido (income/expense/transfer)';
         }
       }
     }
@@ -368,14 +373,21 @@ class BackupService {
     final accountId = accounts.containsKey(movement.accountId)
         ? movement.accountId
         : defaultAccountId;
+    final destinationAccountId = movement.destinationAccountId != null &&
+            accounts.containsKey(movement.destinationAccountId)
+        ? movement.destinationAccountId
+        : (movement.type == MovementType.transfer ? defaultAccountId : null);
     final category = categories[movement.categoryId];
-    final categoryId = category != null && category.type == movement.type
-        ? category.id
-        : _defaultCategoryIdForType(movement.type);
+    final categoryId = movement.type == MovementType.transfer
+        ? movement.categoryId
+        : category != null && category.type == movement.type
+            ? category.id
+            : _defaultCategoryIdForType(movement.type);
 
     return movement.copyWith(
       accountId: accountId,
       categoryId: categoryId,
+      destinationAccountId: destinationAccountId,
     );
   }
 
@@ -464,6 +476,7 @@ class BackupService {
         'type': movement.type.name,
         'category_id': movement.categoryId,
         'account_id': movement.accountId,
+        'destination_account_id': movement.destinationAccountId,
         'date': movement.date.toIso8601String(),
         'note': movement.note,
         'created_at': movement.createdAt.toIso8601String(),

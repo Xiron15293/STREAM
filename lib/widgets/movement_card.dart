@@ -9,6 +9,7 @@ class MovementCard extends StatelessWidget {
   final Movement movement;
   final Category? category;
   final Account? account;
+  final Account? destinationAccount;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDuplicate;
@@ -22,6 +23,7 @@ class MovementCard extends StatelessWidget {
     required this.movement,
     this.category,
     this.account,
+    this.destinationAccount,
     this.onTap,
     this.onEdit,
     this.onDuplicate,
@@ -33,7 +35,10 @@ class MovementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconData = category != null
+    final isTransfer = movement.type == MovementType.transfer;
+    final iconData = isTransfer
+        ? Icons.swap_horiz
+        : category != null
         ? StreamIconLibrary.getIcon(category!.iconKey)
         : Icons.help_outline;
     final hasPopup = onEdit != null ||
@@ -71,11 +76,18 @@ class MovementCard extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(movement.title,
-                              style: StreamTypography.bodyBold),
-                          const SizedBox(height: 2),
-                          if (category != null)
+                          children: [
+                            Text(movement.title,
+                                style: StreamTypography.bodyBold),
+                            const SizedBox(height: 2),
+                          if (isTransfer)
+                            _MetadataRow(
+                              icon: Icons.swap_horiz,
+                              iconColor: StreamColors.textMuted,
+                              text:
+                                  'Da ${account?.name ?? movement.accountId} → ${destinationAccount?.name ?? movement.destinationAccountId ?? defaultAccountId}',
+                            )
+                          else if (category != null)
                             _MetadataRow(
                               icon:
                                   StreamIconLibrary.getIcon(category!.iconKey),
@@ -88,7 +100,7 @@ class MovementCard extends StatelessWidget {
                               iconColor: StreamColors.textMuted,
                               text: movement.categoryId,
                             ),
-                          if (account != null)
+                          if (!isTransfer && account != null)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 1),
                               child: _MetadataRow(
@@ -108,15 +120,19 @@ class MovementCard extends StatelessWidget {
                               ),
                             ),
                         ],
-                      ),
-                    ),
+                          ),
+                        ),
                     const SizedBox(width: StreamSpacing.sm),
                     Text(
-                      '${movement.type == MovementType.expense ? '-' : '+'}${movement.amount.toStringAsFixed(2)} €',
+                      isTransfer
+                          ? '${movement.amount.toStringAsFixed(2)} €'
+                          : '${movement.type == MovementType.expense ? '-' : '+'}${movement.amount.toStringAsFixed(2)} €',
                       style: StreamTypography.amount.copyWith(
-                        color: movement.type == MovementType.expense
-                            ? StreamColors.expense
-                            : StreamColors.income,
+                        color: isTransfer
+                            ? StreamColors.textSecondary
+                            : movement.type == MovementType.expense
+                                ? StreamColors.expense
+                                : StreamColors.income,
                       ),
                     ),
                     if (hasPopup) ...[

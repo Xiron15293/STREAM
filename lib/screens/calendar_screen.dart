@@ -307,10 +307,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final m = movements[index];
         final cat = widget.db.categories.where((c) => c.id == m.categoryId).firstOrNull;
         final acc = widget.db.accounts.where((a) => a.id == m.accountId).firstOrNull;
+        final destinationAcc = m.destinationAccountId == null
+            ? null
+            : widget.db.accounts.where((a) => a.id == m.destinationAccountId).firstOrNull;
         return MovementCard(
           movement: m,
           category: cat,
           account: acc,
+          destinationAccount: destinationAcc,
           onTap: () => _showPicker(context, prefill: m),
         );
       },

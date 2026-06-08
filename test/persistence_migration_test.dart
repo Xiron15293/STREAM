@@ -121,6 +121,62 @@ Future<void> _createV5Schema(Database db) async {
   });
 }
 
+/// Create V6 schema on an open database (date in movements, no destination_account_id).
+Future<void> _createV6Schema(Database db) async {
+  await db.execute('''
+    CREATE TABLE movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      date TEXT NOT NULL,
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE categories (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE quick_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE favorite_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE accounts (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      initial_balance REAL NOT NULL DEFAULT 0.0,
+      icon_key TEXT NOT NULL DEFAULT 'wallet',
+      color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  final now = DateTime.now().toIso8601String();
+  await db.insert('accounts', {
+    'id': defaultAccountId, 'name': 'Principale', 'type': 'bank',
+    'initial_balance': 0.0, 'archived': 0,
+    'created_at': now, 'updated_at': now,
+  });
+}
+
 /// Create V3 schema on an open database (V2 + account_id in quick/favorite).
 Future<void> _createV3Schema(Database db) async {
   await _createV2Schema(db);
@@ -158,6 +214,14 @@ Future<String> _makeV3Db() async {
 Future<String> _makeV5Db() async {
   final path = _tempDbPath('v5.db');
   var db = await openDatabase(path, version: 5, onCreate: (db, _) => _createV5Schema(db));
+  await db.close();
+  return path;
+}
+
+/// Crea database V6 su file (date presente, destination_account_id assente).
+Future<String> _makeV6Db() async {
+  final path = _tempDbPath('v6.db');
+  var db = await openDatabase(path, version: 6, onCreate: (db, _) => _createV6Schema(db));
   await db.close();
   return path;
 }
@@ -622,6 +686,101 @@ void main() {
       expect(appDb.accounts.any((a) => a.id == defaultAccountId), true);
       // date non deve essere NULL
       expect(appDb.movements.first.date, isNotNull);
+
+      await sqlite.close();
+    });
+  });
+
+  group('V6→V7 — destination account migration', () {
+    test('V6 upgradea con destination_account_id senza perdere movimenti esistenti', () async {
+      final path = await _makeV6Db();
+      var db = await openDatabase(path, version: 6);
+      final now = DateTime(2026, 6, 20).toIso8601String();
+      await db.rawInsert('''
+        INSERT INTO movements (id, title, amount, type, category_id, account_id, date, created_at, updated_at)
+        VALUES ('v7_old_mov', 'Vecchio movimento', 42.0, 'expense', 'exp_1', '$defaultAccountId', '$now', '$now', '$now')
+      ''');
+      await db.rawInsert('''
+        INSERT INTO categories (id, name, type, color, archived, created_at, updated_at)
+        VALUES ('exp_1', 'Spesa', 'expense', 0xFFEF5350, 0, '$now', '$now')
+      ''');
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      expect(appDb.movements.length, 1);
+      expect(appDb.movements.first.title, 'Vecchio movimento');
+      expect(appDb.movements.first.destinationAccountId, isNull);
+
+      await sqlite.close();
+    });
+
+    test('V6 upgradea e salva transfer con destination_account_id', () async {
+      final path = await _makeV6Db();
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      await appDb.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Destinazione',
+        type: AccountType.bank,
+        createdAt: DateTime(2026, 6, 20),
+      ));
+      await appDb.addMovement(Movement(
+        id: 'tr_v7',
+        title: 'Trasferimento',
+        amount: 30,
+        type: MovementType.transfer,
+        date: DateTime(2026, 6, 20),
+        categoryId: '',
+        accountId: defaultAccountId,
+        destinationAccountId: 'acc_dest',
+        createdAt: DateTime(2026, 6, 20),
+      ));
+
+      final db2 = AppDatabase(sqlite: sqlite);
+      await db2.initialize();
+      expect(db2.movements.length, 1);
+      expect(db2.movements.first.destinationAccountId, 'acc_dest');
+      expect(db2.getAccountBalance(db2.getAccount(defaultAccountId)), -30.0);
+      expect(db2.getAccountBalance(db2.getAccount('acc_dest')), 30.0);
+
+      await sqlite.close();
+    });
+
+    test('V7 reopen idempotente non perde destination_account_id', () async {
+      final path = await _makeV6Db();
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      await appDb.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Destinazione',
+        type: AccountType.bank,
+        createdAt: DateTime(2026, 6, 20),
+      ));
+      await appDb.addMovement(Movement(
+        id: 'tr_v7_idem',
+        title: 'Trasferimento',
+        amount: 15,
+        type: MovementType.transfer,
+        date: DateTime(2026, 6, 20),
+        categoryId: '',
+        accountId: defaultAccountId,
+        destinationAccountId: 'acc_dest',
+        createdAt: DateTime(2026, 6, 20),
+      ));
+
+      final appDb2 = AppDatabase(sqlite: sqlite);
+      await appDb2.initialize();
+      expect(appDb2.movements.first.destinationAccountId, 'acc_dest');
 
       await sqlite.close();
     });

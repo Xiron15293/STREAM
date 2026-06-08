@@ -53,6 +53,7 @@ void main() {
     required DateTime date,
     required String categoryId,
     required String accountId,
+    String? destinationAccountId,
     String? note,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -65,6 +66,7 @@ void main() {
       date: date,
       categoryId: categoryId,
       accountId: accountId,
+      destinationAccountId: destinationAccountId,
       note: note,
       createdAt: createdAt ?? date,
       updatedAt: updatedAt,
@@ -178,6 +180,40 @@ void main() {
       expect(result.map((m) => m.id), ['m1']);
     });
 
+    test('4b. cerca trasferimento per conto origine e destinazione', () {
+      final movements = [
+        movement(
+          id: 't1',
+          title: 'Trasferimento regalo',
+          amount: 75,
+          type: MovementType.transfer,
+          date: DateTime(2026, 6, 15),
+          categoryId: '',
+          accountId: 'acc_postepay',
+          destinationAccountId: 'acc_iban',
+          note: 'Spostamento saldo',
+        ),
+      ];
+
+      final byOrigin = searchMovements(
+        movements: movements,
+        query: 'postepay',
+        filter: TimeFilter.month(2026, 6),
+        categories: categories,
+        accounts: accounts,
+      );
+      final byDestination = searchMovements(
+        movements: movements,
+        query: 'conto principale',
+        filter: TimeFilter.month(2026, 6),
+        categories: categories,
+        accounts: accounts,
+      );
+
+      expect(byOrigin.map((m) => m.id), ['t1']);
+      expect(byDestination.map((m) => m.id), ['t1']);
+    });
+
     test('5. cerca per categoria', () {
       final movements = [
         movement(
@@ -224,6 +260,32 @@ void main() {
       );
 
       expect(result.map((m) => m.id), ['m1']);
+    });
+
+    test('6b. cerca trasferimento per nota e match parziale', () {
+      final movements = [
+        movement(
+          id: 't1',
+          title: 'Giroconto carta',
+          amount: 20,
+          type: MovementType.transfer,
+          date: DateTime(2026, 6, 15),
+          categoryId: '',
+          accountId: 'acc_iban',
+          destinationAccountId: 'acc_postepay',
+          note: 'Ricarica carta prepagata',
+        ),
+      ];
+
+      final result = searchMovements(
+        movements: movements,
+        query: 'ricarica',
+        filter: TimeFilter.month(2026, 6),
+        categories: categories,
+        accounts: accounts,
+      );
+
+      expect(result.map((m) => m.id), ['t1']);
     });
 
     test('7. query senza risultati', () {

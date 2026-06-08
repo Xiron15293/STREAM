@@ -1,6 +1,6 @@
 import '../design/stream_icon_library.dart';
 
-enum MovementType { income, expense }
+enum MovementType { income, expense, transfer }
 
 class Category {
   final String id;

@@ -37,7 +37,7 @@ void main() {
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
 
-      expect(parsed['version'], equals(1));
+      expect(parsed['version'], equals(2));
       expect(parsed['createdAt'], isNotEmpty);
       expect(parsed['accounts'], isA<List>());
       expect(parsed['categories'], isA<List>());
@@ -333,6 +333,157 @@ void main() {
     });
   });
 
+  group('BackupService — Transfer', () {
+    test('export includes transfer destinationAccountId', () async {
+      final db = AppDatabase();
+      final now = DateTime(2026, 6, 15);
+      await db.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Dest',
+        type: AccountType.bank,
+        createdAt: now,
+      ));
+      await db.addMovement(
+        Movement(
+          id: 'tr_export',
+          title: 'Trasferimento',
+          amount: 25.0,
+          type: MovementType.transfer,
+          date: now,
+          categoryId: '',
+          accountId: defaultAccountId,
+          destinationAccountId: 'acc_dest',
+          createdAt: now,
+        ),
+      );
+
+      final json = await BackupService.exportToJson(db);
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      final movements = parsed['movements'] as List;
+      expect(movements.length, 1);
+      expect(movements.first['type'], 'transfer');
+      expect(movements.first['destinationAccountId'], 'acc_dest');
+    });
+
+    test('validate rejects transfer without destinationAccountId', () {
+      final json = jsonEncode({
+        'version': 2,
+        'createdAt': '2026-06-15T00:00:00.000',
+        'accounts': [
+          {
+            'id': defaultAccountId,
+            'name': 'Principale',
+            'type': 'bank',
+            'initialBalance': 0.0,
+            'iconKey': 'wallet',
+            'color': 0xFF000000,
+            'archived': false,
+            'createdAt': '2026-06-15T00:00:00.000',
+          },
+        ],
+        'categories': [],
+        'movements': [
+          {
+            'id': 'tr_bad',
+            'title': 'Transfer bad',
+            'amount': 10.0,
+            'type': 'transfer',
+            'date': '2026-06-15T00:00:00.000',
+            'categoryId': '',
+            'accountId': defaultAccountId,
+            'note': null,
+            'createdAt': '2026-06-15T00:00:00.000',
+            'updatedAt': '2026-06-15T00:00:00.000',
+          },
+        ],
+      });
+
+      final result = BackupService.validate(json);
+      expect(result.isValid, isFalse);
+      expect(result.error, contains('destinationAccountId'));
+    });
+
+    test('restore preserves transfer origin and destination', () async {
+      final db = AppDatabase();
+      final now = DateTime(2026, 6, 15);
+      await db.addAccount(Account(
+        id: 'acc_dest',
+        name: 'Dest',
+        type: AccountType.bank,
+        createdAt: now,
+      ));
+      await db.addMovement(
+        Movement(
+          id: 'tr_restore',
+          title: 'Trasferimento',
+          amount: 30.0,
+          type: MovementType.transfer,
+          date: now,
+          categoryId: '',
+          accountId: defaultAccountId,
+          destinationAccountId: 'acc_dest',
+          createdAt: now,
+        ),
+      );
+
+      final json = await BackupService.exportToJson(db);
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+
+      final restoreDb = AppDatabase();
+      await BackupService.restore(restoreDb, validation.data!);
+
+      expect(restoreDb.movements.length, 1);
+      expect(restoreDb.movements.first.type, MovementType.transfer);
+      expect(restoreDb.movements.first.accountId, defaultAccountId);
+      expect(restoreDb.movements.first.destinationAccountId, 'acc_dest');
+    });
+
+    test('restore old transfer json without destinationAccountId stays safe', () async {
+      final json = jsonEncode({
+        'version': 1,
+        'createdAt': '2026-06-15T00:00:00.000',
+        'accounts': [
+          {
+            'id': defaultAccountId,
+            'name': 'Principale',
+            'type': 'bank',
+            'initialBalance': 0.0,
+            'iconKey': 'wallet',
+            'color': 0xFF000000,
+            'archived': false,
+            'createdAt': '2026-06-15T00:00:00.000',
+          },
+        ],
+        'categories': [],
+        'movements': [
+          {
+            'id': 'tr_legacy',
+            'title': 'Transfer legacy',
+            'amount': 10.0,
+            'type': 'transfer',
+            'date': '2026-06-15T00:00:00.000',
+            'categoryId': '',
+            'accountId': defaultAccountId,
+            'createdAt': '2026-06-15T00:00:00.000',
+            'updatedAt': '2026-06-15T00:00:00.000',
+          },
+        ],
+      });
+
+      final result = BackupService.validate(json);
+      expect(result.isValid, isFalse);
+
+      final parsed = BackupData.fromJson(jsonDecode(json) as Map<String, dynamic>);
+      final restoreDb = AppDatabase();
+      await BackupService.restore(restoreDb, parsed);
+
+      expect(restoreDb.movements.length, 1);
+      expect(restoreDb.movements.first.type, MovementType.transfer);
+      expect(restoreDb.movements.first.destinationAccountId, defaultAccountId);
+    });
+  });
+
   group('BackupService — pre-restore backup', () {
     test('creates backup before restore', () async {
       final db = AppDatabase();
@@ -343,7 +494,7 @@ void main() {
       // Instead verify the export works
       final json = await BackupService.exportToJson(db);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
-      expect(parsed['version'], equals(1));
+      expect(parsed['version'], equals(2));
     });
   });
 
