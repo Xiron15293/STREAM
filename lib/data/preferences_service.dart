@@ -23,4 +23,10 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastBackupDateKey, date);
   }
+
+  static Future<void> clearForReset() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_showNotesKey);
+    await prefs.remove(_lastBackupDateKey);
+  }
 }

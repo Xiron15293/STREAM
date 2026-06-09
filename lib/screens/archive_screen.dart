@@ -45,7 +45,16 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                 segments: List.generate(4, (i) {
                   return ButtonSegment<int>(
                     value: i,
-                    label: Text(_sections[i]),
+                    label: KeyedSubtree(
+                      key: i == 0
+                          ? const Key('archive_section_movements')
+                          : i == 1
+                              ? const Key('archive_section_accounts')
+                              : i == 2
+                                  ? const Key('archive_section_categories')
+                                  : const Key('archive_section_calendar'),
+                      child: Text(_sections[i]),
+                    ),
                     icon: Icon(_icons[i], size: 18),
                   );
                 }),

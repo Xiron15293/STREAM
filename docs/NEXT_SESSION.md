@@ -71,6 +71,7 @@ La prossima attività reale è:
 
 - Rumore in migrazione V6: `duplicate column name: date` nei test, ma non blocca l'esecuzione
 - Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
+- Reset dati app: verificato manualmente su Pixel 6; i failure QA residui erano dovuti a helper/test fragili e non a un bug confermato del prodotto
 
 ---
 

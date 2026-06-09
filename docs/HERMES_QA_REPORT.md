@@ -53,6 +53,49 @@ I test widget che avevano fallito sono stati ricondotti a regressioni di test, n
 - Il comportamento app è rimasto coerente
 - La suite è tornata verde a 492 test
 
+## Reset Data Verification
+
+Durante la fase QA sono comparsi failure nei test:
+
+- C2
+- F2
+- F3
+- L1
+- `reset_data_test`
+
+L'analisi ha mostrato che:
+
+- `AppDatabase.resetAllData()` funziona correttamente
+- `SQLiteService.resetAllData()` funziona correttamente
+- i movimenti vengono cancellati
+- i preferiti vengono cancellati
+- gli account vengono ripristinati ai default
+- le categorie vengono ripristinate ai default
+- i quick movements vengono ripristinati ai default
+
+### Verifica manuale
+
+Il flusso è stato verificato direttamente su dispositivo Android reale (Pixel 6):
+
+1. creazione dati utente
+2. apertura `Impostazioni`
+3. `Reset dati app`
+4. digitazione `RESET`
+5. conferma reset
+6. eventuale `Backup pre-reset fallito` -> `Continua`
+
+### Risultato osservato
+
+- archivio svuotato
+- movimenti eliminati
+- preferiti eliminati
+- conti riportati al default
+- categorie riportate al default
+
+### Conclusione
+
+Nessun bug prodotto confermato nel reset. I failure erano riconducibili a finder fragili, gestione del dialog secondario backup fallito, timing dei widget test e attese UI basate su snackbar/dialog, non a un malfunzionamento di `resetAllData()`.
+
 ## 1. Data test
 
 2026-06-08 (V0.6.0 QA)

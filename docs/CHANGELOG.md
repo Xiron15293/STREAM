@@ -43,6 +43,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `flutter build apk --release --no-pub`: PASS
 - `flutter build ios --release --no-codesign --no-pub`: da rilanciare localmente
 
+### Reset Data Verification
+
+Durante la fase QA sono comparsi failure nei test:
+
+- C2
+- F2
+- F3
+- L1
+- `reset_data_test`
+
+L'analisi e la verifica manuale hanno confermato che:
+
+- `AppDatabase.resetAllData()` funziona correttamente
+- `SQLiteService.resetAllData()` funziona correttamente
+- i movimenti vengono cancellati
+- i preferiti vengono cancellati
+- gli account vengono ripristinati ai default
+- le categorie vengono ripristinate ai default
+- i quick movements vengono ripristinati ai default
+
+Verifica manuale eseguita su dispositivo Android reale (Pixel 6):
+
+1. creazione dati utente
+2. apertura `Impostazioni`
+3. `Reset dati app`
+4. digitazione `RESET`
+5. conferma reset
+6. eventuale `Backup pre-reset fallito` -> `Continua`
+
+Risultato osservato:
+
+- archivio svuotato
+- movimenti eliminati
+- preferiti eliminati
+- conti riportati al default
+- categorie riportate al default
+
+Conclusione:
+
+Nessun bug prodotto confermato nel reset. I failure erano dovuti a finder fragili, gestione del dialog secondario di backup fallito, timing dei widget test e attese UI basate su snackbar/dialog, non a un malfunzionamento di `resetAllData()`.
+
 ---
 
 ## [0.6.3] - 2026-06-08

@@ -85,6 +85,11 @@ flutter_native_splash:
   ios_content_mode: center
   fullscreen: true
 
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

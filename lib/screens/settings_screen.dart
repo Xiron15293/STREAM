@@ -3,13 +3,20 @@ import 'package:flutter/foundation.dart' show kReleaseMode, kProfileMode;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../data/database.dart';
+import '../data/preferences_service.dart';
+import '../services/backup_service.dart';
 import '../theme.dart';
 import 'backup_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final AppDatabase db;
+  final Future<String> Function(AppDatabase db)? createPreResetBackup;
 
-  const SettingsScreen({super.key, required this.db});
+  const SettingsScreen({
+    super.key,
+    required this.db,
+    this.createPreResetBackup,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +84,98 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: StreamSpacing.lg),
+          Card(
+            color: StreamColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(StreamSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Dati',
+                    style: StreamTypography.h3,
+                  ),
+                  const SizedBox(height: StreamSpacing.sm),
+                  Text(
+                    'Azioni distruttive e manutenzione dei dati locali.',
+                    style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                  ),
+                  const SizedBox(height: StreamSpacing.md),
+                  KeyedSubtree(
+                    key: const Key('settings_reset_data_tile'),
+                    child: ListTile(
+                      key: const Key('reset_data_tile'),
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.delete_forever_outlined, color: StreamColors.expense),
+                      title: const Text('Reset dati app'),
+                      subtitle: const Text('Cancella dati utente e ripristina i default'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _confirmReset(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final typedOk = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _ResetDataDialog(),
+    );
+    if (typedOk != true || !context.mounted) return;
+
+    try {
+      await (createPreResetBackup ?? BackupService.createPreResetBackup)(db);
+    } catch (e) {
+      if (!context.mounted) return;
+      final proceed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Backup pre-reset fallito'),
+          content: SingleChildScrollView(
+            child: Text(
+              'Non è stato possibile creare il backup automatico.\n\n'
+              'Puoi continuare comunque, ma perderai la protezione del backup pre-reset.\n\n'
+              'Errore: $e',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: StreamColors.expense),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Continua'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true || !context.mounted) return;
+    }
+
+    try {
+      await db.resetAllData();
+      await PreferencesService.clearForReset();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dati app resettati')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Errore durante il reset: $e')),
+      );
+    }
   }
 
   Future<void> _showInfo(BuildContext context) async {
@@ -155,6 +251,73 @@ class SettingsScreen extends StatelessWidget {
       title: Text(title),
       subtitle: Text(subtitle),
       enabled: false,
+    );
+  }
+}
+
+class _ResetDataDialog extends StatefulWidget {
+  const _ResetDataDialog();
+
+  @override
+  State<_ResetDataDialog> createState() => _ResetDataDialogState();
+}
+
+class _ResetDataDialogState extends State<_ResetDataDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _isConfirmed => _controller.text.trim().toUpperCase() == 'RESET';
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Reset dati app?'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Questa azione cancellerà movimenti, conti, categorie personalizzate, rapidi, preferiti e backup locali. Non può essere annullata.',
+            ),
+            const SizedBox(height: StreamSpacing.md),
+            TextField(
+              key: const Key('reset_data_confirm_field'),
+              controller: _controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Digita RESET per continuare',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          key: const Key('reset_data_cancel_button'),
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          key: const Key('reset_data_confirm_button'),
+          style: FilledButton.styleFrom(backgroundColor: StreamColors.expense),
+          onPressed: _isConfirmed ? () => Navigator.of(context).pop(true) : null,
+          child: const Text('Resetta'),
+        ),
+      ],
     );
   }
 }

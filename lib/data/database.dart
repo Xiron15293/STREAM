@@ -519,6 +519,30 @@ class AppDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> resetAllData() async {
+    if (_sqlite == null) {
+      _movements.clear();
+      _categories = List.from(DefaultCategories.all);
+      _quickMovements = _defaultQuickMovements();
+      _favoriteMovements.clear();
+      _accounts = [
+        Account(
+          id: defaultAccountId,
+          name: 'Principale',
+          type: AccountType.bank,
+          iconKey: StreamIconLibrary.defaultAccountIcon,
+          color: StreamColorPalette.getDefault(),
+          createdAt: DateTime.now(),
+        ),
+      ];
+      notifyListeners();
+      return;
+    }
+
+    await _sqlite.resetAllData();
+    await reloadFromDb();
+  }
+
   void notify() {
     notifyListeners();
   }

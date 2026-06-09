@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as p;
 import '../data/database.dart';
 import '../data/categories_data.dart';
 import '../data/preferences_service.dart';
@@ -28,6 +30,22 @@ class ValidationResult {
 class BackupService {
   static const int currentVersion = 2;
 
+  static Future<String> _backupDirPath() async {
+    try {
+      final dir = Directory(p.join(await getDatabasesPath(), 'backups'));
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      return dir.path;
+    } catch (_) {
+      final dir = Directory(p.join(Directory.systemTemp.path, 'stream_backups'));
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      return dir.path;
+    }
+  }
+
   static Future<String> exportToJson(AppDatabase db) async {
     final showNotes = await PreferencesService.loadShowNotes();
     final data = BackupData(
@@ -43,6 +61,17 @@ class BackupService {
 
     const encoder = JsonEncoder.withIndent('  ');
     return encoder.convert(data.toJson());
+  }
+
+  static Future<String> createPreResetBackup(AppDatabase db) async {
+    final dirPath = await _backupDirPath();
+    final json = await exportToJson(db);
+    final now = DateTime.now();
+    final filename =
+        'backup_pre_reset_${now.year}_${now.month.toString().padLeft(2, '0')}_${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}_${now.minute.toString().padLeft(2, '0')}.json';
+    final file = File(p.join(dirPath, filename));
+    await file.writeAsString(json);
+    return file.path;
   }
 
   static ValidationResult validate(String jsonString) {

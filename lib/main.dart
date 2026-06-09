@@ -69,9 +69,27 @@ class _MainScaffoldState extends State<MainScaffold> {
           currentIndex: _currentIndex,
           onTap: (i) => setState(() => _currentIndex = i),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Archivio'),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Impostazioni'),
+            BottomNavigationBarItem(
+              icon: KeyedSubtree(
+                key: Key('bottom_nav_dashboard'),
+                child: Icon(Icons.dashboard),
+              ),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: KeyedSubtree(
+                key: Key('bottom_nav_archive'),
+                child: Icon(Icons.folder),
+              ),
+              label: 'Archivio',
+            ),
+            BottomNavigationBarItem(
+              icon: KeyedSubtree(
+                key: Key('bottom_nav_settings'),
+                child: Icon(Icons.settings),
+              ),
+              label: 'Impostazioni',
+            ),
           ],
         ),
       ),

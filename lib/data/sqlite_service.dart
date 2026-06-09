@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'categories_data.dart';
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
@@ -168,11 +169,13 @@ class SQLiteService {
       }
     }
     if (oldVersion < 6) {
-      try {
-        await db.execute("ALTER TABLE movements ADD COLUMN date TEXT");
-      } catch (e) {
-        debugPrint('Migration V6 add date column error: $e');
-      }
+      await _addColumnIfMissing(
+        db,
+        table: 'movements',
+        column: 'date',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V6 add date to movements',
+      );
       try {
         await db.rawUpdate('''
           UPDATE movements SET date = substr(created_at, 1, 10)
@@ -206,7 +209,7 @@ class SQLiteService {
     }
   }
 
-  Future<void> _insertDefaultAccount(Database db) async {
+  Future<void> _insertDefaultAccount(DatabaseExecutor db) async {
     final now = DateTime.now().toIso8601String();
     await db.insert('accounts', {
       'id': defaultAccountId,
@@ -217,6 +220,70 @@ class SQLiteService {
       'created_at': now,
       'updated_at': now,
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  List<QuickMovement> _defaultQuickMovements() => [
+        const QuickMovement(
+          id: 'qm_1',
+          title: 'Caffè',
+          amount: 1.50,
+          type: MovementType.expense,
+          categoryId: 'exp_4',
+          accountId: defaultAccountId,
+        ),
+        const QuickMovement(
+          id: 'qm_2',
+          title: 'Benzina',
+          amount: 50.0,
+          type: MovementType.expense,
+          categoryId: 'exp_3',
+          accountId: defaultAccountId,
+        ),
+        const QuickMovement(
+          id: 'qm_3',
+          title: 'Spesa',
+          amount: 80.0,
+          type: MovementType.expense,
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+        ),
+        const QuickMovement(
+          id: 'qm_4',
+          title: 'Stipendio',
+          amount: 2500.0,
+          type: MovementType.income,
+          categoryId: 'inc_1',
+          accountId: defaultAccountId,
+        ),
+      ];
+
+  Future<void> resetAllData() async {
+    final db = _database;
+    await db.transaction((txn) async {
+      await txn.delete('movements');
+      await txn.delete('categories');
+      await txn.delete('quick_movements');
+      await txn.delete('favorite_movements');
+      await txn.delete('accounts');
+
+      await _insertDefaultAccount(txn);
+
+      for (final category in DefaultCategories.all) {
+        await txn.insert(
+          'categories',
+          _categoryToMap(category),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      for (final quickMovement in _defaultQuickMovements()) {
+        await txn.insert(
+          'quick_movements',
+          _quickMovementToMap(quickMovement),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 
   // ── Movements ──
