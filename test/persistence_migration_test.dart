@@ -226,6 +226,73 @@ Future<String> _makeV6Db() async {
   return path;
 }
 
+/// Create a schema with accounts but without initial_balance, used to validate V8 upgrade.
+Future<void> _createV7NoInitialBalanceSchema(Database db) async {
+  await db.execute('''
+    CREATE TABLE movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      destination_account_id TEXT,
+      date TEXT NOT NULL,
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE categories (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE quick_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE favorite_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE accounts (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      icon_key TEXT NOT NULL DEFAULT 'wallet',
+      color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  final now = DateTime.now().toIso8601String();
+  await db.insert('accounts', {
+    'id': defaultAccountId,
+    'name': 'Principale',
+    'type': 'bank',
+    'archived': 0,
+    'created_at': now,
+    'updated_at': now,
+  });
+  await db.insert('accounts', {
+    'id': 'acc_v7_seed',
+    'name': 'Conto Legacy',
+    'type': 'bank',
+    'archived': 0,
+    'created_at': now,
+    'updated_at': now,
+  });
+}
+
 void main() {
   setUpAll(() {
     sqfliteFfiInit();
@@ -781,6 +848,31 @@ void main() {
       final appDb2 = AppDatabase(sqlite: sqlite);
       await appDb2.initialize();
       expect(appDb2.movements.first.destinationAccountId, 'acc_dest');
+
+      await sqlite.close();
+    });
+  });
+
+  group('V7→V8 — initial_balance migration', () {
+    test('Accounts senza initial_balance vengono letti con saldo iniziale a zero', () async {
+      final path = _tempDbPath('v7_no_initial_balance.db');
+      final db = await openDatabase(
+        path,
+        version: 7,
+        onCreate: (db, _) => _createV7NoInitialBalanceSchema(db),
+      );
+      await db.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      final defaultAccount = appDb.accounts.firstWhere((a) => a.id == defaultAccountId);
+      final legacyAccount = appDb.accounts.firstWhere((a) => a.id == 'acc_v7_seed');
+      expect(defaultAccount.initialBalance, 0.0);
+      expect(legacyAccount.initialBalance, 0.0);
+      expect(appDb.getAccountBalance(legacyAccount), 0.0);
 
       await sqlite.close();
     });

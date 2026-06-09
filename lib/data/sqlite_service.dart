@@ -15,7 +15,7 @@ class SQLiteService {
   Future<void> open({String? path}) async {
     _db = await openDatabase(
       path ?? join(await getDatabasesPath(), 'stream.db'),
-      version: 7,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -206,6 +206,22 @@ class SQLiteService {
         definition: 'TEXT',
         migrationLabel: 'Migration V7 add destination_account_id to movements',
       );
+    }
+    if (oldVersion < 8) {
+      await _addColumnIfMissing(
+        db,
+        table: 'accounts',
+        column: 'initial_balance',
+        definition: 'REAL NOT NULL DEFAULT 0.0',
+        migrationLabel: 'Migration V8 add initial_balance to accounts',
+      );
+      try {
+        await db.rawUpdate(
+          'UPDATE accounts SET initial_balance = 0.0 WHERE initial_balance IS NULL',
+        );
+      } catch (e) {
+        debugPrint('Migration V8 backfill initial_balance error: $e');
+      }
     }
   }
 
@@ -578,7 +594,7 @@ class SQLiteService {
         id: map['id'] as String,
         name: map['name'] as String,
         type: AccountType.values.byName(map['type'] as String),
-        initialBalance: (map['initial_balance'] as num).toDouble(),
+        initialBalance: (map['initial_balance'] as num?)?.toDouble() ?? 0.0,
         iconKey: map['icon_key'] as String? ?? StreamIconLibrary.defaultAccountIcon,
         color: map['color'] as int? ?? StreamColorPalette.getDefault(),
         archived: (map['archived'] as int) == 1,

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stream_app/main.dart';
 import 'package:stream_app/data/database.dart';
+import 'package:stream_app/screens/accounts_screen.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 
@@ -210,5 +211,28 @@ void main() {
 
     expect(find.widgetWithText(FilledButton, 'Esporta backup'), findsOneWidget);
     expect(find.text('Importa backup'), findsOneWidget);
+  });
+
+  testWidgets('Account dialog shows saldo iniziale and saldo attuale', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
+    await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('account_initial_balance_field')), findsOneWidget);
+    expect(find.byKey(const Key('account_current_balance_value')), findsOneWidget);
+    expect(find.byKey(const Key('account_balance_info_text')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('account_initial_balance_field')),
+      '100',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('+100.00 €'), findsWidgets);
   });
 }

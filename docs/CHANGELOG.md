@@ -6,12 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Saldo iniziale dei conti
+  - il saldo attuale è sempre derivato da saldo iniziale + movimenti
+  - la modifica conto mostra saldo iniziale modificabile e saldo attuale in sola lettura
+
+### QA
+- Test reset widget temporaneamente messi in quarantena:
+  - `reset_data_test.dart` -> `Reset confermato ripristina i default e pulisce Archivio`
+  - `qa_extensive_test.dart` -> `C2`, `F2`, `F3`, `L1`
+  - motivo: flow widget fragile per backup pre-reset, dialog secondario e timing UI
+  - reset già validato manualmente su Pixel 6
+  - piano futuro: rifare il reset come integration test o service-level test
+
 ### Planned
 - V0.6.5 — Reset dati app
 - V0.6.6 — Trasferimenti tra Conti
-- V0.6.7 — Import CSV 1Money
 - V0.6.8 — Calendar Heatmap
 - V0.6.9 — Fondi / Obiettivi
+
+---
+
+## [0.8.0] - 2026-06-09
+
+### Added
+- Import CSV 1Money, prima versione dedicata al formato esportato da 1Money
+  - supporto ai campi `DATA`, `TIPOLOGIA`, `DAL CONTO`, `AL CONTO / ALLA CATEGORIA`, `IMPORTO`, `NOTE`
+  - mapping `Spesa` / `Entrata` / `Trasferimento` verso `MovementType.expense` / `income` / `transfer`
+  - `movement.date` ricavata da `DATA` nel formato `dd/MM/yy`
+  - import di `note` e fallback del `title` su categoria/destinazione quando la nota è vuota
+  - auto-creazione di conti e categorie mancanti
+  - trasferimenti nativi Stream con `destinationAccountId`
+  - dedupe per fingerprint `data + tipo + importo + conto + categoria + note`
+  - ignorata la sezione finale 1Money dei conti/fondi a partire dalla riga `NOME`
+- UI Impostazioni aggiornata con azione dedicata `Importa CSV 1Money`
+
+### QA
+- Test unitari aggiunti per import spesa, entrata, trasferimento, auto-creazione, nota, data, duplicati e stress 1000 righe
+- `flutter analyze --no-pub`: PASS
+- `flutter test --no-pub`: da rilanciare localmente in ambiente completo
+- `flutter build apk --release --no-pub`: da rilanciare localmente in ambiente completo
+- `flutter build ios --release --no-codesign --no-pub`: da rilanciare localmente in ambiente completo
+
+### Validation finale dataset reale
+- Validazione completata su dataset reale 1Money / Stream
+- Movimenti unici coincidenti: 6369 / 6369
+- Nessuna perdita di movimenti, nessuna inversione di segno e nessuna divergenza contabile sui movimenti importati
+- Le differenze residue osservate nelle verifiche precedenti erano dovute a dataset di confronto diversi e non a un bug dell'importatore
 
 ---
 

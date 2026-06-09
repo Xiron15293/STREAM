@@ -36,6 +36,7 @@
 | V0.6.2 | Ordinamento Centralizzato + Fix Gruppi Giorno | ✅ COMPLETATO | 2026-06-08 |
 | V0.6.3 | Ricerca Globale Movimenti | ✅ COMPLETATO | 2026-06-08 |
 | V0.6.4 | UX Movimenti Rapidi/Preferiti — Data Picker | ✅ COMPLETATO | 2026-06-08 |
+| V0.8.0 | Import CSV 1Money (prima versione) | 🛠️ IMPLEMENTATO | 2026-06-09 |
 
 ## Approvate / Future (V0.6.x+)
 
@@ -43,7 +44,6 @@
 |----------|------|-------|
 | V0.6.5 | Reset dati app | 📋 APPROVATA |
 | V0.6.6 | Trasferimenti tra Conti | 📋 APPROVATA |
-| V0.6.7 | Import CSV 1Money | 📋 APPROVATA |
 | V0.6.8 | Calendar Heatmap | 💡 IDEA |
 | V0.6.9 | Fondi / Obiettivi | 💡 IDEA |
 | V0.7 | Athena Foundation (Budget, AI, Insight) | 💡 IDEA |
@@ -59,7 +59,6 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 |----------|-------|
 | V0.6.5 | Reset dati app (📋) — reset controllato e ripartenza pulita |
 | V0.6.6 | Trasferimenti tra Conti (📋) — saldo duale, backup compatibile |
-| V0.6.7 | Import CSV 1Money (📋) — import dopo supporto transfer |
 | V0.6.8 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
 | V0.6.9 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
 | V0.7 | Athena Foundation (💡) — Budget, AI categorization, insight |

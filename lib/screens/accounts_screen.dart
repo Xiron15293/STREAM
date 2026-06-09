@@ -56,6 +56,9 @@ class AccountsScreen extends StatelessWidget {
     AccountType selectedType = account?.type ?? AccountType.bank;
     int selectedColor = account?.color ?? StreamColorPalette.getDefault();
     String selectedIconKey = account?.iconKey ?? StreamIconLibrary.defaultAccountIcon;
+    final currentMovementsDelta = account == null
+        ? 0.0
+        : db.getAccountBalance(account) - account.initialBalance;
 
     showDialog(
       context: context,
@@ -95,10 +98,73 @@ class AccountsScreen extends StatelessWidget {
                   },
                 ),
                 const SizedBox(height: StreamSpacing.lg),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Bilancio',
+                    style: StreamTypography.caption.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: StreamSpacing.sm),
                 TextField(
+                  key: const Key('account_initial_balance_field'),
                   controller: balanceController,
-                  decoration: const InputDecoration(labelText: 'Saldo Iniziale'),
-                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Saldo iniziale'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  onChanged: (_) => setDialogState(() {}),
+                ),
+                const SizedBox(height: StreamSpacing.lg),
+                Container(
+                  key: const Key('account_current_balance_section'),
+                  padding: const EdgeInsets.all(StreamSpacing.md),
+                  decoration: BoxDecoration(
+                    color: StreamColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(StreamRadius.md),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Saldo attuale',
+                        style: StreamTypography.caption.copyWith(
+                          color: StreamColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: StreamSpacing.xs),
+                      Builder(
+                        builder: (_) {
+                          final parsedInitialBalance = double.tryParse(
+                                balanceController.text.replaceAll(',', '.'),
+                              ) ??
+                              0.0;
+                          final currentBalance =
+                              parsedInitialBalance + currentMovementsDelta;
+                          return Text(
+                            '${currentBalance >= 0 ? '+' : ''}${currentBalance.toStringAsFixed(2)} €',
+                            key: const Key('account_current_balance_value'),
+                            style: StreamTypography.amount.copyWith(
+                              color: currentBalance >= 0
+                                  ? StreamColors.income
+                                  : StreamColors.expense,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        'Il saldo attuale viene calcolato automaticamente dai movimenti e dal saldo iniziale.',
+                        key: const Key('account_balance_info_text'),
+                        style: StreamTypography.caption.copyWith(
+                          color: StreamColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: StreamSpacing.lg),
                 Row(

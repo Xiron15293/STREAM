@@ -536,19 +536,4 @@ void main() {
           reason: 'Categorie perse');
     });
   });
-
-  // ──────────────────────────────────────────────
-  // IMPORT CSV — NOTA
-  // ──────────────────────────────────────────────
-  group('Import CSV', () {
-    test('CSV import non ancora implementato (V0.8 pianificato)', () {
-      // TODO: Quando sarà implementato F21 (V0.8), aggiungere stress test:
-      // - Parsing di centinaia di righe CSV
-      // - Rilevamento duplicati via fingerprint
-      // - Mapping colonne personalizzato
-      // - Import con errori parziali (righe malformate)
-      // - Performance su 1000+ righe
-      expect(true, isTrue, reason: 'CSV import non implementato — V0.8 pianificato');
-    });
-  });
 }

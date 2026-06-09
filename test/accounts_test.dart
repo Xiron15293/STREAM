@@ -37,6 +37,13 @@ void main() {
       expect(db.accounts.any((a) => a.name == 'Contante'), true);
     });
 
+    test('2b. New account starts with saldo iniziale a zero', () {
+      final db = AppDatabase();
+      final acc = db.accounts.first;
+      expect(acc.initialBalance, 0.0);
+      expect(db.getAccountBalance(acc), 0.0);
+    });
+
     test('3. Archive account in-memory mode', () async {
       final db = AppDatabase();
       await db.archiveAccount('acc_default');
@@ -63,6 +70,59 @@ void main() {
       expect(db.getAccountBalance(acc), 1500.0);
     });
 
+    test('4b. Account balance includes saldo iniziale even without movements', () async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      await db.addAccount(Account(
+        id: 'acc_seed',
+        name: 'Conto Seed',
+        type: AccountType.bank,
+        initialBalance: 100.0,
+        createdAt: now,
+      ));
+
+      expect(db.getAccountBalance(db.getAccount('acc_seed')), 100.0);
+      expect(db.totalAccountsBalance, 100.0);
+    });
+
+    test('4c. Entrata e uscita agiscono sopra il saldo iniziale', () async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+
+      await db.addAccount(Account(
+        id: 'acc_seed_mov',
+        name: 'Conto Movimento',
+        type: AccountType.bank,
+        initialBalance: 100.0,
+        createdAt: now,
+      ));
+
+      await db.addMovement(Movement(
+        id: 'seed_income',
+        title: 'Entrata',
+        amount: 50.0,
+        type: MovementType.income,
+        date: now,
+        categoryId: 'inc_1',
+        accountId: 'acc_seed_mov',
+        createdAt: now,
+      ));
+      await db.addMovement(Movement(
+        id: 'seed_expense',
+        title: 'Spesa',
+        amount: 30.0,
+        type: MovementType.expense,
+        date: now,
+        categoryId: 'exp_1',
+        accountId: 'acc_seed_mov',
+        createdAt: now,
+      ));
+
+      expect(db.getAccountBalance(db.getAccount('acc_seed_mov')), 120.0);
+      expect(db.totalAccountsBalance, 120.0);
+    });
+
     test('5. Total accounts balance', () async {
       final db = AppDatabase();
       final now = DateTime.now();
@@ -86,6 +146,14 @@ void main() {
       final now = DateTime.now();
 
       await db.addAccount(Account(
+        id: 'acc_src',
+        name: 'Origine',
+        type: AccountType.bank,
+        initialBalance: 100.0,
+        createdAt: now,
+      ));
+
+      await db.addAccount(Account(
         id: 'acc_dest',
         name: 'Destinazione',
         type: AccountType.bank,
@@ -100,14 +168,14 @@ void main() {
         type: MovementType.transfer,
         date: now,
         categoryId: '',
-        accountId: 'acc_default',
+        accountId: 'acc_src',
         destinationAccountId: 'acc_dest',
         createdAt: now,
       ));
 
-      expect(db.getAccountBalance(db.getAccount('acc_default')), -150.0);
+      expect(db.getAccountBalance(db.getAccount('acc_src')), -50.0);
       expect(db.getAccountBalance(db.getAccount('acc_dest')), 450.0);
-      expect(db.totalAccountsBalance, 300.0);
+      expect(db.totalAccountsBalance, 400.0);
     });
 
     test('5c. Multiple transfers on the same day aggregate correctly', () async {

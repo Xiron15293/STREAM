@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart' show getDatabasesPath;
 import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../services/backup_service.dart';
+import '../services/one_money_csv_import_service.dart';
 import '../theme.dart';
 
 class BackupScreen extends StatefulWidget {
@@ -177,6 +178,43 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
+  Future<void> _pickOneMoneyCsvFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        allowMultiple: false,
+        withData: false,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final path = result.files.single.path;
+      if (path == null) {
+        _showSnackBar('Impossibile aprire il file CSV selezionato');
+        return;
+      }
+
+      final csv = await readFile(path);
+      if (!mounted) return;
+      setState(() {
+        _importing = true;
+        _importError = null;
+      });
+
+      final report = await OneMoneyCsvImportService.importCsv(widget.db, csv);
+
+      if (!mounted) return;
+      setState(() => _importing = false);
+      await _showOneMoneyImportReport(report);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _importing = false);
+        _showSnackBar('Errore durante l\'import CSV 1Money: $e');
+      }
+    }
+  }
+
   Future<void> _import(String jsonString) async {
     final validation = BackupService.validate(jsonString);
     if (!validation.isValid) {
@@ -241,6 +279,56 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
+  Future<void> _showOneMoneyImportReport(OneMoneyCsvImportReport report) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Import CSV 1Money completato'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Movimenti letti: ${report.movementsRead}'),
+              Text('Importati: ${report.importedMovements}'),
+              Text('Saltati duplicati DB: ${report.duplicateDbMovements}'),
+              Text('Duplicati interni file: ${report.duplicateWithinFileMovements}'),
+              Text('Duplicati interni importati: ${report.duplicateWithinFileImportedMovements}'),
+              Text('Saltati duplicati totali: ${report.duplicateMovements}'),
+              Text('Conti creati: ${report.accountsCreated}'),
+              Text('Categorie create: ${report.categoriesCreated}'),
+              Text('Errori: ${report.errorCount}'),
+              if (report.errors.isNotEmpty) ...[
+                const SizedBox(height: StreamSpacing.md),
+                Text(
+                  'Dettagli errori',
+                  style: StreamTypography.bodyBold.copyWith(color: StreamColors.textSecondary),
+                ),
+                const SizedBox(height: StreamSpacing.xs),
+                ...report.errors.map(
+                  (error) => Padding(
+                    padding: const EdgeInsets.only(bottom: StreamSpacing.xs),
+                    child: Text(
+                      error,
+                      style: StreamTypography.caption.copyWith(color: StreamColors.expense),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Chiudi'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
@@ -303,6 +391,47 @@ class _BackupScreenState extends State<BackupScreen> {
                               )
                             : const Icon(Icons.download),
                         label: Text(_exporting ? 'Esportazione...' : 'Esporta backup'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              Card(
+                color: StreamColors.surface,
+                child: Padding(
+                  padding: const EdgeInsets.all(StreamSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.table_view_outlined, color: StreamColors.primary),
+                          const SizedBox(width: StreamSpacing.md),
+                          const Text('Importa CSV 1Money', style: StreamTypography.h3),
+                        ],
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        'Importa il CSV esportato da 1Money. Supporta spesa, entrata e trasferimento con creazione automatica di conti e categorie mancanti.',
+                        style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        'I duplicati vengono ignorati tramite fingerprint data + tipo + importo + conto + categoria + nota.',
+                        style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      FilledButton.icon(
+                        onPressed: _importing ? null : _pickOneMoneyCsvFile,
+                        icon: _importing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.upload_file),
+                        label: Text(_importing ? 'Importazione...' : 'Seleziona CSV 1Money'),
                       ),
                     ],
                   ),
