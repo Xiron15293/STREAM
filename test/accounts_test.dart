@@ -439,6 +439,198 @@ void main() {
     );
   });
 
+  group('Account period balance helpers', () {
+    Movement movement({
+      required String id,
+      required double amount,
+      required MovementType type,
+      required DateTime date,
+      String accountId = 'acc_main',
+      String? destinationAccountId,
+    }) {
+      return Movement(
+        id: id,
+        title: id,
+        amount: amount,
+        type: type,
+        date: date,
+        categoryId: type == MovementType.income ? 'inc_1' : 'exp_1',
+        accountId: accountId,
+        destinationAccountId: destinationAccountId,
+        createdAt: date,
+      );
+    }
+
+    test('saldo fine gennaio include storico precedente, non solo periodo', () {
+      final movements = [
+        movement(
+          id: 'dec_income_800',
+          amount: 800,
+          type: MovementType.income,
+          date: DateTime(2025, 12, 20),
+        ),
+        movement(
+          id: 'jan_expense_100',
+          amount: 100,
+          type: MovementType.expense,
+          date: DateTime(2026, 1, 10),
+        ),
+      ];
+      final januaryMovements = movements.where((m) => m.date.month == 1);
+
+      expect(
+        balanceForAccountUntil('acc_main', movements, DateTime(2026, 1, 31)),
+        700,
+      );
+      expect(periodNetForAccount('acc_main', januaryMovements), -100);
+    });
+
+    test('saldo fine gennaio e febbraio rispettano initialBalance', () {
+      final movements = [
+        movement(
+          id: 'jan_income_50',
+          amount: 50,
+          type: MovementType.income,
+          date: DateTime(2026, 1, 5),
+        ),
+        movement(
+          id: 'feb_expense_20',
+          amount: 20,
+          type: MovementType.expense,
+          date: DateTime(2026, 2, 5),
+        ),
+      ];
+
+      expect(
+        balanceForAccountUntil(
+          'acc_main',
+          movements,
+          DateTime(2026, 1, 31),
+          initialBalance: 100,
+        ),
+        150,
+      );
+      expect(
+        balanceForAccountUntil(
+          'acc_main',
+          movements,
+          DateTime(2026, 2, 28),
+          initialBalance: 100,
+        ),
+        130,
+      );
+      expect(
+        balanceForAccountBefore(
+          'acc_main',
+          movements,
+          DateTime(2026, 2, 1),
+          initialBalance: 100,
+        ),
+        150,
+      );
+      expect(
+        periodNetForAccount(
+          'acc_main',
+          movements.where((m) => m.date.month == 2),
+        ),
+        -20,
+      );
+    });
+
+    test(
+      'transfer prima e dentro il periodo aggiornano saldi e transfer net',
+      () {
+        final movements = [
+          movement(
+            id: 'transfer_out_before',
+            amount: 100,
+            type: MovementType.transfer,
+            date: DateTime(2026, 1, 20),
+            accountId: 'acc_main',
+            destinationAccountId: 'acc_savings',
+          ),
+          movement(
+            id: 'transfer_in_period',
+            amount: 40,
+            type: MovementType.transfer,
+            date: DateTime(2026, 2, 10),
+            accountId: 'acc_savings',
+            destinationAccountId: 'acc_main',
+          ),
+          movement(
+            id: 'feb_income',
+            amount: 20,
+            type: MovementType.income,
+            date: DateTime(2026, 2, 12),
+          ),
+          movement(
+            id: 'feb_expense',
+            amount: 10,
+            type: MovementType.expense,
+            date: DateTime(2026, 2, 13),
+          ),
+        ];
+        final febMovements = movements.where((m) => m.date.month == 2);
+
+        expect(
+          balanceForAccountBefore(
+            'acc_main',
+            movements,
+            DateTime(2026, 2, 1),
+            initialBalance: 500,
+          ),
+          400,
+        );
+        expect(periodTransferNetForAccount('acc_main', febMovements), 40);
+        expect(sumIncome(febMovements), 20);
+        expect(sumExpenses(febMovements), 10);
+        expect(periodNetForAccount('acc_main', febMovements), 50);
+        expect(
+          balanceForAccountUntil(
+            'acc_main',
+            movements,
+            DateTime(2026, 2, 28),
+            initialBalance: 500,
+          ),
+          450,
+        );
+      },
+    );
+
+    test('saldo attuale reale resta su tutti i movimenti storici', () async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_actual',
+          name: 'Saldo Reale',
+          type: AccountType.bank,
+          initialBalance: 100,
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      );
+      await db.addMovement(
+        movement(
+          id: 'actual_jan',
+          amount: 50,
+          type: MovementType.income,
+          date: DateTime(2026, 1, 1),
+          accountId: 'acc_actual',
+        ),
+      );
+      await db.addMovement(
+        movement(
+          id: 'actual_feb',
+          amount: 20,
+          type: MovementType.expense,
+          date: DateTime(2026, 2, 1),
+          accountId: 'acc_actual',
+        ),
+      );
+
+      expect(db.getAccountBalance(db.getAccount('acc_actual')), 130);
+    });
+  });
+
   group('SQLite persistence', () {
     test('8. Default account persists after reload', () async {
       final sqlite = SQLiteService();

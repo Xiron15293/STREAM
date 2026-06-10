@@ -24,8 +24,9 @@
 | Hermes V0.8.0 — Calculator Pad | AmountExpressionEvaluator, CalculatorAmountField, fix tastiera nativa | ✅ COMPLETATO |
 | Hermes V0.8.1 — Categories Layout Modes | Modello categoria, layout multipli, filtro Entrate/Uscite, KPI categorie | ✅ COMPLETATO |
 | Hermes V0.8.2 — Financial KPI Corrections | Transfer esclusi dai KPI globali, helper centralizzati, Dashboard corretta | ✅ COMPLETATO |
+| Hermes V0.8.3 — Date Filter Categories/Accounts | TimeFilter nelle schermate principali, saldo conto storico/as-of per periodo | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS — 0 issues |
-| `flutter test --no-pub` | — | ✅ 619/619 All tests passed |
+| `flutter test --no-pub` | — | ✅ 625/625 All tests passed |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -93,6 +94,29 @@
 - Nessuno skip aggiunto
 - Nessun commit/push eseguito
 
+**Hermes V0.8.3 — Date Filter in Categories and Accounts**
+
+### Cosa è stato completato
+- Categorie: filtro periodo nella schermata principale con `TimeFilterBar`
+- KPI categorie, Card Stream e ordinamento Top categorie filtrati per periodo
+- Transfer esclusi dai totali categoria
+- Dettaglio categoria aperto con lo stesso filtro della schermata principale
+- Conti: filtro periodo nella schermata principale con riepilogo entrate/uscite/trasferimenti/movimenti
+- Saldo conto visibile storico/as-of al termine del periodo selezionato
+- Formula saldo fine periodo: `initialBalance + impatto di tutti i movimenti con data <= fine periodo`
+- Formula saldo inizio periodo: `initialBalance + impatto di tutti i movimenti con data < inizio periodo`
+- Movimenti netti periodo: entrate periodo - uscite periodo + trasferimenti netti periodo
+- Dettaglio conto allineato allo stesso filtro iniziale
+- Helper aggiunti in `movement.dart`: `transferNetForAccount`, `periodTransferNetForAccount`, `movementNetForAccount`, `periodNetForAccount`, `balanceForAccountUntil`, `balanceForAccountBefore`
+
+### QA finale
+- `flutter analyze --no-pub`: PASS — 0 issues
+- `flutter test --no-pub`: **625/625 All tests passed**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push eseguito
+
 ---
 
 ## 3. Priorità Immediata (Prossima Sessione)
@@ -100,7 +124,7 @@
 Una volta ripresa la sessione:
 
 **Prima di nuove feature:**
-1. Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2
+1. Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3
 2. QA manuale Pixel/iPhone
 3. Build release APK/iOS aggiornate
 4. Eventuale fix minori UX emersi da QA manuale
@@ -126,6 +150,7 @@ Una volta ripresa la sessione:
 - Reset widget flow: `reset_data_test.dart` e `qa_extensive_test.dart` sono verdi; `C2`, `F2`, `F3`, `L1` stabilizzati tramite flusso UI reale con backup pre-reset stub nel test harness dove necessario
 - Categories Layout Modes: preferenza `category_layout`, default `cleanList`, reset incluso in `PreferencesService.clearForReset()`
 - Financial KPI Corrections: Dashboard, database totals e riepiloghi giornalieri usano helper income/expense espliciti; i transfer restano neutrali sui KPI globali e attivi sui saldi conto
+- Date Filter Categories/Accounts: Categorie e Conti hanno `TimeFilterBar` nella schermata principale; nei Conti il saldo visibile è storico/as-of al termine del periodo selezionato
 
 ---
 

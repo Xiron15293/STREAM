@@ -13,7 +13,8 @@ import 'package:stream_app/screens/accounts_screen.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
-DateTime _monthDay(DateTime base, int day) => DateTime(base.year, base.month, day);
+DateTime _monthDay(DateTime base, int day) =>
+    DateTime(base.year, base.month, day);
 
 DateTime _sameYearOtherMonth(DateTime base) {
   final month = base.month == 12 ? 11 : 12;
@@ -23,7 +24,9 @@ DateTime _sameYearOtherMonth(DateTime base) {
 Future<void> openArchiveAccounts(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('archive_section_accounts')).hitTestable());
+  await tester.tap(
+    find.byKey(const Key('archive_section_accounts')).hitTestable(),
+  );
   await tester.pumpAndSettle();
 
   final segmentedButton = tester.widget<SegmentedButton<int>>(
@@ -33,7 +36,10 @@ Future<void> openArchiveAccounts(WidgetTester tester) async {
 }
 
 Future<void> scrollToAccount(WidgetTester tester, String accountId) async {
-  final target = find.byKey(Key('account_card_$accountId'), skipOffstage: false);
+  final target = find.byKey(
+    Key('account_card_$accountId'),
+    skipOffstage: false,
+  );
   final scrollable = find
       .descendant(
         of: find.byType(AccountsScreen),
@@ -42,11 +48,7 @@ Future<void> scrollToAccount(WidgetTester tester, String accountId) async {
       .first;
 
   try {
-    await tester.scrollUntilVisible(
-      target,
-      200,
-      scrollable: scrollable,
-    );
+    await tester.scrollUntilVisible(target, 200, scrollable: scrollable);
   } catch (_) {
     for (var i = 0; i < 8 && !tester.any(target); i++) {
       await tester.drag(scrollable, const Offset(0, -320));
@@ -60,7 +62,10 @@ Future<void> scrollToAccount(WidgetTester tester, String accountId) async {
 }
 
 Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
-  final target = find.byKey(Key('category_card_$categoryId'), skipOffstage: false);
+  final target = find.byKey(
+    Key('category_card_$categoryId'),
+    skipOffstage: false,
+  );
   final scrollable = find
       .descendant(
         of: find.byType(CategoriesScreen),
@@ -69,11 +74,7 @@ Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
       .first;
 
   try {
-    await tester.scrollUntilVisible(
-      target,
-      200,
-      scrollable: scrollable,
-    );
+    await tester.scrollUntilVisible(target, 200, scrollable: scrollable);
   } catch (_) {
     for (var i = 0; i < 8 && !tester.any(target); i++) {
       await tester.drag(scrollable, const Offset(0, -320));
@@ -97,9 +98,9 @@ Future<void> openAccountSheet(WidgetTester tester, String accountId) async {
 }
 
 List<MovementCard> _movementCards(WidgetTester tester) {
-  return tester.widgetList<MovementCard>(
-    find.byType(MovementCard, skipOffstage: false),
-  ).toList();
+  return tester
+      .widgetList<MovementCard>(find.byType(MovementCard, skipOffstage: false))
+      .toList();
 }
 
 List<String> _movementTitles(WidgetTester tester) {
@@ -120,98 +121,119 @@ void main() {
     SharedPreferences.setMockInitialValues({'show_notes': true});
   });
 
-  testWidgets(
-    'Archivio mostra conti e categorie archiviati separati',
-    (WidgetTester tester) async {
-      final db = AppDatabase();
+  testWidgets('Archivio mostra conti e categorie archiviati separati', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
 
-      await db.addAccount(
-        Account(
-          id: 'acc_active',
-          name: 'Conto Attivo',
-          type: AccountType.bank,
-          createdAt: DateTime(2026, 6, 1),
-        ),
-      );
-      await db.addAccount(
-        Account(
-          id: 'acc_archived',
-          name: 'Conto Archiviato',
-          type: AccountType.bank,
-          createdAt: DateTime(2026, 6, 1),
-        ),
-      );
-      await db.archiveAccount('acc_archived');
+    await db.addAccount(
+      Account(
+        id: 'acc_active',
+        name: 'Conto Attivo',
+        type: AccountType.bank,
+        createdAt: DateTime(2026, 6, 1),
+      ),
+    );
+    await db.addAccount(
+      Account(
+        id: 'acc_archived',
+        name: 'Conto Archiviato',
+        type: AccountType.bank,
+        createdAt: DateTime(2026, 6, 1),
+      ),
+    );
+    await db.archiveAccount('acc_archived');
 
-      await db.addCategory('Categoria Attiva', MovementType.expense, 0xFF123456);
-      await db.addCategory('Categoria Archiviata', MovementType.expense, 0xFF654321);
-      final activeCategoryId = db.categories.firstWhere((c) => c.name == 'Categoria Attiva').id;
-      final archivedCategoryId = db.categories.firstWhere((c) => c.name == 'Categoria Archiviata').id;
-      await db.archiveCategory(archivedCategoryId);
+    await db.addCategory('Categoria Attiva', MovementType.expense, 0xFF123456);
+    await db.addCategory(
+      'Categoria Archiviata',
+      MovementType.expense,
+      0xFF654321,
+    );
+    final activeCategoryId = db.categories
+        .firstWhere((c) => c.name == 'Categoria Attiva')
+        .id;
+    final archivedCategoryId = db.categories
+        .firstWhere((c) => c.name == 'Categoria Archiviata')
+        .id;
+    await db.archiveCategory(archivedCategoryId);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('archive_section_accounts')).hitTestable());
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<SegmentedButton<int>>(find.byType(SegmentedButton<int>)).selected,
-        contains(1),
-      );
+    await tester.tap(
+      find.byKey(const Key('archive_section_accounts')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SegmentedButton<int>>(find.byType(SegmentedButton<int>))
+          .selected,
+      contains(1),
+    );
 
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('accounts_archived_section')),
-        200,
-        scrollable: find
-            .descendant(
-              of: find.byType(AccountsScreen),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('accounts_archived_section')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('accounts_archived_section')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(AccountsScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('accounts_archived_section')), findsOneWidget);
 
-      await scrollToAccount(tester, 'acc_active');
-      expect(find.byKey(const Key('account_card_acc_active')), findsOneWidget);
-      expect(find.text('Conto Attivo'), findsOneWidget);
+    await scrollToAccount(tester, 'acc_active');
+    expect(find.byKey(const Key('account_card_acc_active')), findsOneWidget);
+    expect(find.text('Conto Attivo'), findsOneWidget);
 
-      await scrollToAccount(tester, 'acc_archived');
-      expect(find.byKey(const Key('account_card_acc_archived')), findsOneWidget);
-      expect(find.text('Conto Archiviato'), findsOneWidget);
+    await scrollToAccount(tester, 'acc_archived');
+    expect(find.byKey(const Key('account_card_acc_archived')), findsOneWidget);
+    expect(find.text('Conto Archiviato'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('archive_section_categories')).hitTestable());
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<SegmentedButton<int>>(find.byType(SegmentedButton<int>)).selected,
-        contains(2),
-      );
+    await tester.tap(
+      find.byKey(const Key('archive_section_categories')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SegmentedButton<int>>(find.byType(SegmentedButton<int>))
+          .selected,
+      contains(2),
+    );
 
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('categories_archived_section')),
-        200,
-        scrollable: find
-            .descendant(
-              of: find.byType(CategoriesScreen),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('categories_archived_section')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('categories_archived_section')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(CategoriesScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('categories_archived_section')),
+      findsOneWidget,
+    );
 
-      await scrollToCategory(tester, activeCategoryId);
-      expect(find.byKey(Key('category_card_$activeCategoryId')), findsOneWidget);
-      expect(find.text('Categoria Attiva'), findsOneWidget);
+    await scrollToCategory(tester, activeCategoryId);
+    expect(find.byKey(Key('category_card_$activeCategoryId')), findsOneWidget);
+    expect(find.text('Categoria Attiva'), findsOneWidget);
 
-      await scrollToCategory(tester, archivedCategoryId);
-      expect(find.byKey(Key('category_card_$archivedCategoryId')), findsOneWidget);
-      expect(find.text('Categoria Archiviata'), findsOneWidget);
-    },
-  );
+    await scrollToCategory(tester, archivedCategoryId);
+    expect(
+      find.byKey(Key('category_card_$archivedCategoryId')),
+      findsOneWidget,
+    );
+    expect(find.text('Categoria Archiviata'), findsOneWidget);
+  });
 
   testWidgets(
     'Tocca conto apre movimenti del conto e mostra riepilogo filtrato',
@@ -296,7 +318,12 @@ void main() {
       await openAccountSheet(tester, 'acc_main');
 
       expect(find.text('Movimenti del conto'), findsOneWidget);
-      expect(tester.widget<Text>(find.byKey(const Key('account_movements_name'))).data, 'Conto Principale QA');
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('account_movements_name')))
+            .data,
+        'Conto Principale QA',
+      );
 
       expect(
         find.descendant(
@@ -329,7 +356,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('account_movements_current_balance')),
-          matching: find.text('+150.00 €'),
+          matching: find.text('+120.00 €'),
         ),
         findsOneWidget,
       );
@@ -340,9 +367,19 @@ void main() {
         ),
         findsOneWidget,
       );
-      _expectMovementTitles(tester, ['Entrata mese', 'Uscita mese', 'Trasferimento mese']);
+      _expectMovementTitles(tester, [
+        'Entrata mese',
+        'Uscita mese',
+        'Trasferimento mese',
+      ]);
 
-      await tester.tap(find.text('Giorno'));
+      final sheetFilter = find.byKey(
+        const Key('account_movements_time_filter'),
+      );
+
+      await tester.tap(
+        find.descendant(of: sheetFilter, matching: find.text('Giorno')),
+      );
       await tester.pumpAndSettle();
       expect(
         find.descendant(
@@ -353,7 +390,9 @@ void main() {
       );
       _expectMovementTitles(tester, ['Entrata mese']);
 
-      await tester.tap(find.text('Mese'));
+      await tester.tap(
+        find.descendant(of: sheetFilter, matching: find.text('Mese')),
+      );
       await tester.pumpAndSettle();
       expect(
         find.descendant(
@@ -363,7 +402,9 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.text('Anno'));
+      await tester.tap(
+        find.descendant(of: sheetFilter, matching: find.text('Anno')),
+      );
       await tester.pumpAndSettle();
       expect(
         find.descendant(
@@ -375,27 +416,26 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Conto senza movimenti mostra empty state',
-    (WidgetTester tester) async {
-      final db = AppDatabase();
-      await db.addAccount(
-        Account(
-          id: 'acc_empty',
-          name: 'Conto Vuoto QA',
-          type: AccountType.bank,
-          createdAt: DateTime(2026, 6, 1),
-        ),
-      );
+  testWidgets('Conto senza movimenti mostra empty state', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
+    await db.addAccount(
+      Account(
+        id: 'acc_empty',
+        name: 'Conto Vuoto QA',
+        type: AccountType.bank,
+        createdAt: DateTime(2026, 6, 1),
+      ),
+    );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpAndSettle();
 
-      await openAccountSheet(tester, 'acc_empty');
+    await openAccountSheet(tester, 'acc_empty');
 
-      expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
-    },
-  );
+    expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
+  });
 
   testWidgets(
     'Conto archiviato resta cliccabile e mostra lo storico movimenti',
@@ -430,7 +470,12 @@ void main() {
       await openAccountSheet(tester, 'acc_archived_click');
 
       expect(find.text('Movimenti del conto'), findsOneWidget);
-      expect(tester.widget<Text>(find.byKey(const Key('account_movements_name'))).data, 'Conto Archiviato Click');
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('account_movements_name')))
+            .data,
+        'Conto Archiviato Click',
+      );
       _expectMovementTitles(tester, ['Movimento storico']);
       expect(
         find.descendant(
@@ -502,10 +547,7 @@ void main() {
           )
           .toList()
           .filterByTime(
-            TimeFilter.customRange(
-              DateTime(2026, 6, 2),
-              DateTime(2026, 6, 3),
-            ),
+            TimeFilter.customRange(DateTime(2026, 6, 2), DateTime(2026, 6, 3)),
           );
 
       expect(filtered.length, 2);
@@ -513,18 +555,163 @@ void main() {
     },
   );
 
-  group('Initial Balance / Current Balance', () {
-    testWidgets('Dialog mostra saldo attuale non editabile',
+  group('Accounts Date Filter', () {
+    testWidgets(
+      'scheda conto mostra saldo filtrato e riepilogo del periodo selezionato',
       (WidgetTester tester) async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+        final currentMonth = DateTime(now.year, now.month, 10);
+        final previousMonth = DateTime(now.year, now.month - 1, 15);
+
+        await db.addAccount(
+          Account(
+            id: 'acc_period_balance',
+            name: 'Conto Periodo',
+            type: AccountType.bank,
+            initialBalance: 100,
+            createdAt: currentMonth,
+          ),
+        );
+        await db.addAccount(
+          Account(
+            id: 'acc_period_dest',
+            name: 'Conto Destinazione',
+            type: AccountType.bank,
+            createdAt: currentMonth,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'acc_period_income',
+            title: 'Entrata periodo',
+            amount: 80,
+            type: MovementType.income,
+            date: currentMonth,
+            categoryId: 'inc_1',
+            accountId: 'acc_period_balance',
+            createdAt: currentMonth,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'acc_period_expense',
+            title: 'Uscita periodo',
+            amount: 30,
+            type: MovementType.expense,
+            date: currentMonth,
+            categoryId: 'exp_1',
+            accountId: 'acc_period_balance',
+            createdAt: currentMonth,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'acc_period_transfer',
+            title: 'Transfer periodo',
+            amount: 20,
+            type: MovementType.transfer,
+            date: currentMonth,
+            categoryId: '',
+            accountId: 'acc_period_balance',
+            destinationAccountId: 'acc_period_dest',
+            createdAt: currentMonth,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'acc_period_previous',
+            title: 'Entrata mese precedente',
+            amount: 200,
+            type: MovementType.income,
+            date: previousMonth,
+            categoryId: 'inc_1',
+            accountId: 'acc_period_balance',
+            createdAt: previousMonth,
+          ),
+        );
+
+        await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+        await tester.pumpAndSettle();
+
+        final card = find.byKey(const Key('account_card_acc_period_balance'));
+        expect(card, findsOneWidget);
+        expect(find.byKey(const Key('accounts_time_filter')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: card,
+            matching: find.byKey(const Key('account_current_balance')),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          tester
+              .widget<Text>(
+                find.descendant(
+                  of: card,
+                  matching: find.byKey(const Key('account_current_balance')),
+                ),
+              )
+              .data,
+          '+330.00 €',
+        );
+        expect(
+          find.descendant(
+            of: card,
+            matching: find.byKey(const Key('account_period_income')),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: card, matching: find.text('+80.00 €')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: card, matching: find.text('+30.00 €')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: card, matching: find.text('-20.00 €')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byTooltip('Precedente'));
+        await tester.pumpAndSettle();
+
+        expect(
+          tester
+              .widget<Text>(
+                find.descendant(
+                  of: card,
+                  matching: find.byKey(const Key('account_current_balance')),
+                ),
+              )
+              .data,
+          '+300.00 €',
+        );
+        expect(
+          find.descendant(of: card, matching: find.text('+200.00 €')),
+          findsOneWidget,
+        );
+      },
+    );
+  });
+
+  group('Initial Balance / Current Balance', () {
+    testWidgets('Dialog mostra saldo attuale non editabile', (
+      WidgetTester tester,
+    ) async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addAccount(Account(
-        id: 'acc_bal_ui',
-        name: 'Bilancio UI',
-        type: AccountType.bank,
-        initialBalance: 100.0,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_bal_ui',
+          name: 'Bilancio UI',
+          type: AccountType.bank,
+          initialBalance: 100.0,
+          createdAt: now,
+        ),
+      );
 
       await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
@@ -545,16 +732,31 @@ void main() {
       await tester.pumpAndSettle();
 
       // Saldo iniziale editable (TextField inside CalculatorAmountField)
-      expect(find.byKey(const Key('account_initial_balance_field')), findsOneWidget);
+      expect(
+        find.byKey(const Key('account_initial_balance_field')),
+        findsOneWidget,
+      );
 
       // Saldo attuale NON editabile (sezione read-only con solo Text, nessun TextField)
-      expect(find.byKey(const Key('account_current_balance_section')), findsOneWidget);
-      expect(find.byKey(const Key('account_current_balance_value')), findsOneWidget);
-      expect(find.byKey(const Key('account_balance_info_text')), findsOneWidget);
+      expect(
+        find.byKey(const Key('account_current_balance_section')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_current_balance_value')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_balance_info_text')),
+        findsOneWidget,
+      );
       expect(find.text('+100.00 €'), findsAtLeastNWidgets(1));
 
       // current_balance_value is a Text, not a TextField (read-only)
-      expect(find.byKey(const Key('account_current_balance_value')), findsOneWidget);
+      expect(
+        find.byKey(const Key('account_current_balance_value')),
+        findsOneWidget,
+      );
 
       // Save and close
       await tester.tap(find.text('Salva'));

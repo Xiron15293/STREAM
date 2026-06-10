@@ -24,10 +24,13 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> {
   MovementType _selectedType = MovementType.expense;
   String _layoutMode = PreferencesService.defaultCategoryLayout;
+  late TimeFilter _filter;
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _filter = TimeFilter.month(now.year, now.month);
     _loadLayoutMode();
     PreferencesService.categoryLayoutNotifier.addListener(_onLayoutChanged);
   }
@@ -40,7 +43,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   void _onLayoutChanged() {
     if (mounted) {
-      setState(() => _layoutMode = PreferencesService.categoryLayoutNotifier.value);
+      setState(
+        () => _layoutMode = PreferencesService.categoryLayoutNotifier.value,
+      );
     }
   }
 
@@ -55,10 +60,24 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     _showCategoryForm(context, db: widget.db, preferredType: _selectedType);
   }
 
-  double _computeTypeTotal() {
+  List<Movement> _periodTypeMovements() {
     return widget.db.movements
+        .filterByTime(_filter)
         .where((m) => m.type == _selectedType)
-        .fold<double>(0.0, (sum, m) => sum + m.amount);
+        .toList();
+  }
+
+  List<Movement> _categoryPeriodMovements(
+    Category category,
+    List<Movement> periodTypeMovements,
+  ) {
+    return periodTypeMovements
+        .where((m) => m.categoryId == category.id && m.type == category.type)
+        .toList();
+  }
+
+  double _computeTypeTotal(List<Movement> periodTypeMovements) {
+    return periodTypeMovements.fold<double>(0.0, (sum, m) => sum + m.amount);
   }
 
   String _formatMoney(double value) {
@@ -74,11 +93,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         listenable: widget.db,
         builder: (context, _) {
           final all = widget.db.categories;
-          final filtered =
-              all.where((c) => c.type == _selectedType && !c.archived).toList();
-          final archivedList =
-              all.where((c) => c.archived && c.type == _selectedType).toList();
-          final total = _computeTypeTotal();
+          final filtered = all
+              .where((c) => c.type == _selectedType && !c.archived)
+              .toList();
+          final archivedList = all
+              .where((c) => c.archived && c.type == _selectedType)
+              .toList();
+          final periodTypeMovements = _periodTypeMovements();
+          final total = _computeTypeTotal(periodTypeMovements);
 
           return Column(
             children: [
@@ -109,9 +131,30 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   showSelectedIcon: false,
                 ),
               ),
-              _buildTypeSummaryCard(total, filtered.length, archivedList.length),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                child: KeyedSubtree(
+                  key: const Key('categories_time_filter'),
+                  child: TimeFilterBar(
+                    activeFilter: _filter,
+                    onChanged: (value) => setState(() => _filter = value),
+                  ),
+                ),
+              ),
+              _buildTypeSummaryCard(
+                total,
+                filtered.length,
+                archivedList.length,
+                periodTypeMovements.length,
+              ),
               const SizedBox(height: 4),
-              Expanded(child: _buildLayout(filtered, archivedList)),
+              Expanded(
+                child: _buildLayout(
+                  filtered,
+                  archivedList,
+                  periodTypeMovements,
+                ),
+              ),
             ],
           );
         },
@@ -125,7 +168,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  Widget _buildTypeSummaryCard(double total, int activeCount, int archivedCount) {
+  Widget _buildTypeSummaryCard(
+    double total,
+    int activeCount,
+    int archivedCount,
+    int movementCount,
+  ) {
     final isIncome = _selectedType == MovementType.income;
     final typeColor = isIncome ? StreamColors.income : StreamColors.expense;
     final typeLabel = isIncome ? 'Entrate' : 'Uscite';
@@ -134,6 +182,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       key: const Key('categories_type_summary_card'),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
+        key: const Key('categories_period_summary'),
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -165,7 +214,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   const SizedBox(height: 2),
                   Text(
                     _formatMoney(total),
+                    key: const Key('categories_period_total'),
                     style: StreamTypography.amount.copyWith(color: typeColor),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$movementCount ${movementCount == 1 ? 'movimento' : 'movimenti'} nel periodo',
+                    key: const Key('categories_period_movement_count'),
+                    style: StreamTypography.micro.copyWith(
+                      color: StreamColors.textMuted,
+                    ),
                   ),
                 ],
               ),
@@ -173,21 +231,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                Text(
+                  '$activeCount ${activeCount == 1 ? 'attiva' : 'attive'}',
+                  key: const Key('categories_summary_active_count'),
+                  style: StreamTypography.caption.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
+                if (archivedCount > 0)
                   Text(
-                    '$activeCount ${activeCount == 1 ? 'attiva' : 'attive'}',
-                    key: const Key('categories_summary_active_count'),
-                    style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+                    '$archivedCount ${archivedCount == 1 ? 'archiviata' : 'archiviate'}',
+                    key: const Key('categories_summary_archived_count'),
+                    style: StreamTypography.micro.copyWith(
+                      color: StreamColors.textMuted,
                     ),
                   ),
-                if (archivedCount > 0)
-                    Text(
-                      '$archivedCount ${archivedCount == 1 ? 'archiviata' : 'archiviate'}',
-                      key: const Key('categories_summary_archived_count'),
-                      style: StreamTypography.micro.copyWith(
-                        color: StreamColors.textMuted,
-                      ),
-                    ),
               ],
             ),
           ],
@@ -196,12 +254,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  Widget _buildLayout(List<Category> active, List<Category> archived) {
+  Widget _buildLayout(
+    List<Category> active,
+    List<Category> archived,
+    List<Movement> periodTypeMovements,
+  ) {
     switch (_layoutMode) {
       case 'groupedList':
-        return _buildGroupedList(active, archived);
+        return _buildGroupedList(active, archived, periodTypeMovements);
       case 'streamCards':
-        return _buildStreamCards(active, archived);
+        return _buildStreamCards(active, archived, periodTypeMovements);
       default:
         return _buildCleanList(active, archived);
     }
@@ -212,14 +274,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       key: const Key('categories_layout_clean_list'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       children: [
-        ...active.map((c) => _CleanListTile(
-              key: Key('category_card_${c.id}'),
-              category: c,
-              db: widget.db,
-              onTap: () => _showCategoryMovements(context, widget.db, c),
-              onEdit: () => _showCategoryForm(context, db: widget.db, existing: c),
-              onChanged: () => setState(() {}),
-            )),
+        ...active.map(
+          (c) => _CleanListTile(
+            key: Key('category_card_${c.id}'),
+            category: c,
+            db: widget.db,
+            onTap: () => _showCategoryMovements(context, widget.db, c),
+            onEdit: () =>
+                _showCategoryForm(context, db: widget.db, existing: c),
+            onChanged: () => setState(() {}),
+          ),
+        ),
         if (archived.isNotEmpty) ...[
           const SizedBox(height: 12),
           KeyedSubtree(
@@ -234,14 +299,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               ),
             ),
           ),
-          ...archived.map((c) => _CleanListTile(
-                key: Key('category_card_${c.id}'),
-                category: c,
-                db: widget.db,
-                onTap: () => _showCategoryMovements(context, widget.db, c),
-                onEdit: () => _showCategoryForm(context, db: widget.db, existing: c),
-                onChanged: () => setState(() {}),
-              )),
+          ...archived.map(
+            (c) => _CleanListTile(
+              key: Key('category_card_${c.id}'),
+              category: c,
+              db: widget.db,
+              onTap: () => _showCategoryMovements(context, widget.db, c),
+              onEdit: () =>
+                  _showCategoryForm(context, db: widget.db, existing: c),
+              onChanged: () => setState(() {}),
+            ),
+          ),
         ],
         if (active.isEmpty && archived.isEmpty)
           Padding(
@@ -249,7 +317,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             child: Center(
               child: Text(
                 'Nessuna categoria',
-                style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                style: StreamTypography.body.copyWith(
+                  color: StreamColors.textSecondary,
+                ),
               ),
             ),
           ),
@@ -257,11 +327,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  Widget _buildGroupedList(List<Category> active, List<Category> archived) {
+  Widget _buildGroupedList(
+    List<Category> active,
+    List<Category> archived,
+    List<Movement> periodTypeMovements,
+  ) {
     final sorted = List<Category>.from(active)
       ..sort((a, b) {
-        final countA = widget.db.movements.where((m) => m.categoryId == a.id).length;
-        final countB = widget.db.movements.where((m) => m.categoryId == b.id).length;
+        final countA = _categoryPeriodMovements(a, periodTypeMovements).length;
+        final countB = _categoryPeriodMovements(b, periodTypeMovements).length;
         return countB.compareTo(countA);
       });
     final topCount = math.min(3, sorted.length);
@@ -307,8 +381,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           db: widget.db,
                           onTap: () =>
                               _showCategoryMovements(context, widget.db, c),
-                          onEdit: () =>
-                              _showCategoryForm(context, db: widget.db, existing: c),
+                          onEdit: () => _showCategoryForm(
+                            context,
+                            db: widget.db,
+                            existing: c,
+                          ),
                           onChanged: () => setState(() {}),
                         ),
                       ],
@@ -343,7 +420,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Text(
                 'Nessuna categoria',
                 style: StreamTypography.body.copyWith(
-                    color: StreamColors.textSecondary),
+                  color: StreamColors.textSecondary,
+                ),
               ),
             ),
           ),
@@ -383,8 +461,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   key: Key('category_card_${c.id}'),
                   category: c,
                   db: widget.db,
-                  onTap: () =>
-                      _showCategoryMovements(context, widget.db, c),
+                  onTap: () => _showCategoryMovements(context, widget.db, c),
                   onEdit: () =>
                       _showCategoryForm(context, db: widget.db, existing: c),
                   onChanged: () => setState(() {}),
@@ -397,7 +474,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  Widget _buildStreamCards(List<Category> active, List<Category> archived) {
+  Widget _buildStreamCards(
+    List<Category> active,
+    List<Category> archived,
+    List<Movement> periodTypeMovements,
+  ) {
     return CustomScrollView(
       key: const Key('categories_layout_stream_cards'),
       slivers: [
@@ -406,40 +487,38 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             padding: EdgeInsets.fromLTRB(16, 4, 16, archived.isEmpty ? 80 : 0),
             sliver: SliverGrid(
               key: const Key('categories_stream_card_grid'),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
                 childAspectRatio: 1.0,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final c = active[index];
-                  final movCount = widget.db.movements
-                      .where((m) => m.categoryId == c.id)
-                      .length;
-                  final total = widget.db.movements
-                      .where((m) => m.categoryId == c.id)
-                      .fold<double>(0.0, (sum, m) => sum + m.amount);
-                  return KeyedSubtree(
-                    key: const Key('categories_stream_category_card'),
-                    child: _StreamCardGridTile(
-                      key: Key('category_card_${c.id}'),
-                      category: c,
-                      movementCount: movCount,
-                      totalAmount: total,
-                      db: widget.db,
-                      onTap: () =>
-                          _showCategoryMovements(context, widget.db, c),
-                      onEdit: () => _showCategoryForm(
-                          context, db: widget.db, existing: c),
-                      onChanged: () => setState(() {}),
-                    ),
-                  );
-                },
-                childCount: active.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final c = active[index];
+                final categoryMovements = _categoryPeriodMovements(
+                  c,
+                  periodTypeMovements,
+                );
+                final movCount = categoryMovements.length;
+                final total = categoryMovements.fold<double>(
+                  0.0,
+                  (sum, m) => sum + m.amount,
+                );
+                return KeyedSubtree(
+                  key: const Key('categories_stream_category_card'),
+                  child: _StreamCardGridTile(
+                    key: Key('category_card_${c.id}'),
+                    category: c,
+                    movementCount: movCount,
+                    totalAmount: total,
+                    db: widget.db,
+                    onTap: () => _showCategoryMovements(context, widget.db, c),
+                    onEdit: () =>
+                        _showCategoryForm(context, db: widget.db, existing: c),
+                    onChanged: () => setState(() {}),
+                  ),
+                );
+              }, childCount: active.length),
             ),
           ),
         if (archived.isNotEmpty) ...[
@@ -460,25 +539,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final c = archived[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _GroupedListTile(
-                      key: Key('category_card_${c.id}'),
-                      category: c,
-                      db: widget.db,
-                      onTap: () => _showCategoryMovements(
-                          context, widget.db, c),
-                      onEdit: () => _showCategoryForm(
-                          context, db: widget.db, existing: c),
-                      onChanged: () => setState(() {}),
-                    ),
-                  );
-                },
-                childCount: archived.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final c = archived[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _GroupedListTile(
+                    key: Key('category_card_${c.id}'),
+                    category: c,
+                    db: widget.db,
+                    onTap: () => _showCategoryMovements(context, widget.db, c),
+                    onEdit: () =>
+                        _showCategoryForm(context, db: widget.db, existing: c),
+                    onChanged: () => setState(() {}),
+                  ),
+                );
+              }, childCount: archived.length),
             ),
           ),
         ],
@@ -501,8 +576,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  void _showCategoryForm(BuildContext context,
-      {required AppDatabase db, Category? existing, MovementType? preferredType}) {
+  void _showCategoryForm(
+    BuildContext context, {
+    required AppDatabase db,
+    Category? existing,
+    MovementType? preferredType,
+  }) {
     showDialog(
       context: context,
       builder: (ctx) => _CategoryFormDialog(
@@ -523,7 +602,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _CategoryMovementsSheet(db: db, category: category),
+      builder: (_) => _CategoryMovementsSheet(
+        db: db,
+        category: category,
+        initialFilter: _filter,
+      ),
     );
   }
 }
@@ -598,16 +681,29 @@ class _CleanListTile extends StatelessWidget {
                         break;
                     }
                   },
-                  icon: Icon(Icons.more_horiz, size: 18, color: StreamColors.textMuted),
+                  icon: Icon(
+                    Icons.more_horiz,
+                    size: 18,
+                    color: StreamColors.textMuted,
+                  ),
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'edit', child: Text('Modifica')),
                     if (!category.archived)
-                      const PopupMenuItem(value: 'archive', child: Text('Archivia')),
+                      const PopupMenuItem(
+                        value: 'archive',
+                        child: Text('Archivia'),
+                      ),
                     if (category.archived)
-                      const PopupMenuItem(value: 'restore', child: Text('Ripristina')),
+                      const PopupMenuItem(
+                        value: 'restore',
+                        child: Text('Ripristina'),
+                      ),
                     PopupMenuItem(
                       value: 'delete',
-                      child: Text('Elimina', style: TextStyle(color: StreamColors.expense)),
+                      child: Text(
+                        'Elimina',
+                        style: TextStyle(color: StreamColors.expense),
+                      ),
                     ),
                   ],
                 ),
@@ -626,12 +722,14 @@ class _CleanListTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Impossibile eliminare'),
           content: Text(
-              'La categoria "${category.name}" contiene movimenti.\n\n'
-              'Archiviala o riassegna i movimenti prima di eliminarla.'),
+            'La categoria "${category.name}" contiene movimenti.\n\n'
+            'Archiviala o riassegna i movimenti prima di eliminarla.',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
           ],
         ),
       );
@@ -641,18 +739,22 @@ class _CleanListTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Eliminare categoria?'),
           content: Text(
-              'La categoria "${category.name}" sarà eliminata definitivamente.'),
+            'La categoria "${category.name}" sarà eliminata definitivamente.',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annulla')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
             TextButton(
               onPressed: () {
                 db.deleteCategory(category.id);
                 onChanged();
                 Navigator.pop(ctx);
               },
-              style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
+              style: TextButton.styleFrom(
+                foregroundColor: StreamColors.expense,
+              ),
               child: const Text('Elimina'),
             ),
           ],
@@ -727,16 +829,29 @@ class _GroupedListTile extends StatelessWidget {
                     break;
                 }
               },
-              icon: Icon(Icons.more_horiz, size: 18, color: StreamColors.textMuted),
+              icon: Icon(
+                Icons.more_horiz,
+                size: 18,
+                color: StreamColors.textMuted,
+              ),
               itemBuilder: (_) => [
                 const PopupMenuItem(value: 'edit', child: Text('Modifica')),
                 if (!category.archived)
-                  const PopupMenuItem(value: 'archive', child: Text('Archivia')),
+                  const PopupMenuItem(
+                    value: 'archive',
+                    child: Text('Archivia'),
+                  ),
                 if (category.archived)
-                  const PopupMenuItem(value: 'restore', child: Text('Ripristina')),
+                  const PopupMenuItem(
+                    value: 'restore',
+                    child: Text('Ripristina'),
+                  ),
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text('Elimina', style: TextStyle(color: StreamColors.expense)),
+                  child: Text(
+                    'Elimina',
+                    style: TextStyle(color: StreamColors.expense),
+                  ),
                 ),
               ],
             ),
@@ -753,12 +868,14 @@ class _GroupedListTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Impossibile eliminare'),
           content: Text(
-              'La categoria "${category.name}" contiene movimenti.\n\n'
-              'Archiviala o riassegna i movimenti prima di eliminarla.'),
+            'La categoria "${category.name}" contiene movimenti.\n\n'
+            'Archiviala o riassegna i movimenti prima di eliminarla.',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
           ],
         ),
       );
@@ -768,18 +885,22 @@ class _GroupedListTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Eliminare categoria?'),
           content: Text(
-              'La categoria "${category.name}" sarà eliminata definitivamente.'),
+            'La categoria "${category.name}" sarà eliminata definitivamente.',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annulla')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
             TextButton(
               onPressed: () {
                 db.deleteCategory(category.id);
                 onChanged();
                 Navigator.pop(ctx);
               },
-              style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
+              style: TextButton.styleFrom(
+                foregroundColor: StreamColors.expense,
+              ),
               child: const Text('Elimina'),
             ),
           ],
@@ -861,20 +982,32 @@ class _StreamCardGridTile extends StatelessWidget {
                           break;
                       }
                     },
-                    icon: Icon(Icons.more_horiz,
-                        size: 18, color: StreamColors.textMuted),
+                    icon: Icon(
+                      Icons.more_horiz,
+                      size: 18,
+                      color: StreamColors.textMuted,
+                    ),
                     itemBuilder: (_) => [
-                      const PopupMenuItem(value: 'edit', child: Text('Modifica')),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Modifica'),
+                      ),
                       if (!category.archived)
                         const PopupMenuItem(
-                            value: 'archive', child: Text('Archivia')),
+                          value: 'archive',
+                          child: Text('Archivia'),
+                        ),
                       if (category.archived)
                         const PopupMenuItem(
-                            value: 'restore', child: Text('Ripristina')),
+                          value: 'restore',
+                          child: Text('Ripristina'),
+                        ),
                       PopupMenuItem(
                         value: 'delete',
-                        child: Text('Elimina',
-                            style: TextStyle(color: StreamColors.expense)),
+                        child: Text(
+                          'Elimina',
+                          style: TextStyle(color: StreamColors.expense),
+                        ),
                       ),
                     ],
                   ),
@@ -923,12 +1056,14 @@ class _StreamCardGridTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Impossibile eliminare'),
           content: Text(
-              'La categoria "${category.name}" contiene movimenti.\n\n'
-              'Archiviala o riassegna i movimenti prima di eliminarla.'),
+            'La categoria "${category.name}" contiene movimenti.\n\n'
+            'Archiviala o riassegna i movimenti prima di eliminarla.',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
           ],
         ),
       );
@@ -938,18 +1073,22 @@ class _StreamCardGridTile extends StatelessWidget {
         builder: (ctx) => AlertDialog(
           title: const Text('Eliminare categoria?'),
           content: Text(
-              'La categoria "${category.name}" sarà eliminata definitivamente.'),
+            'La categoria "${category.name}" sarà eliminata definitivamente.',
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annulla')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
             TextButton(
               onPressed: () {
                 db.deleteCategory(category.id);
                 onChanged();
                 Navigator.pop(ctx);
               },
-              style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
+              style: TextButton.styleFrom(
+                foregroundColor: StreamColors.expense,
+              ),
               child: const Text('Elimina'),
             ),
           ],
@@ -1012,22 +1151,25 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   bool get _isDuplicateName {
     final name = _nameCtrl.text.trim().toLowerCase();
     if (name.isEmpty) return false;
-    return widget.db.categories.any((c) =>
-        c.name.toLowerCase() == name &&
-        c.id != (widget.existing?.id ?? ''));
+    return widget.db.categories.any(
+      (c) =>
+          c.name.toLowerCase() == name && c.id != (widget.existing?.id ?? ''),
+    );
   }
 
   void _save() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inserisci un nome')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Inserisci un nome')));
       return;
     }
     if (_isDuplicateName) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Esiste già una categoria con questo nome')),
+        const SnackBar(
+          content: Text('Esiste già una categoria con questo nome'),
+        ),
       );
       return;
     }
@@ -1051,10 +1193,8 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   Future<void> _pickIcon() async {
     final result = await showDialog<String>(
       context: context,
-      builder: (_) => IconPickerDialog(
-        currentIconKey: _iconKey,
-        isAccount: false,
-      ),
+      builder: (_) =>
+          IconPickerDialog(currentIconKey: _iconKey, isAccount: false),
     );
     if (result != null) {
       setState(() => _iconKey = result);
@@ -1065,7 +1205,9 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   Widget build(BuildContext context) {
     final previewIcon = StreamIconLibrary.getIcon(_iconKey);
     return AlertDialog(
-      title: Text(widget.existing != null ? 'Modifica categoria' : 'Nuova categoria'),
+      title: Text(
+        widget.existing != null ? 'Modifica categoria' : 'Nuova categoria',
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1073,30 +1215,39 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
           children: [
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Nome',
-              ),
+              decoration: const InputDecoration(labelText: 'Nome'),
             ),
             if (widget.existing == null) ...[
               const SizedBox(height: 16),
               SegmentedButton<MovementType>(
                 segments: const [
-                  ButtonSegment(value: MovementType.expense, label: Text('Uscita')),
-                  ButtonSegment(value: MovementType.income, label: Text('Entrata')),
+                  ButtonSegment(
+                    value: MovementType.expense,
+                    label: Text('Uscita'),
+                  ),
+                  ButtonSegment(
+                    value: MovementType.income,
+                    label: Text('Entrata'),
+                  ),
                 ],
                 selected: {_type},
-                onSelectionChanged: (set) =>
-                    setState(() => _type = set.first),
+                onSelectionChanged: (set) => setState(() => _type = set.first),
               ),
             ],
             if (_typeLocked) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.info_outline, size: 14, color: StreamColors.warning),
+                  Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: StreamColors.warning,
+                  ),
                   const SizedBox(width: 8),
-                  Text(_typeLockMessage!,
-                      style: TextStyle(fontSize: 12, color: StreamColors.warning)),
+                  Text(
+                    _typeLockMessage!,
+                    style: TextStyle(fontSize: 12, color: StreamColors.warning),
+                  ),
                 ],
               ),
             ],
@@ -1104,7 +1255,12 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Icona', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+                Text(
+                  'Icona',
+                  style: StreamTypography.caption.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
                 GestureDetector(
                   onTap: _pickIcon,
                   child: Container(
@@ -1118,10 +1274,16 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                       children: [
                         Icon(previewIcon, size: 20, color: Colors.white),
                         const SizedBox(width: 8),
-                        Text(StreamIconLibrary.getLabel(_iconKey),
-                            style: StreamTypography.caption),
+                        Text(
+                          StreamIconLibrary.getLabel(_iconKey),
+                          style: StreamTypography.caption,
+                        ),
                         const SizedBox(width: 4),
-                        Icon(Icons.chevron_right, size: 16, color: StreamColors.textMuted),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: StreamColors.textMuted,
+                        ),
                       ],
                     ),
                   ),
@@ -1129,7 +1291,12 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
               ],
             ),
             const SizedBox(height: 16),
-            Text('Colore', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+            Text(
+              'Colore',
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
             const SizedBox(height: 12),
             ColorPicker(
               currentColor: _color,
@@ -1140,8 +1307,9 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
         FilledButton(
           onPressed: _save,
           child: Text(widget.existing != null ? 'Salva' : 'Crea'),
@@ -1154,14 +1322,17 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
 class _CategoryMovementsSheet extends StatefulWidget {
   final AppDatabase db;
   final Category category;
+  final TimeFilter? initialFilter;
 
   const _CategoryMovementsSheet({
     required this.db,
     required this.category,
+    this.initialFilter,
   });
 
   @override
-  State<_CategoryMovementsSheet> createState() => _CategoryMovementsSheetState();
+  State<_CategoryMovementsSheet> createState() =>
+      _CategoryMovementsSheetState();
 }
 
 class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
@@ -1171,27 +1342,27 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _filter = TimeFilter.month(now.year, now.month);
+    _filter = widget.initialFilter ?? TimeFilter.month(now.year, now.month);
   }
 
   List<Movement> get _categoryMovements {
     return widget.db.movements
-        .where((m) =>
-            m.categoryId == widget.category.id &&
-            m.type == widget.category.type)
+        .where(
+          (m) =>
+              m.categoryId == widget.category.id &&
+              m.type == widget.category.type,
+        )
         .toList()
         .filterByTime(_filter);
   }
 
   double get _periodTotal {
-    return _categoryMovements.fold<double>(
-      0.0,
-      (sum, m) => sum + m.amount,
-    );
+    return _categoryMovements.fold<double>(0.0, (sum, m) => sum + m.amount);
   }
 
-  String get _totalLabel =>
-      widget.category.type == MovementType.income ? 'Totale entrate' : 'Totale spese';
+  String get _totalLabel => widget.category.type == MovementType.income
+      ? 'Totale entrate'
+      : 'Totale spese';
 
   @override
   Widget build(BuildContext context) {
@@ -1210,7 +1381,10 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Movimenti categoria', style: StreamTypography.h2),
+                    child: Text(
+                      'Movimenti categoria',
+                      style: StreamTypography.h2,
+                    ),
                   ),
                   IconButton(
                     key: const Key('category_movements_close_button'),
@@ -1244,9 +1418,12 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                 ],
               ),
               const SizedBox(height: 12),
-              TimeFilterBar(
-                activeFilter: _filter,
-                onChanged: (value) => setState(() => _filter = value),
+              KeyedSubtree(
+                key: const Key('category_movements_time_filter'),
+                child: TimeFilterBar(
+                  activeFilter: _filter,
+                  onChanged: (value) => setState(() => _filter = value),
+                ),
               ),
               const SizedBox(height: 12),
               Expanded(
@@ -1281,11 +1458,7 @@ class _StatChip extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatChip({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const _StatChip({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
-import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
@@ -11,7 +10,7 @@ import '../widgets/icon_picker.dart';
 import '../widgets/calculator_amount_pad.dart';
 import '../widgets/time_filter_bar.dart';
 
-class AccountsScreen extends StatelessWidget {
+class AccountsScreen extends StatefulWidget {
   final AppDatabase db;
 
   const AccountsScreen({super.key, required this.db});
@@ -25,14 +24,30 @@ class AccountsScreen extends StatelessWidget {
   };
 
   @override
+  State<AccountsScreen> createState() => _AccountsScreenState();
+}
+
+class _AccountsScreenState extends State<AccountsScreen> {
+  late TimeFilter _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _filter = TimeFilter.month(now.year, now.month);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Conti')),
       body: ListenableBuilder(
-        listenable: db,
+        listenable: widget.db,
         builder: (context, _) {
+          final db = widget.db;
           final active = db.accounts.where((a) => !a.archived).toList();
           final archived = db.accounts.where((a) => a.archived).toList();
+          final periodMovements = db.movements.filterByTime(_filter);
           return ListView(
             padding: const EdgeInsets.fromLTRB(
               StreamSpacing.lg,
@@ -41,12 +56,25 @@ class AccountsScreen extends StatelessWidget {
               80,
             ),
             children: [
+              KeyedSubtree(
+                key: const Key('accounts_time_filter'),
+                child: TimeFilterBar(
+                  activeFilter: _filter,
+                  onChanged: (value) => setState(() => _filter = value),
+                ),
+              ),
+              const SizedBox(height: StreamSpacing.md),
               ...active.map(
                 (a) => _AccountCard(
                   key: Key('account_card_${a.id}'),
                   db: db,
                   account: a,
+                  periodMovements: periodMovements,
+                  allMovements: db.movements,
+                  filter: _filter,
                   onTap: () => _showAccountMovements(context, db, a),
+                  onEdit: () => _showAddEditDialog(context, db, account: a),
+                  onArchive: () => db.archiveAccount(a.id),
                 ),
               ),
               if (archived.isNotEmpty) ...[
@@ -61,7 +89,11 @@ class AccountsScreen extends StatelessWidget {
                     key: Key('account_card_${a.id}'),
                     db: db,
                     account: a,
+                    periodMovements: periodMovements,
+                    allMovements: db.movements,
+                    filter: _filter,
                     onTap: () => _showAccountMovements(context, db, a),
+                    onEdit: () => _showAddEditDialog(context, db, account: a),
                   ),
                 ),
               ],
@@ -71,7 +103,7 @@ class AccountsScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'accounts_fab',
-        onPressed: () => _showAddEditDialog(context, db),
+        onPressed: () => _showAddEditDialog(context, widget.db),
         child: const Icon(Icons.add),
       ),
     );
@@ -86,7 +118,11 @@ class AccountsScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _AccountMovementsSheet(db: db, account: account),
+      builder: (_) => _AccountMovementsSheet(
+        db: db,
+        account: account,
+        initialFilter: _filter,
+      ),
     );
   }
 
@@ -142,7 +178,7 @@ class AccountsScreen extends StatelessWidget {
                             children: [
                               Icon(_typeIcon(t), size: 20),
                               const SizedBox(width: 8),
-                              Text(_typeLabels[t]!),
+                              Text(AccountsScreen._typeLabels[t]!),
                             ],
                           ),
                         ),
@@ -369,19 +405,60 @@ class _SectionHeader extends StatelessWidget {
 
 class _AccountCard extends StatelessWidget {
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onArchive;
   final AppDatabase db;
   final Account account;
+  final List<Movement> periodMovements;
+  final List<Movement> allMovements;
+  final TimeFilter filter;
 
   const _AccountCard({
     super.key,
     required this.onTap,
+    this.onEdit,
+    this.onArchive,
     required this.db,
     required this.account,
+    required this.periodMovements,
+    required this.allMovements,
+    required this.filter,
   });
 
   @override
   Widget build(BuildContext context) {
-    final balance = db.getAccountBalance(account);
+    final accountPeriodMovements = periodMovements
+        .where(
+          (m) =>
+              m.accountId == account.id || m.destinationAccountId == account.id,
+        )
+        .toList();
+    final periodIncome = sumIncome(
+      accountPeriodMovements.where(
+        (m) => m.isIncome && m.accountId == account.id,
+      ),
+    );
+    final periodExpenses = sumExpenses(
+      accountPeriodMovements.where(
+        (m) => m.isExpense && m.accountId == account.id,
+      ),
+    );
+    final periodTransfersNet = periodTransferNetForAccount(
+      account.id,
+      accountPeriodMovements,
+    );
+    final periodStartBalance = balanceForAccountBefore(
+      account.id,
+      allMovements,
+      filter.startDate,
+      initialBalance: account.initialBalance,
+    );
+    final periodEndBalance = balanceForAccountUntil(
+      account.id,
+      allMovements,
+      filter.endDate,
+      initialBalance: account.initialBalance,
+    );
     final iconData = StreamIconLibrary.getAccountIcon(account.iconKey);
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
@@ -398,96 +475,108 @@ class _AccountCard extends StatelessWidget {
                   : StreamColors.surface,
               borderRadius: BorderRadius.circular(StreamRadius.md),
             ),
-            child: Row(
+            child: Column(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: account.archived
-                        ? Color(account.color).withValues(alpha: 0.3)
-                        : Color(account.color).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(StreamRadius.md),
-                  ),
-                  child: Icon(
-                    iconData,
-                    color: account.archived
-                        ? StreamColors.textMuted
-                        : Color(account.color),
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: StreamSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        account.name,
-                        style: account.archived
-                            ? StreamTypography.bodyBold.copyWith(
-                                decoration: TextDecoration.lineThrough,
-                                color: StreamColors.textSecondary,
-                              )
-                            : StreamTypography.bodyBold,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        AccountsScreen._typeLabels[account.type] ?? '',
-                        style: StreamTypography.caption.copyWith(
-                          color: StreamColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
                   children: [
-                    Text(
-                      '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
-                      style: StreamTypography.amount.copyWith(
-                        color: balance >= 0
-                            ? StreamColors.income
-                            : StreamColors.expense,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: account.archived
+                            ? Color(account.color).withValues(alpha: 0.3)
+                            : Color(account.color).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(StreamRadius.md),
+                      ),
+                      child: Icon(
+                        iconData,
+                        color: account.archived
+                            ? StreamColors.textMuted
+                            : Color(account.color),
+                        size: 22,
                       ),
                     ),
-                    if (!account.archived) ...[
-                      const SizedBox(height: 2),
-                      PopupMenuButton<String>(
-                        onSelected: (v) {
-                          if (v == 'edit') {
-                            final screen = context
-                                .findAncestorWidgetOfExactType<
-                                  AccountsScreen
-                                >();
-                            screen?._showAddEditDialog(
-                              context,
-                              db,
-                              account: account,
-                            );
-                          } else if (v == 'archive') {
-                            db.archiveAccount(account.id);
-                          }
-                        },
-                        icon: Icon(
-                          Icons.more_horiz,
-                          size: 18,
-                          color: StreamColors.textMuted,
-                        ),
-                        itemBuilder: (_) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Modifica'),
+                    const SizedBox(width: StreamSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            account.name,
+                            style: account.archived
+                                ? StreamTypography.bodyBold.copyWith(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: StreamColors.textSecondary,
+                                  )
+                                : StreamTypography.bodyBold,
                           ),
-                          const PopupMenuItem(
-                            value: 'archive',
-                            child: Text('Archivia'),
+                          const SizedBox(height: 2),
+                          Text(
+                            AccountsScreen._typeLabels[account.type] ?? '',
+                            style: StreamTypography.caption.copyWith(
+                              color: StreamColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatMoney(periodEndBalance),
+                          key: const Key('account_current_balance'),
+                          style: StreamTypography.amount.copyWith(
+                            color: periodEndBalance >= 0
+                                ? StreamColors.income
+                                : StreamColors.expense,
+                          ),
+                        ),
+                        Text(
+                          _balanceLabel(filter),
+                          style: StreamTypography.micro.copyWith(
+                            color: StreamColors.textMuted,
+                          ),
+                        ),
+                        if (!account.archived) ...[
+                          const SizedBox(height: 2),
+                          PopupMenuButton<String>(
+                            onSelected: (v) {
+                              if (v == 'edit') {
+                                onEdit?.call();
+                              } else if (v == 'archive') {
+                                onArchive?.call();
+                              }
+                            },
+                            icon: Icon(
+                              Icons.more_horiz,
+                              size: 18,
+                              color: StreamColors.textMuted,
+                            ),
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('Modifica'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'archive',
+                                child: Text('Archivia'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
+                ),
+                const SizedBox(height: StreamSpacing.md),
+                _AccountPeriodSummary(
+                  income: periodIncome,
+                  expenses: periodExpenses,
+                  transfersNet: periodTransfersNet,
+                  startBalance: periodStartBalance,
+                  endBalance: periodEndBalance,
+                  movementCount: accountPeriodMovements.length,
                 ),
               ],
             ),
@@ -496,13 +585,149 @@ class _AccountCard extends StatelessWidget {
       ),
     );
   }
+
+  String _formatMoney(double value) {
+    return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+  }
+
+  String _balanceLabel(TimeFilter filter) {
+    return 'Saldo al ${_formatDate(filter.endDate)}';
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
+  }
+}
+
+class _AccountPeriodSummary extends StatelessWidget {
+  final double income;
+  final double expenses;
+  final double transfersNet;
+  final double startBalance;
+  final double endBalance;
+  final int movementCount;
+
+  const _AccountPeriodSummary({
+    required this.income,
+    required this.expenses,
+    required this.transfersNet,
+    required this.startBalance,
+    required this.endBalance,
+    required this.movementCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      key: const Key('account_period_summary'),
+      spacing: StreamSpacing.sm,
+      runSpacing: StreamSpacing.sm,
+      children: [
+        _PeriodMetric(
+          key: const Key('account_period_income'),
+          label: 'Entrate',
+          value: _formatMoney(income),
+          color: StreamColors.income,
+        ),
+        _PeriodMetric(
+          key: const Key('account_period_expense'),
+          label: 'Uscite',
+          value: _formatMoney(expenses),
+          color: StreamColors.expense,
+        ),
+        _PeriodMetric(
+          key: const Key('account_period_transfer_net'),
+          label: 'Trasf.',
+          value: _formatMoney(transfersNet),
+          color: transfersNet >= 0 ? StreamColors.income : StreamColors.expense,
+        ),
+        _PeriodMetric(
+          key: const Key('account_period_movement_count'),
+          label: 'Movimenti',
+          value: '$movementCount',
+          color: StreamColors.textPrimary,
+        ),
+        _PeriodMetric(
+          key: const Key('account_period_start_balance'),
+          label: 'Saldo ini.',
+          value: _formatMoney(startBalance),
+          color: startBalance >= 0 ? StreamColors.income : StreamColors.expense,
+        ),
+        _PeriodMetric(
+          key: const Key('account_period_end_balance'),
+          label: 'Saldo fine',
+          value: _formatMoney(endBalance),
+          color: endBalance >= 0 ? StreamColors.income : StreamColors.expense,
+        ),
+      ],
+    );
+  }
+
+  String _formatMoney(double value) {
+    return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+  }
+}
+
+class _PeriodMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _PeriodMetric({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 92,
+      padding: const EdgeInsets.symmetric(
+        horizontal: StreamSpacing.sm,
+        vertical: StreamSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: StreamColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(StreamRadius.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: StreamTypography.micro.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: StreamTypography.captionBold.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AccountMovementsSheet extends StatefulWidget {
   final AppDatabase db;
   final Account account;
+  final TimeFilter? initialFilter;
 
-  const _AccountMovementsSheet({required this.db, required this.account});
+  const _AccountMovementsSheet({
+    required this.db,
+    required this.account,
+    this.initialFilter,
+  });
 
   @override
   State<_AccountMovementsSheet> createState() => _AccountMovementsSheetState();
@@ -515,7 +740,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _filter = TimeFilter.month(now.year, now.month);
+    _filter = widget.initialFilter ?? TimeFilter.month(now.year, now.month);
   }
 
   List<Movement> get _accountMovements {
@@ -529,23 +754,20 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
         .filterByTime(_filter);
   }
 
-  double get _filteredIncome => _accountMovements
-      .where(
-        (m) =>
-            m.type == MovementType.income && m.accountId == widget.account.id,
-      )
-      .fold(0.0, (sum, m) => sum + m.amount);
+  double get _filteredIncome => sumIncome(
+    _accountMovements.where(
+      (m) => m.isIncome && m.accountId == widget.account.id,
+    ),
+  );
 
-  double get _filteredExpenses => _accountMovements
-      .where(
-        (m) =>
-            m.type == MovementType.expense && m.accountId == widget.account.id,
-      )
-      .fold(0.0, (sum, m) => sum + m.amount);
+  double get _filteredExpenses => sumExpenses(
+    _accountMovements.where(
+      (m) => m.isExpense && m.accountId == widget.account.id,
+    ),
+  );
 
-  double get _filteredTransfersNet => _accountMovements
-      .where((m) => m.type == MovementType.transfer)
-      .fold(0.0, (sum, m) => sum + m.impactForAccount(widget.account.id));
+  double get _filteredTransfersNet =>
+      periodTransferNetForAccount(widget.account.id, _accountMovements);
 
   @override
   Widget build(BuildContext context) {
@@ -553,8 +775,19 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
       listenable: widget.db,
       builder: (context, _) {
         final account = widget.account;
-        final currentBalance = widget.db.getAccountBalance(account);
         final movements = _accountMovements;
+        final periodStartBalance = balanceForAccountBefore(
+          account.id,
+          widget.db.movements,
+          _filter.startDate,
+          initialBalance: account.initialBalance,
+        );
+        final periodEndBalance = balanceForAccountUntil(
+          account.id,
+          widget.db.movements,
+          _filter.endDate,
+          initialBalance: account.initialBalance,
+        );
         final hasMovements = movements.isNotEmpty;
 
         return FractionallySizedBox(
@@ -617,9 +850,14 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                       key: const Key('account_movements_transfers'),
                     ),
                     _StatChip(
-                      label: 'Saldo attuale',
-                      value: _formatMoney(currentBalance),
+                      label: _balanceLabel(_filter),
                       key: const Key('account_movements_current_balance'),
+                      value: _formatMoney(periodEndBalance),
+                    ),
+                    _StatChip(
+                      label: 'Saldo inizio periodo',
+                      value: _formatMoney(periodStartBalance),
+                      key: const Key('account_movements_start_balance'),
                     ),
                     _StatChip(
                       label: 'Numero movimenti',
@@ -629,9 +867,12 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                   ],
                 ),
                 const SizedBox(height: StreamSpacing.md),
-                TimeFilterBar(
-                  activeFilter: _filter,
-                  onChanged: (value) => setState(() => _filter = value),
+                KeyedSubtree(
+                  key: const Key('account_movements_time_filter'),
+                  child: TimeFilterBar(
+                    activeFilter: _filter,
+                    onChanged: (value) => setState(() => _filter = value),
+                  ),
                 ),
                 const SizedBox(height: StreamSpacing.md),
                 Expanded(
@@ -661,6 +902,16 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
 
   String _formatMoney(double value) {
     return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+  }
+
+  String _balanceLabel(TimeFilter filter) {
+    return 'Saldo al ${_formatDate(filter.endDate)}';
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
   }
 }
 

@@ -463,4 +463,70 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 ---
 
+### V0.8.1 — Categories Layout Modes ✅
+
+> **Interventi**: Modello categoria in Impostazioni, layout Lista pulita / Lista grouped / Card Stream, filtro Entrate/Uscite, KPI categorie
+> **Test**: incluso nella suite finale V0.8.3 | `flutter analyze` 0 issues
+
+**Cosa è stato fatto (V0.8.1 completa):**
+- Impostazioni > Aspetto > Modello categoria
+- Layout differenziati per Categorie: Lista pulita, Lista grouped, Card Stream
+- Filtro Entrate/Uscite nella schermata Categorie
+- KPI categorie con contatori active/archived e totale per tipo
+- Conti archiviati esclusi dal saldo disponibile
+- Saldo attuale conto resta derivato da `initialBalance + movimenti netti`
+
+---
+
+### V0.8.2 — Financial KPI Corrections ✅
+
+> **Interventi**: transfer esclusi dai KPI globali, helper movement centralizzati, Dashboard corretta
+> **Test**: 619/619 pass nella sessione V0.8.2 | `flutter analyze` 0 issues
+
+**Cosa è stato fatto (V0.8.2 completa):**
+- Transfer esclusi da Entrate/Uscite/Bilancio globali
+- Dashboard non usa più logica `if income else expense`
+- Helper in `movement.dart`: `isIncome`, `isExpense`, `isTransfer`, `sumIncome`, `sumExpenses`, `sumTransfers`, `netIncomeExpense`
+- Spese per categoria calcolate solo su expense
+- Riepiloghi giornalieri esclusivi income/expense
+- Saldo conto invariato: transfer inclusi correttamente su origine/destinazione
+
+---
+
+### V0.8.3 — Date Filter in Categories and Accounts ✅
+
+> **Interventi**: filtro periodo nelle schermate principali Categorie e Conti, saldo conto storico/as-of al termine del periodo selezionato
+> **Test**: 625/625 pass | `flutter analyze` 0 issues
+
+**Cosa è stato fatto (V0.8.3 completa):**
+- Categorie:
+  - `TimeFilterBar` nella schermata principale
+  - KPI categorie filtrati per periodo
+  - Card Stream con importi/conteggi filtrati
+  - Lista grouped ordina le Top categorie sui movimenti del periodo
+  - transfer esclusi dai totali categoria
+  - bottom sheet categoria inizializzato con il filtro della pagina
+- Conti:
+  - `TimeFilterBar` nella schermata principale
+  - riepilogo periodo per conto: entrate, uscite, trasferimenti netti, numero movimenti
+  - saldo conto visibile storico/as-of: `initialBalance + impatto di tutti i movimenti con data <= fine periodo`
+  - saldo inizio periodo: `initialBalance + impatto di tutti i movimenti con data < inizio periodo`
+  - movimenti netti periodo: entrate periodo - uscite periodo + trasferimenti netti periodo
+  - bottom sheet conto inizializzato con il filtro della pagina
+- Helper in `movement.dart`: `transferNetForAccount`, `periodTransferNetForAccount`, `movementNetForAccount`, `periodNetForAccount`, `balanceForAccountUntil`, `balanceForAccountBefore`
+- Nessun DB/schema/migrazione, backup/restore/import/reset modificato
+
+### File modificati (V0.8.3)
+| File | Modifica |
+|------|----------|
+| `lib/models/movement.dart` | Helper transfer/account net + saldo storico as-of |
+| `lib/screens/categories_screen.dart` | Filtro periodo principale + KPI/layout filtrati |
+| `lib/screens/accounts_screen.dart` | Filtro periodo principale + saldo conto filtrato |
+| `test/categories_layout_test.dart` | Test filtro periodo categorie/Card Stream |
+| `test/categories_navigation_test.dart` | Test bottom sheet con filtro disambiguato |
+| `test/accounts_test.dart` | Test saldo storico/as-of, saldo inizio/fine periodo, transfer net |
+| `test/accounts_navigation_test.dart` | Test saldo conto storico/as-of e bottom sheet disambiguato |
+
+---
+
 Vedi `CHANGELOG.md` per dettaglio completo di V0.5.x, V0.4.x, V0.3.x, V0.2, V0.1.

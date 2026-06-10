@@ -7,12 +7,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2
+- Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3
 - QA manuale Pixel/iPhone
 - Build release Android/iOS
 - Prossimo sprint consigliato:
   - Global Tap-to-Edit Movement
   - oppure Movimenti: Vista Calendario
+
+---
+
+## [0.8.3] - 2026-06-10
+
+### Added
+- **Date Filter in Categories and Accounts**
+  - filtro periodo nella schermata principale Categorie, riusando `TimeFilter`, `filterByTime()` e `TimeFilterBar`
+  - filtro periodo nella schermata principale Conti, riusando gli stessi componenti già presenti in Dashboard/Movimenti
+  - il filtro pagina viene passato ai bottom sheet di dettaglio categoria/conto come periodo iniziale
+- **Categorie**
+  - KPI categorie filtrati per periodo
+  - totali e conteggi nei layout Card Stream filtrati per periodo
+  - ordinamento Top categorie in Lista grouped basato sui movimenti del periodo
+  - transfer esclusi dai totali categoria perché il filtro lavora solo su income/expense
+- **Conti**
+  - riepilogo periodo per conto: entrate, uscite, trasferimenti netti e numero movimenti
+  - saldo conto visibile storico/as-of: `initialBalance + impatto di tutti i movimenti con data <= fine periodo`
+  - saldo inizio periodo: `initialBalance + impatto di tutti i movimenti con data < inizio periodo`
+  - movimenti netti periodo: entrate periodo - uscite periodo + trasferimenti netti periodo
+  - dettaglio conto allineato allo stesso criterio di saldo storico al termine del periodo
+- Helper centralizzati in `movement.dart`:
+  - `transferNetForAccount`
+  - `periodTransferNetForAccount`
+  - `movementNetForAccount`
+  - `periodNetForAccount`
+  - `balanceForAccountUntil`
+  - `balanceForAccountBefore`
+
+### Fixed
+- Corretto il saldo periodo dei conti: non usa più `initialBalance + solo movimenti del periodo`, formula insufficiente per rispondere a "quanti soldi avevo a gennaio?".
+- Test dei bottom sheet conti/categorie aggiornati per distinguere la `TimeFilterBar` principale da quella del dettaglio.
+- Test legacy Card Stream resi più precisi quando lo stesso importo appare sia nel riepilogo sia nella card.
+
+### Unchanged
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+### QA
+- Test mirati:
+  - `test/categories_layout_test.dart`
+  - `test/categories_navigation_test.dart`
+  - `test/accounts_test.dart`
+  - `test/accounts_navigation_test.dart`
+- `flutter analyze --no-pub`: 0 issues
+- `flutter test --no-pub`: **625/625 All tests passed**
 
 ---
 

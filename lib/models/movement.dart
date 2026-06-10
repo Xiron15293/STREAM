@@ -99,6 +99,61 @@ double sumTransfers(Iterable<Movement> movements) {
       .fold<double>(0.0, (sum, m) => sum + m.amount);
 }
 
+double transferNetForAccount(String accountId, Iterable<Movement> movements) {
+  return movements
+      .where((m) => m.isTransfer)
+      .fold<double>(0.0, (sum, m) => sum + m.impactForAccount(accountId));
+}
+
+double periodTransferNetForAccount(
+  String accountId,
+  Iterable<Movement> movementsInPeriod,
+) {
+  return transferNetForAccount(accountId, movementsInPeriod);
+}
+
+double movementNetForAccount(String accountId, Iterable<Movement> movements) {
+  return movements.fold<double>(
+    0.0,
+    (sum, m) => sum + m.impactForAccount(accountId),
+  );
+}
+
+double periodNetForAccount(
+  String accountId,
+  Iterable<Movement> movementsInPeriod,
+) {
+  return movementNetForAccount(accountId, movementsInPeriod);
+}
+
+double balanceForAccountUntil(
+  String accountId,
+  Iterable<Movement> movements,
+  DateTime endDate, {
+  double initialBalance = 0.0,
+}) {
+  final end = DateTime(endDate.year, endDate.month, endDate.day);
+  final historicalMovements = movements.where((m) {
+    final date = DateTime(m.date.year, m.date.month, m.date.day);
+    return !date.isAfter(end);
+  });
+  return initialBalance + movementNetForAccount(accountId, historicalMovements);
+}
+
+double balanceForAccountBefore(
+  String accountId,
+  Iterable<Movement> movements,
+  DateTime startDate, {
+  double initialBalance = 0.0,
+}) {
+  final start = DateTime(startDate.year, startDate.month, startDate.day);
+  final historicalMovements = movements.where((m) {
+    final date = DateTime(m.date.year, m.date.month, m.date.day);
+    return date.isBefore(start);
+  });
+  return initialBalance + movementNetForAccount(accountId, historicalMovements);
+}
+
 double netIncomeExpense(Iterable<Movement> movements) {
   return sumIncome(movements) - sumExpenses(movements);
 }

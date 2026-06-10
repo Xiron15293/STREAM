@@ -11,6 +11,9 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 
+DateTime _previousMonth(DateTime date) =>
+    DateTime(date.year, date.month - 1, 15);
+
 void main() {
   setUpAll(() {
     sqfliteFfiInit();
@@ -727,8 +730,9 @@ void main() {
           'category_layout': 'streamCards',
         });
         final db = AppDatabase();
-        await db.addCategory('Cibo', MovementType.expense, 0xFF42A5F5);
-        final cat = db.categories.firstWhere((c) => c.name == 'Cibo');
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
         await db.addMovement(
           Movement(
             id: 'mov_test_1',
@@ -762,8 +766,20 @@ void main() {
         await tester.tap(find.byKey(const Key('archive_section_categories')));
         await tester.pumpAndSettle();
 
-        expect(find.text('+170.50 €', skipOffstage: false), findsOneWidget);
-        expect(find.text('2 movimenti', skipOffstage: false), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(Key('category_card_${cat.id}'), skipOffstage: false),
+            matching: find.text('+170.50 €', skipOffstage: false),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(Key('category_card_${cat.id}'), skipOffstage: false),
+            matching: find.text('2 movimenti', skipOffstage: false),
+          ),
+          findsOneWidget,
+        );
       },
     );
 
@@ -794,6 +810,102 @@ void main() {
               skipOffstage: false,
             ),
             matching: find.text('+0.00 €', skipOffstage: false),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+  });
+
+  group('Categories Date Filter', () {
+    testWidgets(
+      'main summary and stream cards use selected period and ignore transfers',
+      (WidgetTester tester) async {
+        SharedPreferences.setMockInitialValues({
+          'category_layout': 'streamCards',
+        });
+        PreferencesService.categoryLayoutNotifier.value = 'streamCards';
+
+        final db = AppDatabase();
+        final now = DateTime.now();
+        final previousMonth = _previousMonth(now);
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
+
+        await db.addMovement(
+          Movement(
+            id: 'cat_period_current',
+            title: 'Spesa mese corrente',
+            amount: 30,
+            type: MovementType.expense,
+            date: now,
+            categoryId: cat.id,
+            accountId: defaultAccountId,
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'cat_period_previous',
+            title: 'Spesa mese precedente',
+            amount: 70,
+            type: MovementType.expense,
+            date: previousMonth,
+            categoryId: cat.id,
+            accountId: defaultAccountId,
+            createdAt: previousMonth,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'cat_period_transfer',
+            title: 'Trasferimento escluso',
+            amount: 90,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: cat.id,
+            accountId: defaultAccountId,
+            destinationAccountId: 'acc_other',
+            createdAt: now,
+          ),
+        );
+
+        await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+        await tester.pumpAndSettle();
+
+        final card = find.byKey(Key('category_card_${cat.id}'));
+
+        expect(find.byKey(const Key('categories_time_filter')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('categories_period_summary')),
+            matching: find.text('+30.00 €'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: card,
+            matching: find.text('1 movimento', skipOffstage: false),
+          ),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byTooltip('Precedente'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('categories_period_summary')),
+            matching: find.text('+70.00 €'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: card,
+            matching: find.text('+70.00 €', skipOffstage: false),
           ),
           findsOneWidget,
         );

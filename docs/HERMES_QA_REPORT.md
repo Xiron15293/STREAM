@@ -1547,3 +1547,51 @@ Rischio residuo basso. Nessun CRITICAL bug aperto. 14 nuovi test aggiunti in que
 - Movimenti presenti solo nel CSV 1Money: **0**
 - Le differenze residue osservate durante i controlli precedenti erano dovute a dataset di confronto diversi, non a perdita di dati nell'import
 - Il comportamento dell'import CSV 1Money può essere considerato validato sul dataset reale usato per la QA finale
+
+---
+
+# V0.8.3 — Date Filter in Categories and Accounts
+
+## Data test
+
+2026-06-10
+
+## Risultati verify
+
+```
+flutter analyze --no-pub → 0 issues
+flutter test --no-pub    → 625/625 All tests passed
+```
+
+## Cosa è stato verificato
+
+### Categorie
+- `TimeFilterBar` presente nella schermata principale Categorie
+- KPI categorie filtrati dal periodo selezionato
+- Card Stream usa importi e conteggi del periodo selezionato
+- Lista grouped ordina le Top categorie usando i movimenti del periodo
+- Transfer esclusi dai totali categoria
+- Bottom sheet categoria inizializzato con il filtro della pagina
+
+### Conti
+- `TimeFilterBar` presente nella schermata principale Conti
+- Riepilogo periodo per conto: entrate, uscite, trasferimenti netti, numero movimenti
+- Saldo conto visibile storico/as-of al termine del periodo selezionato
+- Formula saldo fine periodo: `initialBalance + impatto di tutti i movimenti con data <= fine periodo`
+- Formula saldo inizio periodo: `initialBalance + impatto di tutti i movimenti con data < inizio periodo`
+- Movimenti netti periodo: entrate periodo - uscite periodo + trasferimenti netti periodo
+- Corretto il caso gennaio: storico precedente al periodo contribuisce al saldo finale
+- Bottom sheet conto inizializzato con il filtro della pagina
+
+### Regressioni
+- V0.8.2 confermata: transfer ancora esclusi da Entrate/Uscite/Bilancio globali
+- Transfer ancora inclusi correttamente nei saldi conto origine/destinazione
+- Test legacy bottom sheet aggiornati per distinguere filtro pagina e filtro dettaglio
+- Saldo attuale reale (`getAccountBalance`) resta derivato da `initialBalance + tutti i movimenti`
+
+## Vincoli confermati
+
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push eseguito

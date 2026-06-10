@@ -14,7 +14,9 @@ import 'package:stream_app/widgets/movement_card.dart';
 Future<void> openArchiveCategories(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('archive_section_categories')).hitTestable());
+  await tester.tap(
+    find.byKey(const Key('archive_section_categories')).hitTestable(),
+  );
   await tester.pumpAndSettle();
 
   final segmentedButton = tester.widget<SegmentedButton<int>>(
@@ -23,7 +25,10 @@ Future<void> openArchiveCategories(WidgetTester tester) async {
   expect(segmentedButton.selected, contains(2));
 }
 
-Future<void> switchCategoryFilter(WidgetTester tester, MovementType type) async {
+Future<void> switchCategoryFilter(
+  WidgetTester tester,
+  MovementType type,
+) async {
   final key = type == MovementType.income
       ? 'categories_filter_income'
       : 'categories_filter_expense';
@@ -32,7 +37,10 @@ Future<void> switchCategoryFilter(WidgetTester tester, MovementType type) async 
 }
 
 Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
-  final target = find.byKey(Key('category_card_$categoryId'), skipOffstage: false);
+  final target = find.byKey(
+    Key('category_card_$categoryId'),
+    skipOffstage: false,
+  );
   final listView = find.byType(ListView).first;
 
   for (var i = 0; i < 12 && target.evaluate().isEmpty; i++) {
@@ -46,8 +54,11 @@ Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> openCategorySheet(WidgetTester tester, String categoryId,
-    {MovementType? filterType}) async {
+Future<void> openCategorySheet(
+  WidgetTester tester,
+  String categoryId, {
+  MovementType? filterType,
+}) async {
   await openArchiveCategories(tester);
   if (filterType != null) {
     await switchCategoryFilter(tester, filterType);
@@ -61,9 +72,9 @@ Future<void> openCategorySheet(WidgetTester tester, String categoryId,
 }
 
 List<MovementCard> _movementCards(WidgetTester tester) {
-  return tester.widgetList<MovementCard>(
-    find.byType(MovementCard, skipOffstage: false),
-  ).toList();
+  return tester
+      .widgetList<MovementCard>(find.byType(MovementCard, skipOffstage: false))
+      .toList();
 }
 
 List<String> _movementTitles(WidgetTester tester) {
@@ -96,7 +107,9 @@ void main() {
 
       await db.addCategory('Spese QA', MovementType.expense, 0xFF4285F4);
       await db.addCategory('Entrate QA', MovementType.income, 0xFF66BB6A);
-      final incomeCategory = db.categories.firstWhere((c) => c.name == 'Entrate QA');
+      final incomeCategory = db.categories.firstWhere(
+        (c) => c.name == 'Entrate QA',
+      );
 
       await db.addMovement(
         Movement(
@@ -167,11 +180,17 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
-      await openCategorySheet(tester, incomeCategory.id, filterType: MovementType.income);
+      await openCategorySheet(
+        tester,
+        incomeCategory.id,
+        filterType: MovementType.income,
+      );
 
       expect(find.text('Movimenti categoria'), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('category_movements_name'))).data,
+        tester
+            .widget<Text>(find.byKey(const Key('category_movements_name')))
+            .data,
         'Entrate QA',
       );
       expect(find.text('Totale entrate'), findsOneWidget);
@@ -184,7 +203,13 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.text('Giorno'));
+      final sheetFilter = find.byKey(
+        const Key('category_movements_time_filter'),
+      );
+
+      await tester.tap(
+        find.descendant(of: sheetFilter, matching: find.text('Giorno')),
+      );
       await tester.pumpAndSettle();
       expect(
         find.descendant(
@@ -195,7 +220,9 @@ void main() {
       );
       _expectMovementTitles(tester, ['Entrata uno']);
 
-      await tester.tap(find.text('Anno'));
+      await tester.tap(
+        find.descendant(of: sheetFilter, matching: find.text('Anno')),
+      );
       await tester.pumpAndSettle();
       expect(
         find.descendant(
@@ -204,12 +231,22 @@ void main() {
         ),
         findsOneWidget,
       );
-      _expectMovementTitles(tester, ['Entrata uno', 'Entrata due', 'Entrata anno']);
+      _expectMovementTitles(tester, [
+        'Entrata uno',
+        'Entrata due',
+        'Entrata anno',
+      ]);
 
-      await tester.tap(find.byKey(const Key('category_movements_close_button')));
+      await tester.tap(
+        find.byKey(const Key('category_movements_close_button')),
+      );
       await tester.pumpAndSettle();
 
-      await openCategorySheet(tester, incomeCategory.id, filterType: MovementType.income);
+      await openCategorySheet(
+        tester,
+        incomeCategory.id,
+        filterType: MovementType.income,
+      );
       expect(find.text('Totale entrate'), findsOneWidget);
     },
   );
@@ -220,8 +257,14 @@ void main() {
       final db = AppDatabase();
       final day = DateTime(2026, 6, 4);
 
-      await db.addCategory('Categoria Archiviata QA', MovementType.income, 0xFF8E24AA);
-      final category = db.categories.firstWhere((c) => c.name == 'Categoria Archiviata QA');
+      await db.addCategory(
+        'Categoria Archiviata QA',
+        MovementType.income,
+        0xFF8E24AA,
+      );
+      final category = db.categories.firstWhere(
+        (c) => c.name == 'Categoria Archiviata QA',
+      );
       await db.addMovement(
         Movement(
           id: 'arch_inc_1',
@@ -241,7 +284,10 @@ void main() {
 
       await openArchiveCategories(tester);
       await switchCategoryFilter(tester, MovementType.income);
-      final archivedSection = find.byKey(const Key('categories_archived_section'), skipOffstage: false);
+      final archivedSection = find.byKey(
+        const Key('categories_archived_section'),
+        skipOffstage: false,
+      );
       final listView = find.byType(ListView).first;
       for (var i = 0; i < 12 && archivedSection.evaluate().isEmpty; i++) {
         await tester.drag(listView, const Offset(0, -320));
@@ -251,11 +297,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(archivedSection, findsOneWidget);
 
-      await openCategorySheet(tester, category.id, filterType: MovementType.income);
+      await openCategorySheet(
+        tester,
+        category.id,
+        filterType: MovementType.income,
+      );
 
       expect(find.text('Movimenti categoria'), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('category_movements_name'))).data,
+        tester
+            .widget<Text>(find.byKey(const Key('category_movements_name')))
+            .data,
         'Categoria Archiviata QA',
       );
       expect(find.text('Totale entrate'), findsOneWidget);
@@ -270,76 +322,85 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Categoria senza movimenti mostra empty state',
-    (WidgetTester tester) async {
-      final db = AppDatabase();
-      await db.addCategory('Categoria Vuota QA', MovementType.expense, 0xFFEF5350);
-      final category = db.categories.firstWhere((c) => c.name == 'Categoria Vuota QA');
+  testWidgets('Categoria senza movimenti mostra empty state', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
+    await db.addCategory(
+      'Categoria Vuota QA',
+      MovementType.expense,
+      0xFFEF5350,
+    );
+    final category = db.categories.firstWhere(
+      (c) => c.name == 'Categoria Vuota QA',
+    );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpAndSettle();
 
-      await openCategorySheet(tester, category.id);
+    await openCategorySheet(tester, category.id);
 
-      expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
-    },
-  );
+    expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
+  });
 
-  test(
-    'Filtro intervallo su categoria usa TimeFilter.customRange',
-    () async {
-      final db = AppDatabase();
-      await db.addCategory('Categoria Intervallo QA', MovementType.expense, 0xFF03A9F4);
-      final storedCategory = db.categories.firstWhere((c) => c.name == 'Categoria Intervallo QA');
-      await db.addMovement(
-        Movement(
-          id: 'rng_1',
-          title: 'Mov 1',
-          amount: 5,
-          type: MovementType.expense,
-          date: DateTime(2026, 6, 10),
-          categoryId: storedCategory.id,
-          accountId: defaultAccountId,
-          createdAt: DateTime(2026, 6, 10),
-        ),
-      );
-      await db.addMovement(
-        Movement(
-          id: 'rng_2',
-          title: 'Mov 2',
-          amount: 7,
-          type: MovementType.expense,
-          date: DateTime(2026, 6, 15),
-          categoryId: storedCategory.id,
-          accountId: defaultAccountId,
-          createdAt: DateTime(2026, 6, 15),
-        ),
-      );
-      await db.addMovement(
-        Movement(
-          id: 'rng_3',
-          title: 'Mov 3',
-          amount: 9,
-          type: MovementType.expense,
-          date: DateTime(2026, 6, 20),
-          categoryId: storedCategory.id,
-          accountId: defaultAccountId,
-          createdAt: DateTime(2026, 6, 20),
-        ),
-      );
+  test('Filtro intervallo su categoria usa TimeFilter.customRange', () async {
+    final db = AppDatabase();
+    await db.addCategory(
+      'Categoria Intervallo QA',
+      MovementType.expense,
+      0xFF03A9F4,
+    );
+    final storedCategory = db.categories.firstWhere(
+      (c) => c.name == 'Categoria Intervallo QA',
+    );
+    await db.addMovement(
+      Movement(
+        id: 'rng_1',
+        title: 'Mov 1',
+        amount: 5,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 10),
+        categoryId: storedCategory.id,
+        accountId: defaultAccountId,
+        createdAt: DateTime(2026, 6, 10),
+      ),
+    );
+    await db.addMovement(
+      Movement(
+        id: 'rng_2',
+        title: 'Mov 2',
+        amount: 7,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 15),
+        categoryId: storedCategory.id,
+        accountId: defaultAccountId,
+        createdAt: DateTime(2026, 6, 15),
+      ),
+    );
+    await db.addMovement(
+      Movement(
+        id: 'rng_3',
+        title: 'Mov 3',
+        amount: 9,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 20),
+        categoryId: storedCategory.id,
+        accountId: defaultAccountId,
+        createdAt: DateTime(2026, 6, 20),
+      ),
+    );
 
-      final filtered = db.movements
-          .where((m) => m.categoryId == storedCategory.id && m.type == storedCategory.type)
-          .toList()
-          .filterByTime(
-            TimeFilter.customRange(
-              DateTime(2026, 6, 12),
-              DateTime(2026, 6, 18),
-            ),
-          );
+    final filtered = db.movements
+        .where(
+          (m) =>
+              m.categoryId == storedCategory.id &&
+              m.type == storedCategory.type,
+        )
+        .toList()
+        .filterByTime(
+          TimeFilter.customRange(DateTime(2026, 6, 12), DateTime(2026, 6, 18)),
+        );
 
-      expect(filtered.map((m) => m.id).toList(), ['rng_2']);
-    },
-  );
+    expect(filtered.map((m) => m.id).toList(), ['rng_2']);
+  });
 }
