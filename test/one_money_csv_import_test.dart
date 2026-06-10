@@ -99,6 +99,7 @@ void main() {
 
     expect(db.accounts.any((a) => a.name == 'Conto Corrente'), isTrue);
     expect(db.categories.any((c) => c.name == 'Supermercato' && c.type == MovementType.expense), isTrue);
+    expect(db.accounts.every((a) => a.initialBalance == 0.0), isTrue);
 
   });
 
@@ -168,6 +169,7 @@ void main() {
     expect(db.accounts.firstWhere((a) => a.id == movement.destinationAccountId).name, 'Conto B');
     expect(db.accounts.any((a) => a.name == 'Conto A'), isTrue);
     expect(db.accounts.any((a) => a.name == 'Conto B'), isTrue);
+    expect(db.accounts.every((a) => a.initialBalance == 0.0), isTrue);
   });
 
   test('ignora la sezione finale conti e fondi dopo il blocco movimenti', () async {
@@ -205,6 +207,7 @@ void main() {
     expect(db.categories.any((c) => c.name == 'Revolut'), isFalse);
     expect(db.categories.any((c) => c.name == 'Contanti'), isFalse);
     expect(db.categories.any((c) => c.name == 'Buffer'), isFalse);
+    expect(db.accounts.every((a) => a.initialBalance == 0.0), isTrue);
   });
 
   test('ignora duplicati presenti nello stesso file', () async {
@@ -343,6 +346,7 @@ void main() {
       expect(report.duplicateWithinFileMovements, 49);
       expect(report.duplicateWithinFileImportedMovements, 49);
       expect(db.movements, hasLength(6417));
+      expect(db.accounts.every((a) => a.initialBalance == 0.0), isTrue);
 
       final secondReport = await OneMoneyCsvImportService.importCsv(
         db,

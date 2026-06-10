@@ -15,6 +15,36 @@
   - `Saldo attuale` in sola lettura
   - nota informativa sul calcolo automatico
 
+### Hermes V0.8.x — Navigazione conti e archiviati
+
+### Stato sintetico
+
+- In Archivio > Conti, il tap su un conto apre la vista `Movimenti del conto`
+- La vista mostra:
+  - nome conto
+  - saldo iniziale
+  - entrate filtrate
+  - uscite filtrate
+  - trasferimenti netti filtrati
+  - saldo attuale
+  - numero movimenti
+  - lista movimenti filtrata
+- Conti e categorie archiviati sono esposti in sezioni separate e consultabili
+
+### Test aggiunti
+
+- tap conto apre movimenti conto
+- filtri giorno / mese / anno
+- conto senza movimenti mostra empty state
+- conti archiviati visibili nella sezione Archiviati
+- categorie archiviate visibili nella sezione Archiviati
+- import CSV 1Money rieseguito con successo con `dedupeWithinFile=true` / `false`, trailer `NOME` ignorato e `initialBalance = 0`
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: da rilanciare localmente in ambiente completo
+- `flutter test --no-pub`: da rilanciare localmente in ambiente completo
+
 ### Verifica locale
 
 - `flutter analyze --no-pub`: **PASS**

@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Saldo iniziale dei conti
   - il saldo attuale è sempre derivato da saldo iniziale + movimenti
   - la modifica conto mostra saldo iniziale modificabile e saldo attuale in sola lettura
+- Navigazione conti in Archivio
+  - tocco su un conto apre la vista `Movimenti del conto`
+  - riepilogo con saldo iniziale, entrate filtrate, uscite filtrate, trasferimenti netti, saldo attuale e numero movimenti
+  - filtro periodo riusando `TimeFilter` e `TimeFilterBar`
+  - lista movimenti riusando `GroupedMovementsList`
+- Gestione archiviati resa più esplicita in Archivio
+  - conti attivi e archiviati mostrati in sezioni separate
+  - categorie attive e archiviate mostrate in sezioni separate
 
 ### QA
 - Test reset widget temporaneamente messi in quarantena:
@@ -18,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - motivo: flow widget fragile per backup pre-reset, dialog secondario e timing UI
   - reset già validato manualmente su Pixel 6
   - piano futuro: rifare il reset come integration test o service-level test
+- Re-test import CSV 1Money mantenuto verde:
+  - dedupeWithinFile `true` e `false`
+  - CSV reale
+  - trailer `NOME,BILANCIO,VALUTA` ignorato
+  - saldi conto importati con `initialBalance = 0`
 
 ### Planned
 - V0.6.5 — Reset dati app

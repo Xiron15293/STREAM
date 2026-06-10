@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
 import '../models/category.dart';
+import '../models/movement.dart';
+import '../models/time_filter.dart';
 import '../theme.dart';
+import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/time_filter_bar.dart';
 
 class CategoriesScreen extends StatefulWidget {
   final AppDatabase db;
@@ -36,8 +40,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               _SectionHeader(title: 'Entrate', count: income.length),
               const SizedBox(height: StreamSpacing.md),
               ...income.map((c) => _CategoryTile(
+                    key: Key('category_card_${c.id}'),
                     category: c,
                     db: widget.db,
+                    onTap: () => _showCategoryMovements(context, widget.db, c),
                     onEdit: () => _showCategoryForm(context, db: widget.db, existing: c),
                     onChanged: () => setState(() {}),
                   )),
@@ -45,18 +51,25 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               _SectionHeader(title: 'Uscite', count: expense.length),
               const SizedBox(height: StreamSpacing.md),
               ...expense.map((c) => _CategoryTile(
+                    key: Key('category_card_${c.id}'),
                     category: c,
                     db: widget.db,
+                    onTap: () => _showCategoryMovements(context, widget.db, c),
                     onEdit: () => _showCategoryForm(context, db: widget.db, existing: c),
                     onChanged: () => setState(() {}),
                   )),
               if (archived.isNotEmpty) ...[
                 const SizedBox(height: StreamSpacing.section),
-                const _SectionHeader(title: 'Archiviate', count: null),
+                const KeyedSubtree(
+                  key: Key('categories_archived_section'),
+                  child: _SectionHeader(title: 'Archiviati', count: null),
+                ),
                 const SizedBox(height: StreamSpacing.md),
                 ...archived.map((c) => _CategoryTile(
+                      key: Key('category_card_${c.id}'),
                       category: c,
                       db: widget.db,
+                      onTap: () => _showCategoryMovements(context, widget.db, c),
                       onEdit: () => _showCategoryForm(context, db: widget.db, existing: c),
                       onChanged: () => setState(() {}),
                     )),
@@ -82,6 +95,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         existing: existing,
         onChanged: () => setState(() {}),
       ),
+    );
+  }
+
+  void _showCategoryMovements(
+    BuildContext context,
+    AppDatabase db,
+    Category category,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _CategoryMovementsSheet(db: db, category: category),
     );
   }
 }
@@ -116,12 +142,15 @@ class _SectionHeader extends StatelessWidget {
 class _CategoryTile extends StatelessWidget {
   final Category category;
   final AppDatabase db;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onChanged;
 
   const _CategoryTile({
+    super.key,
     required this.category,
     required this.db,
+    required this.onTap,
     required this.onEdit,
     required this.onChanged,
   });
@@ -129,90 +158,113 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = StreamIconLibrary.getIcon(category.iconKey);
-    return Container(
-      margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
-      padding: const EdgeInsets.all(StreamSpacing.md),
-      decoration: BoxDecoration(
-        color: StreamColors.surface,
-        borderRadius: BorderRadius.circular(StreamRadius.md),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(StreamRadius.md),
+          child: Container(
+            padding: const EdgeInsets.all(StreamSpacing.md),
             decoration: BoxDecoration(
-              color: Color(category.color),
+              color: StreamColors.surface,
               borderRadius: BorderRadius.circular(StreamRadius.md),
             ),
-            child: Icon(iconData, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: StreamSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  category.name,
-                  style: category.archived
-                      ? StreamTypography.bodyBold.copyWith(decoration: TextDecoration.lineThrough, color: StreamColors.textSecondary)
-                      : StreamTypography.bodyBold,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Color(category.color),
+                    borderRadius: BorderRadius.circular(StreamRadius.md),
+                  ),
+                  child: Icon(iconData, color: Colors.white, size: 20),
                 ),
-                if (category.archived)
-                  Text('Archiviata', style: StreamTypography.micro.copyWith(color: StreamColors.textMuted)),
+                const SizedBox(width: StreamSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.name,
+                        style: category.archived
+                            ? StreamTypography.bodyBold.copyWith(
+                                decoration: TextDecoration.lineThrough,
+                                color: StreamColors.textSecondary,
+                              )
+                            : StreamTypography.bodyBold,
+                      ),
+                      if (category.archived)
+                        Text(
+                          'Archiviata',
+                          style: StreamTypography.micro.copyWith(
+                            color: StreamColors.textMuted,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: category.type == MovementType.income
+                            ? StreamColors.income.withValues(alpha: 0.15)
+                            : StreamColors.expense.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(StreamRadius.sm),
+                      ),
+                      child: Text(
+                        category.type == MovementType.income ? 'Entrata' : 'Uscita',
+                        style: StreamTypography.micro.copyWith(
+                          color: category.type == MovementType.income
+                              ? StreamColors.income
+                              : StreamColors.expense,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: StreamSpacing.xs),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            onEdit();
+                            break;
+                          case 'archive':
+                            db.archiveCategory(category.id);
+                            onChanged();
+                            break;
+                          case 'restore':
+                            db.restoreCategory(category.id);
+                            onChanged();
+                            break;
+                          case 'delete':
+                            _tryDelete(context);
+                            break;
+                        }
+                      },
+                      icon: Icon(Icons.more_horiz, size: 18, color: StreamColors.textMuted),
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'edit', child: Text('Modifica')),
+                        if (!category.archived)
+                          const PopupMenuItem(value: 'archive', child: Text('Archivia')),
+                        if (category.archived)
+                          const PopupMenuItem(value: 'restore', child: Text('Ripristina')),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Elimina', style: TextStyle(color: StreamColors.expense)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: category.type == MovementType.income
-                      ? StreamColors.income.withValues(alpha: 0.15)
-                      : StreamColors.expense.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(StreamRadius.sm),
-                ),
-                child: Text(
-                  category.type == MovementType.income ? 'Entrata' : 'Uscita',
-                  style: StreamTypography.micro.copyWith(
-                    color: category.type == MovementType.income ? StreamColors.income : StreamColors.expense,
-                  ),
-                ),
-              ),
-              const SizedBox(width: StreamSpacing.xs),
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'edit':
-                      onEdit();
-                    case 'archive':
-                      db.archiveCategory(category.id);
-                      onChanged();
-                    case 'restore':
-                      db.restoreCategory(category.id);
-                      onChanged();
-                    case 'delete':
-                      _tryDelete(context);
-                  }
-                },
-                icon: Icon(Icons.more_horiz, size: 18, color: StreamColors.textMuted),
-                itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Modifica')),
-                  if (!category.archived)
-                    const PopupMenuItem(value: 'archive', child: Text('Archivia')),
-                  if (category.archived)
-                    const PopupMenuItem(value: 'restore', child: Text('Ripristina')),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Elimina', style: TextStyle(color: StreamColors.expense)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -273,6 +325,137 @@ class _CategoryFormDialog extends StatefulWidget {
 
   @override
   State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
+}
+
+class _CategoryMovementsSheet extends StatefulWidget {
+  final AppDatabase db;
+  final Category category;
+
+  const _CategoryMovementsSheet({
+    required this.db,
+    required this.category,
+  });
+
+  @override
+  State<_CategoryMovementsSheet> createState() => _CategoryMovementsSheetState();
+}
+
+class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
+  late TimeFilter _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _filter = TimeFilter.month(now.year, now.month);
+  }
+
+  List<Movement> get _categoryMovements {
+    return widget.db.movements
+        .where((m) =>
+            m.categoryId == widget.category.id &&
+            m.type == widget.category.type)
+        .toList()
+        .filterByTime(_filter);
+  }
+
+  double get _periodTotal {
+    return _categoryMovements.fold<double>(
+      0.0,
+      (sum, m) => sum + m.amount,
+    );
+  }
+
+  String get _totalLabel =>
+      widget.category.type == MovementType.income ? 'Totale entrate' : 'Totale spese';
+
+  @override
+  Widget build(BuildContext context) {
+    final movements = _categoryMovements;
+    final hasMovements = movements.isNotEmpty;
+
+    return ListenableBuilder(
+      listenable: widget.db,
+      builder: (context, _) => FractionallySizedBox(
+        heightFactor: 0.95,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            StreamSpacing.lg,
+            StreamSpacing.lg,
+            StreamSpacing.lg,
+            StreamSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Movimenti categoria', style: StreamTypography.h2),
+                  ),
+                  IconButton(
+                    key: const Key('category_movements_close_button'),
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              Text(
+                widget.category.name,
+                key: const Key('category_movements_name'),
+                style: StreamTypography.h3.copyWith(
+                  color: StreamColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              Wrap(
+                spacing: StreamSpacing.sm,
+                runSpacing: StreamSpacing.sm,
+                children: [
+                  _StatChip(
+                    label: _totalLabel,
+                    value: _formatMoney(_periodTotal),
+                    key: const Key('category_movements_total'),
+                  ),
+                  _StatChip(
+                    label: 'Numero movimenti',
+                    value: '${movements.length}',
+                    key: const Key('category_movements_count'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              TimeFilterBar(
+                activeFilter: _filter,
+                onChanged: (value) => setState(() => _filter = value),
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              Expanded(
+                child: hasMovements
+                    ? GroupedMovementsList(
+                        movements: movements,
+                        db: widget.db,
+                        showNotes: true,
+                      )
+                    : Center(
+                        child: Text(
+                          'Nessun movimento in questo periodo',
+                          style: StreamTypography.body.copyWith(
+                            color: StreamColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatMoney(double value) =>
+      '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
 }
 
 class _CategoryFormDialogState extends State<_CategoryFormDialog> {
@@ -444,6 +627,47 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
           child: Text(widget.existing != null ? 'Salva' : 'Crea'),
         ),
       ],
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatChip({
+    super.key,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(StreamSpacing.md),
+      decoration: BoxDecoration(
+        color: StreamColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(StreamRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: StreamTypography.micro.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: StreamTypography.amount.copyWith(
+              color: StreamColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

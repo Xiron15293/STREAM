@@ -68,7 +68,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (i) => setState(() => _currentIndex = i),
-          items: const [
+          items: [
             BottomNavigationBarItem(
               icon: KeyedSubtree(
                 key: Key('bottom_nav_dashboard'),

@@ -66,6 +66,8 @@ La prossima attività reale è:
 - Import CSV 1Money: la sezione finale dei conti/fondi esportata da 1Money viene ignorata dalla riga `NOME`
 - Se serve riallineare i saldi conto per una verifica manuale, usare i valori del backup Stream validato come riferimento operativo
 - Saldo iniziale conti: il saldo attuale è ora sempre derivato da saldo iniziale + movimenti, e la modifica conto espone solo il saldo iniziale come campo editabile
+- Archivio > Conti: la vista `Movimenti del conto` è stata aggiunta e usa `TimeFilter` + `GroupedMovementsList`
+- Conti e categorie archiviate sono consultabili in sezioni separate (`Archiviati`)
 - Reset widget flow: i test fragili sono stati messi in quarantena temporanea; reset già validato manualmente su Pixel 6. Rifare come integration test o service-level test prima di riabilitarli
 
 ---
