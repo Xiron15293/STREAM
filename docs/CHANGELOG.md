@@ -7,12 +7,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3
+- Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3 + V0.8.4
 - QA manuale Pixel/iPhone
 - Build release Android/iOS
 - Prossimo sprint consigliato:
   - Global Tap-to-Edit Movement
   - oppure Movimenti: Vista Calendario
+
+---
+
+## [0.8.4] - 2026-06-10
+
+### Added
+- **Interactive Category/Account Menus**
+  - tap categoria apre uno sheet interattivo unico con header, riepilogo periodo, azioni rapide e lista movimenti filtrata
+  - tap conto apre uno sheet interattivo unico con header, saldo storico/as-of, riepilogo periodo, azioni rapide e lista movimenti filtrata
+- **Category sheet**
+  - header con icona, nome, tipo e stato
+  - totale e conteggio movimenti nel periodo
+  - azioni: Movimento, Modifica, Archivia/Ripristina
+  - `MovementPicker` aperto con categoria e tipo precompilati
+  - transfer esclusi dalla lista/totali categoria
+- **Account sheet**
+  - header con icona, nome e stato
+  - saldo al termine del periodo coerente con V0.8.3
+  - riepilogo periodo: entrate, uscite, trasferimenti netti, saldo inizio periodo, movimenti
+  - azioni: Movimento, Trasferisci, Modifica, Archivia per conti attivi
+  - `MovementPicker` supporta `accountPreFill` e `initialType`
+  - azione Trasferisci apre il form in modalità transfer con conto origine precompilato
+
+### Unchanged
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Formula saldo conto V0.8.3 invariata
+- Transfer ancora esclusi da Entrate/Uscite/Bilancio globali e inclusi nei saldi conto
+- Nessuno skip aggiunto
+- Nessun commit/push
+- Ripristino conto archiviato non aggiunto: non esisteva API esistente da riusare
+
+### QA
+- `flutter analyze --no-pub`: 0 issues
+- `flutter test --no-pub`: **627/627 All tests passed**
 
 ---
 

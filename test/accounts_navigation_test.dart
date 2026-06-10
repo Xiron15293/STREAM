@@ -317,6 +317,39 @@ void main() {
 
       await openAccountSheet(tester, 'acc_main');
 
+      expect(
+        find.byKey(const Key('account_interactive_sheet')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('account_sheet_header')), findsOneWidget);
+      expect(
+        find.byKey(const Key('account_sheet_balance_as_of')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_sheet_period_summary')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_sheet_add_movement_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_sheet_transfer_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_sheet_edit_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_sheet_archive_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_sheet_movements_list')),
+        findsOneWidget,
+      );
       expect(find.text('Movimenti del conto'), findsOneWidget);
       expect(
         tester
@@ -415,6 +448,46 @@ void main() {
       );
     },
   );
+
+  testWidgets('Interactive account sheet apre Trasferisci con conto origine', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
+    final now = DateTime.now();
+    await db.addAccount(
+      Account(
+        id: 'acc_transfer_origin',
+        name: 'Origine Transfer',
+        type: AccountType.bank,
+        createdAt: now,
+      ),
+    );
+    await db.addAccount(
+      Account(
+        id: 'acc_transfer_dest',
+        name: 'Destinazione Transfer',
+        type: AccountType.bank,
+        createdAt: now,
+      ),
+    );
+
+    await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('account_card_acc_transfer_origin')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('account_sheet_transfer_action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    final typeControls = tester.widgetList<SegmentedButton<MovementType>>(
+      find.byType(SegmentedButton<MovementType>),
+    );
+    expect(typeControls.last.selected, contains(MovementType.transfer));
+    expect(find.text('Origine Transfer'), findsAtLeastNWidgets(1));
+  });
 
   testWidgets('Conto senza movimenti mostra empty state', (
     WidgetTester tester,

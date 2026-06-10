@@ -147,12 +147,16 @@ class MovementPicker extends StatefulWidget {
   final AppDatabase db;
   final Movement? prefill;
   final String? categoryPreFill;
+  final String? accountPreFill;
+  final MovementType? initialType;
 
   const MovementPicker({
     super.key,
     required this.db,
     this.prefill,
     this.categoryPreFill,
+    this.accountPreFill,
+    this.initialType,
   });
 
   @override
@@ -226,6 +230,8 @@ class _MovementPickerState extends State<MovementPicker> {
           db: widget.db,
           prefill: widget.prefill,
           categoryPreFill: widget.categoryPreFill,
+          accountPreFill: widget.accountPreFill,
+          initialType: widget.initialType,
           onSaved: () => Navigator.of(context).pop(),
         );
       case AddMode.rapidi:
@@ -250,12 +256,16 @@ class _ManualForm extends StatefulWidget {
   final AppDatabase db;
   final Movement? prefill;
   final String? categoryPreFill;
+  final String? accountPreFill;
+  final MovementType? initialType;
   final VoidCallback onSaved;
 
   const _ManualForm({
     required this.db,
     this.prefill,
     this.categoryPreFill,
+    this.accountPreFill,
+    this.initialType,
     required this.onSaved,
   });
 
@@ -288,13 +298,17 @@ class _ManualFormState extends State<_ManualForm> {
       _selectedCategoryId = p.categoryId;
       _selectedAccountId = p.accountId;
       _selectedDestinationAccountId = p.destinationAccountId;
-    } else if (widget.categoryPreFill != null) {
+    } else {
+      _type = widget.initialType ?? _type;
       final cat = widget.db.categories
           .where((c) => c.id == widget.categoryPreFill)
           .firstOrNull;
       if (cat != null) {
         _type = cat.type;
         _selectedCategoryId = cat.id;
+      }
+      if (widget.accountPreFill != null) {
+        _selectedAccountId = widget.accountPreFill;
       }
     }
   }

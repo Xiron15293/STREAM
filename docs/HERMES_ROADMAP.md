@@ -529,4 +529,38 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 ---
 
+### V0.8.4 — Interactive Category/Account Menus ✅
+
+> **Interventi**: sheet operativi per categorie e conti con azioni rapide, riepiloghi periodo e prefill movimento/transfer
+> **Test**: 627/627 pass | `flutter analyze` 0 issues
+
+**Cosa è stato fatto (V0.8.4 completa):**
+- Categorie:
+  - tap categoria apre sheet interattivo unico
+  - header con icona, nome, tipo e stato
+  - riepilogo periodo con totale e numero movimenti
+  - azioni Movimento, Modifica, Archivia/Ripristina
+  - Movimento apre `MovementPicker` con categoria e tipo precompilati
+  - lista movimenti filtrata dal periodo, transfer esclusi
+- Conti:
+  - tap conto apre sheet interattivo unico
+  - header con icona, nome e stato
+  - saldo storico/as-of coerente con V0.8.3
+  - riepilogo periodo con entrate, uscite, trasferimenti netti, saldo inizio, movimenti
+  - azioni Movimento, Trasferisci, Modifica, Archivia per conti attivi
+  - Movimento/Trasferisci aprono `MovementPicker` con conto origine precompilato
+- `MovementPicker` supporta `accountPreFill` e `initialType`
+- Nessun DB/schema/migrazione, backup/restore/import/reset modificato
+
+### File modificati (V0.8.4)
+| File | Modifica |
+|------|----------|
+| `lib/widgets/movement_picker.dart` | `accountPreFill` + `initialType` |
+| `lib/screens/categories_screen.dart` | Interactive Category Sheet |
+| `lib/screens/accounts_screen.dart` | Interactive Account Sheet |
+| `test/categories_navigation_test.dart` | Test key/azione sheet categoria |
+| `test/accounts_navigation_test.dart` | Test key/azione sheet conto |
+
+---
+
 Vedi `CHANGELOG.md` per dettaglio completo di V0.5.x, V0.4.x, V0.3.x, V0.2, V0.1.

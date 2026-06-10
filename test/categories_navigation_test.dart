@@ -186,6 +186,31 @@ void main() {
         filterType: MovementType.income,
       );
 
+      expect(
+        find.byKey(const Key('category_interactive_sheet')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('category_sheet_header')), findsOneWidget);
+      expect(
+        find.byKey(const Key('category_sheet_period_summary')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('category_sheet_add_movement_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('category_sheet_edit_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('category_sheet_archive_action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('category_sheet_movements_list')),
+        findsOneWidget,
+      );
       expect(find.text('Movimenti categoria'), findsOneWidget);
       expect(
         tester
@@ -250,6 +275,35 @@ void main() {
       expect(find.text('Totale entrate'), findsOneWidget);
     },
   );
+
+  testWidgets('Interactive category sheet apre Movimento precompilato', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
+    await db.addCategory('Entrate Azione', MovementType.income, 0xFF66BB6A);
+    final category = db.categories.firstWhere(
+      (c) => c.name == 'Entrate Azione',
+    );
+
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpAndSettle();
+
+    await openCategorySheet(
+      tester,
+      category.id,
+      filterType: MovementType.income,
+    );
+
+    await tester.tap(
+      find.byKey(const Key('category_sheet_add_movement_action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    final typeControls = tester.widgetList<SegmentedButton<MovementType>>(
+      find.byType(SegmentedButton<MovementType>),
+    );
+    expect(typeControls.last.selected, contains(MovementType.income));
+  });
 
   testWidgets(
     'Categoria archiviata resta cliccabile e mostra movimenti storici',

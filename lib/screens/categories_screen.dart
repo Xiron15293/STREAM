@@ -10,6 +10,7 @@ import '../models/time_filter.dart';
 import '../theme.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -1338,6 +1339,13 @@ class _CategoryMovementsSheet extends StatefulWidget {
 class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
   late TimeFilter _filter;
 
+  Category get _category {
+    return widget.db.categories.firstWhere(
+      (c) => c.id == widget.category.id,
+      orElse: () => widget.category,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1346,11 +1354,13 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
   }
 
   List<Movement> get _categoryMovements {
+    final category = _category;
     return widget.db.movements
         .where(
           (m) =>
-              m.categoryId == widget.category.id &&
-              m.type == widget.category.type,
+              m.categoryId == category.id &&
+              m.type == category.type &&
+              !m.isTransfer,
         )
         .toList()
         .filterByTime(_filter);
@@ -1364,40 +1374,132 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
       ? 'Totale entrate'
       : 'Totale spese';
 
+  void _showAddMovement() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => MovementPicker(
+        db: widget.db,
+        categoryPreFill: _category.id,
+        initialType: _category.type,
+      ),
+    );
+  }
+
+  void _showEditCategory() {
+    showDialog(
+      context: context,
+      builder: (_) => _CategoryFormDialog(
+        db: widget.db,
+        existing: _category,
+        onChanged: () => setState(() {}),
+      ),
+    );
+  }
+
+  Future<void> _toggleArchive() async {
+    final category = _category;
+    if (category.archived) {
+      await widget.db.restoreCategory(category.id);
+    } else {
+      await widget.db.archiveCategory(category.id);
+    }
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final movements = _categoryMovements;
     final hasMovements = movements.isNotEmpty;
+    final category = _category;
+    final iconData = StreamIconLibrary.getIcon(category.iconKey);
+    final typeLabel = category.type == MovementType.income
+        ? 'Entrata'
+        : 'Uscita';
 
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) => FractionallySizedBox(
-        heightFactor: 0.95,
+        heightFactor: 1.0,
         child: Padding(
+          key: const Key('category_interactive_sheet'),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Movimenti categoria',
-                      style: StreamTypography.h2,
+              KeyedSubtree(
+                key: const Key('category_sheet_header'),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: Color(category.color),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(iconData, color: Colors.white, size: 22),
                     ),
-                  ),
-                  IconButton(
-                    key: const Key('category_movements_close_button'),
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Movimenti categoria',
+                            style: StreamTypography.captionBold.copyWith(
+                              color: StreamColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            category.name,
+                            key: const Key('category_movements_name'),
+                            style: StreamTypography.h2,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$typeLabel • ${category.archived ? 'Archiviata' : 'Attiva'}',
+                            style: StreamTypography.caption.copyWith(
+                              color: StreamColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      key: const Key('category_movements_close_button'),
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
               ),
-              Text(
-                widget.category.name,
-                key: const Key('category_movements_name'),
-                style: StreamTypography.h3.copyWith(
-                  color: StreamColors.textSecondary,
+              const SizedBox(height: 12),
+              KeyedSubtree(
+                key: const Key('category_sheet_period_summary'),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    KeyedSubtree(
+                      key: const Key('category_movements_total'),
+                      child: _StatChip(
+                        label: _totalLabel,
+                        value: _formatMoney(_periodTotal),
+                        key: const Key('category_sheet_total'),
+                      ),
+                    ),
+                    KeyedSubtree(
+                      key: const Key('category_movements_count'),
+                      child: _StatChip(
+                        label: 'Movimenti',
+                        value: '${movements.length}',
+                        key: const Key('category_sheet_movement_count'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -1405,15 +1507,25 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _StatChip(
-                    label: _totalLabel,
-                    value: _formatMoney(_periodTotal),
-                    key: const Key('category_movements_total'),
+                  _SheetActionButton(
+                    key: const Key('category_sheet_add_movement_action'),
+                    icon: Icons.add,
+                    label: 'Movimento',
+                    onPressed: _showAddMovement,
                   ),
-                  _StatChip(
-                    label: 'Numero movimenti',
-                    value: '${movements.length}',
-                    key: const Key('category_movements_count'),
+                  _SheetActionButton(
+                    key: const Key('category_sheet_edit_action'),
+                    icon: Icons.edit,
+                    label: 'Modifica',
+                    onPressed: _showEditCategory,
+                  ),
+                  _SheetActionButton(
+                    key: const Key('category_sheet_archive_action'),
+                    icon: category.archived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                    label: category.archived ? 'Ripristina' : 'Archivia',
+                    onPressed: _toggleArchive,
                   ),
                 ],
               ),
@@ -1427,6 +1539,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
               ),
               const SizedBox(height: 12),
               Expanded(
+                key: const Key('category_sheet_movements_list'),
                 child: hasMovements
                     ? GroupedMovementsList(
                         movements: movements,
@@ -1452,6 +1565,31 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
 
   String _formatMoney(double value) =>
       '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+}
+
+class _SheetActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _SheetActionButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+    );
+  }
 }
 
 class _StatChip extends StatelessWidget {

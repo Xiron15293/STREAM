@@ -1595,3 +1595,48 @@ flutter test --no-pub    → 625/625 All tests passed
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
 - Nessun commit/push eseguito
+
+---
+
+# V0.8.4 — Interactive Category/Account Menus
+
+## Data test
+
+2026-06-10
+
+## Risultati verify
+
+```
+flutter analyze --no-pub → 0 issues
+flutter test --no-pub    → 627/627 All tests passed
+```
+
+## Cosa è stato verificato
+
+### Categoria
+- Tap categoria apre `category_interactive_sheet`
+- Header, riepilogo periodo, azioni e lista movimenti hanno key testabili
+- Azione Movimento apre `MovementPicker` con tipo categoria precompilato
+- Azioni Modifica e Archivia/Ripristina riusano logiche esistenti
+- Lista movimenti resta filtrata dal periodo e dai soli income/expense della categoria
+
+### Conto
+- Tap conto apre `account_interactive_sheet`
+- Header, saldo as-of, riepilogo periodo, azioni e lista movimenti hanno key testabili
+- Azione Movimento apre `MovementPicker` con conto precompilato
+- Azione Trasferisci apre `MovementPicker` in modalità transfer con conto origine precompilato
+- Saldo as-of V0.8.3 invariato
+- Conti archiviati restano consultabili; archiviazione disponibile sui conti attivi
+
+### Regressioni
+- Transfer esclusi da Entrate/Uscite/Bilancio globali
+- Transfer inclusi nei saldi conto origine/destinazione
+- Conti archiviati esclusi dal saldo disponibile
+- Calculator Pad ancora usato dai form importo tramite `MovementPicker`
+
+## Vincoli confermati
+
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push eseguito

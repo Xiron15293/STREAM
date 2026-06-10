@@ -25,8 +25,9 @@
 | Hermes V0.8.1 — Categories Layout Modes | Modello categoria, layout multipli, filtro Entrate/Uscite, KPI categorie | ✅ COMPLETATO |
 | Hermes V0.8.2 — Financial KPI Corrections | Transfer esclusi dai KPI globali, helper centralizzati, Dashboard corretta | ✅ COMPLETATO |
 | Hermes V0.8.3 — Date Filter Categories/Accounts | TimeFilter nelle schermate principali, saldo conto storico/as-of per periodo | ✅ COMPLETATO |
+| Hermes V0.8.4 — Interactive Category/Account Menus | Sheet operativi con azioni rapide e prefill movimento/transfer | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS — 0 issues |
-| `flutter test --no-pub` | — | ✅ 625/625 All tests passed |
+| `flutter test --no-pub` | — | ✅ 627/627 All tests passed |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -117,6 +118,25 @@
 - Nessuno skip aggiunto
 - Nessun commit/push eseguito
 
+**Hermes V0.8.4 — Interactive Category/Account Menus**
+
+### Cosa è stato completato
+- Sheet categoria interattivo con header, riepilogo periodo, azioni rapide e lista movimenti filtrata
+- Azioni categoria: Movimento, Modifica, Archivia/Ripristina
+- Movimento da categoria apre `MovementPicker` con categoria e tipo precompilati
+- Sheet conto interattivo con header, saldo storico/as-of, riepilogo periodo e lista movimenti filtrata
+- Azioni conto: Movimento, Trasferisci, Modifica, Archivia per conti attivi
+- Movimento/Trasferisci da conto aprono `MovementPicker` con conto origine precompilato
+- `MovementPicker` ora supporta `accountPreFill` e `initialType`
+
+### QA finale
+- `flutter analyze --no-pub`: PASS — 0 issues
+- `flutter test --no-pub`: **627/627 All tests passed**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push eseguito
+
 ---
 
 ## 3. Priorità Immediata (Prossima Sessione)
@@ -124,7 +144,7 @@
 Una volta ripresa la sessione:
 
 **Prima di nuove feature:**
-1. Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3
+1. Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3 + V0.8.4
 2. QA manuale Pixel/iPhone
 3. Build release APK/iOS aggiornate
 4. Eventuale fix minori UX emersi da QA manuale
@@ -151,6 +171,7 @@ Una volta ripresa la sessione:
 - Categories Layout Modes: preferenza `category_layout`, default `cleanList`, reset incluso in `PreferencesService.clearForReset()`
 - Financial KPI Corrections: Dashboard, database totals e riepiloghi giornalieri usano helper income/expense espliciti; i transfer restano neutrali sui KPI globali e attivi sui saldi conto
 - Date Filter Categories/Accounts: Categorie e Conti hanno `TimeFilterBar` nella schermata principale; nei Conti il saldo visibile è storico/as-of al termine del periodo selezionato
+- Interactive Category/Account Menus: restore conto non implementato perché non esiste una API esistente da riusare; archiviazione conto attivo disponibile
 
 ---
 
