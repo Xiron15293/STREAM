@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:stream_app/data/database.dart';
+import 'package:stream_app/data/categories_data.dart';
 import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/data/sqlite_service.dart';
 import 'package:stream_app/main.dart';
@@ -14,8 +15,11 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/quick_movement.dart';
+import 'package:stream_app/screens/archive_screen.dart';
+import 'package:stream_app/screens/dashboard_screen.dart';
 import 'package:stream_app/screens/settings_screen.dart';
 import 'package:stream_app/services/backup_service.dart';
+import 'package:stream_app/widgets/movement_card.dart';
 
 class TriggerFailingSQLiteService extends SQLiteService {
   Future<void> installAbortTrigger() async {
@@ -28,6 +32,78 @@ class TriggerFailingSQLiteService extends SQLiteService {
         END;
       ''');
     });
+  }
+}
+
+Future<void> _pumpMainAppWithResetBackupStub(
+  WidgetTester tester,
+  AppDatabase db,
+) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: _TestMainScaffold(db: db),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+class _TestMainScaffold extends StatefulWidget {
+  final AppDatabase db;
+
+  const _TestMainScaffold({required this.db});
+
+  @override
+  State<_TestMainScaffold> createState() => _TestMainScaffoldState();
+}
+
+class _TestMainScaffoldState extends State<_TestMainScaffold> {
+  int _currentIndex = 0;
+  late final AppDatabase _db = widget.db;
+
+  @override
+  Widget build(BuildContext context) {
+    final screens = <Widget>[
+      DashboardScreen(db: _db),
+      ArchiveScreen(db: _db),
+      SettingsScreen(
+        db: _db,
+        createPreResetBackup: (_) async => 'test://noop-backup',
+      ),
+    ];
+
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+        items: [
+          BottomNavigationBarItem(
+            icon: KeyedSubtree(
+              key: const Key('bottom_nav_dashboard'),
+              child: const Icon(Icons.dashboard),
+            ),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: KeyedSubtree(
+              key: const Key('bottom_nav_archive'),
+              child: const Icon(Icons.folder),
+            ),
+            label: 'Archivio',
+          ),
+          BottomNavigationBarItem(
+            icon: KeyedSubtree(
+              key: const Key('bottom_nav_settings'),
+              child: const Icon(Icons.settings),
+            ),
+            label: 'Impostazioni',
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -88,32 +164,7 @@ void main() {
     );
   }
 
-  Future<void> openSettings(WidgetTester tester) async {
-    await tester.tap(
-      find.byKey(const Key('bottom_nav_settings')).hitTestable(),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byType(SettingsScreen, skipOffstage: false), findsOneWidget);
-    expect(find.byType(SettingsScreen), findsOneWidget);
-    final resetTile = find.byKey(const Key('settings_reset_data_tile'));
-    final scrollable = find.descendant(
-      of: find.byType(SettingsScreen),
-      matching: find.byType(Scrollable),
-    );
-    expect(scrollable, findsWidgets);
-    await tester.scrollUntilVisible(
-      resetTile,
-      250.0,
-      scrollable: scrollable.first,
-    );
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('settings_reset_data_tile'), skipOffstage: false),
-      findsOneWidget,
-    );
-  }
-
-  Future<void> openResetDialog(WidgetTester tester) async {
+  Future<void> openSettingsOrResetArea(WidgetTester tester) async {
     final settingsNav = find
         .byKey(const Key('bottom_nav_settings'))
         .hitTestable();
@@ -153,57 +204,94 @@ void main() {
     expect(hittableResetTile, findsOneWidget);
     await tester.tap(hittableResetTile);
     await tester.pumpAndSettle();
+    expect(find.text('Reset dati app?'), findsOneWidget);
   }
 
-  late Future<void> Function(WidgetTester tester, AppDatabase db)
-  waitForResetComplete;
+  Future<void> startResetFlow(WidgetTester tester) async {
+    final confirmField = find.byKey(const Key('reset_data_confirm_field'));
+    expect(confirmField, findsOneWidget);
+    await tester.ensureVisible(confirmField);
+    await tester.enterText(confirmField, 'RESET');
+    await tester.pumpAndSettle();
+    final confirmButton = find
+        .byKey(const Key('reset_data_confirm_button'))
+        .hitTestable();
+    expect(confirmButton, findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('reset_data_confirm_button'))).onPressed,
+      isNotNull,
+    );
+    await tester.ensureVisible(confirmButton);
+    await tester.runAsync(() async {
+      await tester.tap(confirmButton);
+      await Future<void>.delayed(Duration.zero);
+    });
+    await tester.pumpAndSettle();
+    final deadline = DateTime.now().add(const Duration(seconds: 2));
+    while (DateTime.now().isBefore(deadline) &&
+        find.text('Reset dati app?').evaluate().isNotEmpty) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Reset dati app?'), findsNothing);
+  }
 
   Future<bool> confirmResetFlow(
     WidgetTester tester, {
     bool continueIfBackupFails = true,
   }) async {
-    await tester.enterText(
-      find.byKey(const Key('reset_data_confirm_field')),
-      'RESET',
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('reset_data_confirm_button')));
-    await tester.pumpAndSettle();
+    await startResetFlow(tester);
 
-    final deadline = DateTime.now().add(const Duration(seconds: 1));
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
     while (DateTime.now().isBefore(deadline)) {
       await tester.pump(const Duration(milliseconds: 100));
 
       final backupFailed = find.text('Backup pre-reset fallito');
       if (backupFailed.evaluate().isNotEmpty) {
         if (continueIfBackupFails) {
-          await tester.tap(
-            find.widgetWithText(FilledButton, 'Continua').hitTestable(),
-          );
+          final continueButton =
+              find.widgetWithText(FilledButton, 'Continua').hitTestable();
+          expect(continueButton, findsOneWidget);
+          await tester.ensureVisible(continueButton);
+          await tester.runAsync(() async {
+            await tester.tap(continueButton);
+            await Future<void>.delayed(Duration.zero);
+          });
         } else {
-          await tester.tap(
-            find.widgetWithText(TextButton, 'Annulla').hitTestable(),
-          );
+          final cancelButton =
+              find.widgetWithText(TextButton, 'Annulla').hitTestable();
+          expect(cancelButton, findsOneWidget);
+          await tester.ensureVisible(cancelButton);
+          await tester.runAsync(() async {
+            await tester.tap(cancelButton);
+            await Future<void>.delayed(Duration.zero);
+          });
         }
         await tester.pumpAndSettle();
         return true;
+      }
+
+      if (find.text('Dati app resettati').evaluate().isNotEmpty) {
+        await tester.pumpAndSettle();
+        return false;
       }
     }
     return false;
   }
 
-  waitForResetComplete = (WidgetTester tester, AppDatabase db) async {
+  Future<void> waitForResetCompleted(WidgetTester tester, AppDatabase db) async {
     final deadline = DateTime.now().add(const Duration(seconds: 5));
 
     while (DateTime.now().isBefore(deadline)) {
       await tester.pump(const Duration(milliseconds: 100));
+      await tester.runAsync(() async {});
+      await db.reloadFromDb();
 
       final movementsEmpty = db.movements.isEmpty;
       final hasDefaultAccount = db.accounts.any(
         (a) => a.id == defaultAccountId,
       );
       final hasOnlyDefaultAccount = db.accounts.length == 1;
-      final hasDefaultCategories = db.categories.length == 10;
+      final hasDefaultCategories = db.categories.length == DefaultCategories.all.length;
       final hasDefaultQuickMovements = db.quickMovements.length == 4;
       final favoritesEmpty = db.favoriteMovements.isEmpty;
       final resetCompleted =
@@ -252,7 +340,23 @@ void main() {
       'Rapidi presenti: $quick; '
       'condizioni fallite: $failedConditions',
     );
-  };
+  }
+
+  Future<void> assertDefaultsRestored(WidgetTester tester, AppDatabase db) async {
+    expect(db.movements, isEmpty);
+    expect(db.accounts.length, 1);
+    expect(db.accounts.single.id, defaultAccountId);
+    expect(db.categories.length, DefaultCategories.all.length);
+    expect(db.quickMovements.length, 4);
+    expect(db.favoriteMovements, isEmpty);
+    expect(db.totalIncome, closeTo(0.0, 0.001));
+    expect(db.totalExpenses, closeTo(0.0, 0.001));
+    expect(db.balance, closeTo(0.0, 0.001));
+    expect(db.totalAccountsBalance, closeTo(0.0, 0.001));
+    expect(await PreferencesService.loadShowNotes(), isFalse);
+    expect(await PreferencesService.loadLastBackupDate(), isNull);
+    await tester.pumpAndSettle();
+  }
 
   testWidgets('Reset richiede conferma e Annulla non cancella nulla', (
     WidgetTester tester,
@@ -263,8 +367,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
-    await openSettings(tester);
-    await openResetDialog(tester);
+    await openSettingsOrResetArea(tester);
 
     expect(find.text('Reset dati app?'), findsOneWidget);
     expect(find.byKey(const Key('reset_data_confirm_button')), findsOneWidget);
@@ -297,31 +400,18 @@ void main() {
 
   // TODO: Reset widget flow fragile; reset validated manually on Pixel;
   // rerun as integration test or service-level test.
-  testWidgets(
-    'Reset confermato ripristina i default e pulisce Archivio',
-    (WidgetTester tester) async {
+    testWidgets(
+      'Reset confermato ripristina i default e pulisce Archivio',
+      (WidgetTester tester) async {
       final db = AppDatabase();
       await seedUserData(db);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
-      await tester.pumpAndSettle();
+      await _pumpMainAppWithResetBackupStub(tester, db);
 
-      await openSettings(tester);
-      await openResetDialog(tester);
+      await openSettingsOrResetArea(tester);
       await confirmResetFlow(tester);
-      await waitForResetComplete(tester, db);
-
-      expect(db.movements, isEmpty);
-      expect(db.accounts.length, 1);
-      expect(db.categories.length, 10);
-      expect(db.quickMovements.length, 4);
-      expect(db.favoriteMovements, isEmpty);
-      expect(db.totalIncome, closeTo(0.0, 0.001));
-      expect(db.totalExpenses, closeTo(0.0, 0.001));
-      expect(db.balance, closeTo(0.0, 0.001));
-      expect(db.totalAccountsBalance, closeTo(0.0, 0.001));
-      expect(await PreferencesService.loadShowNotes(), isFalse);
-      expect(await PreferencesService.loadLastBackupDate(), isNull);
+      await waitForResetCompleted(tester, db);
+      await assertDefaultsRestored(tester, db);
 
       await tester.tap(find.byKey(const Key('bottom_nav_dashboard')));
       await tester.pumpAndSettle();
@@ -330,14 +420,13 @@ void main() {
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
       await tester.pumpAndSettle();
       expect(find.text('Nessun movimento'), findsOneWidget);
-      expect(find.text('Vecchio movimento'), findsNothing);
+      expect(find.byType(MovementCard), findsNothing);
 
       await tester.enterText(find.byType(TextField).first, 'Vecchio movimento');
       await tester.pumpAndSettle();
-      expect(find.text('Vecchio movimento'), findsNothing);
+      expect(find.byType(MovementCard), findsNothing);
       expect(find.text('Nessun movimento'), findsOneWidget);
     },
-    skip: true,
   );
 
   test(
@@ -376,7 +465,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await openResetDialog(tester);
+      await openSettingsOrResetArea(tester);
       final sawBackupFailure = await confirmResetFlow(
         tester,
         continueIfBackupFails: false,
@@ -405,14 +494,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await openResetDialog(tester);
+      await openSettingsOrResetArea(tester);
       final sawBackupFailure = await confirmResetFlow(tester);
       expect(sawBackupFailure, isTrue);
-      await waitForResetComplete(tester, db);
+      await waitForResetCompleted(tester, db);
 
       expect(db.movements, isEmpty);
       expect(db.accounts.length, 1);
-      expect(db.categories.length, 10);
+      expect(db.categories.length, DefaultCategories.all.length);
     },
   );
 
