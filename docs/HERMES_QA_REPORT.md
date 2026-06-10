@@ -1,6 +1,142 @@
 # HERMES QA REPORT
 
-> Contiene QA per Hermes V0.1 (conclusa), V0.2 (conclusa), V0.3.1 e V0.3.2 (COMPLETATO), V0.3.3 (COMPLETATO), V0.4 (COMPLETATO), V0.4.1 (COMPLETATO), V0.4.2 (COMPLETATO), V0.5.5 (COMPLETATO), V0.5.6 (COMPLETATO), MovementCard Refactor (COMPLETATO), Backup/Restore in Impostazioni (COMPLETATO), V0.6.0 QA Completa 500 scenari (COMPLETATO).
+> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes e V0.8.2 Financial KPI Corrections.
+
+---
+
+## Hermes V0.8.2 — Financial KPI Corrections ✅ COMPLETATO
+
+### Stato sintetico
+
+- Corretto il calcolo KPI globale di periodo in Dashboard
+- Root cause confermata: la Dashboard usava una logica `if income else expense`, quindi ogni movimento non-income, inclusi i trasferimenti, veniva sommato nelle uscite
+- I KPI globali ora usano solo il tipo esplicito del movimento:
+  - Entrate = solo `MovementType.income`
+  - Uscite = solo `MovementType.expense`
+  - Bilancio = Entrate - Uscite
+- I trasferimenti restano neutrali per:
+  - entrate globali
+  - uscite globali
+  - bilancio globale
+  - spese per categoria
+  - riepiloghi giornalieri income/expense
+- I trasferimenti restano invece attivi su:
+  - saldo conto origine
+  - saldo conto destinazione
+  - storico movimenti
+  - movimenti conto
+
+### Helper centralizzati
+
+- `Movement.isIncome`
+- `Movement.isExpense`
+- `Movement.isTransfer`
+- `sumIncome()`
+- `sumExpenses()`
+- `sumTransfers()`
+- `netIncomeExpense()`
+
+### Verifiche dataset reale
+
+- Giugno 2026:
+  - Entrate: `1142.52`
+  - Uscite: `328.08`
+  - Trasferimenti: `272.30`
+  - Bilancio corretto: `+814.44`
+  - Valore errato precedente evitato: uscite `600.38`
+- Maggio 2026:
+  - Entrate: `1447.97`
+  - Uscite: `2115.10`
+  - Trasferimenti: `1187.50`
+  - Bilancio corretto: `-667.13`
+  - Valore errato precedente evitato: uscite `3302.60`
+
+### Test aggiunti / aggiornati
+
+- KPI periodo con income `100`, expense `30`, transfer `50`
+- Dashboard giugno 2026 con transfer escluso dai KPI globali
+- Dashboard maggio 2026 con transfer escluso dai KPI globali
+- Spese per categoria ignorano transfer anche con `categoryId`
+- Riepiloghi giornalieri ignorano transfer in income/expense
+- Saldo conto con transfer ancora invariato su origine/destinazione
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: **PASS** — 0 issues
+- `flutter test --no-pub test/dashboard_after_delete_test.dart`: **PASS**
+- `flutter test --no-pub test/categories_layout_test.dart`: **PASS**
+- `flutter test --no-pub test/accounts_test.dart`: **PASS**
+- `flutter test --no-pub test/qa_extensive_test.dart`: **PASS**
+- `flutter test --no-pub test/dashboard_filtered_test.dart`: **PASS** — 42/42
+- `flutter test --no-pub`: **PASS** — 619/619 test verdi
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+---
+
+## Hermes V0.8.1 — Categories Layout Modes ✅ COMPLETATO
+
+### Stato sintetico
+
+- Aggiunta preferenza visuale per la schermata Categorie
+- Percorso impostazione: `Impostazioni > Aspetto > Modello categoria`
+- Preferenza persistente `category_layout` via SharedPreferences
+- `categoryLayoutNotifier` aggiorna la UI in tempo reale
+- Default: `cleanList`
+
+### Layout disponibili
+
+- `Lista pulita`
+  - layout minimal e compatto
+  - icona piccola
+  - padding ridotto
+  - nessun contenitore pesante
+- `Lista grouped`
+  - layout a sezioni
+  - gruppi distinti
+  - header visibili
+  - chiavi testabili per top/attive/archiviate
+- `Card Stream`
+  - card premium
+  - padding ampio
+  - bordo visibile
+  - icona più evidente
+  - grid/list coerente con Stream
+
+### Categorie
+
+- Filtro superiore `[ Uscite | Entrate ]`
+- Default: `Uscite`
+- Categorie archiviate filtrate per tipo
+- FAB nuova categoria precompila il tipo dal filtro attivo
+- KPI riepilogo categorie con key testabili:
+  - `categories_type_summary_card`
+  - `categories_summary_title`
+  - `categories_summary_active_count`
+  - `categories_summary_archived_count`
+
+### Conti archiviati e saldo disponibile
+
+- Saldo disponibile / operativo = somma dei soli conti non archiviati
+- Conti archiviati esclusi dal saldo disponibile
+- Conti archiviati ancora visibili nell'Archivio
+- Movimenti storici dei conti archiviati ancora consultabili
+- Saldo attuale conto resta derivato da:
+  - `initialBalance + entrate - uscite + trasferimenti netti`
+- Nessun campo saldo attuale indipendente
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: **PASS** — 0 issues
+- `test/categories_layout_test.dart`: **PASS**
+- `test/categories_navigation_test.dart`: **PASS**
+- `test/accounts_test.dart`: **PASS**
+- `test/accounts_navigation_test.dart`: **PASS**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
 
 ---
 

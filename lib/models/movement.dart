@@ -26,12 +26,17 @@ class Movement {
     this.note,
     required this.createdAt,
     DateTime? updatedAt,
-  })  : accountId = accountId ?? defaultAccountId,
-        updatedAt = updatedAt ?? createdAt;
+  }) : accountId = accountId ?? defaultAccountId,
+       updatedAt = updatedAt ?? createdAt;
 
   /// Orders by updatedAt desc → createdAt desc → id asc.
   /// categoryId, type, amount, title do NOT affect order.
-  int compareForDisplay(Movement other) => compareMovementsForDisplay(this, other);
+  int compareForDisplay(Movement other) =>
+      compareMovementsForDisplay(this, other);
+
+  bool get isIncome => type == MovementType.income;
+  bool get isExpense => type == MovementType.expense;
+  bool get isTransfer => type == MovementType.transfer;
 
   Movement copyWith({
     String? id,
@@ -74,6 +79,28 @@ class Movement {
         return impact;
     }
   }
+}
+
+double sumIncome(Iterable<Movement> movements) {
+  return movements
+      .where((m) => m.isIncome)
+      .fold<double>(0.0, (sum, m) => sum + m.amount);
+}
+
+double sumExpenses(Iterable<Movement> movements) {
+  return movements
+      .where((m) => m.isExpense)
+      .fold<double>(0.0, (sum, m) => sum + m.amount);
+}
+
+double sumTransfers(Iterable<Movement> movements) {
+  return movements
+      .where((m) => m.isTransfer)
+      .fold<double>(0.0, (sum, m) => sum + m.amount);
+}
+
+double netIncomeExpense(Iterable<Movement> movements) {
+  return sumIncome(movements) - sumExpenses(movements);
 }
 
 /// Shared comparator for all Movement display lists.

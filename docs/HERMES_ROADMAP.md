@@ -39,15 +39,18 @@
 | V0.7.0 | Import CSV 1Money + Saldo Iniziale + Archivio Navigabile | ✅ COMPLETATO | 2026-06-09 |
 | V0.7.1 | QA Reset Stabilizzato | ✅ COMPLETATO | 2026-06-09 |
 | V0.8.0 | Calculator Pad | ✅ COMPLETATO | 2026-06-10 |
+| V0.8.1 | Categories Layout Modes | ✅ COMPLETATO | 2026-06-10 |
+| V0.8.2 | Financial KPI Corrections | ✅ COMPLETATO | 2026-06-10 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.9.0 | Trasferimenti tra Conti | 📋 APPROVATA |
-| V0.9.1 | Calendar Heatmap | 💡 IDEA |
-| V0.9.2 | Fondi / Obiettivi | 💡 IDEA |
-| V0.9.3 | Beneficiario + Etichette | 💡 IDEA |
+| V0.9.0 | Global Tap-to-Edit Movement | 📋 CONSIGLIATA |
+| V0.9.1 | Movimenti: Vista Calendario | 📋 CONSIGLIATA |
+| V0.9.2 | Calendar Heatmap | 💡 IDEA |
+| V0.9.3 | Fondi / Obiettivi | 💡 IDEA |
+| V0.9.4 | Beneficiario + Etichette | 💡 IDEA |
 | V1.0 | Prima Beta STREAM | ⏳ PIANIFICATA |
 | V1.0+ | Adaptive / Tablet Layout | 💡 IDEA |
 | V1.0+ | Cloud Sync (backup premium, multi-dispositivo) | 💡 IDEA |
@@ -60,10 +63,11 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 | Versione | Focus |
 |----------|-------|
-| V0.9.0 | Trasferimenti tra Conti (📋) — saldo duale, backup compatibile |
-| V0.9.1 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
-| V0.9.2 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
-| V0.9.3 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
+| V0.9.0 | Global Tap-to-Edit Movement (📋) — modifica movimento da ogni lista/dettaglio |
+| V0.9.1 | Movimenti: Vista Calendario (📋) — navigazione calendario dei movimenti |
+| V0.9.2 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
+| V0.9.3 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
+| V0.9.4 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
 | V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
 | V1.0+ | Cloud Sync (💡) — backup premium, multi-dispositivo |
@@ -73,6 +77,94 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 ---
 
 ## Dettaglio feature per versione
+
+### V0.8.2 — Financial KPI Corrections ✅
+
+> **Interventi**: transfer esclusi dai KPI globali, helper centralizzati income/expense/transfer, Dashboard corretta
+> **Test**: 619/619 test pass | `flutter analyze` 0 issues
+
+**Cosa è stato fatto:**
+- Dashboard non usa più `if income else expense`
+- Entrate globali = solo `MovementType.income`
+- Uscite globali = solo `MovementType.expense`
+- Bilancio globale = Entrate - Uscite
+- Transfer esclusi da Entrate/Uscite/Bilancio globali
+- Spese per categoria = solo `expense`
+- Riepiloghi giornalieri = solo `income` / `expense`
+- Saldo conto invariato:
+  - transfer sottrae dal conto origine
+  - transfer aggiunge al conto destinazione
+
+**Helper centralizzati in `movement.dart`:**
+- `isIncome`
+- `isExpense`
+- `isTransfer`
+- `sumIncome`
+- `sumExpenses`
+- `sumTransfers`
+- `netIncomeExpense`
+
+**Confini rispettati:**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+---
+
+### V0.8.1 — Categories Layout Modes ✅
+
+> **Interventi**: modello categoria in Impostazioni, tre layout categorie, filtro Entrate/Uscite, KPI categorie, saldo disponibile corretto
+
+**Cosa è stato fatto:**
+- `Impostazioni > Aspetto > Modello categoria`
+- Preferenza persistente `category_layout`
+- Default `cleanList`
+- `categoryLayoutNotifier` per refresh UI
+- Layout:
+  - Lista pulita
+  - Lista grouped
+  - Card Stream
+- Filtro categorie `[ Uscite | Entrate ]`
+- Categorie archiviate filtrate per tipo
+- FAB categoria precompila il tipo in base al filtro
+- KPI riepilogo categorie con key testabili
+- Layout differenziati visivamente
+
+**Fix conti archiviati:**
+- Saldo disponibile = somma solo conti non archiviati
+- Conti archiviati esclusi dal saldo disponibile
+- Conti archiviati restano consultabili nell'Archivio
+- Movimenti storici dei conti archiviati restano consultabili
+- Saldo attuale resta derivato da `initialBalance + movimenti netti`
+
+---
+
+### V0.8.0 — Calculator Pad ✅
+
+> **Interventi**: CalculatorAmountField riusabile, pad importi custom, tastiera numerica nativa bloccata, test helper dedicati
+
+**Cosa è stato fatto:**
+- `CalculatorAmountField` riusabile
+- `AmountExpressionEvaluator` senza `eval`
+- Supporto operatori `+`, `-`, `*`, `/`, `:`, `=`
+- Decimali e virgola decimale
+- Backspace, clear, `Fatto`
+- Nessuna tastiera numerica nativa sui campi importo
+- Integrazione su:
+  - movimento manuale
+  - modifica movimento
+  - trasferimento manuale
+  - rapidi
+  - preferiti
+  - saldo iniziale conto
+
+**Test:**
+- Helper in `test/helpers/calculator_test_helpers.dart`
+- Test legacy aggiornati da `tester.enterText` a helper Calculator Pad
+- Nessuno skip e nessun indebolimento assert
+
+---
 
 ### V0.6.2 — Ordinamento Centralizzato + Fix Gruppi Giorno ✅
 

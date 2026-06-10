@@ -138,18 +138,14 @@ class AppDatabase extends ChangeNotifier {
   }
 
   double get totalIncome {
-    return _movements
-        .where((m) => m.type == MovementType.income)
-        .fold(0.0, (sum, m) => sum + m.amount);
+    return sumIncome(_movements);
   }
 
   double get totalExpenses {
-    return _movements
-        .where((m) => m.type == MovementType.expense)
-        .fold(0.0, (sum, m) => sum + m.amount);
+    return sumExpenses(_movements);
   }
 
-  double get balance => totalIncome - totalExpenses;
+  double get balance => netIncomeExpense(_movements);
 
   Future<void> addMovement(Movement movement) async {
     if (_sqlite != null) {

@@ -5,6 +5,7 @@ import 'package:stream_app/data/database.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/account.dart';
+import 'package:stream_app/models/daily_group.dart';
 import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/models/quick_movement.dart';
 import 'package:stream_app/models/favorite_movement.dart';
@@ -140,63 +141,177 @@ void main() {
       expect(db.balance, 300);
     });
 
-    test('1.4b Transfer non altera KPI entrate/spese e resta neutro sul saldo', () {
-      db.addAccount(
-        Account(
-          id: 'acc_dest',
-          name: 'Destinazione',
-          type: AccountType.bank,
-          createdAt: now,
-        ),
-      );
-      db.addMovement(
-        Movement(
-          id: 'm1',
-          title: 'Income',
-          amount: 500,
-          type: MovementType.income,
-          date: now,
-          categoryId: 'inc_1',
-          createdAt: now,
-        ),
-      );
-      db.addMovement(
-        Movement(
-          id: 'tr1',
-          title: 'Transfer',
-          amount: 120,
-          type: MovementType.transfer,
-          date: now,
-          categoryId: '',
-          accountId: defaultAccountId,
-          destinationAccountId: 'acc_dest',
-          createdAt: now,
-        ),
-      );
-      db.addMovement(
-        Movement(
-          id: 'm2',
-          title: 'Expense',
-          amount: 200,
-          type: MovementType.expense,
-          date: now,
-          categoryId: 'exp_1',
-          createdAt: now,
-        ),
-      );
+    test(
+      '1.4b Transfer non altera KPI entrate/spese e resta neutro sul saldo',
+      () {
+        db.addAccount(
+          Account(
+            id: 'acc_dest',
+            name: 'Destinazione',
+            type: AccountType.bank,
+            createdAt: now,
+          ),
+        );
+        db.addMovement(
+          Movement(
+            id: 'm1',
+            title: 'Income',
+            amount: 500,
+            type: MovementType.income,
+            date: now,
+            categoryId: 'inc_1',
+            createdAt: now,
+          ),
+        );
+        db.addMovement(
+          Movement(
+            id: 'tr1',
+            title: 'Transfer',
+            amount: 120,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: '',
+            accountId: defaultAccountId,
+            destinationAccountId: 'acc_dest',
+            createdAt: now,
+          ),
+        );
+        db.addMovement(
+          Movement(
+            id: 'm2',
+            title: 'Expense',
+            amount: 200,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
 
-      final filter = TimeFilter.month(now.year, now.month);
-      final filtered = db.movements.filterByTime(filter);
-      final income = filtered.where((m) => m.type == MovementType.income).fold<double>(0, (sum, m) => sum + m.amount);
-      final expenses = filtered.where((m) => m.type == MovementType.expense).fold<double>(0, (sum, m) => sum + m.amount);
-      final transferCount = filtered.where((m) => m.type == MovementType.transfer).length;
+        final filter = TimeFilter.month(now.year, now.month);
+        final filtered = db.movements.filterByTime(filter);
+        final income = filtered
+            .where((m) => m.type == MovementType.income)
+            .fold<double>(0, (sum, m) => sum + m.amount);
+        final expenses = filtered
+            .where((m) => m.type == MovementType.expense)
+            .fold<double>(0, (sum, m) => sum + m.amount);
+        final transferCount = filtered
+            .where((m) => m.type == MovementType.transfer)
+            .length;
 
-      expect(income, 500);
-      expect(expenses, 200);
-      expect(transferCount, 1);
-      expect(db.balance, 300);
-      expect(db.totalAccountsBalance, 300);
-    });
+        expect(income, 500);
+        expect(expenses, 200);
+        expect(transferCount, 1);
+        expect(db.balance, 300);
+        expect(db.totalAccountsBalance, 300);
+      },
+    );
+
+    test(
+      '1.4c KPI periodo usano solo income/expense e ignorano transfer',
+      () async {
+        await db.addAccount(
+          Account(
+            id: 'acc_dest',
+            name: 'Destinazione',
+            type: AccountType.bank,
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'income_100',
+            title: 'Income',
+            amount: 100,
+            type: MovementType.income,
+            date: now,
+            categoryId: 'inc_1',
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'expense_30',
+            title: 'Expense',
+            amount: 30,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'transfer_50',
+            title: 'Transfer',
+            amount: 50,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: '',
+            accountId: defaultAccountId,
+            destinationAccountId: 'acc_dest',
+            createdAt: now,
+          ),
+        );
+
+        final filtered = db.movements.filterByTime(
+          TimeFilter.month(now.year, now.month),
+        );
+
+        expect(sumIncome(filtered), 100);
+        expect(sumExpenses(filtered), 30);
+        expect(sumTransfers(filtered), 50);
+        expect(netIncomeExpense(filtered), 70);
+        expect(db.balance, 70);
+      },
+    );
+
+    test(
+      '1.4d Riepilogo giornaliero non somma transfer in entrate/uscite',
+      () async {
+        await db.addMovement(
+          Movement(
+            id: 'income_day',
+            title: 'Income',
+            amount: 100,
+            type: MovementType.income,
+            date: now,
+            categoryId: 'inc_1',
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'expense_day',
+            title: 'Expense',
+            amount: 30,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'transfer_day',
+            title: 'Transfer',
+            amount: 50,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: '',
+            createdAt: now,
+          ),
+        );
+
+        final group = groupMovementsByDay(db.movements).single;
+
+        expect(group.totalIncome, 100);
+        expect(group.totalExpenses, 30);
+        expect(group.balance, 70);
+        expect(group.movements.where((m) => m.isTransfer), hasLength(1));
+      },
+    );
 
     test('1.5 Cambio giorno: KPI filtrati correttamente', () {
       final yesterday = DateTime(now.year, now.month, now.day - 1);
@@ -467,6 +582,124 @@ void main() {
       expect(find.textContaining('800.00 €'), findsWidgets);
     });
 
+    testWidgets('2.2b Dashboard giugno 2026 esclude transfer dai KPI', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      final june = DateTime(2026, 6, 10);
+
+      await db.addAccount(
+        Account(
+          id: 'acc_dest_june',
+          name: 'Destinazione giugno',
+          type: AccountType.bank,
+          createdAt: june,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'june_income',
+          title: 'Entrate giugno',
+          amount: 1142.52,
+          type: MovementType.income,
+          date: june,
+          categoryId: 'inc_1',
+          createdAt: june,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'june_expense',
+          title: 'Spese giugno',
+          amount: 328.08,
+          type: MovementType.expense,
+          date: june,
+          categoryId: 'exp_1',
+          createdAt: june,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'june_transfer',
+          title: 'Transfer giugno',
+          amount: 272.30,
+          type: MovementType.transfer,
+          date: june,
+          categoryId: '',
+          accountId: defaultAccountId,
+          destinationAccountId: 'acc_dest_june',
+          createdAt: june,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+      expect(find.text('1142.52 €'), findsOneWidget);
+      expect(find.text('328.08 €'), findsWidgets);
+      expect(find.text('+814.44 €'), findsWidgets);
+      expect(find.text('600.38 €'), findsNothing);
+    });
+
+    testWidgets('2.2c Dashboard maggio 2026 esclude transfer dai KPI', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      final may = DateTime(2026, 5, 10);
+
+      await db.addAccount(
+        Account(
+          id: 'acc_dest_may',
+          name: 'Destinazione maggio',
+          type: AccountType.bank,
+          createdAt: may,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'may_income',
+          title: 'Entrate maggio',
+          amount: 1447.97,
+          type: MovementType.income,
+          date: may,
+          categoryId: 'inc_1',
+          createdAt: may,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'may_expense',
+          title: 'Spese maggio',
+          amount: 2115.10,
+          type: MovementType.expense,
+          date: may,
+          categoryId: 'exp_1',
+          createdAt: may,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'may_transfer',
+          title: 'Transfer maggio',
+          amount: 1187.50,
+          type: MovementType.transfer,
+          date: may,
+          categoryId: '',
+          accountId: defaultAccountId,
+          destinationAccountId: 'acc_dest_may',
+          createdAt: may,
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.tap(find.byTooltip('Precedente'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1447.97 €'), findsOneWidget);
+      expect(find.text('2115.10 €'), findsWidgets);
+      expect(find.text('-667.13 €'), findsWidgets);
+      expect(find.text('3302.60 €'), findsNothing);
+    });
+
     testWidgets('2.3 Empty state when no expenses in selected period', (
       tester,
     ) async {
@@ -533,35 +766,71 @@ void main() {
       expect(firstExpense.dy, lessThan(secondExpense.dy));
     });
 
-    testWidgets('2.5 Dashboard non mostra più lista movimenti (rimossa V0.6.1)', (
-      tester,
-    ) async {
-      final db = AppDatabase();
-      final now = DateTime.now();
+    testWidgets(
+      '2.4b Category expenses exclude transfers even with categoryId',
+      (tester) async {
+        final db = AppDatabase();
+        final now = DateTime.now();
 
-      db.addMovement(
-        Movement(
-          id: 'in_period',
-          title: 'Movimento nel periodo',
-          amount: 150.0,
-          type: MovementType.expense,
-          date: now,
-          categoryId: 'exp_1',
-          createdAt: now,
-        ),
-      );
+        await db.addMovement(
+          Movement(
+            id: 'expense_food',
+            title: 'Spesa',
+            amount: 30,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'transfer_with_category',
+            title: 'Transfer con categoryId',
+            amount: 50,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
-      // Dashboard must NOT show a flat movement list
-      expect(find.text('Movimenti del periodo'), findsNothing);
-      // Dashboard still shows KPI and categories
-      expect(find.text('Spese per categoria'), findsOneWidget);
-    });
+        expect(find.text('30.00 €'), findsWidgets);
+        expect(find.text('80.00 €'), findsNothing);
+        expect(find.text('Transfer con categoryId'), findsNothing);
+      },
+    );
 
-    testWidgets('2.6 Dashboard empty period — no KPI crash', (
-      tester,
-    ) async {
+    testWidgets(
+      '2.5 Dashboard non mostra più lista movimenti (rimossa V0.6.1)',
+      (tester) async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        db.addMovement(
+          Movement(
+            id: 'in_period',
+            title: 'Movimento nel periodo',
+            amount: 150.0,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            createdAt: now,
+          ),
+        );
+
+        await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+
+        // Dashboard must NOT show a flat movement list
+        expect(find.text('Movimenti del periodo'), findsNothing);
+        // Dashboard still shows KPI and categories
+        expect(find.text('Spese per categoria'), findsOneWidget);
+      },
+    );
+
+    testWidgets('2.6 Dashboard empty period — no KPI crash', (tester) async {
       final db = AppDatabase();
       final prev = DateTime.now().subtract(const Duration(days: 60));
 
@@ -584,7 +853,9 @@ void main() {
       expect(find.text('Vecchio'), findsNothing);
     });
 
-    testWidgets('2.7 Dashboard con 25 movimenti — nessuna lista movimenti', (tester) async {
+    testWidgets('2.7 Dashboard con 25 movimenti — nessuna lista movimenti', (
+      tester,
+    ) async {
       final db = AppDatabase();
       final now = DateTime.now();
 
@@ -610,7 +881,9 @@ void main() {
       expect(find.text('25'), findsOneWidget);
     });
 
-    testWidgets('2.8 TimeFilter changes update KPI only (no movement list)', (tester) async {
+    testWidgets('2.8 TimeFilter changes update KPI only (no movement list)', (
+      tester,
+    ) async {
       final db = AppDatabase();
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
@@ -648,23 +921,24 @@ void main() {
   });
 
   group('3. Intervallo picker', () {
-    testWidgets('3.1 Intervallo segmented button exists and opens bottom sheet', (
-      tester,
-    ) async {
-      final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+    testWidgets(
+      '3.1 Intervallo segmented button exists and opens bottom sheet',
+      (tester) async {
+        final db = AppDatabase();
+        await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
 
-      expect(find.text('Intervallo'), findsOneWidget);
-      await tester.tap(find.text('Intervallo'));
-      await tester.pumpAndSettle();
+        expect(find.text('Intervallo'), findsOneWidget);
+        await tester.tap(find.text('Intervallo'));
+        await tester.pumpAndSettle();
 
-      // Bottom sheet must show Da/A cards
-      expect(find.text('Seleziona intervallo'), findsOneWidget);
-      expect(find.text('Da'), findsOneWidget);
-      expect(find.text('A'), findsOneWidget);
-      expect(find.text('Annulla'), findsOneWidget);
-      expect(find.text('Applica'), findsOneWidget);
-    });
+        // Bottom sheet must show Da/A cards
+        expect(find.text('Seleziona intervallo'), findsOneWidget);
+        expect(find.text('Da'), findsOneWidget);
+        expect(find.text('A'), findsOneWidget);
+        expect(find.text('Annulla'), findsOneWidget);
+        expect(find.text('Applica'), findsOneWidget);
+      },
+    );
 
     testWidgets('3.2 Annulla non modifica il filtro attivo', (tester) async {
       final db = AppDatabase();
@@ -728,7 +1002,9 @@ void main() {
   });
 
   group('4. Category detail and quick-add', () {
-    testWidgets('4.1 Category expense row shows name and amount', (tester) async {
+    testWidgets('4.1 Category expense row shows name and amount', (
+      tester,
+    ) async {
       final db = AppDatabase();
       final now = DateTime.now();
       db.addMovement(
@@ -884,53 +1160,59 @@ void main() {
       expect(qm.categoryId, catId);
     });
 
-    test('5.4 Favorite movements preserve categoryId after category rename', () {
-      final db = AppDatabase();
-      final catId = 'inc_1';
+    test(
+      '5.4 Favorite movements preserve categoryId after category rename',
+      () {
+        final db = AppDatabase();
+        final catId = 'inc_1';
 
-      // Add a favorite movement
-      db.addFavoriteMovement(
-        FavoriteMovement(
-          id: 'fm_test',
-          title: 'Test Preferito',
-          amount: 1000,
-          type: MovementType.income,
-          categoryId: catId,
-        ),
-      );
-
-      // Rename the category
-      final cat = db.categories.firstWhere((c) => c.id == catId);
-      db.updateCategory(cat.id, 'Nuovo Stipendio', cat.color);
-
-      // Favorite should still reference the same category
-      final fm = db.favoriteMovements.firstWhere((f) => f.id == 'fm_test');
-      expect(fm.categoryId, catId);
-    });
-
-    test('5.5 Suggestion threshold: 5 identical movements trigger suggestion', () {
-      final db = AppDatabase();
-      final now = DateTime.now();
-
-      // Add 5 identical movements
-      for (int i = 0; i < 5; i++) {
-        db.addMovement(
-          Movement(
-            id: 'sug_$i',
-            title: 'Caffè',
-            amount: 1.50,
-            type: MovementType.expense,
-            date: now,
-            categoryId: 'exp_4',
-            createdAt: now,
+        // Add a favorite movement
+        db.addFavoriteMovement(
+          FavoriteMovement(
+            id: 'fm_test',
+            title: 'Test Preferito',
+            amount: 1000,
+            type: MovementType.income,
+            categoryId: catId,
           ),
         );
-      }
 
-      final suggestions = db.getSuggestions();
-      expect(suggestions.length, 1);
-      expect(suggestions.first.title, 'Caffè');
-    });
+        // Rename the category
+        final cat = db.categories.firstWhere((c) => c.id == catId);
+        db.updateCategory(cat.id, 'Nuovo Stipendio', cat.color);
+
+        // Favorite should still reference the same category
+        final fm = db.favoriteMovements.firstWhere((f) => f.id == 'fm_test');
+        expect(fm.categoryId, catId);
+      },
+    );
+
+    test(
+      '5.5 Suggestion threshold: 5 identical movements trigger suggestion',
+      () {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        // Add 5 identical movements
+        for (int i = 0; i < 5; i++) {
+          db.addMovement(
+            Movement(
+              id: 'sug_$i',
+              title: 'Caffè',
+              amount: 1.50,
+              type: MovementType.expense,
+              date: now,
+              categoryId: 'exp_4',
+              createdAt: now,
+            ),
+          );
+        }
+
+        final suggestions = db.getSuggestions();
+        expect(suggestions.length, 1);
+        expect(suggestions.first.title, 'Caffè');
+      },
+    );
 
     test('5.6 Suggestion threshold: 4 identical movements do NOT trigger', () {
       final db = AppDatabase();
@@ -1063,8 +1345,11 @@ void main() {
       final filter = TimeFilter.month(now.year, now.month);
       db.movements.filterByTime(filter);
 
-      expect(db.totalAccountsBalance, patrimonio,
-          reason: 'Patrimonio NON deve cambiare col filtro');
+      expect(
+        db.totalAccountsBalance,
+        patrimonio,
+        reason: 'Patrimonio NON deve cambiare col filtro',
+      );
     });
 
     test('6.3 Filtro custom range su 1000 movimenti', () {

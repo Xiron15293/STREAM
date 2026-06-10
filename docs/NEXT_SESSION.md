@@ -22,10 +22,12 @@
 | Hermes V0.7.0 — Import CSV 1Money + Saldo Iniziale + Archivio Navigabile | Import CSV validato, saldo iniziale conti, conti/categorie cliccabili | ✅ COMPLETATO |
 | Hermes V0.7.1 — QA Reset Stabilizzato | Test reset ripristinati e verdi | ✅ COMPLETATO |
 | Hermes V0.8.0 — Calculator Pad | AmountExpressionEvaluator, CalculatorAmountField, fix tastiera nativa | ✅ COMPLETATO |
+| Hermes V0.8.1 — Categories Layout Modes | Modello categoria, layout multipli, filtro Entrate/Uscite, KPI categorie | ✅ COMPLETATO |
+| Hermes V0.8.2 — Financial KPI Corrections | Transfer esclusi dai KPI globali, helper centralizzati, Dashboard corretta | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS — 0 issues |
-| `flutter test --no-pub` | — | ✅ 579/579 All tests passed |
-| `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente (con Calculator Pad) |
-| `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente (con Calculator Pad) |
+| `flutter test --no-pub` | — | ✅ 619/619 All tests passed |
+| `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
+| `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
 ---
 
@@ -48,25 +50,64 @@
 
 ### QA
 - `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **579/579 All tests passed**
+- `flutter test --no-pub`: PASS
 - 49 test legacy aggiornati per usare Calculator Pad al posto di `enterText`
+
+**Hermes V0.8.1 — Categories Layout Modes**
+
+### Cosa è stato completato
+- `Impostazioni > Aspetto > Modello categoria`
+- Layout categorie:
+  - Lista pulita
+  - Lista grouped
+  - Card Stream
+- Filtro `[ Uscite | Entrate ]` nella schermata Categorie
+- KPI riepilogo categorie con key testabili
+- FAB categoria precompilato in base al filtro attivo
+- Layout differenziati visivamente
+- Conti archiviati esclusi dal saldo disponibile
+- Saldo attuale conto resta derivato da `initialBalance + movimenti netti`
+
+**Hermes V0.8.2 — Financial KPI Corrections**
+
+### Cosa è stato completato
+- Transfer esclusi da Entrate/Uscite/Bilancio globali
+- Dashboard corretta: rimossa la logica `if income else expense`
+- Helper centralizzati in `movement.dart`:
+  - `isIncome`
+  - `isExpense`
+  - `isTransfer`
+  - `sumIncome`
+  - `sumExpenses`
+  - `sumTransfers`
+  - `netIncomeExpense`
+- Spese per categoria = solo `expense`
+- Riepiloghi giornalieri = solo `income` / `expense`
+- Saldo conto invariato: transfer ancora inclusi su origine/destinazione
+
+### QA finale
+- `flutter analyze --no-pub`: PASS — 0 issues
+- `flutter test --no-pub`: **619/619 All tests passed**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push eseguito
 
 ---
 
 ## 3. Priorità Immediata (Prossima Sessione)
 
-Una volta effettuato commit e push di V0.8.0:
+Una volta ripresa la sessione:
 
 **Prima di nuove feature:**
-1. QA manuale Calculator Pad su Pixel/iPhone
-2. Build release APK/iOS aggiornate
-3. Eventuale fix minori UX emersi da QA manuale
+1. Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2
+2. QA manuale Pixel/iPhone
+3. Build release APK/iOS aggiornate
+4. Eventuale fix minori UX emersi da QA manuale
 
 **Prossimo sprint prodotto (scegliere):**
-- 💰 **Trasferimenti tra Conti** (V0.9.0 — 📋 approvata)
-- 🗺️ **Calendar Heatmap** (V0.9.1 — 💡 idea)
-- 🎯 **Fondi / Obiettivi** (V0.9.2 — 💡 idea)
-- 🏷️ **Beneficiario + Etichette** (V0.9.3 — 💡 idea)
+- ✏️ **Global Tap-to-Edit Movement**
+- 🗓️ **Movimenti: Vista Calendario**
 
 ---
 
@@ -83,13 +124,16 @@ Una volta effettuato commit e push di V0.8.0:
 - Archivio > Categorie: la vista `Movimenti categoria` è stata aggiunta e usa `TimeFilter` + `GroupedMovementsList`
 - Conti e categorie archiviate sono consultabili e cliccabili in sezioni separate (`Archiviati`)
 - Reset widget flow: `reset_data_test.dart` e `qa_extensive_test.dart` sono verdi; `C2`, `F2`, `F3`, `L1` stabilizzati tramite flusso UI reale con backup pre-reset stub nel test harness dove necessario
+- Categories Layout Modes: preferenza `category_layout`, default `cleanList`, reset incluso in `PreferencesService.clearForReset()`
+- Financial KPI Corrections: Dashboard, database totals e riepiloghi giornalieri usano helper income/expense espliciti; i transfer restano neutrali sui KPI globali e attivi sui saldi conto
 
 ---
 
 ## 5. Handoff Rapido
 
 Quando si riparte:
-- verificare che i dati di test siano puliti prima della sessione
-- riprendere dalla pianificazione Calculator Pad
+- verificare stato git e preparare commit/push finale
+- eseguire QA manuale Pixel/iPhone
+- rilanciare build release APK/iOS
 - mantenere Dashboard insight-only
-- non introdurre nuove feature fuori priorità senza allineamento
+- scegliere il prossimo sprint tra Global Tap-to-Edit Movement e Movimenti: Vista Calendario

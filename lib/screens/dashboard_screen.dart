@@ -72,22 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? allMovements.filterByTime(previousFilter)
               : <Movement>[];
 
-          double filteredIncome = 0;
-          double filteredExpenses = 0;
-          double previousExpenses = 0;
-          for (final m in filteredMovements) {
-            if (m.type == MovementType.income) {
-              filteredIncome += m.amount;
-            } else {
-              filteredExpenses += m.amount;
-            }
-          }
-          for (final m in previousMovements) {
-            if (m.type == MovementType.expense) {
-              previousExpenses += m.amount;
-            }
-          }
-          final filteredBalance = filteredIncome - filteredExpenses;
+          final filteredIncome = sumIncome(filteredMovements);
+          final filteredExpenses = sumExpenses(filteredMovements);
+          final previousExpenses = sumExpenses(previousMovements);
+          final filteredBalance = netIncomeExpense(filteredMovements);
           final filteredCount = filteredMovements.length;
           final accountsBalance = widget.db.totalAccountsBalance;
           final activeAccounts = widget.db.accounts
@@ -129,11 +117,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 items: categoryExpenses,
                 totalExpenses: filteredExpenses,
                 db: widget.db,
-                onCategoryTap: (item) => _showCategoryDetail(
-                  context,
-                  item,
-                  filteredMovements,
-                ),
+                onCategoryTap: (item) =>
+                    _showCategoryDetail(context, item, filteredMovements),
               ),
             ],
           );
@@ -264,7 +249,7 @@ List<_CategoryExpense> _buildCategoryExpenses(
 ) {
   final totalsByCategory = <String, double>{};
   for (final movement in movements) {
-    if (movement.type != MovementType.expense) continue;
+    if (!movement.isExpense) continue;
     totalsByCategory.update(
       movement.categoryId,
       (value) => value + movement.amount,
@@ -315,10 +300,7 @@ class _CategoryExpensesSection extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => MovementPicker(
-        db: db,
-        categoryPreFill: item.categoryId,
-      ),
+      builder: (_) => MovementPicker(db: db, categoryPreFill: item.categoryId),
     );
   }
 
@@ -347,15 +329,15 @@ class _CategoryExpensesSection extends StatelessWidget {
             child: Column(
               children: [
                 ...visibleItems.asMap().entries.map((entry) {
-                    return _CategoryExpenseRow(
-                      item: entry.value,
-                      totalExpenses: totalExpenses,
-                      isTopCategory: entry.key == 0,
-                      onQuickAdd: () => _quickAdd(context, entry.value),
-                      onTap: onCategoryTap != null
-                          ? () => onCategoryTap!(entry.value)
-                          : null,
-                    );
+                  return _CategoryExpenseRow(
+                    item: entry.value,
+                    totalExpenses: totalExpenses,
+                    isTopCategory: entry.key == 0,
+                    onQuickAdd: () => _quickAdd(context, entry.value),
+                    onTap: onCategoryTap != null
+                        ? () => onCategoryTap!(entry.value)
+                        : null,
+                  );
                 }),
                 if (hiddenCount > 0) ...[
                   const Divider(height: StreamSpacing.lg),

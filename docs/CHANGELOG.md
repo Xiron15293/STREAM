@@ -7,10 +7,69 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- V0.9.0 — Trasferimenti tra Conti
-- V0.9.1 — Calendar Heatmap
-- V0.9.2 — Fondi / Obiettivi
-- V0.9.3 — Beneficiario + Etichette
+- Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2
+- QA manuale Pixel/iPhone
+- Build release Android/iOS
+- Prossimo sprint consigliato:
+  - Global Tap-to-Edit Movement
+  - oppure Movimenti: Vista Calendario
+
+---
+
+## [0.8.2] - 2026-06-10
+
+### Fixed
+- **Financial KPI Corrections**
+  - i trasferimenti sono esclusi da Entrate/Uscite/Bilancio globali
+  - Dashboard corretta: non usa più logica ambigua `if income else expense`
+  - Entrate = solo `MovementType.income`
+  - Uscite = solo `MovementType.expense`
+  - Bilancio = Entrate - Uscite
+- **Spese per categoria**
+  - somma solo movimenti `expense`
+  - eventuali transfer con `categoryId` valorizzato non entrano nei totali categoria
+- **Riepiloghi giornalieri**
+  - `DailyMovementGroup.totalIncome` e `totalExpenses` sono esclusivi income/expense
+  - i transfer restano visibili nello storico movimenti ma neutrali per i KPI giornalieri
+
+### Added
+- Helper centralizzati in `movement.dart`:
+  - `isIncome`
+  - `isExpense`
+  - `isTransfer`
+  - `sumIncome`
+  - `sumExpenses`
+  - `sumTransfers`
+  - `netIncomeExpense`
+
+### Unchanged
+- Formula saldo conto invariata:
+  - `initialBalance + income - expense + transfer in/out`
+- I transfer continuano a modificare correttamente saldo conto origine e destinazione
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+
+### QA
+- Caso reale Giugno 2026 verificato:
+  - Entrate `1142.52`
+  - Uscite `328.08`
+  - Bilancio `+814.44`
+  - transfer `272.30` escluso dai KPI globali
+- Caso reale Maggio 2026 verificato:
+  - Entrate `1447.97`
+  - Uscite `2115.10`
+  - Bilancio `-667.13`
+  - transfer `1187.50` escluso dai KPI globali
+- Test aggiunti/aggiornati:
+  - KPI periodo con income/expense/transfer
+  - Dashboard giugno/maggio 2026
+  - spese per categoria ignorano transfer
+  - riepilogo giornaliero ignora transfer nei totali income/expense
+  - saldo conto transfer invariato
+- `flutter analyze --no-pub`: 0 issues
+- `flutter test --no-pub`: **619/619 All tests passed**
+- Nessuno skip aggiunto
+- Nessun commit/push
 
 ---
 
@@ -38,12 +97,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - dialog di selezione con 3 opzioni + descrizione
   - RadioGroup pattern (Flutter 3.44 compatibile)
 
+### Fixed
+- **Conti archiviati esclusi dal saldo disponibile**
+  - saldo disponibile / operativo = somma dei saldi solo dei conti non archiviati
+  - conti archiviati restano visibili e consultabili nell'Archivio
+  - movimenti storici dei conti archiviati restano consultabili
+  - saldo derivato del singolo conto archiviato resta mostrabile nel dettaglio archivio
+- **Saldo attuale conto resta derivato**
+  - nessun campo indipendente per il saldo attuale
+  - formula invariata: `initialBalance + entrate - uscite + trasferimenti netti`
+
 ### QA
-- `test/categories_navigation_test.dart`: 4/4 PASS (aggiornati per filtro tipo)
-- `test/categories_layout_test.dart`: 11/11 PASS (nuovo, copre preferenza, filtro, layout, azioni)
+- `test/categories_navigation_test.dart`: PASS (aggiornati per filtro tipo)
+- `test/categories_layout_test.dart`: PASS (copre preferenza, filtro, layout, azioni, KPI)
 - `test/accounts_navigation_test.dart`: fix regressione (categoria archiviata type expense per filtro default)
 - `flutter analyze --no-pub`: 0 issues
-- `flutter test --no-pub`: **590/590 All tests passed**
+- `flutter test --no-pub`: PASS
 - Nessun DB/schema modificato
 - Nessuna business logic finanziaria modificata
 - Nessun backup/restore/import/reset modificato
