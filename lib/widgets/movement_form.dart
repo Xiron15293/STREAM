@@ -4,6 +4,7 @@ import '../design/stream_icon_library.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../theme.dart';
+import 'calculator_amount_pad.dart';
 
 class MovementForm extends StatefulWidget {
   final AppDatabase db;
@@ -30,7 +31,9 @@ class _MovementFormState extends State<MovementForm> {
     super.initState();
     final p = widget.prefill;
     _titleCtrl = TextEditingController(text: p?.title ?? '');
-    _amountCtrl = TextEditingController(text: p != null ? p.amount.toString() : '');
+    _amountCtrl = TextEditingController(
+      text: p != null ? p.amount.toString() : '',
+    );
     _noteCtrl = TextEditingController(text: p?.note ?? '');
     _date = p?.date ?? DateTime.now();
     if (p != null) {
@@ -49,17 +52,19 @@ class _MovementFormState extends State<MovementForm> {
     super.dispose();
   }
 
-  List<Category> get _availableCategories =>
-      _type == MovementType.transfer
-          ? const <Category>[]
-          : widget.db.categories.where((c) => c.type == _type && !c.archived).toList();
+  List<Category> get _availableCategories => _type == MovementType.transfer
+      ? const <Category>[]
+      : widget.db.categories
+            .where((c) => c.type == _type && !c.archived)
+            .toList();
 
   void _submit() {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
     final isTransfer = _type == MovementType.transfer;
 
-    if (amountText.isEmpty || (!isTransfer && (title.isEmpty || _selectedCategoryId == null))) {
+    if (amountText.isEmpty ||
+        (!isTransfer && (title.isEmpty || _selectedCategoryId == null))) {
       return;
     }
 
@@ -144,7 +149,13 @@ class _MovementFormState extends State<MovementForm> {
     );
     if (picked != null) {
       setState(() {
-        _date = DateTime(picked.year, picked.month, picked.day, _date.hour, _date.minute);
+        _date = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _date.hour,
+          _date.minute,
+        );
       });
     }
   }
@@ -155,7 +166,9 @@ class _MovementFormState extends State<MovementForm> {
 
   @override
   Widget build(BuildContext context) {
-    final accountLabel = _type == MovementType.transfer ? 'Conto origine' : 'Conto';
+    final accountLabel = _type == MovementType.transfer
+        ? 'Conto origine'
+        : 'Conto';
     if (_type != MovementType.transfer &&
         _selectedCategoryId == null &&
         _availableCategories.isNotEmpty) {
@@ -167,10 +180,13 @@ class _MovementFormState extends State<MovementForm> {
         _selectedAccountId = active.first.id;
       }
     }
-    if (_type == MovementType.transfer && _selectedDestinationAccountId == null) {
+    if (_type == MovementType.transfer &&
+        _selectedDestinationAccountId == null) {
       final active = widget.db.accounts.where((a) => !a.archived).toList();
       if (active.isNotEmpty) {
-        _selectedDestinationAccountId = active.length > 1 ? active[1].id : active.first.id;
+        _selectedDestinationAccountId = active.length > 1
+            ? active[1].id
+            : active.first.id;
       }
     }
 
@@ -189,7 +205,9 @@ class _MovementFormState extends State<MovementForm> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.prefill != null ? 'Modifica movimento' : 'Nuovo movimento',
+                widget.prefill != null
+                    ? 'Modifica movimento'
+                    : 'Nuovo movimento',
                 style: StreamTypography.h3,
               ),
               IconButton(
@@ -203,7 +221,10 @@ class _MovementFormState extends State<MovementForm> {
             segments: const [
               ButtonSegment(value: MovementType.expense, label: Text('Uscita')),
               ButtonSegment(value: MovementType.income, label: Text('Entrata')),
-              ButtonSegment(value: MovementType.transfer, label: Text('Trasferimento')),
+              ButtonSegment(
+                value: MovementType.transfer,
+                label: Text('Trasferimento'),
+              ),
             ],
             selected: {_type},
             onSelectionChanged: (set) {
@@ -222,10 +243,9 @@ class _MovementFormState extends State<MovementForm> {
             decoration: const InputDecoration(labelText: 'Titolo'),
           ),
           const SizedBox(height: StreamSpacing.md),
-          TextField(
+          CalculatorAmountField(
             controller: _amountCtrl,
             decoration: const InputDecoration(labelText: 'Importo (€)'),
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: StreamSpacing.md),
           InkWell(
@@ -245,54 +265,63 @@ class _MovementFormState extends State<MovementForm> {
               decoration: const InputDecoration(
                 labelText: 'Categoria',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(StreamRadius.md),
+                  ),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: StreamColors.surfaceElevated,
               ),
               items: _availableCategories
-                  .map((c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: Color(c.color),
-                                borderRadius: BorderRadius.circular(StreamRadius.sm),
-                              ),
-                              child: Icon(
-                                StreamIconLibrary.getIcon(c.iconKey),
-                                color: Colors.white,
-                                size: 12,
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c.id,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Color(c.color),
+                              borderRadius: BorderRadius.circular(
+                                StreamRadius.sm,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(c.name),
-                          ],
-                        ),
-                      ))
+                            child: Icon(
+                              StreamIconLibrary.getIcon(c.iconKey),
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(c.name),
+                        ],
+                      ),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) => setState(() => _selectedCategoryId = v),
             ),
             const SizedBox(height: StreamSpacing.md),
           ],
-        DropdownButtonFormField<String>(
-          initialValue: _selectedAccountId,
-          decoration: InputDecoration(
-            labelText: accountLabel,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-              borderSide: BorderSide.none,
+          DropdownButtonFormField<String>(
+            initialValue: _selectedAccountId,
+            decoration: InputDecoration(
+              labelText: accountLabel,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: StreamColors.surfaceElevated,
             ),
-            filled: true,
-            fillColor: StreamColors.surfaceElevated,
-          ),
-          items: widget.db.accounts
-              .where((a) => !a.archived)
-              .map((a) => DropdownMenuItem(
+            items: widget.db.accounts
+                .where((a) => !a.archived)
+                .map(
+                  (a) => DropdownMenuItem(
                     value: a.id,
                     child: Row(
                       children: [
@@ -305,10 +334,11 @@ class _MovementFormState extends State<MovementForm> {
                         Text(a.name),
                       ],
                     ),
-                  ))
-              .toList(),
-          onChanged: (v) => setState(() => _selectedAccountId = v),
-        ),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) => setState(() => _selectedAccountId = v),
+          ),
           if (_type == MovementType.transfer) ...[
             const SizedBox(height: StreamSpacing.md),
             DropdownButtonFormField<String>(
@@ -316,7 +346,9 @@ class _MovementFormState extends State<MovementForm> {
               decoration: const InputDecoration(
                 labelText: 'Conto destinazione',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(StreamRadius.md),
+                  ),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
@@ -324,22 +356,25 @@ class _MovementFormState extends State<MovementForm> {
               ),
               items: widget.db.accounts
                   .where((a) => !a.archived)
-                  .map((a) => DropdownMenuItem(
-                        value: a.id,
-                        child: Row(
-                          children: [
-                            Icon(
-                              StreamIconLibrary.getAccountIcon(a.iconKey),
-                              size: 18,
-                              color: Color(a.color),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(a.name),
-                          ],
-                        ),
-                      ))
+                  .map(
+                    (a) => DropdownMenuItem(
+                      value: a.id,
+                      child: Row(
+                        children: [
+                          Icon(
+                            StreamIconLibrary.getAccountIcon(a.iconKey),
+                            size: 18,
+                            color: Color(a.color),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(a.name),
+                        ],
+                      ),
+                    ),
+                  )
                   .toList(),
-              onChanged: (v) => setState(() => _selectedDestinationAccountId = v),
+              onChanged: (v) =>
+                  setState(() => _selectedDestinationAccountId = v),
             ),
           ],
           const SizedBox(height: StreamSpacing.md),

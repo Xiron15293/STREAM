@@ -8,8 +8,10 @@ import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
 import '../theme.dart';
+import 'calculator_amount_pad.dart';
 
 enum AddMode { manuale, rapidi, preferiti }
+
 enum _TemplateDateChoice { today, yesterday, tomorrow, custom }
 
 DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -146,7 +148,12 @@ class MovementPicker extends StatefulWidget {
   final Movement? prefill;
   final String? categoryPreFill;
 
-  const MovementPicker({super.key, required this.db, this.prefill, this.categoryPreFill});
+  const MovementPicker({
+    super.key,
+    required this.db,
+    this.prefill,
+    this.categoryPreFill,
+  });
 
   @override
   State<MovementPicker> createState() => _MovementPickerState();
@@ -181,10 +188,12 @@ class _MovementPickerState extends State<MovementPicker> {
             children: [
               Text(
                 _mode == AddMode.manuale
-                    ? (widget.prefill != null ? 'Modifica movimento' : 'Nuovo movimento')
+                    ? (widget.prefill != null
+                          ? 'Modifica movimento'
+                          : 'Nuovo movimento')
                     : _mode == AddMode.rapidi
-                        ? 'Movimenti rapidi'
-                        : 'Preferiti',
+                    ? 'Movimenti rapidi'
+                    : 'Preferiti',
                 style: StreamTypography.h3,
               ),
               IconButton(
@@ -201,15 +210,10 @@ class _MovementPickerState extends State<MovementPicker> {
               ButtonSegment(value: AddMode.preferiti, label: Text('Preferiti')),
             ],
             selected: {_mode},
-            onSelectionChanged: (set) =>
-                setState(() => _mode = set.first),
+            onSelectionChanged: (set) => setState(() => _mode = set.first),
           ),
           const SizedBox(height: StreamSpacing.lg),
-          Flexible(
-            child: SingleChildScrollView(
-              child: _buildContent(),
-            ),
-          ),
+          Flexible(child: SingleChildScrollView(child: _buildContent())),
         ],
       ),
     );
@@ -274,8 +278,9 @@ class _ManualFormState extends State<_ManualForm> {
     super.initState();
     final p = widget.prefill;
     _titleCtrl = TextEditingController(text: p?.title ?? '');
-    _amountCtrl =
-        TextEditingController(text: p != null ? p.amount.toString() : '');
+    _amountCtrl = TextEditingController(
+      text: p != null ? p.amount.toString() : '',
+    );
     _noteCtrl = TextEditingController(text: p?.note ?? '');
     _date = p?.date ?? DateTime.now();
     if (p != null) {
@@ -284,7 +289,9 @@ class _ManualFormState extends State<_ManualForm> {
       _selectedAccountId = p.accountId;
       _selectedDestinationAccountId = p.destinationAccountId;
     } else if (widget.categoryPreFill != null) {
-      final cat = widget.db.categories.where((c) => c.id == widget.categoryPreFill).firstOrNull;
+      final cat = widget.db.categories
+          .where((c) => c.id == widget.categoryPreFill)
+          .firstOrNull;
       if (cat != null) {
         _type = cat.type;
         _selectedCategoryId = cat.id;
@@ -300,16 +307,18 @@ class _ManualFormState extends State<_ManualForm> {
     super.dispose();
   }
 
-  List<Category> get _availableCategories =>
-      _type == MovementType.transfer
-          ? const <Category>[]
-          : widget.db.categories.where((c) => c.type == _type && !c.archived).toList();
+  List<Category> get _availableCategories => _type == MovementType.transfer
+      ? const <Category>[]
+      : widget.db.categories
+            .where((c) => c.type == _type && !c.archived)
+            .toList();
 
   void _submit() {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
     final isTransfer = _type == MovementType.transfer;
-    if (amountText.isEmpty || (!isTransfer && (title.isEmpty || _selectedCategoryId == null))) {
+    if (amountText.isEmpty ||
+        (!isTransfer && (title.isEmpty || _selectedCategoryId == null))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Compila tutti i campi obbligatori')),
       );
@@ -401,8 +410,13 @@ class _ManualFormState extends State<_ManualForm> {
     );
     if (picked != null) {
       setState(() {
-        _date = DateTime(picked.year, picked.month, picked.day,
-            _date.hour, _date.minute);
+        _date = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _date.hour,
+          _date.minute,
+        );
       });
     }
   }
@@ -413,7 +427,9 @@ class _ManualFormState extends State<_ManualForm> {
 
   @override
   Widget build(BuildContext context) {
-    final accountLabel = _type == MovementType.transfer ? 'Conto origine' : 'Conto';
+    final accountLabel = _type == MovementType.transfer
+        ? 'Conto origine'
+        : 'Conto';
     if (_type != MovementType.transfer &&
         _selectedCategoryId == null &&
         _availableCategories.isNotEmpty) {
@@ -425,11 +441,13 @@ class _ManualFormState extends State<_ManualForm> {
         _selectedAccountId = active.first.id;
       }
     }
-    if (_type == MovementType.transfer && _selectedDestinationAccountId == null) {
+    if (_type == MovementType.transfer &&
+        _selectedDestinationAccountId == null) {
       final active = widget.db.accounts.where((a) => !a.archived).toList();
       if (active.isNotEmpty) {
-        _selectedDestinationAccountId =
-            active.length > 1 ? active[1].id : active.first.id;
+        _selectedDestinationAccountId = active.length > 1
+            ? active[1].id
+            : active.first.id;
       }
     }
 
@@ -440,7 +458,10 @@ class _ManualFormState extends State<_ManualForm> {
           segments: const [
             ButtonSegment(value: MovementType.expense, label: Text('Uscita')),
             ButtonSegment(value: MovementType.income, label: Text('Entrata')),
-            ButtonSegment(value: MovementType.transfer, label: Text('Trasferimento')),
+            ButtonSegment(
+              value: MovementType.transfer,
+              label: Text('Trasferimento'),
+            ),
           ],
           selected: {_type},
           onSelectionChanged: (set) {
@@ -459,10 +480,9 @@ class _ManualFormState extends State<_ManualForm> {
           decoration: const InputDecoration(labelText: 'Titolo'),
         ),
         const SizedBox(height: StreamSpacing.md),
-        TextField(
+        CalculatorAmountField(
           controller: _amountCtrl,
           decoration: const InputDecoration(labelText: 'Importo (€)'),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: StreamSpacing.md),
         InkWell(
@@ -482,35 +502,41 @@ class _ManualFormState extends State<_ManualForm> {
             decoration: const InputDecoration(
               labelText: 'Categoria',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: StreamColors.surfaceElevated,
             ),
             items: _availableCategories
-                .map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Color(c.color),
-                              borderRadius: BorderRadius.circular(StreamRadius.sm),
-                            ),
-                            child: Icon(
-                              StreamIconLibrary.getIcon(c.iconKey),
-                              color: Colors.white,
-                              size: 12,
+                .map(
+                  (c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(c.color),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.sm,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(c.name),
-                        ],
-                      ),
-                    ))
+                          child: Icon(
+                            StreamIconLibrary.getIcon(c.iconKey),
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(c.name),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
@@ -529,7 +555,44 @@ class _ManualFormState extends State<_ManualForm> {
           ),
           items: widget.db.accounts
               .where((a) => !a.archived)
-              .map((a) => DropdownMenuItem(
+              .map(
+                (a) => DropdownMenuItem(
+                  value: a.id,
+                  child: Row(
+                    children: [
+                      Icon(
+                        StreamIconLibrary.getAccountIcon(a.iconKey),
+                        size: 18,
+                        color: Color(a.color),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(a.name),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => setState(() => _selectedAccountId = v),
+        ),
+        if (_type == MovementType.transfer) ...[
+          const SizedBox(height: StreamSpacing.md),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedDestinationAccountId,
+            decoration: const InputDecoration(
+              labelText: 'Conto destinazione',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: StreamColors.surfaceElevated,
+            ),
+            items: widget.db.accounts
+                .where((a) => !a.archived)
+                .map(
+                  (a) => DropdownMenuItem(
                     value: a.id,
                     child: Row(
                       children: [
@@ -542,54 +605,23 @@ class _ManualFormState extends State<_ManualForm> {
                         Text(a.name),
                       ],
                     ),
-                  ))
-              .toList(),
-          onChanged: (v) => setState(() => _selectedAccountId = v),
-        ),
-        if (_type == MovementType.transfer) ...[
-          const SizedBox(height: StreamSpacing.md),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedDestinationAccountId,
-            decoration: const InputDecoration(
-              labelText: 'Conto destinazione',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
-            ),
-            items: widget.db.accounts
-                .where((a) => !a.archived)
-                .map((a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Row(
-                        children: [
-                          Icon(
-                            StreamIconLibrary.getAccountIcon(a.iconKey),
-                            size: 18,
-                            color: Color(a.color),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(a.name),
-                        ],
-                      ),
-                    ))
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedDestinationAccountId = v),
           ),
         ],
-          const SizedBox(height: StreamSpacing.md),
-          TextField(
-            controller: _noteCtrl,
-            decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
-            maxLines: 2,
-          ),
-          const SizedBox(height: StreamSpacing.lg),
-          FilledButton(
-            onPressed: _submit,
-            child: Text(widget.prefill != null ? 'Aggiorna' : 'Salva'),
-          ),
+        const SizedBox(height: StreamSpacing.md),
+        TextField(
+          controller: _noteCtrl,
+          decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
+          maxLines: 2,
+        ),
+        const SizedBox(height: StreamSpacing.lg),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(widget.prefill != null ? 'Aggiorna' : 'Salva'),
+        ),
       ],
     );
   }
@@ -628,106 +660,112 @@ class _QuickPanel extends StatelessWidget {
             if (items.isEmpty)
               _EmptyPanel(message: 'Nessun movimento rapido')
             else
-                  ...items.map((qm) {
-                    final qmCat = db.categories.where((c) => c.id == qm.categoryId).firstOrNull;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
-                      child: Material(
-                        color: StreamColors.surface,
-                        borderRadius: BorderRadius.circular(StreamRadius.md),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(StreamRadius.md),
-                          onTap: () => _useTemplateMovement(
-                            context: context,
-                            db: db,
-                            onUsed: onUsed,
-                            title: qm.title,
-                            amount: qm.amount,
-                            type: qm.type,
-                            categoryId: qm.categoryId,
-                            accountId: qm.accountId,
-                            note: qm.note,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(StreamSpacing.md),
-                            child: Row(
+              ...items.map((qm) {
+                final qmCat = db.categories
+                    .where((c) => c.id == qm.categoryId)
+                    .firstOrNull;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                  child: Material(
+                    color: StreamColors.surface,
+                    borderRadius: BorderRadius.circular(StreamRadius.md),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(StreamRadius.md),
+                      onTap: () => _useTemplateMovement(
+                        context: context,
+                        db: db,
+                        onUsed: onUsed,
+                        title: qm.title,
+                        amount: qm.amount,
+                        type: qm.type,
+                        categoryId: qm.categoryId,
+                        accountId: qm.accountId,
+                        note: qm.note,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(StreamSpacing.md),
+                        child: Row(
+                          children: [
+                            _CategoryIcon(
+                              color: qmCat?.color ?? 0xFF636366,
+                              iconKey:
+                                  qmCat?.iconKey ??
+                                  StreamIconLibrary.defaultCategoryIcon,
+                              size: 36,
+                            ),
+                            const SizedBox(width: StreamSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    qm.title,
+                                    style: StreamTypography.bodyBold,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
+                                    style: StreamTypography.caption.copyWith(
+                                      color: StreamColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                _CategoryIcon(
-                                  color: qmCat?.color ?? 0xFF636366,
-                                  iconKey: qmCat?.iconKey ??
-                                      StreamIconLibrary.defaultCategoryIcon,
-                                  size: 36,
-                                ),
-                                const SizedBox(width: StreamSpacing.md),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        qm.title,
-                                        style: StreamTypography.bodyBold,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
-                                        style: StreamTypography.caption.copyWith(
-                                          color: StreamColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.edit,
+                                    size: 18,
+                                    color: StreamColors.textMuted,
+                                  ),
+                                  onPressed: () => _showQuickForm(
+                                    context,
+                                    db: db,
+                                    existing: qm,
                                   ),
                                 ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.edit,
-                                        size: 18,
-                                        color: StreamColors.textMuted,
-                                      ),
-                                      onPressed: () => _showQuickForm(
-                                        context,
-                                        db: db,
-                                        existing: qm,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.play_arrow,
-                                        size: 22,
-                                        color: StreamColors.primary,
-                                      ),
-                                      tooltip: 'Usa',
-                                      onPressed: () => _useTemplateMovement(
-                                        context: context,
-                                        db: db,
-                                        onUsed: onUsed,
-                                        title: qm.title,
-                                        amount: qm.amount,
-                                        type: qm.type,
-                                        categoryId: qm.categoryId,
-                                        accountId: qm.accountId,
-                                        note: qm.note,
-                                      ),
-                                    ),
-                                  ],
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.play_arrow,
+                                    size: 22,
+                                    color: StreamColors.primary,
+                                  ),
+                                  tooltip: 'Usa',
+                                  onPressed: () => _useTemplateMovement(
+                                    context: context,
+                                    db: db,
+                                    onUsed: onUsed,
+                                    title: qm.title,
+                                    amount: qm.amount,
+                                    type: qm.type,
+                                    categoryId: qm.categoryId,
+                                    accountId: qm.accountId,
+                                    note: qm.note,
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
+                );
+              }),
           ],
         );
       },
     );
   }
 
-  void _showQuickForm(BuildContext context,
-      {required AppDatabase db, QuickMovement? existing}) {
+  void _showQuickForm(
+    BuildContext context, {
+    required AppDatabase db,
+    QuickMovement? existing,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -759,7 +797,8 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
     final e = widget.existing;
     _titleCtrl = TextEditingController(text: e?.title ?? '');
     _amountCtrl = TextEditingController(
-        text: e != null ? e.amount.toString() : '');
+      text: e != null ? e.amount.toString() : '',
+    );
     if (e != null) {
       _type = e.type;
       _selectedCategoryId = e.categoryId;
@@ -774,28 +813,30 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
     super.dispose();
   }
 
-  List<Category> get _availableCategories =>
-      widget.db.categories.where((c) => c.type == _type && !c.archived).toList();
+  List<Category> get _availableCategories => widget.db.categories
+      .where((c) => c.type == _type && !c.archived)
+      .toList();
 
   void _save() {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
     if (title.isEmpty || amountText.isEmpty || _selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compila tutti i campi')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Compila tutti i campi')));
       return;
     }
     final amount = double.tryParse(amountText.replaceAll(',', '.'));
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Importo non valido')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Importo non valido')));
       return;
     }
 
     final qm = QuickMovement(
-      id: widget.existing?.id ??
+      id:
+          widget.existing?.id ??
           DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
       amount: amount,
@@ -839,7 +880,9 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.existing != null ? 'Modifica rapido' : 'Nuovo movimento rapido',
+                widget.existing != null
+                    ? 'Modifica rapido'
+                    : 'Nuovo movimento rapido',
                 style: StreamTypography.h3,
               ),
               IconButton(
@@ -868,10 +911,9 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
             decoration: const InputDecoration(labelText: 'Titolo'),
           ),
           const SizedBox(height: StreamSpacing.md),
-          TextField(
+          CalculatorAmountField(
             controller: _amountCtrl,
             decoration: const InputDecoration(labelText: 'Importo (€)'),
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: StreamSpacing.md),
           DropdownButtonFormField<String>(
@@ -879,30 +921,36 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
             decoration: const InputDecoration(
               labelText: 'Categoria',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: StreamColors.surfaceElevated,
             ),
             items: _availableCategories
-                .map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Color(c.color),
-                              borderRadius: BorderRadius.circular(StreamRadius.sm),
+                .map(
+                  (c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(c.color),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.sm,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(c.name),
-                        ],
-                      ),
-                    ))
+                        ),
+                        const SizedBox(width: 8),
+                        Text(c.name),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
@@ -912,7 +960,9 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
             decoration: const InputDecoration(
               labelText: 'Conto',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
@@ -920,16 +970,22 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
             ),
             items: widget.db.accounts
                 .where((a) => !a.archived)
-                .map((a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Row(
-                        children: [
-                          Icon(StreamIconLibrary.getAccountIcon(a.iconKey), size: 18, color: Color(a.color)),
-                          const SizedBox(width: 8),
-                          Text(a.name),
-                        ],
-                      ),
-                    ))
+                .map(
+                  (a) => DropdownMenuItem(
+                    value: a.id,
+                    child: Row(
+                      children: [
+                        Icon(
+                          StreamIconLibrary.getAccountIcon(a.iconKey),
+                          size: 18,
+                          color: Color(a.color),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(a.name),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedAccountId = v),
           ),
@@ -945,7 +1001,9 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
                 widget.db.deleteQuickMovement(widget.existing!.id);
                 Navigator.of(context).pop();
               },
-              style: OutlinedButton.styleFrom(foregroundColor: StreamColors.expense),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: StreamColors.expense,
+              ),
               child: const Text('Elimina'),
             ),
           ],
@@ -990,28 +1048,36 @@ class _FavoritesPanel extends StatelessWidget {
             if (favorites.isEmpty && suggestions.isEmpty)
               const _EmptyPanel(message: 'Nessun preferito'),
             if (favorites.isNotEmpty)
-              ...favorites.map((fm) => _FavoriteTile(
-                    fm: fm,
-                    isSuggestion: false,
-                    db: db,
-                    onUsed: onUsed,
-                  )),
+              ...favorites.map(
+                (fm) => _FavoriteTile(
+                  fm: fm,
+                  isSuggestion: false,
+                  db: db,
+                  onUsed: onUsed,
+                ),
+              ),
             if (suggestions.isNotEmpty) ...[
               const SizedBox(height: StreamSpacing.md),
               Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, size: 14, color: StreamColors.textMuted),
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 14,
+                    color: StreamColors.textMuted,
+                  ),
                   const SizedBox(width: StreamSpacing.sm),
                   const Text('Suggeriti', style: StreamTypography.h3),
                 ],
               ),
               const SizedBox(height: StreamSpacing.sm),
-              ...suggestions.map((fm) => _FavoriteTile(
-                    fm: fm,
-                    isSuggestion: true,
-                    db: db,
-                    onUsed: onUsed,
-                  )),
+              ...suggestions.map(
+                (fm) => _FavoriteTile(
+                  fm: fm,
+                  isSuggestion: true,
+                  db: db,
+                  onUsed: onUsed,
+                ),
+              ),
             ],
           ],
         );
@@ -1019,8 +1085,11 @@ class _FavoritesPanel extends StatelessWidget {
     );
   }
 
-  void _showFavoriteForm(BuildContext context,
-      {required AppDatabase db, FavoriteMovement? existing}) {
+  void _showFavoriteForm(
+    BuildContext context, {
+    required AppDatabase db,
+    FavoriteMovement? existing,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1044,7 +1113,9 @@ class _FavoriteTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favCat = db.categories.where((c) => c.id == fm.categoryId).firstOrNull;
+    final favCat = db.categories
+        .where((c) => c.id == fm.categoryId)
+        .firstOrNull;
     final catColor = favCat?.color ?? 0xFF636366;
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
@@ -1070,8 +1141,8 @@ class _FavoriteTile extends StatelessWidget {
               children: [
                 _CategoryIcon(
                   color: catColor,
-                  iconKey: favCat?.iconKey ??
-                      StreamIconLibrary.defaultCategoryIcon,
+                  iconKey:
+                      favCat?.iconKey ?? StreamIconLibrary.defaultCategoryIcon,
                   size: 36,
                 ),
                 const SizedBox(width: StreamSpacing.md),
@@ -1100,11 +1171,8 @@ class _FavoriteTile extends StatelessWidget {
                           size: 18,
                           color: StreamColors.textMuted,
                         ),
-                        onPressed: () => _showFavoriteForm(
-                          context,
-                          db: db,
-                          existing: fm,
-                        ),
+                        onPressed: () =>
+                            _showFavoriteForm(context, db: db, existing: fm),
                       ),
                       IconButton(
                         icon: Icon(
@@ -1144,8 +1212,11 @@ class _FavoriteTile extends StatelessWidget {
     );
   }
 
-  void _showFavoriteForm(BuildContext context,
-      {required AppDatabase db, required FavoriteMovement existing}) {
+  void _showFavoriteForm(
+    BuildContext context, {
+    required AppDatabase db,
+    required FavoriteMovement existing,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1177,8 +1248,9 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
     super.initState();
     final e = widget.existing;
     _titleCtrl = TextEditingController(text: e?.title ?? '');
-    _amountCtrl =
-        TextEditingController(text: e != null ? e.amount.toString() : '');
+    _amountCtrl = TextEditingController(
+      text: e != null ? e.amount.toString() : '',
+    );
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     if (e != null) {
       _type = e.type;
@@ -1195,23 +1267,24 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
     super.dispose();
   }
 
-  List<Category> get _availableCategories =>
-      widget.db.categories.where((c) => c.type == _type && !c.archived).toList();
+  List<Category> get _availableCategories => widget.db.categories
+      .where((c) => c.type == _type && !c.archived)
+      .toList();
 
   void _save() {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
     if (title.isEmpty || amountText.isEmpty || _selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compila tutti i campi')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Compila tutti i campi')));
       return;
     }
     final amount = double.tryParse(amountText.replaceAll(',', '.'));
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Importo non valido')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Importo non valido')));
       return;
     }
 
@@ -1219,16 +1292,19 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
       widget.db.deleteFavoriteMovement(widget.existing!.id);
     }
 
-    widget.db.addFavoriteMovement(FavoriteMovement(
-      id: widget.existing?.id ??
-          DateTime.now().microsecondsSinceEpoch.toString(),
-      title: title,
-      amount: amount,
-      type: _type,
-      categoryId: _selectedCategoryId!,
-      accountId: _selectedAccountId ?? defaultAccountId,
-      note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-    ));
+    widget.db.addFavoriteMovement(
+      FavoriteMovement(
+        id:
+            widget.existing?.id ??
+            DateTime.now().microsecondsSinceEpoch.toString(),
+        title: title,
+        amount: amount,
+        type: _type,
+        categoryId: _selectedCategoryId!,
+        accountId: _selectedAccountId ?? defaultAccountId,
+        note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+      ),
+    );
 
     Navigator.of(context).pop();
   }
@@ -1260,7 +1336,9 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.existing != null ? 'Modifica preferito' : 'Nuovo preferito',
+                widget.existing != null
+                    ? 'Modifica preferito'
+                    : 'Nuovo preferito',
                 style: StreamTypography.h3,
               ),
               IconButton(
@@ -1289,10 +1367,9 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
             decoration: const InputDecoration(labelText: 'Titolo'),
           ),
           const SizedBox(height: StreamSpacing.md),
-          TextField(
+          CalculatorAmountField(
             controller: _amountCtrl,
             decoration: const InputDecoration(labelText: 'Importo (€)'),
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: StreamSpacing.md),
           DropdownButtonFormField<String>(
@@ -1300,30 +1377,36 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
             decoration: const InputDecoration(
               labelText: 'Categoria',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: StreamColors.surfaceElevated,
             ),
             items: _availableCategories
-                .map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Color(c.color),
-                              borderRadius: BorderRadius.circular(StreamRadius.sm),
+                .map(
+                  (c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(c.color),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.sm,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(c.name),
-                        ],
-                      ),
-                    ))
+                        ),
+                        const SizedBox(width: 8),
+                        Text(c.name),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
@@ -1333,7 +1416,9 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
             decoration: const InputDecoration(
               labelText: 'Conto',
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(StreamRadius.md),
+                ),
                 borderSide: BorderSide.none,
               ),
               filled: true,
@@ -1341,16 +1426,22 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
             ),
             items: widget.db.accounts
                 .where((a) => !a.archived)
-                .map((a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Row(
-                        children: [
-                          Icon(StreamIconLibrary.getAccountIcon(a.iconKey), size: 18, color: Color(a.color)),
-                          const SizedBox(width: 8),
-                          Text(a.name),
-                        ],
-                      ),
-                    ))
+                .map(
+                  (a) => DropdownMenuItem(
+                    value: a.id,
+                    child: Row(
+                      children: [
+                        Icon(
+                          StreamIconLibrary.getAccountIcon(a.iconKey),
+                          size: 18,
+                          color: Color(a.color),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(a.name),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _selectedAccountId = v),
           ),
@@ -1372,7 +1463,9 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
                 widget.db.deleteFavoriteMovement(widget.existing!.id);
                 Navigator.of(context).pop();
               },
-              style: OutlinedButton.styleFrom(foregroundColor: StreamColors.expense),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: StreamColors.expense,
+              ),
               child: const Text('Elimina'),
             ),
           ],
@@ -1391,7 +1484,11 @@ class _CategoryIcon extends StatelessWidget {
   final String iconKey;
   final double size;
 
-  const _CategoryIcon({required this.color, required this.iconKey, required this.size});
+  const _CategoryIcon({
+    required this.color,
+    required this.iconKey,
+    required this.size,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1402,7 +1499,11 @@ class _CategoryIcon extends StatelessWidget {
         color: Color(color),
         borderRadius: BorderRadius.circular(StreamRadius.sm),
       ),
-      child: Icon(StreamIconLibrary.getIcon(iconKey), color: Colors.white, size: size * 0.45),
+      child: Icon(
+        StreamIconLibrary.getIcon(iconKey),
+        color: Colors.white,
+        size: size * 0.45,
+      ),
     );
   }
 }
@@ -1417,7 +1518,12 @@ class _EmptyPanel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: StreamSpacing.xxl),
       child: Center(
-        child: Text(message, style: StreamTypography.body.copyWith(color: StreamColors.textSecondary)),
+        child: Text(
+          message,
+          style: StreamTypography.body.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+        ),
       ),
     );
   }

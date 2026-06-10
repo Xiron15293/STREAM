@@ -8,6 +8,7 @@ import '../models/time_filter.dart';
 import '../theme.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/calculator_amount_pad.dart';
 import '../widgets/time_filter_bar.dart';
 
 class AccountsScreen extends StatelessWidget {
@@ -33,8 +34,13 @@ class AccountsScreen extends StatelessWidget {
           final active = db.accounts.where((a) => !a.archived).toList();
           final archived = db.accounts.where((a) => a.archived).toList();
           return ListView(
-            padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, 80),
-          children: [
+            padding: const EdgeInsets.fromLTRB(
+              StreamSpacing.lg,
+              StreamSpacing.lg,
+              StreamSpacing.lg,
+              80,
+            ),
+            children: [
               ...active.map(
                 (a) => _AccountCard(
                   key: Key('account_card_${a.id}'),
@@ -84,13 +90,19 @@ class AccountsScreen extends StatelessWidget {
     );
   }
 
-  void _showAddEditDialog(BuildContext context, AppDatabase db, {Account? account}) {
+  void _showAddEditDialog(
+    BuildContext context,
+    AppDatabase db, {
+    Account? account,
+  }) {
     final nameController = TextEditingController(text: account?.name ?? '');
-    final balanceController =
-        TextEditingController(text: account?.initialBalance.toString() ?? '0');
+    final balanceController = TextEditingController(
+      text: account?.initialBalance.toString() ?? '0',
+    );
     AccountType selectedType = account?.type ?? AccountType.bank;
     int selectedColor = account?.color ?? StreamColorPalette.getDefault();
-    String selectedIconKey = account?.iconKey ?? StreamIconLibrary.defaultAccountIcon;
+    String selectedIconKey =
+        account?.iconKey ?? StreamIconLibrary.defaultAccountIcon;
     final currentMovementsDelta = account == null
         ? 0.0
         : db.getAccountBalance(account) - account.initialBalance;
@@ -114,20 +126,28 @@ class AccountsScreen extends StatelessWidget {
                   decoration: const InputDecoration(
                     labelText: 'Tipo',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(StreamRadius.md),
+                      ),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
                     fillColor: StreamColors.surfaceElevated,
                   ),
-                  items: AccountType.values.map((t) => DropdownMenuItem(
-                    value: t,
-                    child: Row(children: [
-                      Icon(_typeIcon(t), size: 20),
-                      const SizedBox(width: 8),
-                      Text(_typeLabels[t]!),
-                    ]),
-                  )).toList(),
+                  items: AccountType.values
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Row(
+                            children: [
+                              Icon(_typeIcon(t), size: 20),
+                              const SizedBox(width: 8),
+                              Text(_typeLabels[t]!),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (v) {
                     if (v != null) setDialogState(() => selectedType = v);
                   },
@@ -143,14 +163,13 @@ class AccountsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: StreamSpacing.sm),
-                TextField(
-                  key: const Key('account_initial_balance_field'),
+                CalculatorAmountField(
+                  fieldKey: const Key('account_initial_balance_field'),
                   controller: balanceController,
-                  decoration: const InputDecoration(labelText: 'Saldo iniziale'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Saldo iniziale',
                   ),
+                  allowNegative: true,
                   onChanged: (_) => setDialogState(() {}),
                 ),
                 const SizedBox(height: StreamSpacing.lg),
@@ -173,7 +192,8 @@ class AccountsScreen extends StatelessWidget {
                       const SizedBox(height: StreamSpacing.xs),
                       Builder(
                         builder: (_) {
-                          final parsedInitialBalance = double.tryParse(
+                          final parsedInitialBalance =
+                              double.tryParse(
                                 balanceController.text.replaceAll(',', '.'),
                               ) ??
                               0.0;
@@ -205,7 +225,12 @@ class AccountsScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Icona', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+                    Text(
+                      'Icona',
+                      style: StreamTypography.caption.copyWith(
+                        color: StreamColors.textSecondary,
+                      ),
+                    ),
                     GestureDetector(
                       onTap: () async {
                         final result = await showDialog<String>(
@@ -230,13 +255,22 @@ class AccountsScreen extends StatelessWidget {
                           children: [
                             Icon(
                               StreamIconLibrary.getAccountIcon(selectedIconKey),
-                              size: 20, color: Colors.white,
+                              size: 20,
+                              color: Colors.white,
                             ),
                             const SizedBox(width: 8),
-                            Text(StreamIconLibrary.getAccountLabel(selectedIconKey),
-                                style: StreamTypography.caption),
+                            Text(
+                              StreamIconLibrary.getAccountLabel(
+                                selectedIconKey,
+                              ),
+                              style: StreamTypography.caption,
+                            ),
                             const SizedBox(width: 4),
-                            Icon(Icons.chevron_right, size: 16, color: StreamColors.textMuted),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 16,
+                              color: StreamColors.textMuted,
+                            ),
                           ],
                         ),
                       ),
@@ -244,7 +278,12 @@ class AccountsScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: StreamSpacing.lg),
-                Text('Colore', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+                Text(
+                  'Colore',
+                  style: StreamTypography.caption.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: StreamSpacing.md),
                 ColorPicker(
                   currentColor: selectedColor,
@@ -254,24 +293,40 @@ class AccountsScreen extends StatelessWidget {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annulla')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
             FilledButton(
               onPressed: () {
                 final name = nameController.text.trim();
                 if (name.isEmpty) return;
-                final balance = double.tryParse(balanceController.text.replaceAll(',', '.')) ?? 0;
+                final balance =
+                    double.tryParse(
+                      balanceController.text.replaceAll(',', '.'),
+                    ) ??
+                    0;
                 if (account == null) {
-                  db.addAccount(Account(
-                    id: DateTime.now().microsecondsSinceEpoch.toString(),
-                    name: name,
-                    type: selectedType,
-                    initialBalance: balance,
+                  db.addAccount(
+                    Account(
+                      id: DateTime.now().microsecondsSinceEpoch.toString(),
+                      name: name,
+                      type: selectedType,
+                      initialBalance: balance,
+                      iconKey: selectedIconKey,
+                      color: selectedColor,
+                      createdAt: DateTime.now(),
+                    ),
+                  );
+                } else {
+                  db.updateAccount(
+                    account.id,
+                    name,
+                    selectedType,
+                    balance,
                     iconKey: selectedIconKey,
                     color: selectedColor,
-                    createdAt: DateTime.now(),
-                  ));
-                } else {
-                  db.updateAccount(account.id, name, selectedType, balance, iconKey: selectedIconKey, color: selectedColor);
+                  );
                 }
                 Navigator.pop(ctx);
               },
@@ -285,11 +340,16 @@ class AccountsScreen extends StatelessWidget {
 
   static IconData _typeIcon(AccountType t) {
     switch (t) {
-      case AccountType.cash: return Icons.money;
-      case AccountType.bank: return Icons.account_balance;
-      case AccountType.card: return Icons.credit_card;
-      case AccountType.savings: return Icons.savings;
-      case AccountType.other: return Icons.account_balance_wallet;
+      case AccountType.cash:
+        return Icons.money;
+      case AccountType.bank:
+        return Icons.account_balance;
+      case AccountType.card:
+        return Icons.credit_card;
+      case AccountType.savings:
+        return Icons.savings;
+      case AccountType.other:
+        return Icons.account_balance_wallet;
     }
   }
 }
@@ -300,7 +360,10 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: StreamTypography.h3.copyWith(color: StreamColors.textSecondary));
+    return Text(
+      title,
+      style: StreamTypography.h3.copyWith(color: StreamColors.textSecondary),
+    );
   }
 }
 
@@ -395,7 +458,9 @@ class _AccountCard extends StatelessWidget {
                         onSelected: (v) {
                           if (v == 'edit') {
                             final screen = context
-                                .findAncestorWidgetOfExactType<AccountsScreen>();
+                                .findAncestorWidgetOfExactType<
+                                  AccountsScreen
+                                >();
                             screen?._showAddEditDialog(
                               context,
                               db,
@@ -437,10 +502,7 @@ class _AccountMovementsSheet extends StatefulWidget {
   final AppDatabase db;
   final Account account;
 
-  const _AccountMovementsSheet({
-    required this.db,
-    required this.account,
-  });
+  const _AccountMovementsSheet({required this.db, required this.account});
 
   @override
   State<_AccountMovementsSheet> createState() => _AccountMovementsSheetState();
@@ -468,11 +530,17 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
   }
 
   double get _filteredIncome => _accountMovements
-      .where((m) => m.type == MovementType.income && m.accountId == widget.account.id)
+      .where(
+        (m) =>
+            m.type == MovementType.income && m.accountId == widget.account.id,
+      )
       .fold(0.0, (sum, m) => sum + m.amount);
 
   double get _filteredExpenses => _accountMovements
-      .where((m) => m.type == MovementType.expense && m.accountId == widget.account.id)
+      .where(
+        (m) =>
+            m.type == MovementType.expense && m.accountId == widget.account.id,
+      )
       .fold(0.0, (sum, m) => sum + m.amount);
 
   double get _filteredTransfersNet => _accountMovements
@@ -600,11 +668,7 @@ class _StatChip extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatChip({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const _StatChip({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
