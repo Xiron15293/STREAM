@@ -6,14 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Planned
+- V0.9.0 — Trasferimenti tra Conti
+- V0.9.1 — Calendar Heatmap
+- V0.9.2 — Fondi / Obiettivi
+- V0.9.3 — Beneficiario + Etichette
+
+---
+
+## [0.7.0] - 2026-06-09
+
 ### Added
-- Import CSV 1Money completato e validato su dataset reale
-  - Backup Stream: 6369 movimenti
-  - CSV 1Money unici: 6369 movimenti
-  - overlap: 6369
-  - backup-only: 0
-  - csv-only: 0
-  - nessuna perdita movimenti
+- Import CSV 1Money, prima versione dedicata al formato esportato da 1Money
+  - supporto ai campi `DATA`, `TIPOLOGIA`, `DAL CONTO`, `AL CONTO / ALLA CATEGORIA`, `IMPORTO`, `NOTE`
+  - mapping `Spesa` / `Entrata` / `Trasferimento` verso `MovementType.expense` / `income` / `transfer`
+  - `movement.date` ricavata da `DATA` nel formato `dd/MM/yy`
+  - import di `note` e fallback del `title` su categoria/destinazione quando la nota è vuota
+  - auto-creazione di conti e categorie mancanti
+  - trasferimenti nativi Stream con `destinationAccountId`
+  - dedupe per fingerprint `data + tipo + importo + conto + categoria + note`
+  - ignorata la sezione finale 1Money dei conti/fondi a partire dalla riga `NOME`
+- UI Impostazioni aggiornata con azione dedicata `Importa CSV 1Money`
 - Saldo iniziale dei conti
   - aggiunta persistenza `accounts.initial_balance`
   - il saldo attuale è sempre derivato da saldo iniziale + movimenti
@@ -34,49 +47,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - elementi archiviati consultabili e cliccabili
 
 ### QA
-- Test reset ripristinati e verdi:
-  - `reset_data_test.dart`: PASS
-  - `qa_extensive_test.dart`: PASS
-  - `C2`, `F2`, `F3`, `L1` stabilizzati
-  - reset validato tramite flusso UI reale nei test, con backup pre-reset stub nel test harness dove necessario
-  - nessuna business logic/UI modificata
+- Test unitari aggiunti per import spesa, entrata, trasferimento, auto-creazione, nota, data, duplicati e stress 1000 righe
 - Test navigazione Archivio verdi:
   - `test/accounts_navigation_test.dart`: PASS
   - `test/categories_navigation_test.dart`: PASS
-- Re-test import CSV 1Money mantenuto verde:
-  - `test/one_money_csv_import_test.dart`: PASS
-  - dedupeWithinFile `true` e `false`
-  - CSV reale
-  - trailer `NOME,BILANCIO,VALUTA` ignorato
-  - saldi conto importati con `initialBalance = 0`
-- `flutter analyze --no-pub`: PASS
-- Test mirati reset: PASS
-- Suite completa: da rilanciare
-
-### Planned
-- Calculator Pad per tutti i campi importo
-- V0.6.6 — Trasferimenti tra Conti
-- V0.6.8 — Calendar Heatmap
-- V0.6.9 — Fondi / Obiettivi
-
----
-
-## [0.8.0] - 2026-06-09
-
-### Added
-- Import CSV 1Money, prima versione dedicata al formato esportato da 1Money
-  - supporto ai campi `DATA`, `TIPOLOGIA`, `DAL CONTO`, `AL CONTO / ALLA CATEGORIA`, `IMPORTO`, `NOTE`
-  - mapping `Spesa` / `Entrata` / `Trasferimento` verso `MovementType.expense` / `income` / `transfer`
-  - `movement.date` ricavata da `DATA` nel formato `dd/MM/yy`
-  - import di `note` e fallback del `title` su categoria/destinazione quando la nota è vuota
-  - auto-creazione di conti e categorie mancanti
-  - trasferimenti nativi Stream con `destinationAccountId`
-  - dedupe per fingerprint `data + tipo + importo + conto + categoria + note`
-  - ignorata la sezione finale 1Money dei conti/fondi a partire dalla riga `NOME`
-- UI Impostazioni aggiornata con azione dedicata `Importa CSV 1Money`
-
-### QA
-- Test unitari aggiunti per import spesa, entrata, trasferimento, auto-creazione, nota, data, duplicati e stress 1000 righe
+- Re-test import CSV 1Money mantenuto verde
 - `flutter analyze --no-pub`: PASS
 - `flutter test --no-pub`: da rilanciare localmente in ambiente completo
 - `flutter build apk --release --no-pub`: da rilanciare localmente in ambiente completo
@@ -87,6 +62,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Movimenti unici coincidenti: 6369 / 6369
 - Nessuna perdita di movimenti, nessuna inversione di segno e nessuna divergenza contabile sui movimenti importati
 - Le differenze residue osservate nelle verifiche precedenti erano dovute a dataset di confronto diversi e non a un bug dell'importatore
+
+---
+
+## [0.7.1] - 2026-06-09
+
+### QA
+- Test reset ripristinati e verdi:
+  - `reset_data_test.dart`: PASS
+  - `qa_extensive_test.dart`: PASS
+  - `C2`, `F2`, `F3`, `L1` stabilizzati
+  - reset validato tramite flusso UI reale nei test, con backup pre-reset stub nel test harness dove necessario
+  - nessuna business logic/UI modificata
+- `flutter analyze --no-pub`: PASS
+- `flutter test --no-pub`: PASS, 575 test verdi
+- `flutter build apk --release --no-pub`: PASS, `app-release.apk` 66.7MB
+- `flutter build ios --release --no-codesign --no-pub`: PASS al secondo tentativo, `Runner.app` 32.8MB
+- Nota build iOS: primo tentativo fallito per errore Xcode/DerivedData `disk I/O error`, rilancio senza modifiche passato
+
+---
+
+## [0.8.0] - 2026-06-10
+
+### Added
+- Calculator Pad riusabile per i campi importo
+  - nuovo `CalculatorAmountField` con pad custom
+  - evaluator separato senza `eval`
+  - supporto a `+`, `-`, `*`, `/`, `:`, `=`, decimale, backspace, clear e `Fatto`
+  - `=` calcola e lascia il pad aperto
+  - `Fatto` calcola/conferma e chiude il pad
+  - integrazione su movimenti manuali, modifica movimento, trasferimenti, rapidi, preferiti e saldo iniziale conto
+
+### Fixed
+- **Tastiera nativa non si apre più** sui campi importo CalculatorAmountField
+  - root cause: TextField richiedeva focus/keyboard prima che `onTap` aprisse il bottom sheet; dopo chiusura, focus residuo riapriva la tastiera
+  - fix: `readOnly: true`, `showCursor: false`, `keyboardType: TextInputType.none`, `FocusManager.instance.primaryFocus?.unfocus()` prima del bottom sheet
+  - `test/helpers/calculator_test_helpers.dart` — 3 nuovi helper per test (enterAmountWithCalculator, openPadAndType, closeCalculatorPad)
+  - 49 test legacy aggiornati: `tester.enterText` su campi importo readOnly non funzionava più → sostituito con helper Calculator Pad
+  - nessun indebolimento assert, nessuno skip aggiunto
+
+### QA
+- `test/calculator_amount_pad_test.dart`: 30/30 PASS (11 evaluator + 15 widget pad + 4 keyboard prevention + 4 integrazione)
+- `test/qa_movements_test.dart`: 85/85 PASS
+- `test/widget_test.dart`: 9/9 PASS
+- `test/dashboard_after_delete_test.dart`: 21/21 PASS
+- `test/qa_extensive_test.dart`: 30/30 PASS
+- `flutter test --no-pub`: **579/579 All tests passed**
+- `flutter analyze --no-pub`: 0 issues
+- Nessuno skip aggiunto
 
 ---
 

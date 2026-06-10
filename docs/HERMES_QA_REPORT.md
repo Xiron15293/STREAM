@@ -4,7 +4,7 @@
 
 ---
 
-## Hermes V0.8.1 — Saldo iniziale conti
+## Hermes V0.7.0 — Saldo iniziale conti
 
 ### Stato sintetico
 
@@ -16,7 +16,7 @@
   - `Saldo attuale` in sola lettura
   - nota informativa sul calcolo automatico
 
-### Hermes V0.8.x — Navigazione conti e archiviati
+### Hermes V0.7.0 — Navigazione conti e archiviati
 
 ### Stato sintetico
 
@@ -54,11 +54,141 @@
 - `flutter test --no-pub test/reset_data_test.dart`: **PASS**
 - `flutter test --no-pub test/qa_extensive_test.dart`: **PASS**
 - `flutter test --no-pub test/one_money_csv_import_test.dart`: **PASS**
-- Suite completa: da rilanciare
+- `flutter test --no-pub`: **PASS** — 575 test verdi
+- `flutter build apk --release --no-pub`: **PASS** — `app-release.apk` 66.7MB
+- `flutter build ios --release --no-codesign --no-pub`: **PASS** al secondo tentativo — `Runner.app` 32.8MB
 
 ---
 
-## Hermes V0.8.0 — Import CSV 1Money (prima versione)
+## Hermes V0.8.0 — Calculator Pad (QA iniziale — prima del fix tastiera nativa)
+
+### Stato sintetico
+
+- Aggiunto Calculator Pad riusabile per i campi importo
+- Il pad supporta:
+  - numeri interi e decimali
+  - `+`
+  - `-`
+  - `*`
+  - `/`
+  - `:`
+  - `=`
+  - backspace
+  - clear
+  - `Fatto`
+- `=` calcola l'espressione corrente senza chiudere il pad
+- `Fatto` calcola, conferma il valore e chiude il pad
+- Divisione per zero ed espressioni incomplete mostrano errore non bloccante
+- Parser/evaluator separato dalla UI, senza `eval`
+
+### Integrazione
+
+- Movimento manuale
+- Modifica movimento
+- Trasferimento manuale
+- Movimenti rapidi
+- Preferiti
+- Saldo iniziale conto
+
+### Test aggiunti
+
+- Unit test evaluator:
+  - somma
+  - sottrazione
+  - moltiplicazione
+  - divisione
+  - divisione con `:`
+  - decimali
+  - virgola decimale
+  - divisione per zero
+  - espressione incompleta
+  - input vuoto
+  - precedenza operatori
+- Widget test pad:
+  - numeri e operatori
+  - `=` calcola senza chiudere
+  - continuazione dopo `=`
+  - `Fatto` calcola e chiude
+  - backspace e clear
+  - errori non bloccanti
+- Integrazione:
+  - aggiunta spesa
+  - aggiunta entrata
+  - modifica movimento
+  - saldo iniziale conto
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: **PASS**
+- `flutter test --no-pub test/calculator_amount_pad_test.dart`: **PASS**
+- `flutter test --no-pub test/calculator_amount_pad_test.dart test/qa_movements_test.dart`: **PASS**
+- `flutter test --no-pub`: **PASS** — 575 test verdi
+- `flutter build apk --release --no-pub`: **PASS** — `app-release.apk` 66.7MB
+- `flutter build ios --release --no-codesign --no-pub`: **PASS** al secondo tentativo — `Runner.app` 32.8MB
+
+### Nota build iOS
+
+Il primo tentativo iOS ha fallito in Xcode/DerivedData con `disk I/O error` e file intermedi mancanti. Il secondo tentativo, senza modifiche al codice, è passato.
+
+---
+
+## Hermes V0.8.0 — Calculator Pad ✅ COMPLETATO
+
+### Stato sintetico
+
+- Calculator Pad riusabile per tutti i campi importo
+- `CalculatorAmountField` con `readOnly: true`, `showCursor: false`, `keyboardType: TextInputType.none`
+- `unfocus()` prima dell'apertura del bottom sheet → tastiera nativa bloccata
+- `AmountExpressionEvaluator` senza `eval` con supporto:
+  - operatori: `+`, `-`, `*`, `/`, `:`, `=`
+  - decimali e virgola decimale
+  - backspace, clear, precedenza operatori
+  - divisione per zero ed espressioni incomplete gestite
+- `=` calcola senza chiudere il pad
+- `Fatto` calcola/conferma/chiude
+
+### Integrazione
+
+- Movimento manuale, modifica movimento, trasferimento manuale
+- Movimenti rapidi e preferiti
+- Saldo iniziale conto
+
+### Fix tastiera nativa (finale V0.8.0)
+
+- **Bug**: dopo tap sul campo importo, tastiera numerica nativa si apriva sopra il pad custom
+- **Root cause**: TextField attivava focus/keyboard prima che `onTap` aprisse il bottom sheet; dopo chiusura, il focus residuo riapriva la tastiera
+- **Fix**: `readOnly: true`, `showCursor: false`, `keyboardType: TextInputType.none`, `FocusManager.instance.primaryFocus?.unfocus()` in `_showPad()`
+
+### Test helper
+
+- Nuovo file: `test/helpers/calculator_test_helpers.dart`
+- Helper riusabili:
+  - `enterAmountWithCalculator(tester, amount, {label})` — tap campo → apre pad → tasti → Fatto → chiude
+  - `openPadAndType(tester, expression, {label})` — apre pad, digita senza confermare
+  - `closeCalculatorPad(tester)` — clear + Fatto per chiusura forzata
+
+### Nota QA — 49 fail legacy
+
+I 49 test che fallivano dopo V0.8.0 NON erano regressioni business logic:
+- **Causa**: `CalculatorAmountField` ora readOnly → `tester.enterText` non scrive più sui campi importo. Controller restava vuoto → movimenti non salvati → bottom sheet/overlay aperti → tap successivi colpivano widget sbagliati
+- **Fix**: 44 `saveMovement`/direct `enterText` calls + 5 UI widget test aggiornati per usare il Calculator Pad come l'utente reale
+- **Nessun indebolimento assert, nessuno skip**
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: **PASS** — 0 issues
+- `test/calculator_amount_pad_test.dart`: **30/30 PASS**
+- `test/qa_movements_test.dart`: **85/85 PASS**
+- `test/widget_test.dart`: **9/9 PASS**
+- `test/dashboard_after_delete_test.dart`: **21/21 PASS**
+- `test/qa_extensive_test.dart`: **30/30 PASS**
+- `flutter test --no-pub`: **579/579 All tests passed**
+- `flutter build apk --release --no-pub`: da rilanciare
+- `flutter build ios --release --no-codesign --no-pub`: da rilanciare
+
+---
+
+## Hermes V0.7.0 — Import CSV 1Money (prima versione)
 
 ### Stato sintetico
 

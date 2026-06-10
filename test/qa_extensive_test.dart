@@ -13,6 +13,7 @@ import 'package:stream_app/main.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/backup_data.dart';
 import 'package:stream_app/models/category.dart';
+import 'helpers/calculator_test_helpers.dart';
 import 'package:stream_app/models/daily_group.dart';
 import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/models/movement.dart';
@@ -294,7 +295,7 @@ Future<void> _fillManualMovementForm(
   await tester.tap(find.text(typeText));
   await tester.pumpAndSettle();
   await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
-  await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), amount);
+  await enterAmountWithCalculator(tester, amount);
   if (note != null) {
     await tester.enterText(
       find.widgetWithText(TextField, 'Nota (opzionale)'),

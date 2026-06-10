@@ -10,6 +10,7 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/main.dart';
+import 'helpers/calculator_test_helpers.dart';
 
 /// Helper: create AppDatabase + pump app
 Future<AppDatabase> pumpApp(WidgetTester tester) async {
@@ -33,7 +34,7 @@ Future<void> saveMovement(
   await tester.tap(find.byType(FloatingActionButton));
   await tester.pumpAndSettle();
   await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
-  await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), amount);
+  await enterAmountWithCalculator(tester, amount);
   if (isIncome) {
     await tester.tap(find.text('Entrata'));
     await tester.pumpAndSettle();

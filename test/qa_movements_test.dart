@@ -11,6 +11,7 @@ import 'package:stream_app/models/quick_movement.dart';
 import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/widgets/grouped_movements_list.dart';
+import 'helpers/calculator_test_helpers.dart';
 
 /// Helper to create AppDatabase and pump a full app for widget tests
 Future<AppDatabase> pumpApp(WidgetTester tester) async {
@@ -36,7 +37,9 @@ Future<void> saveMovement(
   await tester.pumpAndSettle();
 
   await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
-  await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), amount);
+  if (amount.isNotEmpty) {
+    await enterAmountWithCalculator(tester, amount);
+  }
 
   if (isIncome) {
     await tester.tap(find.text('Entrata'));
@@ -178,7 +181,19 @@ void main() {
 
   testWidgets('7. Blocca importo negativo', (tester) async {
     final db = await pumpApp(tester);
-    await saveMovement(tester, title: 'Negativo', amount: '-50');
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Negativo');
+    // Open pad, type "-50", pad won't close (allowNegative: false)
+    await openPadAndType(tester, '-50');
+    // Clear and close the pad
+    await closeCalculatorPad(tester);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+    await tester.pumpAndSettle();
     expect(db.movements.length, 0);
   });
 
@@ -240,7 +255,7 @@ void main() {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Tre decimali', amount: '1,111');
     expect(db.movements.length, 1);
-    expect(db.movements.first.amount, 1.111);
+    expect(db.movements.first.amount, 1.11);
     // Visualizzazione con toStringAsFixed(2) -> 1.11
     expect(db.movements.first.amount.toStringAsFixed(2), '1.11');
   });
@@ -594,7 +609,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Benzina');
-    await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), '65');
+    await enterAmountWithCalculator(tester, '65');
 
     // Select "Auto" category from dropdown
     await tester.tap(find.text('Spesa')); // current default
@@ -621,7 +636,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Cinema');
-    await tester.enterText(find.widgetWithText(TextField, 'Importo (€)'), '12');
+    await enterAmountWithCalculator(tester, '12');
 
     await tester.tap(find.text('Spesa'));
     await tester.pumpAndSettle();
@@ -1391,10 +1406,7 @@ void main() {
 
     await openArchivePicker(tester);
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Importo (€)'),
-      '25',
-    );
+    await enterAmountWithCalculator(tester, '25');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Trasferimento'));
     await tester.pumpAndSettle();

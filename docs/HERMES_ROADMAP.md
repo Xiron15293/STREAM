@@ -36,20 +36,23 @@
 | V0.6.2 | Ordinamento Centralizzato + Fix Gruppi Giorno | ✅ COMPLETATO | 2026-06-08 |
 | V0.6.3 | Ricerca Globale Movimenti | ✅ COMPLETATO | 2026-06-08 |
 | V0.6.4 | UX Movimenti Rapidi/Preferiti — Data Picker | ✅ COMPLETATO | 2026-06-08 |
-| V0.8.0 | Import CSV 1Money (prima versione) | 🛠️ IMPLEMENTATO | 2026-06-09 |
+| V0.7.0 | Import CSV 1Money + Saldo Iniziale + Archivio Navigabile | ✅ COMPLETATO | 2026-06-09 |
+| V0.7.1 | QA Reset Stabilizzato | ✅ COMPLETATO | 2026-06-09 |
+| V0.8.0 | Calculator Pad | ✅ COMPLETATO | 2026-06-10 |
 
-## Approvate / Future (V0.6.x+)
+## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.6.5 | Reset dati app | 📋 APPROVATA |
-| V0.6.6 | Trasferimenti tra Conti | 📋 APPROVATA |
-| V0.6.8 | Calendar Heatmap | 💡 IDEA |
-| V0.6.9 | Fondi / Obiettivi | 💡 IDEA |
-| V0.7 | Athena Foundation (Budget, AI, Insight) | 💡 IDEA |
-| V0.8 | Import CSV | 💡 IDEA |
-| V0.9 | Scenari | 💡 IDEA |
-| V1.1 | Cloud Sync (backup premium, multi-dispositivo) | 💡 IDEA |
+| V0.9.0 | Trasferimenti tra Conti | 📋 APPROVATA |
+| V0.9.1 | Calendar Heatmap | 💡 IDEA |
+| V0.9.2 | Fondi / Obiettivi | 💡 IDEA |
+| V0.9.3 | Beneficiario + Etichette | 💡 IDEA |
+| V1.0 | Prima Beta STREAM | ⏳ PIANIFICATA |
+| V1.0+ | Adaptive / Tablet Layout | 💡 IDEA |
+| V1.0+ | Cloud Sync (backup premium, multi-dispositivo) | 💡 IDEA |
+| V1.0+ | Scenari (what-if, pianificazione) | 💡 IDEA |
+| V1.0+ | Athena Foundation (Budget, AI categorization, insight) | 💡 IDEA |
 
 Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato aggiornato delle feature.
 
@@ -57,15 +60,15 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 | Versione | Focus |
 |----------|-------|
-| V0.6.5 | Reset dati app (📋) — reset controllato e ripartenza pulita |
-| V0.6.6 | Trasferimenti tra Conti (📋) — saldo duale, backup compatibile |
-| V0.6.8 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
-| V0.6.9 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
-| V0.7 | Athena Foundation (💡) — Budget, AI categorization, insight |
-| V0.8 | Import CSV (💡) — import movimenti da home banking |
-| V0.9 | Scenari (💡) — proiezioni what-if, pianificazione |
+| V0.9.0 | Trasferimenti tra Conti (📋) — saldo duale, backup compatibile |
+| V0.9.1 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
+| V0.9.2 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
+| V0.9.3 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
 | V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
+| V1.0+ | Cloud Sync (💡) — backup premium, multi-dispositivo |
+| V1.0+ | Scenari (💡) — proiezioni what-if, pianificazione |
+| V1.0+ | Athena Foundation (💡) — Budget, AI categorization, insight |
 
 ---
 
@@ -250,5 +253,122 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 3. Categoria dettaglio bottom sheet
 4. Azione rapida "+" per categoria
 5. TimeFilter.contains() fix
+
+---
+
+### V0.7.0 — Import CSV 1Money + Saldo Iniziale + Archivio Navigabile ✅
+
+> **Interventi**: Import CSV 1Money con validazione dataset reale, saldo iniziale conti, Archivio navigabile conti/categorie
+> **Test**: 575 test pass | `flutter analyze` 0 issues
+> **Build**: APK release PASS ✅ | iOS release PASS ✅
+
+**Cosa è stato fatto (V0.7.0 completa):**
+
+### 1. Import CSV 1Money
+- Import da CSV 1Money con validazione dataset reale (6369 movimenti)
+- Zero perdita: backup 6369, CSV unici 6369, overlap 6369, backup-only 0, csv-only 0
+- `test/one_money_csv_import_test.dart` verde
+- Nessuna duplicazione al re-import
+
+### 2. Saldo Iniziale Conti
+- `accounts.initial_balance` nel modello
+- Saldo attuale = saldo iniziale + entrate − spese ± trasferimenti netti
+- Modifica conto: saldo iniziale editabile, saldo attuale derivato in sola lettura
+
+### 3. Archivio Navigabile
+- **Archivio > Conti**: conti cliccabili → bottom sheet "Movimenti del conto" con saldo iniziale, entrate/uscite/trasferimenti filtrati, TimeFilterBar, GroupedMovementsList
+- **Archivio > Categorie**: categorie cliccabili → bottom sheet movimenti categoria (spesa mostra spese, entrata mostra entrate, trasferimenti esclusi)
+- Conti/categorie attivi e archiviati in sezioni separate; archiviati consultabili/cliccabili
+
+### File modificati (V0.7.0)
+| File | Modifica |
+|------|----------|
+| `lib/data/database.dart` | Saldo iniziale, query filtrate archivio |
+| `lib/models/account.dart` | `initialBalance` field |
+| `lib/screens/accounts_screen.dart` | Archivio conti navigabile |
+| `lib/screens/categories_screen.dart` | Archivio categorie navigabile |
+| `lib/widgets/account_detail_sheet.dart` | **NUOVO** — dettaglio conto |
+| `lib/widgets/category_movements_sheet.dart` | **NUOVO** — dettaglio categoria |
+| + `lib/import/` | Modulo import CSV 1Money |
+
+---
+
+### V0.7.1 — QA Reset Stabilizzato ✅
+
+> **Interventi**: Stabilizzazione test reset, eliminata dipendenza da stato db pregresso
+> **Test**: 575 test pass | `flutter analyze` 0 issues
+> **Build**: APK release PASS ✅ | iOS release PASS ✅
+
+**Cosa è stato fatto (V0.7.1 completa):**
+- `reset_data_test.dart` verde
+- `qa_extensive_test.dart` verde (C2/F2/F3/L1 stabilizzati)
+- Reset validato tramite flusso UI reale nei test
+- Backup pre-reset stub nel test harness dove necessario
+- Nessuna modifica business logic / UI per stabilizzare i test
+
+---
+
+### V0.8.0 — Calculator Pad ✅
+
+> **Interventi**: CalculatorAmountField riusabile, AmountExpressionEvaluator, integrazione in form movimento/trasferimento/conto
+> **Test**: 579 test pass (+30 calculator pad) | `flutter analyze` 0 issues
+> **Build**: APK release PASS ✅ | iOS release PASS ✅
+
+**Cosa è stato fatto (V0.8.0 completa):**
+
+### 1. CalculatorAmountField
+- `lib/widgets/calculator_amount_pad.dart` — widget riusabile
+- TextField `readOnly: true`, `showCursor: false`, `keyboardType: TextInputType.none` → tastiera nativa bloccata
+- `onTap` apre il calculator pad custom via bottom sheet
+- Focus rimosso prima dell'apertura (`FocusManager.instance.primaryFocus?.unfocus()`)
+- Valore nel controller persistente dopo chiusura pad
+
+### 2. AmountExpressionEvaluator
+- `AmountExpressionEvaluator` in `calculator_amount_pad.dart`
+- Supporto operatori: `+`, `-`, `*`, `/`, `:`, `=`
+- Decimali (`.`) e virgola decimale (`,`)
+- Backspace, clear
+- Precedenza operatori (`2 + 3 * 4 = 14`)
+- Divisione per zero gestita
+- Espressioni incomplete gestite
+- **Nessun `eval()`** — parser custom safe
+
+### 3. Comportamento pad
+- `=` calcola senza chiudere il bottom sheet
+- "Fatto" calcola, conferma, e chiude il bottom sheet
+- Dopo `=` si può continuare l'operazione
+
+### 4. Integrazione
+- Movimento manuale (spesa/entrata)
+- Modifica movimento
+- Trasferimento manuale
+- Movimenti rapidi & preferiti
+- Saldo iniziale conto
+
+### 5. Fix tastiera nativa (V0.8.0 finale)
+- **Bug**: dopo tap sul campo importo, tastiera numerica nativa si apriva sopra il pad custom
+- **Root cause**: TextField attivava focus/keyboard prima che `onTap` aprisse il bottom sheet; dopo chiusura, il focus residuo riapriva la tastiera
+- **Fix**: `readOnly: true`, `showCursor: false`, `keyboardType: TextInputType.none`, `unfocus()` in `_showPad()`
+- **Test**: 4 nuovi test (readOnly, showCursor, keyboardType, tap apre pad custom, Fatto chiude e mantiene valore, = calcola senza chiudere)
+- **49 test legacy aggiornati**: `tester.enterText` su campo readOnly non funzionava più → sostituito con helper Calculator Pad
+- **Nuovo helper test**: `test/helpers/calculator_test_helpers.dart` con `enterAmountWithCalculator`, `openPadAndType`, `closeCalculatorPad`
+- **Nessun indebolimento assert, nessuno skip**
+- **Verifica**: 30/30 calculator pad test pass, 579/579 suite completa, analyze 0 issues
+
+### File modificati (V0.8.0)
+| File | Modifica |
+|------|----------|
+| `lib/widgets/calculator_amount_pad.dart` | CalculatorAmountField + CalculatorAmountPad + AmountExpressionEvaluator |
+| `lib/widgets/movement_picker.dart` | Usa CalculatorAmountField (3 campi) |
+| `lib/widgets/movement_form.dart` | Usa CalculatorAmountField (1 campo) |
+| `lib/screens/accounts_screen.dart` | Usa CalculatorAmountField (saldo iniziale) |
+| `test/calculator_amount_pad_test.dart` | 30 test (evaluator + widget + integrazione) |
+| `test/helpers/calculator_test_helpers.dart` | **NUOVO** — helper test Calculator Pad |
+| `test/qa_movements_test.dart` | `saveMovement` e 3 test aggiornati per Calculator Pad |
+| `test/widget_test.dart` | 3 test aggiornati per Calculator Pad |
+| `test/dashboard_after_delete_test.dart` | `saveMovement` aggiornato per Calculator Pad |
+| `test/qa_extensive_test.dart` | `_fillManualMovementForm` aggiornato per Calculator Pad |
+
+---
 
 Vedi `CHANGELOG.md` per dettaglio completo di V0.5.x, V0.4.x, V0.3.x, V0.2, V0.1.

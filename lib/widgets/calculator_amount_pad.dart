@@ -156,14 +156,16 @@ class CalculatorAmountField extends StatelessWidget {
       key: fieldKey,
       controller: controller,
       decoration: decoration,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      showCursor: true,
+      readOnly: true,
+      showCursor: false,
+      keyboardType: TextInputType.none,
       onChanged: onChanged,
       onTap: () => _showPad(context),
     );
   }
 
   Future<void> _showPad(BuildContext context) async {
+    FocusManager.instance.primaryFocus?.unfocus();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

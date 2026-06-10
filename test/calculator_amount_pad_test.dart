@@ -222,6 +222,60 @@ void main() {
     });
   });
 
+  group('CalculatorAmountField — keyboard prevention', () {
+    testWidgets('campo readOnly non apre tastiera nativa', (tester) async {
+      final controller = TextEditingController();
+      await _pumpAmountField(tester, controller);
+
+      final field = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Importo (€)'),
+      );
+      expect(field.readOnly, isTrue);
+      expect(field.showCursor, isFalse);
+      expect(field.keyboardType, TextInputType.none);
+    });
+
+    testWidgets('tap apre il calculator pad custom', (tester) async {
+      final controller = TextEditingController();
+      await _pumpAmountField(tester, controller);
+
+      await _openPad(tester);
+      expect(find.byKey(const Key('calculator_key_1')), findsOneWidget);
+      expect(find.byKey(const Key('calculator_key_+')), findsOneWidget);
+      expect(find.byKey(const Key('calculator_done')), findsOneWidget);
+    });
+
+    testWidgets('Fatto chiude pad e mantiene valore nel controller', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: '10+5');
+      await _pumpAmountField(tester, controller);
+
+      await _openPad(tester);
+      await tester.tap(find.byKey(const Key('calculator_equals')));
+      await tester.tap(find.byKey(const Key('calculator_done')));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, '15');
+      expect(find.byKey(const Key('calculator_amount_display')), findsNothing);
+    });
+
+    testWidgets('= calcola senza chiudere il pad', (tester) async {
+      final controller = TextEditingController(text: '10+5');
+      await _pumpAmountField(tester, controller);
+
+      await _openPad(tester);
+      await tester.tap(find.byKey(const Key('calculator_equals')));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, '15');
+      expect(
+        find.byKey(const Key('calculator_amount_display')),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('integrazione campi importo', () {
     testWidgets('aggiunta spesa con importo da calculator pad', (tester) async {
       final db = AppDatabase();

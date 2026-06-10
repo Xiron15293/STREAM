@@ -7,6 +7,7 @@ import 'package:stream_app/data/database.dart';
 import 'package:stream_app/screens/accounts_screen.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
+import 'helpers/calculator_test_helpers.dart';
 
 void main() {
   SharedPreferences.setMockInitialValues({});
@@ -99,10 +100,7 @@ void main() {
       find.widgetWithText(TextField, 'Titolo'),
       'Test salvataggio',
     );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Importo (€)'),
-      '150',
-    );
+    await enterAmountWithCalculator(tester, '150');
 
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
     await tester.pumpAndSettle();
@@ -131,10 +129,7 @@ void main() {
       find.widgetWithText(TextField, 'Titolo'),
       'Spesa con virgola',
     );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Importo (€)'),
-      '10,50',
-    );
+    await enterAmountWithCalculator(tester, '10,50');
 
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
     await tester.pumpAndSettle();
@@ -166,10 +161,7 @@ void main() {
       find.widgetWithText(TextField, 'Titolo'),
       'Stipendio',
     );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Importo (€)'),
-      '2000',
-    );
+    await enterAmountWithCalculator(tester, '2000');
 
     // Switch to income type
     await tester.tap(find.text('Entrata'));
@@ -227,9 +219,10 @@ void main() {
     expect(find.byKey(const Key('account_current_balance_value')), findsOneWidget);
     expect(find.byKey(const Key('account_balance_info_text')), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const Key('account_initial_balance_field')),
+    await enterAmountWithCalculator(
+      tester,
       '100',
+      label: 'Saldo iniziale',
     );
     await tester.pumpAndSettle();
 
