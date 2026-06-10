@@ -26,13 +26,15 @@ void main() {
     test('2. Add account in-memory mode', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addAccount(Account(
-        id: 'acc_test',
-        name: 'Contante',
-        type: AccountType.cash,
-        initialBalance: 100.0,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_test',
+          name: 'Contante',
+          type: AccountType.cash,
+          initialBalance: 100.0,
+          createdAt: now,
+        ),
+      );
       expect(db.accounts.length, 2);
       expect(db.accounts.any((a) => a.name == 'Contante'), true);
     });
@@ -55,69 +57,94 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addMovement(Movement(
-        id: 'inc1', title: 'Stipendio', amount: 2000,
-        type: MovementType.income, date: now, categoryId: 'inc_1',
-        accountId: 'acc_default', createdAt: now,
-      ));
-      await db.addMovement(Movement(
-        id: 'exp1', title: 'Spesa', amount: 500,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        accountId: 'acc_default', createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'inc1',
+          title: 'Stipendio',
+          amount: 2000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_default',
+          createdAt: now,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'exp1',
+          title: 'Spesa',
+          amount: 500,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          accountId: 'acc_default',
+          createdAt: now,
+        ),
+      );
 
       final acc = db.getAccount('acc_default');
       expect(db.getAccountBalance(acc), 1500.0);
     });
 
-    test('4b. Account balance includes saldo iniziale even without movements', () async {
-      final db = AppDatabase();
-      final now = DateTime.now();
+    test(
+      '4b. Account balance includes saldo iniziale even without movements',
+      () async {
+        final db = AppDatabase();
+        final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_seed',
-        name: 'Conto Seed',
-        type: AccountType.bank,
-        initialBalance: 100.0,
-        createdAt: now,
-      ));
+        await db.addAccount(
+          Account(
+            id: 'acc_seed',
+            name: 'Conto Seed',
+            type: AccountType.bank,
+            initialBalance: 100.0,
+            createdAt: now,
+          ),
+        );
 
-      expect(db.getAccountBalance(db.getAccount('acc_seed')), 100.0);
-      expect(db.totalAccountsBalance, 100.0);
-    });
+        expect(db.getAccountBalance(db.getAccount('acc_seed')), 100.0);
+        expect(db.totalAccountsBalance, 100.0);
+      },
+    );
 
     test('4c. Entrata e uscita agiscono sopra il saldo iniziale', () async {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_seed_mov',
-        name: 'Conto Movimento',
-        type: AccountType.bank,
-        initialBalance: 100.0,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_seed_mov',
+          name: 'Conto Movimento',
+          type: AccountType.bank,
+          initialBalance: 100.0,
+          createdAt: now,
+        ),
+      );
 
-      await db.addMovement(Movement(
-        id: 'seed_income',
-        title: 'Entrata',
-        amount: 50.0,
-        type: MovementType.income,
-        date: now,
-        categoryId: 'inc_1',
-        accountId: 'acc_seed_mov',
-        createdAt: now,
-      ));
-      await db.addMovement(Movement(
-        id: 'seed_expense',
-        title: 'Spesa',
-        amount: 30.0,
-        type: MovementType.expense,
-        date: now,
-        categoryId: 'exp_1',
-        accountId: 'acc_seed_mov',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'seed_income',
+          title: 'Entrata',
+          amount: 50.0,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_seed_mov',
+          createdAt: now,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'seed_expense',
+          title: 'Spesa',
+          amount: 30.0,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          accountId: 'acc_seed_mov',
+          createdAt: now,
+        ),
+      );
 
       expect(db.getAccountBalance(db.getAccount('acc_seed_mov')), 120.0);
       expect(db.totalAccountsBalance, 120.0);
@@ -127,91 +154,199 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc2', name: 'Cash', type: AccountType.cash,
-        initialBalance: 200.0, createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc2',
+          name: 'Cash',
+          type: AccountType.cash,
+          initialBalance: 200.0,
+          createdAt: now,
+        ),
+      );
 
-      await db.addMovement(Movement(
-        id: 'm1', title: 'Income', amount: 1000,
-        type: MovementType.income, date: now, categoryId: 'inc_1',
-        accountId: 'acc_default', createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'm1',
+          title: 'Income',
+          amount: 1000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_default',
+          createdAt: now,
+        ),
+      );
 
       expect(db.totalAccountsBalance, 1200.0); // 0 + 200 + 1000
     });
 
-    test('5b. Transfer between accounts keeps total balance unchanged', () async {
+    test('5a. Active balance excludes archived account balance', () async {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_src',
-        name: 'Origine',
-        type: AccountType.bank,
-        initialBalance: 100.0,
-        createdAt: now,
-      ));
-
-      await db.addAccount(Account(
-        id: 'acc_dest',
-        name: 'Destinazione',
-        type: AccountType.bank,
-        initialBalance: 300.0,
-        createdAt: now,
-      ));
-
-      await db.addMovement(Movement(
-        id: 'tr1',
-        title: 'Trasferimento',
-        amount: 150,
-        type: MovementType.transfer,
-        date: now,
-        categoryId: '',
-        accountId: 'acc_src',
-        destinationAccountId: 'acc_dest',
-        createdAt: now,
-      ));
-
-      expect(db.getAccountBalance(db.getAccount('acc_src')), -50.0);
-      expect(db.getAccountBalance(db.getAccount('acc_dest')), 450.0);
-      expect(db.totalAccountsBalance, 400.0);
-    });
-
-    test('5c. Multiple transfers on the same day aggregate correctly', () async {
-      final db = AppDatabase();
-      final now = DateTime.now();
-
-      await db.addAccount(Account(
-        id: 'acc_dest',
-        name: 'Destinazione',
-        type: AccountType.bank,
-        initialBalance: 0.0,
-        createdAt: now,
-      ));
-
-      for (var i = 0; i < 3; i++) {
-        await db.addMovement(Movement(
-          id: 'tr_$i',
-          title: 'T$i',
-          amount: 10.0 * (i + 1),
-          type: MovementType.transfer,
-          date: now,
-          categoryId: '',
-          accountId: 'acc_default',
-          destinationAccountId: 'acc_dest',
+      await db.updateAccount(
+        'acc_default',
+        'Principale',
+        AccountType.bank,
+        100.0,
+      );
+      await db.addAccount(
+        Account(
+          id: 'acc_archived_250',
+          name: 'Archivio 250',
+          type: AccountType.bank,
+          initialBalance: 250.0,
           createdAt: now,
-        ));
-      }
+        ),
+      );
 
-      expect(db.getAccountBalance(db.getAccount('acc_default')), -60.0);
-      expect(db.getAccountBalance(db.getAccount('acc_dest')), 60.0);
-      expect(db.totalAccountsBalance, 0.0);
+      expect(db.totalAccountsBalance, 350.0);
+
+      await db.archiveAccount('acc_archived_250');
+
+      expect(db.getAccountBalance(db.getAccount('acc_archived_250')), 250.0);
+      expect(db.totalAccountsBalance, 100.0);
     });
+
+    test(
+      '5aa. Archived account keeps derived balance but not available total',
+      () async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        await db.addAccount(
+          Account(
+            id: 'acc_archived_history',
+            name: 'Archivio storico',
+            type: AccountType.bank,
+            initialBalance: 100.0,
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'archived_expense_30',
+            title: 'Storico',
+            amount: 30.0,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            accountId: 'acc_archived_history',
+            createdAt: now,
+          ),
+        );
+
+        expect(
+          db.getAccountBalance(db.getAccount('acc_archived_history')),
+          70.0,
+        );
+
+        await db.archiveAccount('acc_archived_history');
+
+        expect(
+          db.getAccountBalance(db.getAccount('acc_archived_history')),
+          70.0,
+        );
+        expect(db.totalAccountsBalance, 0.0);
+        expect(
+          db.movements.where((m) => m.accountId == 'acc_archived_history'),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      '5b. Transfer between accounts keeps total balance unchanged',
+      () async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        await db.addAccount(
+          Account(
+            id: 'acc_src',
+            name: 'Origine',
+            type: AccountType.bank,
+            initialBalance: 100.0,
+            createdAt: now,
+          ),
+        );
+
+        await db.addAccount(
+          Account(
+            id: 'acc_dest',
+            name: 'Destinazione',
+            type: AccountType.bank,
+            initialBalance: 300.0,
+            createdAt: now,
+          ),
+        );
+
+        await db.addMovement(
+          Movement(
+            id: 'tr1',
+            title: 'Trasferimento',
+            amount: 150,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: '',
+            accountId: 'acc_src',
+            destinationAccountId: 'acc_dest',
+            createdAt: now,
+          ),
+        );
+
+        expect(db.getAccountBalance(db.getAccount('acc_src')), -50.0);
+        expect(db.getAccountBalance(db.getAccount('acc_dest')), 450.0);
+        expect(db.totalAccountsBalance, 400.0);
+      },
+    );
+
+    test(
+      '5c. Multiple transfers on the same day aggregate correctly',
+      () async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        await db.addAccount(
+          Account(
+            id: 'acc_dest',
+            name: 'Destinazione',
+            type: AccountType.bank,
+            initialBalance: 0.0,
+            createdAt: now,
+          ),
+        );
+
+        for (var i = 0; i < 3; i++) {
+          await db.addMovement(
+            Movement(
+              id: 'tr_$i',
+              title: 'T$i',
+              amount: 10.0 * (i + 1),
+              type: MovementType.transfer,
+              date: now,
+              categoryId: '',
+              accountId: 'acc_default',
+              destinationAccountId: 'acc_dest',
+              createdAt: now,
+            ),
+          );
+        }
+
+        expect(db.getAccountBalance(db.getAccount('acc_default')), -60.0);
+        expect(db.getAccountBalance(db.getAccount('acc_dest')), 60.0);
+        expect(db.totalAccountsBalance, 0.0);
+      },
+    );
 
     test('6. Update account details', () async {
       final db = AppDatabase();
-      await db.updateAccount('acc_default', 'Banca Principale', AccountType.bank, 500);
+      await db.updateAccount(
+        'acc_default',
+        'Banca Principale',
+        AccountType.bank,
+        500,
+      );
       final acc = db.getAccount('acc_default');
       expect(acc.name, 'Banca Principale');
     });
@@ -221,6 +356,87 @@ void main() {
       final acc = db.getAccount('acc_default');
       expect(db.getAccountBalance(acc), 0.0);
     });
+
+    test(
+      '7b. Modify initialBalance updates current balance (senza movimenti)',
+      () async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        await db.addAccount(
+          Account(
+            id: 'acc_bal_mod',
+            name: 'Balance Test',
+            type: AccountType.bank,
+            initialBalance: 100.0,
+            createdAt: now,
+          ),
+        );
+
+        expect(db.getAccountBalance(db.getAccount('acc_bal_mod')), 100.0);
+
+        await db.updateAccount(
+          'acc_bal_mod',
+          'Balance Test',
+          AccountType.bank,
+          250.0,
+        );
+
+        expect(db.getAccountBalance(db.getAccount('acc_bal_mod')), 250.0);
+      },
+    );
+
+    test(
+      '7c. Modify initialBalance con movimenti — saldo attuale derivato',
+      () async {
+        final db = AppDatabase();
+        final now = DateTime.now();
+
+        await db.addAccount(
+          Account(
+            id: 'acc_bal_mov',
+            name: 'Balance Mov',
+            type: AccountType.bank,
+            initialBalance: 100.0,
+            createdAt: now,
+          ),
+        );
+
+        await db.addMovement(
+          Movement(
+            id: 'mov_bal_test',
+            title: 'Spesa',
+            amount: 30.0,
+            type: MovementType.expense,
+            date: now,
+            categoryId: 'exp_1',
+            accountId: 'acc_bal_mov',
+            createdAt: now,
+          ),
+        );
+
+        expect(db.getAccountBalance(db.getAccount('acc_bal_mov')), 70.0);
+
+        await db.updateAccount(
+          'acc_bal_mov',
+          'Balance Mov',
+          AccountType.bank,
+          250.0,
+        );
+
+        expect(db.getAccountBalance(db.getAccount('acc_bal_mov')), 220.0);
+      },
+    );
+
+    test(
+      '7d. currentBalance non è un campo salvato — nessuna modifica diretta',
+      () {
+        final db = AppDatabase();
+        final acc = db.getAccount('acc_default');
+        expect(acc.initialBalance, 0.0);
+        expect(db.getAccountBalance(acc), 0.0);
+      },
+    );
   });
 
   group('SQLite persistence', () {
@@ -247,13 +463,15 @@ void main() {
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
 
-      await db.addAccount(Account(
-        id: 'acc_test_1',
-        name: 'Contanti',
-        type: AccountType.cash,
-        initialBalance: 50.0,
-        createdAt: DateTime.now(),
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_test_1',
+          name: 'Contanti',
+          type: AccountType.cash,
+          initialBalance: 50.0,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
@@ -286,11 +504,18 @@ void main() {
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
 
-      await db.addMovement(Movement(
-        id: 'inc_bal', title: 'Stipendio', amount: 3000,
-        type: MovementType.income, date: DateTime.now(),
-        categoryId: 'inc_1', accountId: 'acc_default', createdAt: DateTime.now(),
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'inc_bal',
+          title: 'Stipendio',
+          amount: 3000,
+          type: MovementType.income,
+          date: DateTime.now(),
+          categoryId: 'inc_1',
+          accountId: 'acc_default',
+          createdAt: DateTime.now(),
+        ),
+      );
 
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
@@ -300,40 +525,47 @@ void main() {
       await sqlite.close();
     });
 
-    test('11b. Transfer survives reload and updates both account balances', () async {
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
-      final now = DateTime.now();
+    test(
+      '11b. Transfer survives reload and updates both account balances',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
+        final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_dest',
-        name: 'Secondo',
-        type: AccountType.bank,
-        initialBalance: 100.0,
-        createdAt: now,
-      ));
-      await db.addMovement(Movement(
-        id: 'tr_reload',
-        title: 'Trasferimento',
-        amount: 40,
-        type: MovementType.transfer,
-        date: now,
-        categoryId: '',
-        accountId: 'acc_default',
-        destinationAccountId: 'acc_dest',
-        createdAt: now,
-      ));
+        await db.addAccount(
+          Account(
+            id: 'acc_dest',
+            name: 'Secondo',
+            type: AccountType.bank,
+            initialBalance: 100.0,
+            createdAt: now,
+          ),
+        );
+        await db.addMovement(
+          Movement(
+            id: 'tr_reload',
+            title: 'Trasferimento',
+            amount: 40,
+            type: MovementType.transfer,
+            date: now,
+            categoryId: '',
+            accountId: 'acc_default',
+            destinationAccountId: 'acc_dest',
+            createdAt: now,
+          ),
+        );
 
-      final db2 = AppDatabase(sqlite: sqlite);
-      await db2.initialize();
-      expect(db2.getAccountBalance(db2.getAccount('acc_default')), -40.0);
-      expect(db2.getAccountBalance(db2.getAccount('acc_dest')), 140.0);
-      expect(db2.totalAccountsBalance, 100.0);
+        final db2 = AppDatabase(sqlite: sqlite);
+        await db2.initialize();
+        expect(db2.getAccountBalance(db2.getAccount('acc_default')), -40.0);
+        expect(db2.getAccountBalance(db2.getAccount('acc_dest')), 140.0);
+        expect(db2.totalAccountsBalance, 100.0);
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
 
     test('12. Account update persists after reload', () async {
       final sqlite = SQLiteService();
@@ -341,7 +573,12 @@ void main() {
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
 
-      await db.updateAccount('acc_default', 'Principale Banca', AccountType.bank, 1000);
+      await db.updateAccount(
+        'acc_default',
+        'Principale Banca',
+        AccountType.bank,
+        1000,
+      );
 
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
@@ -359,21 +596,40 @@ void main() {
       await db.initialize();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_cash', name: 'Contanti', type: AccountType.cash,
-        initialBalance: 200.0, createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_cash',
+          name: 'Contanti',
+          type: AccountType.cash,
+          initialBalance: 200.0,
+          createdAt: now,
+        ),
+      );
 
-      await db.addMovement(Movement(
-        id: 'm_inc', title: 'Income', amount: 1000,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', accountId: 'acc_default', createdAt: now,
-      ));
-      await db.addMovement(Movement(
-        id: 'm_exp', title: 'Spesa contanti', amount: 50,
-        type: MovementType.expense, date: now,
-        categoryId: 'exp_1', accountId: 'acc_cash', createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'm_inc',
+          title: 'Income',
+          amount: 1000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_default',
+          createdAt: now,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'm_exp',
+          title: 'Spesa contanti',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          accountId: 'acc_cash',
+          createdAt: now,
+        ),
+      );
 
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
@@ -390,21 +646,36 @@ void main() {
       await db.initialize();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_old', name: 'Vecchio', type: AccountType.bank,
-        initialBalance: 500.0, createdAt: now,
-      ));
-      await db.addMovement(Movement(
-        id: 'm_old_inc', title: 'Old inc', amount: 1000,
-        type: MovementType.income, date: now,
-        categoryId: 'inc_1', accountId: 'acc_old', createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_old',
+          name: 'Vecchio',
+          type: AccountType.bank,
+          initialBalance: 500.0,
+          createdAt: now,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'm_old_inc',
+          title: 'Old inc',
+          amount: 1000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_old',
+          createdAt: now,
+        ),
+      );
 
       // Before archive
       expect(db.totalAccountsBalance, 1500.0);
 
       await db.archiveAccount('acc_old');
-      expect(db.totalAccountsBalance, 0.0); // Only 'acc_default' with no movements
+      expect(
+        db.totalAccountsBalance,
+        0.0,
+      ); // Only 'acc_default' with no movements
 
       await Future.delayed(const Duration(milliseconds: 100));
       await sqlite.close();
@@ -415,12 +686,20 @@ void main() {
     test('15. Edit movement title', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_1', title: 'Vecchio', amount: 100,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
-      await db.updateMovement(db.movements.first.copyWith(title: 'Nuovo', updatedAt: DateTime.now()));
+      await db.addMovement(
+        Movement(
+          id: 'edit_1',
+          title: 'Vecchio',
+          amount: 100,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      await db.updateMovement(
+        db.movements.first.copyWith(title: 'Nuovo', updatedAt: DateTime.now()),
+      );
       expect(db.movements.length, 1);
       expect(db.movements.first.title, 'Nuovo');
     });
@@ -428,67 +707,123 @@ void main() {
     test('16. Edit movement amount', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_2', title: 'Test', amount: 50,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
-      await db.updateMovement(db.movements.first.copyWith(amount: 99.99, updatedAt: DateTime.now()));
+      await db.addMovement(
+        Movement(
+          id: 'edit_2',
+          title: 'Test',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      await db.updateMovement(
+        db.movements.first.copyWith(amount: 99.99, updatedAt: DateTime.now()),
+      );
       expect(db.movements.first.amount, 99.99);
     });
 
     test('17. Edit movement category', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_3', title: 'Test', amount: 50,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
-      await db.updateMovement(db.movements.first.copyWith(categoryId: 'exp_3', updatedAt: DateTime.now()));
+      await db.addMovement(
+        Movement(
+          id: 'edit_3',
+          title: 'Test',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          categoryId: 'exp_3',
+          updatedAt: DateTime.now(),
+        ),
+      );
       expect(db.movements.first.categoryId, 'exp_3');
     });
 
     test('18. Edit movement account', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addAccount(Account(
-        id: 'acc_edit', name: 'Secondo', type: AccountType.cash,
-        createdAt: now,
-      ));
-      await db.addMovement(Movement(
-        id: 'edit_4', title: 'Test', amount: 50,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        accountId: 'acc_default', createdAt: now,
-      ));
-      await db.updateMovement(db.movements.first.copyWith(accountId: 'acc_edit', updatedAt: DateTime.now()));
+      await db.addAccount(
+        Account(
+          id: 'acc_edit',
+          name: 'Secondo',
+          type: AccountType.cash,
+          createdAt: now,
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'edit_4',
+          title: 'Test',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          accountId: 'acc_default',
+          createdAt: now,
+        ),
+      );
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          accountId: 'acc_edit',
+          updatedAt: DateTime.now(),
+        ),
+      );
       expect(db.movements.first.accountId, 'acc_edit');
     });
 
     test('19. Edit movement note', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_5', title: 'Test', amount: 50,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'edit_5',
+          title: 'Test',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
       expect(db.movements.first.note, isNull);
-      await db.updateMovement(db.movements.first.copyWith(note: 'Nota aggiunta', updatedAt: DateTime.now()));
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          note: 'Nota aggiunta',
+          updatedAt: DateTime.now(),
+        ),
+      );
       expect(db.movements.first.note, 'Nota aggiunta');
     });
 
     test('20. Edit movement type (expense -> income)', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_6', title: 'Test', amount: 50,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
-      await db.updateMovement(db.movements.first.copyWith(
-        type: MovementType.income, categoryId: 'inc_1', updatedAt: DateTime.now(),
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'edit_6',
+          title: 'Test',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          type: MovementType.income,
+          categoryId: 'inc_1',
+          updatedAt: DateTime.now(),
+        ),
+      );
       expect(db.movements.first.type, MovementType.income);
       expect(db.movements.first.categoryId, 'inc_1');
     });
@@ -497,38 +832,65 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
       final newDate = DateTime(2025, 1, 1);
-      await db.addMovement(Movement(
-        id: 'edit_7', title: 'Test', amount: 50,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
-      await db.updateMovement(db.movements.first.copyWith(date: newDate, updatedAt: DateTime.now()));
+      await db.addMovement(
+        Movement(
+          id: 'edit_7',
+          title: 'Test',
+          amount: 50,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
+      await db.updateMovement(
+        db.movements.first.copyWith(date: newDate, updatedAt: DateTime.now()),
+      );
       expect(db.movements.first.date, newDate);
     });
 
     test('22. createdAt unchanged after edit', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_8', title: 'Originale', amount: 100,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'edit_8',
+          title: 'Originale',
+          amount: 100,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
       final originalCreatedAt = db.movements.first.createdAt;
-      await db.updateMovement(db.movements.first.copyWith(title: 'Modificato', updatedAt: DateTime.now()));
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          title: 'Modificato',
+          updatedAt: DateTime.now(),
+        ),
+      );
       expect(db.movements.first.createdAt, originalCreatedAt);
     });
 
     test('23. updatedAt updated after edit', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_9', title: 'Test', amount: 100,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'edit_9',
+          title: 'Test',
+          amount: 100,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
       final later = now.add(const Duration(hours: 1));
-      await db.updateMovement(db.movements.first.copyWith(title: 'Modificato', updatedAt: later));
+      await db.updateMovement(
+        db.movements.first.copyWith(title: 'Modificato', updatedAt: later),
+      );
       expect(db.movements.first.updatedAt, later);
       expect(db.movements.first.createdAt, now);
     });
@@ -536,22 +898,30 @@ void main() {
     test('24. Dashboard updates after edit', () async {
       final db = AppDatabase();
       final now = DateTime.now();
-      await db.addMovement(Movement(
-        id: 'edit_10', title: 'Stipendio', amount: 2000,
-        type: MovementType.income, date: now, categoryId: 'inc_1',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'edit_10',
+          title: 'Stipendio',
+          amount: 2000,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
       expect(db.totalIncome, 2000.0);
       expect(db.balance, 2000.0);
 
       // Edit: change from income to expense
-      await db.updateMovement(db.movements.first.copyWith(
-        title: 'Bolletta',
-        amount: 500,
-        type: MovementType.expense,
-        categoryId: 'exp_2',
-        updatedAt: DateTime.now(),
-      ));
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          title: 'Bolletta',
+          amount: 500,
+          type: MovementType.expense,
+          categoryId: 'exp_2',
+          updatedAt: DateTime.now(),
+        ),
+      );
       expect(db.totalIncome, 0.0);
       expect(db.totalExpenses, 500.0);
       expect(db.balance, -500.0);
@@ -566,19 +936,27 @@ void main() {
       await db.initialize();
       final now = DateTime.now();
 
-      await db.addMovement(Movement(
-        id: 'edit_persist', title: 'Originale', amount: 100,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'edit_persist',
+          title: 'Originale',
+          amount: 100,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
 
-      await db.updateMovement(db.movements.first.copyWith(
-        title: 'Modificato',
-        amount: 200,
-        categoryId: 'exp_3',
-        note: 'Nota dopo modifica',
-        updatedAt: DateTime.now(),
-      ));
+      await db.updateMovement(
+        db.movements.first.copyWith(
+          title: 'Modificato',
+          amount: 200,
+          categoryId: 'exp_3',
+          note: 'Nota dopo modifica',
+          updatedAt: DateTime.now(),
+        ),
+      );
 
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
@@ -600,15 +978,21 @@ void main() {
       await db.initialize();
       final now = DateTime.now();
 
-      await db.addMovement(Movement(
-        id: 'update_test', title: 'Prima', amount: 100,
-        type: MovementType.expense, date: now, categoryId: 'exp_1',
-        createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'update_test',
+          title: 'Prima',
+          amount: 100,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
 
-      await db.updateMovement(db.movements.first.copyWith(
-        title: 'Dopo', updatedAt: DateTime.now(),
-      ));
+      await db.updateMovement(
+        db.movements.first.copyWith(title: 'Dopo', updatedAt: DateTime.now()),
+      );
 
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
@@ -624,34 +1008,55 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_test_qm', name: 'Secondo', type: AccountType.cash,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_test_qm',
+          name: 'Secondo',
+          type: AccountType.cash,
+          createdAt: now,
+        ),
+      );
 
-      await db.addQuickMovement(const QuickMovement(
-        id: 'qm_test', title: 'Test', amount: 10,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_test_qm',
-      ));
+      await db.addQuickMovement(
+        const QuickMovement(
+          id: 'qm_test',
+          title: 'Test',
+          amount: 10,
+          type: MovementType.expense,
+          categoryId: 'exp_1',
+          accountId: 'acc_test_qm',
+        ),
+      );
 
-      expect(db.quickMovements.firstWhere((q) => q.id == 'qm_test').accountId, 'acc_test_qm');
+      expect(
+        db.quickMovements.firstWhere((q) => q.id == 'qm_test').accountId,
+        'acc_test_qm',
+      );
     });
 
     test('28. FavoriteMovement salva accountId', () async {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_test_fm', name: 'Secondo', type: AccountType.cash,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_test_fm',
+          name: 'Secondo',
+          type: AccountType.cash,
+          createdAt: now,
+        ),
+      );
 
-      await db.addFavoriteMovement(const FavoriteMovement(
-        id: 'fm_test', title: 'Test', amount: 10,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_test_fm',
-      ));
+      await db.addFavoriteMovement(
+        const FavoriteMovement(
+          id: 'fm_test',
+          title: 'Test',
+          amount: 10,
+          type: MovementType.expense,
+          categoryId: 'exp_1',
+          accountId: 'acc_test_fm',
+        ),
+      );
 
       expect(db.favoriteMovements.first.accountId, 'acc_test_fm');
     });
@@ -660,16 +1065,25 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_rapido', name: 'Conto Rapido', type: AccountType.cash,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_rapido',
+          name: 'Conto Rapido',
+          type: AccountType.cash,
+          createdAt: now,
+        ),
+      );
 
-      await db.addQuickMovement(const QuickMovement(
-        id: 'qm_rapido', title: 'Test Rapido', amount: 25,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_rapido',
-      ));
+      await db.addQuickMovement(
+        const QuickMovement(
+          id: 'qm_rapido',
+          title: 'Test Rapido',
+          amount: 25,
+          type: MovementType.expense,
+          categoryId: 'exp_1',
+          accountId: 'acc_rapido',
+        ),
+      );
 
       final qm = db.quickMovements.firstWhere((q) => q.id == 'qm_rapido');
       db.createMovementFromTemplate(
@@ -687,16 +1101,25 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_pref', name: 'Conto Preferito', type: AccountType.cash,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_pref',
+          name: 'Conto Preferito',
+          type: AccountType.cash,
+          createdAt: now,
+        ),
+      );
 
-      await db.addFavoriteMovement(const FavoriteMovement(
-        id: 'fm_pref', title: 'Test Pref', amount: 50,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_pref',
-      ));
+      await db.addFavoriteMovement(
+        const FavoriteMovement(
+          id: 'fm_pref',
+          title: 'Test Pref',
+          amount: 50,
+          type: MovementType.expense,
+          categoryId: 'exp_1',
+          accountId: 'acc_pref',
+        ),
+      );
 
       db.createMovementFromTemplate(
         title: db.favoriteMovements.first.title,
@@ -713,16 +1136,27 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_save_fav', name: 'Conto Salvato', type: AccountType.cash,
-        createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_save_fav',
+          name: 'Conto Salvato',
+          type: AccountType.cash,
+          createdAt: now,
+        ),
+      );
 
-      await db.addMovement(Movement(
-        id: 'm_save', title: 'Da salvare', amount: 100,
-        type: MovementType.income, date: now, categoryId: 'inc_1',
-        accountId: 'acc_save_fav', createdAt: now,
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'm_save',
+          title: 'Da salvare',
+          amount: 100,
+          type: MovementType.income,
+          date: now,
+          categoryId: 'inc_1',
+          accountId: 'acc_save_fav',
+          createdAt: now,
+        ),
+      );
 
       await db.saveMovementAsFavorite(db.movements.first);
 
@@ -734,16 +1168,26 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_bal_rap', name: 'Bilancio', type: AccountType.cash,
-        initialBalance: 1000, createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_bal_rap',
+          name: 'Bilancio',
+          type: AccountType.cash,
+          initialBalance: 1000,
+          createdAt: now,
+        ),
+      );
 
-      await db.addQuickMovement(const QuickMovement(
-        id: 'qm_bal', title: 'Spesa veloce', amount: 100,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_bal_rap',
-      ));
+      await db.addQuickMovement(
+        const QuickMovement(
+          id: 'qm_bal',
+          title: 'Spesa veloce',
+          amount: 100,
+          type: MovementType.expense,
+          categoryId: 'exp_1',
+          accountId: 'acc_bal_rap',
+        ),
+      );
 
       final qm = db.quickMovements.firstWhere((q) => q.id == 'qm_bal');
       db.createMovementFromTemplate(
@@ -762,16 +1206,26 @@ void main() {
       final db = AppDatabase();
       final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_bal_pref', name: 'Bilancio', type: AccountType.cash,
-        initialBalance: 500, createdAt: now,
-      ));
+      await db.addAccount(
+        Account(
+          id: 'acc_bal_pref',
+          name: 'Bilancio',
+          type: AccountType.cash,
+          initialBalance: 500,
+          createdAt: now,
+        ),
+      );
 
-      await db.addFavoriteMovement(const FavoriteMovement(
-        id: 'fm_bal', title: 'Entrata preferita', amount: 200,
-        type: MovementType.income, categoryId: 'inc_1',
-        accountId: 'acc_bal_pref',
-      ));
+      await db.addFavoriteMovement(
+        const FavoriteMovement(
+          id: 'fm_bal',
+          title: 'Entrata preferita',
+          amount: 200,
+          type: MovementType.income,
+          categoryId: 'inc_1',
+          accountId: 'acc_bal_pref',
+        ),
+      );
 
       final fm = db.favoriteMovements.firstWhere((f) => f.id == 'fm_bal');
       db.createMovementFromTemplate(
@@ -788,100 +1242,139 @@ void main() {
   });
 
   group('AccountId Rapidi/Preferiti — SQLite persistence', () {
-    test('34. Persistenza accountId su quick_movements dopo reload DB', () async {
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
-      final now = DateTime.now();
+    test(
+      '34. Persistenza accountId su quick_movements dopo reload DB',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
+        final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_pers_qm', name: 'Persistente', type: AccountType.cash,
-        createdAt: now,
-      ));
+        await db.addAccount(
+          Account(
+            id: 'acc_pers_qm',
+            name: 'Persistente',
+            type: AccountType.cash,
+            createdAt: now,
+          ),
+        );
 
-      await db.addQuickMovement(QuickMovement(
-        id: 'qm_pers', title: 'Test', amount: 10,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_pers_qm',
-      ));
+        await db.addQuickMovement(
+          QuickMovement(
+            id: 'qm_pers',
+            title: 'Test',
+            amount: 10,
+            type: MovementType.expense,
+            categoryId: 'exp_1',
+            accountId: 'acc_pers_qm',
+          ),
+        );
 
-      await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      final db2 = AppDatabase(sqlite: sqlite);
-      await db2.initialize();
-      expect(db2.quickMovements.any((q) => q.id == 'qm_pers'), true);
-      expect(
-        db2.quickMovements.firstWhere((q) => q.id == 'qm_pers').accountId,
-        'acc_pers_qm',
-      );
+        final db2 = AppDatabase(sqlite: sqlite);
+        await db2.initialize();
+        expect(db2.quickMovements.any((q) => q.id == 'qm_pers'), true);
+        expect(
+          db2.quickMovements.firstWhere((q) => q.id == 'qm_pers').accountId,
+          'acc_pers_qm',
+        );
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
 
-    test('35. Persistenza accountId su favorite_movements dopo reload DB', () async {
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
-      final now = DateTime.now();
+    test(
+      '35. Persistenza accountId su favorite_movements dopo reload DB',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
+        final now = DateTime.now();
 
-      await db.addAccount(Account(
-        id: 'acc_pers_fm', name: 'Persistente', type: AccountType.cash,
-        createdAt: now,
-      ));
+        await db.addAccount(
+          Account(
+            id: 'acc_pers_fm',
+            name: 'Persistente',
+            type: AccountType.cash,
+            createdAt: now,
+          ),
+        );
 
-      await db.addFavoriteMovement(FavoriteMovement(
-        id: 'fm_pers', title: 'Test', amount: 10,
-        type: MovementType.expense, categoryId: 'exp_1',
-        accountId: 'acc_pers_fm',
-      ));
+        await db.addFavoriteMovement(
+          FavoriteMovement(
+            id: 'fm_pers',
+            title: 'Test',
+            amount: 10,
+            type: MovementType.expense,
+            categoryId: 'exp_1',
+            accountId: 'acc_pers_fm',
+          ),
+        );
 
-      await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      final db2 = AppDatabase(sqlite: sqlite);
-      await db2.initialize();
-      expect(db2.favoriteMovements.any((f) => f.id == 'fm_pers'), true);
-      expect(
-        db2.favoriteMovements.firstWhere((f) => f.id == 'fm_pers').accountId,
-        'acc_pers_fm',
-      );
+        final db2 = AppDatabase(sqlite: sqlite);
+        await db2.initialize();
+        expect(db2.favoriteMovements.any((f) => f.id == 'fm_pers'), true);
+        expect(
+          db2.favoriteMovements.firstWhere((f) => f.id == 'fm_pers').accountId,
+          'acc_pers_fm',
+        );
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
 
-    test('36. Migrazione record legacy senza account_id -> Principale', () async {
-      // Test that fromMap fallback handles null account_id
-      // This simulates legacy records created before v3 migration
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
+    test(
+      '36. Migrazione record legacy senza account_id -> Principale',
+      () async {
+        // Test that fromMap fallback handles null account_id
+        // This simulates legacy records created before v3 migration
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
 
-      await db.addQuickMovement(const QuickMovement(
-        id: 'qm_legacy', title: 'Legacy', amount: 10,
-        type: MovementType.expense, categoryId: 'exp_1',
-      ));
+        await db.addQuickMovement(
+          const QuickMovement(
+            id: 'qm_legacy',
+            title: 'Legacy',
+            amount: 10,
+            type: MovementType.expense,
+            categoryId: 'exp_1',
+          ),
+        );
 
-      await db.addFavoriteMovement(const FavoriteMovement(
-        id: 'fm_legacy', title: 'Legacy', amount: 10,
-        type: MovementType.expense, categoryId: 'exp_1',
-      ));
+        await db.addFavoriteMovement(
+          const FavoriteMovement(
+            id: 'fm_legacy',
+            title: 'Legacy',
+            amount: 10,
+            type: MovementType.expense,
+            categoryId: 'exp_1',
+          ),
+        );
 
-      // Reload and verify default accountId
-      final db2 = AppDatabase(sqlite: sqlite);
-      await db2.initialize();
+        // Reload and verify default accountId
+        final db2 = AppDatabase(sqlite: sqlite);
+        await db2.initialize();
 
-      expect(
-        db2.quickMovements.firstWhere((q) => q.id == 'qm_legacy').accountId,
-        defaultAccountId,
-      );
-      expect(
-        db2.favoriteMovements.firstWhere((f) => f.id == 'fm_legacy').accountId,
-        defaultAccountId,
-      );
+        expect(
+          db2.quickMovements.firstWhere((q) => q.id == 'qm_legacy').accountId,
+          defaultAccountId,
+        );
+        expect(
+          db2.favoriteMovements
+              .firstWhere((f) => f.id == 'fm_legacy')
+              .accountId,
+          defaultAccountId,
+        );
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
   });
 }

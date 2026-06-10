@@ -14,6 +14,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.8.1] - 2026-06-10
+
+### Added
+- **Filtro Entrate/Uscite** nella schermata Categorie
+  - SegmentedButton sopra la lista: `[ Uscite | Entrate ]`
+  - default: Uscite
+  - mostra solo categorie del tipo selezionato
+  - le categorie archiviate rispettano lo stesso filtro
+  - contatori/sezioni aggiornati coerentemente
+- **3 Layout Mode** per la schermata Categorie, selezionabili da Impostazioni > Aspetto > Modello categoria
+  - **Lista pulita** (default): tile semplice con icona, nome, popup menu
+  - **Lista grouped**: raggruppato in card con header sezione, divisori tra righe
+  - **Card Stream**: card con bordo outline, icona, nome, conteggio movimenti, popup menu
+- **Preferenza persistente** `category_layout` via SharedPreferences
+  - `PreferencesService.categoryLayoutNotifier` per aggiornamenti in tempo reale
+  - aggiunta a `clearForReset()`
+- **FAB precompila tipo** in base al filtro attivo:
+  - se su Entrate → nuova categoria di tipo Entrata
+  - se su Uscite → nuova categoria di tipo Uscita
+  - l'utente può comunque cambiare tipo manualmente nel form
+- **Sezione Aspetto** nelle Impostazioni con voce "Modello categoria"
+  - dialog di selezione con 3 opzioni + descrizione
+  - RadioGroup pattern (Flutter 3.44 compatibile)
+
+### QA
+- `test/categories_navigation_test.dart`: 4/4 PASS (aggiornati per filtro tipo)
+- `test/categories_layout_test.dart`: 11/11 PASS (nuovo, copre preferenza, filtro, layout, azioni)
+- `test/accounts_navigation_test.dart`: fix regressione (categoria archiviata type expense per filtro default)
+- `flutter analyze --no-pub`: 0 issues
+- `flutter test --no-pub`: **590/590 All tests passed**
+- Nessun DB/schema modificato
+- Nessuna business logic finanziaria modificata
+- Nessun backup/restore/import/reset modificato
+- Nessuno skip aggiunto
+
+---
+
 ## [0.7.0] - 2026-06-09
 
 ### Added

@@ -729,8 +729,8 @@ void main() {
     // Go to Categorie
     await tester.tap(find.text('Categorie'));
     await tester.pumpAndSettle();
-    expect(find.text('Entrate'), findsOneWidget);
-    expect(find.text('Uscite'), findsOneWidget);
+    expect(find.text('Entrate'), findsAtLeastNWidgets(1));
+    expect(find.text('Uscite'), findsAtLeastNWidgets(1));
 
     // Back to Movimenti
     await tester.tap(find.text('Movimenti'));

@@ -72,6 +72,60 @@ void main() {
   });
 
   group('CalculatorAmountPad', () {
+    testWidgets('tap su CalculatorAmountField apre solo il pad custom', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      await _pumpAmountField(tester, controller);
+
+      await tester.tap(find.widgetWithText(TextField, 'Importo (€)'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('calculator_amount_display')),
+        findsOneWidget,
+      );
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+
+    testWidgets('il campo e readOnly e non richiede tastiera nativa', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      await _pumpAmountField(tester, controller);
+
+      final field = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Importo (€)'),
+      );
+      expect(field.readOnly, isTrue);
+      expect(field.keyboardType, TextInputType.none);
+      expect(field.showCursor, isFalse);
+
+      await tester.tap(find.widgetWithText(TextField, 'Importo (€)'));
+      await tester.pumpAndSettle();
+
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+
+    testWidgets('tap Fatto chiude bottom sheet e rimuove focus', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: '10+5');
+      await _pumpAmountField(tester, controller);
+
+      await _openPad(tester);
+      await tester.tap(find.byKey(const Key('calculator_done')));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, '15');
+      expect(find.byKey(const Key('calculator_amount_display')), findsNothing);
+      expect(
+        FocusManager.instance.primaryFocus?.context?.widget,
+        isNot(isA<EditableText>()),
+      );
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+
     testWidgets('tap numeri aggiorna campo', (tester) async {
       final controller = TextEditingController();
       await _pumpAmountField(tester, controller);

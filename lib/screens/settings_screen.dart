@@ -93,6 +93,29 @@ class SettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
+                    'Aspetto',
+                    style: StreamTypography.h3,
+                  ),
+                  const SizedBox(height: StreamSpacing.sm),
+                  Text(
+                    'Personalizza l\'interfaccia dell\'app.',
+                    style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                  ),
+                  const SizedBox(height: StreamSpacing.md),
+                  _CategoryLayoutTile(db: db),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: StreamSpacing.lg),
+          Card(
+            color: StreamColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(StreamSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     'Dati',
                     style: StreamTypography.h3,
                   ),
@@ -251,6 +274,124 @@ class SettingsScreen extends StatelessWidget {
       title: Text(title),
       subtitle: Text(subtitle),
       enabled: false,
+    );
+  }
+}
+
+class _CategoryLayoutTile extends StatefulWidget {
+  final AppDatabase db;
+
+  const _CategoryLayoutTile({required this.db});
+
+  @override
+  State<_CategoryLayoutTile> createState() => _CategoryLayoutTileState();
+}
+
+class _CategoryLayoutTileState extends State<_CategoryLayoutTile> {
+  String _currentLayout = PreferencesService.defaultCategoryLayout;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final layout = await PreferencesService.loadCategoryLayout();
+    if (mounted) setState(() => _currentLayout = layout);
+  }
+
+  String _layoutLabel(String value) {
+    switch (value) {
+      case 'groupedList':
+        return 'Lista grouped';
+      case 'streamCards':
+        return 'Card Stream';
+      default:
+        return 'Lista pulita';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.grid_view_outlined, color: StreamColors.primary),
+      title: const Text('Modello categoria'),
+      subtitle: Text(_layoutLabel(_currentLayout)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final result = await showDialog<String>(
+          context: context,
+          builder: (_) => _CategoryLayoutDialog(current: _currentLayout),
+        );
+        if (result != null && result != _currentLayout) {
+          await PreferencesService.saveCategoryLayout(result);
+          if (mounted) setState(() => _currentLayout = result);
+        }
+      },
+    );
+  }
+}
+
+class _CategoryLayoutDialog extends StatefulWidget {
+  final String current;
+
+  const _CategoryLayoutDialog({required this.current});
+
+  @override
+  State<_CategoryLayoutDialog> createState() => _CategoryLayoutDialogState();
+}
+
+class _CategoryLayoutDialogState extends State<_CategoryLayoutDialog> {
+  late String _selected;
+
+  static const _options = [
+    ('cleanList', 'Lista pulita', 'Elenco semplice e minimale'),
+    ('groupedList', 'Lista grouped', 'Raggruppata con stile iOS'),
+    ('streamCards', 'Card Stream', 'Card dettagliate in stile Stream'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.current;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Modello categoria'),
+      content: SingleChildScrollView(
+        child: RadioGroup<String>(
+          groupValue: _selected,
+          onChanged: (v) {
+            if (v != null) {
+              setState(() => _selected = v);
+              Navigator.of(context).pop(v);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _options.map((option) {
+              final value = option.$1;
+              final label = option.$2;
+              final desc = option.$3;
+              return RadioListTile<String>(
+                title: Text(label),
+                subtitle: Text(desc, style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+                value: value,
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+      ],
     );
   }
 }

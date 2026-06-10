@@ -243,8 +243,9 @@ class _CalculatorAmountPadState extends State<CalculatorAmountPad> {
     if (widget.controller.text.trim().isNotEmpty && !_calculate()) {
       return;
     }
-    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
     Navigator.of(context).pop();
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   @override

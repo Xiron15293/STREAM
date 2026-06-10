@@ -23,6 +23,14 @@ Future<void> openArchiveCategories(WidgetTester tester) async {
   expect(segmentedButton.selected, contains(2));
 }
 
+Future<void> switchCategoryFilter(WidgetTester tester, MovementType type) async {
+  final key = type == MovementType.income
+      ? 'categories_filter_income'
+      : 'categories_filter_expense';
+  await tester.tap(find.byKey(Key(key)).hitTestable());
+  await tester.pumpAndSettle();
+}
+
 Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
   final target = find.byKey(Key('category_card_$categoryId'), skipOffstage: false);
   final listView = find.byType(ListView).first;
@@ -38,8 +46,12 @@ Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> openCategorySheet(WidgetTester tester, String categoryId) async {
+Future<void> openCategorySheet(WidgetTester tester, String categoryId,
+    {MovementType? filterType}) async {
   await openArchiveCategories(tester);
+  if (filterType != null) {
+    await switchCategoryFilter(tester, filterType);
+  }
   await scrollToCategory(tester, categoryId);
 
   final card = find.byKey(Key('category_card_$categoryId'));
@@ -155,7 +167,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
-      await openCategorySheet(tester, incomeCategory.id);
+      await openCategorySheet(tester, incomeCategory.id, filterType: MovementType.income);
 
       expect(find.text('Movimenti categoria'), findsOneWidget);
       expect(
@@ -197,7 +209,7 @@ void main() {
       await tester.tap(find.byKey(const Key('category_movements_close_button')));
       await tester.pumpAndSettle();
 
-      await openCategorySheet(tester, incomeCategory.id);
+      await openCategorySheet(tester, incomeCategory.id, filterType: MovementType.income);
       expect(find.text('Totale entrate'), findsOneWidget);
     },
   );
@@ -228,6 +240,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await openArchiveCategories(tester);
+      await switchCategoryFilter(tester, MovementType.income);
       final archivedSection = find.byKey(const Key('categories_archived_section'), skipOffstage: false);
       final listView = find.byType(ListView).first;
       for (var i = 0; i < 12 && archivedSection.evaluate().isEmpty; i++) {
@@ -238,7 +251,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(archivedSection, findsOneWidget);
 
-      await openCategorySheet(tester, category.id);
+      await openCategorySheet(tester, category.id, filterType: MovementType.income);
 
       expect(find.text('Movimenti categoria'), findsOneWidget);
       expect(

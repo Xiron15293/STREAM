@@ -144,7 +144,7 @@ void main() {
       await db.archiveAccount('acc_archived');
 
       await db.addCategory('Categoria Attiva', MovementType.expense, 0xFF123456);
-      await db.addCategory('Categoria Archiviata', MovementType.income, 0xFF654321);
+      await db.addCategory('Categoria Archiviata', MovementType.expense, 0xFF654321);
       final activeCategoryId = db.categories.firstWhere((c) => c.name == 'Categoria Attiva').id;
       final archivedCategoryId = db.categories.firstWhere((c) => c.name == 'Categoria Archiviata').id;
       await db.archiveCategory(archivedCategoryId);
@@ -512,4 +512,56 @@ void main() {
       expect(filtered.map((m) => m.id).toList(), ['f3', 'f2']);
     },
   );
+
+  group('Initial Balance / Current Balance', () {
+    testWidgets('Dialog mostra saldo attuale non editabile',
+      (WidgetTester tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      await db.addAccount(Account(
+        id: 'acc_bal_ui',
+        name: 'Bilancio UI',
+        type: AccountType.bank,
+        initialBalance: 100.0,
+        createdAt: now,
+      ));
+
+      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpAndSettle();
+
+      await openArchiveAccounts(tester);
+      await scrollToAccount(tester, 'acc_bal_ui');
+
+      // Open edit dialog
+      final card = find.byKey(const Key('account_card_acc_bal_ui'));
+      final popup = find.descendant(
+        of: card,
+        matching: find.byIcon(Icons.more_horiz),
+      );
+      await tester.tap(popup);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Modifica'));
+      await tester.pumpAndSettle();
+
+      // Saldo iniziale editable (TextField inside CalculatorAmountField)
+      expect(find.byKey(const Key('account_initial_balance_field')), findsOneWidget);
+
+      // Saldo attuale NON editabile (sezione read-only con solo Text, nessun TextField)
+      expect(find.byKey(const Key('account_current_balance_section')), findsOneWidget);
+      expect(find.byKey(const Key('account_current_balance_value')), findsOneWidget);
+      expect(find.byKey(const Key('account_balance_info_text')), findsOneWidget);
+      expect(find.text('+100.00 €'), findsAtLeastNWidgets(1));
+
+      // current_balance_value is a Text, not a TextField (read-only)
+      expect(find.byKey(const Key('account_current_balance_value')), findsOneWidget);
+
+      // Save and close
+      await tester.tap(find.text('Salva'));
+      await tester.pumpAndSettle();
+
+      // Card still shows after save
+      expect(find.byKey(const Key('account_card_acc_bal_ui')), findsOneWidget);
+    });
+  });
 }
