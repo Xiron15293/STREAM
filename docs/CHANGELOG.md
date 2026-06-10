@@ -7,33 +7,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Import CSV 1Money completato e validato su dataset reale
+  - Backup Stream: 6369 movimenti
+  - CSV 1Money unici: 6369 movimenti
+  - overlap: 6369
+  - backup-only: 0
+  - csv-only: 0
+  - nessuna perdita movimenti
 - Saldo iniziale dei conti
+  - aggiunta persistenza `accounts.initial_balance`
   - il saldo attuale è sempre derivato da saldo iniziale + movimenti
+  - formula saldo attuale: saldo iniziale + entrate - spese + trasferimenti netti
   - la modifica conto mostra saldo iniziale modificabile e saldo attuale in sola lettura
 - Navigazione conti in Archivio
   - tocco su un conto apre la vista `Movimenti del conto`
   - riepilogo con saldo iniziale, entrate filtrate, uscite filtrate, trasferimenti netti, saldo attuale e numero movimenti
   - filtro periodo riusando `TimeFilter` e `TimeFilterBar`
   - lista movimenti riusando `GroupedMovementsList`
+- Navigazione categorie in Archivio
+  - tocco su una categoria apre la vista `Movimenti categoria`
+  - filtro periodo riusando `TimeFilter` e `TimeFilterBar`
+  - lista movimenti riusando `GroupedMovementsList`
 - Gestione archiviati resa più esplicita in Archivio
   - conti attivi e archiviati mostrati in sezioni separate
   - categorie attive e archiviate mostrate in sezioni separate
+  - elementi archiviati consultabili e cliccabili
 
 ### QA
-- Test reset widget temporaneamente messi in quarantena:
-  - `reset_data_test.dart` -> `Reset confermato ripristina i default e pulisce Archivio`
-  - `qa_extensive_test.dart` -> `C2`, `F2`, `F3`, `L1`
-  - motivo: flow widget fragile per backup pre-reset, dialog secondario e timing UI
-  - reset già validato manualmente su Pixel 6
-  - piano futuro: rifare il reset come integration test o service-level test
+- Test reset ripristinati e verdi:
+  - `reset_data_test.dart`: PASS
+  - `qa_extensive_test.dart`: PASS
+  - `C2`, `F2`, `F3`, `L1` stabilizzati
+  - reset validato tramite flusso UI reale nei test, con backup pre-reset stub nel test harness dove necessario
+  - nessuna business logic/UI modificata
+- Test navigazione Archivio verdi:
+  - `test/accounts_navigation_test.dart`: PASS
+  - `test/categories_navigation_test.dart`: PASS
 - Re-test import CSV 1Money mantenuto verde:
+  - `test/one_money_csv_import_test.dart`: PASS
   - dedupeWithinFile `true` e `false`
   - CSV reale
   - trailer `NOME,BILANCIO,VALUTA` ignorato
   - saldi conto importati con `initialBalance = 0`
+- `flutter analyze --no-pub`: PASS
+- Test mirati reset: PASS
+- Suite completa: da rilanciare
 
 ### Planned
-- V0.6.5 — Reset dati app
+- Calculator Pad per tutti i campi importo
 - V0.6.6 — Trasferimenti tra Conti
 - V0.6.8 — Calendar Heatmap
 - V0.6.9 — Fondi / Obiettivi

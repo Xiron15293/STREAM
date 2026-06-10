@@ -9,7 +9,8 @@
 ### Stato sintetico
 
 - Introdotto il concetto di saldo iniziale sui conti
-- Il saldo attuale è sempre derivato da `saldo iniziale + movimenti`
+- Persistenza su `accounts.initial_balance`
+- Il saldo attuale è sempre derivato da `saldo iniziale + entrate - spese + trasferimenti netti`
 - La schermata modifica conto mostra:
   - `Saldo iniziale` modificabile
   - `Saldo attuale` in sola lettura
@@ -20,6 +21,7 @@
 ### Stato sintetico
 
 - In Archivio > Conti, il tap su un conto apre la vista `Movimenti del conto`
+- In Archivio > Categorie, il tap su una categoria apre la vista `Movimenti categoria`
 - La vista mostra:
   - nome conto
   - saldo iniziale
@@ -30,25 +32,29 @@
   - numero movimenti
   - lista movimenti filtrata
 - Conti e categorie archiviati sono esposti in sezioni separate e consultabili
+- Le viste dettaglio usano `TimeFilterBar` e `GroupedMovementsList`
 
 ### Test aggiunti
 
 - tap conto apre movimenti conto
+- tap categoria apre movimenti categoria
 - filtri giorno / mese / anno
 - conto senza movimenti mostra empty state
 - conti archiviati visibili nella sezione Archiviati
 - categorie archiviate visibili nella sezione Archiviati
 - import CSV 1Money rieseguito con successo con `dedupeWithinFile=true` / `false`, trailer `NOME` ignorato e `initialBalance = 0`
-
-### Verifica locale
-
-- `flutter analyze --no-pub`: da rilanciare localmente in ambiente completo
-- `flutter test --no-pub`: da rilanciare localmente in ambiente completo
+- `accounts_navigation_test.dart`: PASS
+- `categories_navigation_test.dart`: PASS
 
 ### Verifica locale
 
 - `flutter analyze --no-pub`: **PASS**
-- `flutter test --no-pub`: da rilanciare localmente in ambiente completo
+- `flutter test --no-pub test/accounts_navigation_test.dart`: **PASS**
+- `flutter test --no-pub test/categories_navigation_test.dart`: **PASS**
+- `flutter test --no-pub test/reset_data_test.dart`: **PASS**
+- `flutter test --no-pub test/qa_extensive_test.dart`: **PASS**
+- `flutter test --no-pub test/one_money_csv_import_test.dart`: **PASS**
+- Suite completa: da rilanciare
 
 ---
 
@@ -86,9 +92,19 @@
 ### Verifica locale
 
 - `flutter analyze --no-pub`: **PASS**
-- `flutter test --no-pub`: da rilanciare localmente in ambiente completo
+- `flutter test --no-pub test/one_money_csv_import_test.dart`: **PASS**
+- Suite completa: da rilanciare
 - `flutter build apk --release --no-pub`: da rilanciare localmente in ambiente completo
 - `flutter build ios --release --no-codesign --no-pub`: da rilanciare localmente in ambiente completo
+
+### Validazione dataset reale
+
+- Backup Stream: 6369 movimenti
+- CSV 1Money unici: 6369 movimenti
+- Overlap: 6369
+- Backup-only: 0
+- CSV-only: 0
+- Nessuna perdita movimenti
 
 ---
 
@@ -184,24 +200,16 @@ Il flusso è stato verificato direttamente su dispositivo Android reale (Pixel 6
 
 Nessun bug prodotto confermato nel reset. I failure erano riconducibili a finder fragili, gestione del dialog secondario backup fallito, timing dei widget test e attese UI basate su snackbar/dialog, non a un malfunzionamento di `resetAllData()`.
 
-### Nota operativa
+### Stato test reset
 
-I test widget del reset sono stati messi temporaneamente in quarantena per non bloccare la suite principale:
+I test widget del reset sono stati ripristinati e stabilizzati:
 
-- `reset_data_test.dart` -> `Reset confermato ripristina i default e pulisce Archivio`
-- `qa_extensive_test.dart` -> `C2`, `F2`, `F3`, `L1`
-
-Motivo:
-
-- flow widget fragile per backup pre-reset
-- dialog secondario
-- timing dei helper widget
-- verifica manuale già eseguita su Pixel 6 con esito corretto
-
-Piano futuro:
-
-- rifare il reset come integration test o service-level test
-- mantenere la validazione manuale come riferimento
+- `reset_data_test.dart`: **PASS**
+- `qa_extensive_test.dart`: **PASS**
+- `C2`, `F2`, `F3`, `L1`: stabilizzati
+- Il reset è validato tramite flusso UI reale nei test
+- Il test harness usa backup pre-reset stub dove necessario per evitare fragilità del backup asincrono
+- Nessuna business logic/UI modificata
 
 ## 1. Data test
 

@@ -19,9 +19,12 @@
 | Hermes V0.6.2 — Ordinamento Centralizzato | Comparator unico + fix gruppi giorno | ✅ COMPLETATO |
 | Hermes V0.6.3 — Ricerca Globale Movimenti | ricerca in-memory in Archivio > Movimenti | ✅ COMPLETATO |
 | Hermes V0.6.4 — UX Rapidi/Preferiti Data Picker | Oggi / Ieri / Domani / Scegli data | ✅ COMPLETATO |
-| Hermes V0.8.0 — Import CSV 1Money | mapping dedicato + dedupe fingerprint | 🛠️ IMPLEMENTATO |
+| Hermes V0.8.0 — Import CSV 1Money | mapping dedicato + dedupe fingerprint | ✅ COMPLETATO |
+| Hermes V0.8.1 — Saldo iniziale conti | `accounts.initial_balance` + saldo derivato | ✅ COMPLETATO |
+| Hermes V0.8.x — Archivio navigabile | Conti/Categorie cliccabili + archiviati consultabili | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS |
-| Test totali | — | ⏳ da rilanciare localmente |
+| Test mirati reset/import/archivio | — | ✅ PASS |
+| Test totali | — | ⏳ suite completa da rilanciare |
 | Build Android | `flutter build apk --release --no-pub` | ⏳ da rilanciare localmente |
 | Build iOS | `flutter build ios --release --no-codesign --no-pub` | ⏳ da rilanciare localmente |
 
@@ -41,7 +44,15 @@
 
 ### QA
 - `flutter analyze --no-pub`: PASS
-- `flutter test --no-pub`: da rilanciare localmente
+- `flutter test --no-pub test/one_money_csv_import_test.dart`: PASS
+- Validazione dataset reale:
+  - Backup Stream: 6369 movimenti
+  - CSV 1Money unici: 6369 movimenti
+  - overlap: 6369
+  - backup-only: 0
+  - csv-only: 0
+  - nessuna perdita movimenti
+- Suite completa: da rilanciare
 - `flutter build apk --release --no-pub`: da rilanciare localmente
 - `flutter build ios --release --no-codesign --no-pub`: da rilanciare localmente
 
@@ -51,9 +62,21 @@
 
 La prossima attività reale è:
 
-1. **Verifica locale completa di Import CSV 1Money**
-2. **Reset dati app controllato**
-3. **Trasferimenti tra conti**
+1. **Calculator Pad per tutti i campi importo**
+
+Da fare in commit/sessione separata.
+
+Tasti richiesti:
+
+- `+`
+- `-`
+- `*`
+- `/`
+- `:`
+- `=`
+- backspace
+- clear
+- `Fatto`
 
 ---
 
@@ -67,8 +90,9 @@ La prossima attività reale è:
 - Se serve riallineare i saldi conto per una verifica manuale, usare i valori del backup Stream validato come riferimento operativo
 - Saldo iniziale conti: il saldo attuale è ora sempre derivato da saldo iniziale + movimenti, e la modifica conto espone solo il saldo iniziale come campo editabile
 - Archivio > Conti: la vista `Movimenti del conto` è stata aggiunta e usa `TimeFilter` + `GroupedMovementsList`
-- Conti e categorie archiviate sono consultabili in sezioni separate (`Archiviati`)
-- Reset widget flow: i test fragili sono stati messi in quarantena temporanea; reset già validato manualmente su Pixel 6. Rifare come integration test o service-level test prima di riabilitarli
+- Archivio > Categorie: la vista `Movimenti categoria` è stata aggiunta e usa `TimeFilter` + `GroupedMovementsList`
+- Conti e categorie archiviate sono consultabili e cliccabili in sezioni separate (`Archiviati`)
+- Reset widget flow: `reset_data_test.dart` e `qa_extensive_test.dart` sono verdi; `C2`, `F2`, `F3`, `L1` stabilizzati tramite flusso UI reale con backup pre-reset stub nel test harness dove necessario
 
 ---
 
@@ -76,6 +100,6 @@ La prossima attività reale è:
 
 Quando si riparte:
 - verificare che i dati di test siano puliti prima della sessione
-- riprendere dalla pianificazione Reset dati app
+- riprendere dalla pianificazione Calculator Pad
 - mantenere Dashboard insight-only
 - non introdurre nuove feature fuori priorità senza allineamento
