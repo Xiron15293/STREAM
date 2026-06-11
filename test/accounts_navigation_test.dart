@@ -118,7 +118,10 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    SharedPreferences.setMockInitialValues({'show_notes': true});
+    SharedPreferences.setMockInitialValues({
+      'show_notes': true,
+      'movements_view_mode': 'listHeatmap',
+    });
   });
 
   testWidgets('Archivio mostra conti e categorie archiviati separati', (
@@ -400,6 +403,7 @@ void main() {
         ),
         findsOneWidget,
       );
+
       _expectMovementTitles(tester, [
         'Entrata mese',
         'Uscita mese',

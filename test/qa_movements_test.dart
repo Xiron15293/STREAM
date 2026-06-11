@@ -15,7 +15,9 @@ import 'helpers/calculator_test_helpers.dart';
 
 /// Helper to create AppDatabase and pump a full app for widget tests
 Future<AppDatabase> pumpApp(WidgetTester tester) async {
-  SharedPreferences.setMockInitialValues({});
+  SharedPreferences.setMockInitialValues({
+    'movements_view_mode': 'listHeatmap',
+  });
   final db = AppDatabase();
   await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
   return db;
@@ -79,7 +81,9 @@ Future<void> chooseQuickDate(
     'Scegli data' => const Key('quick_date_custom'),
     _ => null,
   };
-  final choiceFinder = choiceKey == null ? find.text(choice) : find.byKey(choiceKey);
+  final choiceFinder = choiceKey == null
+      ? find.text(choice)
+      : find.byKey(choiceKey);
   await tester.tap(choiceFinder);
   await tester.pumpAndSettle();
 
@@ -185,7 +189,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Negativo');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo'),
+      'Negativo',
+    );
     // Open pad, type "-50", pad won't close (allowNegative: false)
     await openPadAndType(tester, '-50');
     // Clear and close the pad
@@ -1030,7 +1037,9 @@ void main() {
     expect(db.movements.first.date.day, yesterday.day);
   });
 
-  testWidgets('55c. Movimento rapido con Domani usa data domani', (tester) async {
+  testWidgets('55c. Movimento rapido con Domani usa data domani', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
 
     await openArchivePicker(tester);
@@ -1059,11 +1068,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.play_arrow).first);
     await tester.pumpAndSettle();
-    final picked = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      15,
-    );
+    final picked = DateTime(DateTime.now().year, DateTime.now().month, 15);
     await chooseQuickDate(tester, 'Scegli data', customDate: picked);
 
     expect(db.movements.length, 1);
@@ -1424,10 +1429,7 @@ void main() {
     expect(db.movements.first.type, MovementType.transfer);
     expect(db.movements.first.accountId, defaultAccountId);
     expect(db.movements.first.destinationAccountId, 'acc_risparmio');
-    expect(
-      db.movements.first.title,
-      'Trasferimento: Principale → Risparmio',
-    );
+    expect(db.movements.first.title, 'Trasferimento: Principale → Risparmio');
     expect(db.getAccountBalance(db.getAccount(defaultAccountId)), -25.0);
     expect(db.getAccountBalance(db.getAccount('acc_risparmio')), 25.0);
   });

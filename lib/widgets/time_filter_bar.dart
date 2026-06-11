@@ -7,11 +7,13 @@ import 'interval_picker_sheet.dart';
 class TimeFilterBar extends StatelessWidget {
   final TimeFilter activeFilter;
   final ValueChanged<TimeFilter> onChanged;
+  final ValueChanged<DateTime>? onDatePicked;
 
   const TimeFilterBar({
     super.key,
     required this.activeFilter,
     required this.onChanged,
+    this.onDatePicked,
   });
 
   void _onModeChanged(TimeFilterMode mode, BuildContext context) {
@@ -24,11 +26,16 @@ class TimeFilterBar extends StatelessWidget {
       case TimeFilterMode.year:
         onChanged(TimeFilter.year(s.year));
       case TimeFilterMode.customRange:
-        WidgetsBinding.instance.addPostFrameCallback((_) => _pickDate(context, forcedMode: TimeFilterMode.customRange));
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _pickDate(context, forcedMode: TimeFilterMode.customRange),
+        );
     }
   }
 
-  Future<void> _pickDate(BuildContext context, {TimeFilterMode? forcedMode}) async {
+  Future<void> _pickDate(
+    BuildContext context, {
+    TimeFilterMode? forcedMode,
+  }) async {
     switch (forcedMode ?? activeFilter.mode) {
       case TimeFilterMode.day:
         final picked = await StreamDatePicker.show(
@@ -36,6 +43,7 @@ class TimeFilterBar extends StatelessWidget {
           initialDate: activeFilter.startDate,
         );
         if (picked != null) {
+          onDatePicked?.call(picked);
           onChanged(TimeFilter.day(picked));
         }
       case TimeFilterMode.month:
@@ -44,6 +52,7 @@ class TimeFilterBar extends StatelessWidget {
           initialDate: activeFilter.startDate,
         );
         if (picked != null) {
+          onDatePicked?.call(picked);
           onChanged(TimeFilter.month(picked.year, picked.month));
         }
       case TimeFilterMode.year:
@@ -52,6 +61,7 @@ class TimeFilterBar extends StatelessWidget {
           initialDate: DateTime(activeFilter.startDate.year, 6, 15),
         );
         if (picked != null) {
+          onDatePicked?.call(picked);
           onChanged(TimeFilter.year(picked.year));
         }
       case TimeFilterMode.customRange:
@@ -75,18 +85,9 @@ class TimeFilterBar extends StatelessWidget {
         children: [
           SegmentedButton<TimeFilterMode>(
             segments: const [
-              ButtonSegment(
-                value: TimeFilterMode.day,
-                label: Text('Giorno'),
-              ),
-              ButtonSegment(
-                value: TimeFilterMode.month,
-                label: Text('Mese'),
-              ),
-              ButtonSegment(
-                value: TimeFilterMode.year,
-                label: Text('Anno'),
-              ),
+              ButtonSegment(value: TimeFilterMode.day, label: Text('Giorno')),
+              ButtonSegment(value: TimeFilterMode.month, label: Text('Mese')),
+              ButtonSegment(value: TimeFilterMode.year, label: Text('Anno')),
               ButtonSegment(
                 value: TimeFilterMode.customRange,
                 label: Text('Intervallo'),
@@ -98,7 +99,7 @@ class TimeFilterBar extends StatelessWidget {
             },
             showSelectedIcon: false,
           ),
-          const SizedBox(height: StreamSpacing.sm),
+          const SizedBox(height: StreamSpacing.xs),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -118,10 +119,7 @@ class TimeFilterBar extends StatelessWidget {
                     color: StreamColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(StreamRadius.md),
                   ),
-                  child: Text(
-                    activeFilter.label,
-                    style: StreamTypography.h3,
-                  ),
+                  child: Text(activeFilter.label, style: StreamTypography.h3),
                 ),
               ),
               IconButton(

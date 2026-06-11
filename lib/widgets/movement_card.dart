@@ -41,7 +41,8 @@ class MovementCard extends StatelessWidget {
         : category != null
         ? StreamIconLibrary.getIcon(category!.iconKey)
         : Icons.help_outline;
-    final hasPopup = onEdit != null ||
+    final hasPopup =
+        onEdit != null ||
         onDuplicate != null ||
         onSaveAsFavorite != null ||
         onDelete != null;
@@ -76,10 +77,12 @@ class MovementCard extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(movement.title,
-                                style: StreamTypography.bodyBold),
-                            const SizedBox(height: 2),
+                        children: [
+                          Text(
+                            movement.title,
+                            style: StreamTypography.bodyBold,
+                          ),
+                          const SizedBox(height: 2),
                           if (isTransfer)
                             _MetadataRow(
                               icon: Icons.swap_horiz,
@@ -89,8 +92,9 @@ class MovementCard extends StatelessWidget {
                             )
                           else if (category != null)
                             _MetadataRow(
-                              icon:
-                                  StreamIconLibrary.getIcon(category!.iconKey),
+                              icon: StreamIconLibrary.getIcon(
+                                category!.iconKey,
+                              ),
                               iconColor: Color(category!.color),
                               text: category!.name,
                             )
@@ -105,7 +109,8 @@ class MovementCard extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 1),
                               child: _MetadataRow(
                                 icon: StreamIconLibrary.getAccountIcon(
-                                    account!.iconKey),
+                                  account!.iconKey,
+                                ),
                                 iconColor: Color(account!.color),
                                 text: account!.name,
                               ),
@@ -116,12 +121,13 @@ class MovementCard extends StatelessWidget {
                               child: Text(
                                 _formatDate(movement.date),
                                 style: StreamTypography.caption.copyWith(
-                                    color: StreamColors.textSecondary),
+                                  color: StreamColors.textSecondary,
+                                ),
                               ),
                             ),
                         ],
-                          ),
-                        ),
+                      ),
+                    ),
                     const SizedBox(width: StreamSpacing.sm),
                     Text(
                       isTransfer
@@ -131,8 +137,8 @@ class MovementCard extends StatelessWidget {
                         color: isTransfer
                             ? StreamColors.textSecondary
                             : movement.type == MovementType.expense
-                                ? StreamColors.expense
-                                : StreamColors.income,
+                            ? StreamColors.expense
+                            : StreamColors.income,
                       ),
                     ),
                     if (hasPopup) ...[
@@ -186,9 +192,12 @@ class _MetadataRow extends StatelessWidget {
           Icon(icon, size: 12, color: iconColor),
           const SizedBox(width: 4),
           Flexible(
-            child: Text(text,
-                style: StreamTypography.caption
-                    .copyWith(color: StreamColors.textSecondary)),
+            child: Text(
+              text,
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
           ),
         ],
       ),
@@ -219,8 +228,9 @@ class _NoteBox extends StatelessWidget {
               note,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: StreamTypography.caption
-                  .copyWith(color: StreamColors.textSecondary),
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -258,8 +268,7 @@ class _PopupMenu extends StatelessWidget {
               Navigator.pop(ctx);
               onDelete?.call();
             },
-            style:
-                TextButton.styleFrom(foregroundColor: StreamColors.expense),
+            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
             child: const Text('Elimina'),
           ),
         ],
@@ -270,7 +279,67 @@ class _PopupMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
+      key: const Key('movement_card_action'),
       icon: Icon(Icons.more_horiz, size: 20, color: StreamColors.textMuted),
+      itemBuilder: (context) {
+        final items = <PopupMenuEntry<String>>[];
+        if (onEdit != null) {
+          items.add(
+            const PopupMenuItem(
+              value: 'modifica',
+              child: ListTile(
+                leading: Icon(Icons.edit, size: 20),
+                title: Text('Modifica'),
+                dense: true,
+              ),
+            ),
+          );
+        }
+        if (onDuplicate != null) {
+          items.add(
+            const PopupMenuItem(
+              value: 'duplica',
+              child: ListTile(
+                leading: Icon(Icons.copy, size: 20),
+                title: Text('Duplica'),
+                dense: true,
+              ),
+            ),
+          );
+        }
+        if (onSaveAsFavorite != null) {
+          items.add(
+            const PopupMenuItem(
+              value: 'preferito',
+              child: ListTile(
+                leading: Icon(Icons.favorite_border, size: 20),
+                title: Text('Salva preferito'),
+                dense: true,
+              ),
+            ),
+          );
+        }
+        if (onDelete != null) {
+          items.add(
+            PopupMenuItem(
+              value: 'elimina',
+              child: ListTile(
+                leading: Icon(
+                  Icons.delete_outline,
+                  size: 20,
+                  color: StreamColors.expense,
+                ),
+                title: Text(
+                  'Elimina',
+                  style: TextStyle(color: StreamColors.expense),
+                ),
+                dense: true,
+              ),
+            ),
+          );
+        }
+        return items;
+      },
       onSelected: (value) {
         switch (value) {
           case 'modifica':
@@ -282,52 +351,6 @@ class _PopupMenu extends StatelessWidget {
           case 'elimina':
             _confirmDelete(context);
         }
-      },
-      itemBuilder: (context) {
-        final items = <PopupMenuEntry<String>>[];
-        if (onEdit != null) {
-          items.add(const PopupMenuItem(
-            value: 'modifica',
-            child: ListTile(
-              leading: Icon(Icons.edit, size: 20),
-              title: Text('Modifica'),
-              dense: true,
-            ),
-          ));
-        }
-        if (onDuplicate != null) {
-          items.add(const PopupMenuItem(
-            value: 'duplica',
-            child: ListTile(
-              leading: Icon(Icons.copy, size: 20),
-              title: Text('Duplica'),
-              dense: true,
-            ),
-          ));
-        }
-        if (onSaveAsFavorite != null) {
-          items.add(const PopupMenuItem(
-            value: 'preferito',
-            child: ListTile(
-              leading: Icon(Icons.favorite_border, size: 20),
-              title: Text('Salva preferito'),
-              dense: true,
-            ),
-          ));
-        }
-        if (onDelete != null) {
-          items.add(PopupMenuItem(
-            value: 'elimina',
-            child: ListTile(
-              leading: Icon(Icons.delete_outline,
-                  size: 20, color: StreamColors.expense),
-              title:
-                  Text('Elimina', style: TextStyle(color: StreamColors.expense)),
-              dense: true,
-            ),
-          ));
-        }
-        return items;
       },
     );
   }

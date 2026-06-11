@@ -92,7 +92,10 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    SharedPreferences.setMockInitialValues({'show_notes': true});
+    SharedPreferences.setMockInitialValues({
+      'show_notes': true,
+      'movements_view_mode': 'listHeatmap',
+    });
   });
 
   testWidgets(
