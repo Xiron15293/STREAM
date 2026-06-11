@@ -10,7 +10,6 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
 
-
 const String _defaultAccountId = 'acc_default';
 
 Movement _makeMovement(int i) {
@@ -63,7 +62,11 @@ void main() {
         db.addMovement(_makeMovement(i));
       }
 
-      expect(db.movements.length, 1000, reason: 'Perdita dati: mancano movimenti');
+      expect(
+        db.movements.length,
+        1000,
+        reason: 'Perdita dati: mancano movimenti',
+      );
 
       // ids univoci
       final ids = db.movements.map((m) => m.id).toSet();
@@ -84,30 +87,45 @@ void main() {
 
       for (int i = 0; i < 500; i++) {
         final m = db.movements[i];
-        db.updateMovement(m.copyWith(
-          title: 'Modificato $i',
-          amount: (i + 1) * 2.0,
-          note: 'Nota modifica $i',
-        ));
+        db.updateMovement(
+          m.copyWith(
+            title: 'Modificato $i',
+            amount: (i + 1) * 2.0,
+            note: 'Nota modifica $i',
+          ),
+        );
       }
 
       expect(db.movements.length, 1000, reason: 'Perdita dati dopo modifiche');
-      expect(db.movements.where((m) => m.title.startsWith('Modificato')).length,
-          500, reason: 'Modifiche non applicate');
+      expect(
+        db.movements.where((m) => m.title.startsWith('Modificato')).length,
+        500,
+        reason: 'Modifiche non applicate',
+      );
 
       // ids invariati
       final idsAfter = db.movements.map((m) => m.id).toSet();
-      expect(idsAfter, idsBefore, reason: 'Duplicati: ids cambiati dopo modifica');
+      expect(
+        idsAfter,
+        idsBefore,
+        reason: 'Duplicati: ids cambiati dopo modifica',
+      );
 
-      expect(() => db.updateMovement(Movement(
-        id: 'inesistente',
-        title: 'Fake',
-        amount: 1,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: 'exp_1',
-        createdAt: DateTime.now(),
-      )), returnsNormally, reason: 'Assertion/crash su update ID inesistente');
+      expect(
+        () => db.updateMovement(
+          Movement(
+            id: 'inesistente',
+            title: 'Fake',
+            amount: 1,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: 'exp_1',
+            createdAt: DateTime.now(),
+          ),
+        ),
+        returnsNormally,
+        reason: 'Assertion/crash su update ID inesistente',
+      );
     });
 
     test('Cancella 500 movimenti senza errori', () {
@@ -120,13 +138,23 @@ void main() {
         db.deleteMovement('stress_m_$i');
       }
 
-      expect(db.movements.length, 500, reason: 'Perdita/duplicati: lunghezza errata dopo delete');
-      expect(db.movements.every((m) => int.parse(m.id.split('_').last) >= 500),
-          isTrue, reason: 'Cancellati ID errati');
+      expect(
+        db.movements.length,
+        500,
+        reason: 'Perdita/duplicati: lunghezza errata dopo delete',
+      );
+      expect(
+        db.movements.every((m) => int.parse(m.id.split('_').last) >= 500),
+        isTrue,
+        reason: 'Cancellati ID errati',
+      );
 
       // verify no crash on delete di ID già rimosso
-      expect(() => db.deleteMovement('stress_m_0'),
-          returnsNormally, reason: 'Crash su delete ID già rimosso');
+      expect(
+        () => db.deleteMovement('stress_m_0'),
+        returnsNormally,
+        reason: 'Crash su delete ID già rimosso',
+      );
     });
 
     test('Verifica calcoli finali dopo stress', () {
@@ -135,10 +163,12 @@ void main() {
         db.addMovement(_makeMovement(i));
       }
       for (int i = 0; i < 500; i++) {
-        db.updateMovement(db.movements[i].copyWith(
-          amount: (i % 100) + 0.50,
-          title: 'Movimento ${db.movements[i].id}',
-        ));
+        db.updateMovement(
+          db.movements[i].copyWith(
+            amount: (i % 100) + 0.50,
+            title: 'Movimento ${db.movements[i].id}',
+          ),
+        );
       }
       for (int i = 0; i < 500; i++) {
         db.deleteMovement('stress_m_$i');
@@ -183,10 +213,16 @@ void main() {
       // reload
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
-      expect(db2.movements.length, 1000,
-          reason: 'Perdita dati dopo reload SQLite');
-      expect(db2.movements.map((m) => m.id).toSet().length, 1000,
-          reason: 'Duplicati dopo reload SQLite');
+      expect(
+        db2.movements.length,
+        1000,
+        reason: 'Perdita dati dopo reload SQLite',
+      );
+      expect(
+        db2.movements.map((m) => m.id).toSet().length,
+        1000,
+        reason: 'Duplicati dopo reload SQLite',
+      );
 
       await sqlite.close();
     });
@@ -202,10 +238,12 @@ void main() {
       }
 
       for (int i = 0; i < 500; i++) {
-        await db.updateMovement(db.movements[i].copyWith(
-          title: 'SQLite Mod $i',
-          amount: (i + 1) * 3.0,
-        ));
+        await db.updateMovement(
+          db.movements[i].copyWith(
+            title: 'SQLite Mod $i',
+            amount: (i + 1) * 3.0,
+          ),
+        );
       }
 
       // reload
@@ -213,8 +251,10 @@ void main() {
       await db2.initialize();
       expect(db2.movements.length, 1000);
       expect(
-          db2.movements.where((m) => m.title.startsWith('SQLite Mod')).length,
-          500, reason: 'Modifiche non persistite');
+        db2.movements.where((m) => m.title.startsWith('SQLite Mod')).length,
+        500,
+        reason: 'Modifiche non persistite',
+      );
 
       await sqlite.close();
     });
@@ -236,10 +276,16 @@ void main() {
       // reload
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
-      expect(db2.movements.length, 500,
-          reason: 'Perdita/duplicati dopo delete persistente');
-      expect(db2.movements.every((m) => int.parse(m.id.split('_').last) >= 500),
-          isTrue, reason: 'Cancellati ID errati (persistente)');
+      expect(
+        db2.movements.length,
+        500,
+        reason: 'Perdita/duplicati dopo delete persistente',
+      );
+      expect(
+        db2.movements.every((m) => int.parse(m.id.split('_').last) >= 500),
+        isTrue,
+        reason: 'Cancellati ID errati (persistente)',
+      );
 
       await sqlite.close();
     });
@@ -254,10 +300,12 @@ void main() {
         await db.addMovement(_makeMovement(i));
       }
       for (int i = 0; i < 500; i++) {
-        await db.updateMovement(db.movements[i].copyWith(
-          amount: (i % 100) + 0.50,
-          title: 'Movimento ${db.movements[i].id}',
-        ));
+        await db.updateMovement(
+          db.movements[i].copyWith(
+            amount: (i % 100) + 0.50,
+            title: 'Movimento ${db.movements[i].id}',
+          ),
+        );
       }
       for (int i = 0; i < 500; i++) {
         await db.deleteMovement('stress_m_$i');
@@ -295,20 +343,25 @@ void main() {
       expect(db.accounts.length, 1); // default account
 
       for (int i = 0; i < 30; i++) {
-        db.addAccount(Account(
-          id: 'conto_$i',
-          name: 'Conto $i',
-          type: [AccountType.cash, AccountType.bank, AccountType.card,
-                  AccountType.savings, AccountType.other][i % 5],
-          createdAt: DateTime.now().subtract(Duration(days: i)),
-        ));
+        db.addAccount(
+          Account(
+            id: 'conto_$i',
+            name: 'Conto $i',
+            type: [
+              AccountType.cash,
+              AccountType.bank,
+              AccountType.card,
+              AccountType.savings,
+              AccountType.other,
+            ][i % 5],
+            createdAt: DateTime.now().subtract(Duration(days: i)),
+          ),
+        );
       }
 
-      expect(db.accounts.length, 31,
-          reason: 'Perdita dati: mancano conti');
+      expect(db.accounts.length, 31, reason: 'Perdita dati: mancano conti');
       final ids = db.accounts.map((a) => a.id).toSet();
-      expect(ids.length, 31,
-          reason: 'Duplicati: ids conto non univoci');
+      expect(ids.length, 31, reason: 'Duplicati: ids conto non univoci');
     });
 
     test('Archivia conti — restoreAccount non disponibile (mancante API)', () {
@@ -318,12 +371,14 @@ void main() {
       // oppure updateAccount() dovrebbe supportare il flag archived.
       final db = AppDatabase();
       for (int i = 0; i < 30; i++) {
-        db.addAccount(Account(
-          id: 'conto_$i',
-          name: 'Conto $i',
-          type: AccountType.bank,
-          createdAt: DateTime.now().subtract(Duration(days: i)),
-        ));
+        db.addAccount(
+          Account(
+            id: 'conto_$i',
+            name: 'Conto $i',
+            type: AccountType.bank,
+            createdAt: DateTime.now().subtract(Duration(days: i)),
+          ),
+        );
       }
 
       // archivia 15 conti
@@ -331,14 +386,23 @@ void main() {
         db.archiveAccount('conto_$i');
       }
 
-      expect(db.accounts.where((a) => a.archived).length, 15,
-          reason: 'Archiviazione non applicata');
-      expect(db.accounts.where((a) => !a.archived).length, 16, // 15 + default
-          reason: 'Perdita conti non archiviati');
+      expect(
+        db.accounts.where((a) => a.archived).length,
+        15,
+        reason: 'Archiviazione non applicata',
+      );
+      expect(
+        db.accounts.where((a) => !a.archived).length,
+        16, // 15 + default
+        reason: 'Perdita conti non archiviati',
+      );
 
       // verifica crash su archive ID inesistente
-      expect(() => db.archiveAccount('conto_999'),
-          returnsNormally, reason: 'Crash su archive ID inesistente');
+      expect(
+        () => db.archiveAccount('conto_999'),
+        returnsNormally,
+        reason: 'Crash su archive ID inesistente',
+      );
     });
 
     test('Verifica totalAccountsBalance dopo archiviazione', () {
@@ -346,13 +410,15 @@ void main() {
 
       // conto default + 5 nuovi
       for (int i = 0; i < 5; i++) {
-        db.addAccount(Account(
-          id: 'conto_$i',
-          name: 'Conto $i',
-          type: AccountType.bank,
-          initialBalance: 1000.0 * (i + 1),
-          createdAt: DateTime.now(),
-        ));
+        db.addAccount(
+          Account(
+            id: 'conto_$i',
+            name: 'Conto $i',
+            type: AccountType.bank,
+            initialBalance: 1000.0 * (i + 1),
+            createdAt: DateTime.now(),
+          ),
+        );
       }
 
       // aggiungi movimenti a ciascun conto
@@ -363,20 +429,29 @@ void main() {
       }
 
       final beforeArchive = db.totalAccountsBalance;
-      expect(beforeArchive, greaterThan(0),
-          reason: 'totalAccountsBalance dovrebbe essere positivo');
+      expect(
+        beforeArchive,
+        greaterThan(0),
+        reason: 'totalAccountsBalance dovrebbe essere positivo',
+      );
 
       // archivia conto_0
       db.archiveAccount('conto_0');
       final afterArchive = db.totalAccountsBalance;
 
       // conto_0 (1000 initial + 10*100) = 2000 non dovrebbe più contribuire
-      expect(afterArchive, lessThan(beforeArchive),
-          reason: 'Archiviazione non rimossa da totalAccountsBalance');
+      expect(
+        afterArchive,
+        lessThan(beforeArchive),
+        reason: 'Archiviazione non rimossa da totalAccountsBalance',
+      );
 
       // verifica crash su archive ID inesistente
-      expect(() => db.archiveAccount('conto_999'),
-          returnsNormally, reason: 'Crash su archive ID inesistente');
+      expect(
+        () => db.archiveAccount('conto_999'),
+        returnsNormally,
+        reason: 'Crash su archive ID inesistente',
+      );
     });
 
     test('Crea 30 conti con SQLite senza crash', () async {
@@ -387,13 +462,15 @@ void main() {
 
       // oltre al default, aggiungi 30 conti
       for (int i = 0; i < 30; i++) {
-        await db.addAccount(Account(
-          id: 'p_conto_$i',
-          name: 'Persistente $i',
-          type: AccountType.bank,
-          initialBalance: 500.0,
-          createdAt: DateTime.now().subtract(Duration(days: i)),
-        ));
+        await db.addAccount(
+          Account(
+            id: 'p_conto_$i',
+            name: 'Persistente $i',
+            type: AccountType.bank,
+            initialBalance: 500.0,
+            createdAt: DateTime.now().subtract(Duration(days: i)),
+          ),
+        );
       }
 
       expect(db.accounts.length, 31);
@@ -401,10 +478,16 @@ void main() {
       // reload
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
-      expect(db2.accounts.length, 31,
-          reason: 'Perdita conti dopo reload SQLite');
-      expect(db2.accounts.map((a) => a.id).toSet().length, 31,
-          reason: 'Duplicati conti dopo reload SQLite');
+      expect(
+        db2.accounts.length,
+        31,
+        reason: 'Perdita conti dopo reload SQLite',
+      );
+      expect(
+        db2.accounts.map((a) => a.id).toSet().length,
+        31,
+        reason: 'Duplicati conti dopo reload SQLite',
+      );
 
       await sqlite.close();
     });
@@ -414,7 +497,9 @@ void main() {
   // NAVIGAZIONE RAPIDA — WIDGET TEST
   // ──────────────────────────────────────────────
   group('Navigazione rapida — freeze/crash apertura/chiusura schermate', () {
-    testWidgets('Switch rapido tra sezioni Archivio senza freeze', (tester) async {
+    testWidgets('Switch rapido tra sezioni Archivio senza freeze', (
+      tester,
+    ) async {
       final db = await _pumpApp(tester);
       for (int i = 0; i < 20; i++) {
         db.addMovement(_makeMovement(i));
@@ -424,23 +509,23 @@ void main() {
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // switch rapido tra le 4 sezioni interne
+      // switch rapido tra le 3 sezioni interne
       for (int i = 0; i < 3; i++) {
-        await tester.tap(find.text('Conti'));
+        await tester.tap(find.byKey(const Key('archive_section_accounts')));
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
-        await tester.tap(find.text('Categorie'));
+        await tester.tap(find.byKey(const Key('archive_section_categories')));
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
-        await tester.tap(find.text('Calendario'));
-        await tester.pumpAndSettle(const Duration(seconds: 2));
-
-        await tester.tap(find.text('Movimenti'));
+        await tester.tap(find.byKey(const Key('archive_section_movements')));
         await tester.pumpAndSettle(const Duration(seconds: 2));
       }
 
-      expect(db.movements.length, 20,
-          reason: 'Movimenti persi dopo navigazione rapida');
+      expect(
+        db.movements.length,
+        20,
+        reason: 'Movimenti persi dopo navigazione rapida',
+      );
     });
 
     testWidgets('Switch rapido bottom nav senza freeze', (tester) async {
@@ -463,11 +548,16 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
       }
 
-      expect(db.movements.length, 10,
-          reason: 'Movimenti persi dopo switch bottom nav');
+      expect(
+        db.movements.length,
+        10,
+        reason: 'Movimenti persi dopo switch bottom nav',
+      );
     });
 
-    testWidgets('Apri e chiudi form movimento rapido senza crash', (tester) async {
+    testWidgets('Apri e chiudi form movimento rapido senza crash', (
+      tester,
+    ) async {
       final db = await _pumpApp(tester);
       for (int i = 0; i < 5; i++) {
         db.addMovement(_makeMovement(i));
@@ -487,11 +577,17 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
       }
 
-      expect(db.movements.length, 5,
-          reason: 'Movimenti creati involontariamente durante apertura/chiusura form');
+      expect(
+        db.movements.length,
+        5,
+        reason:
+            'Movimenti creati involontariamente durante apertura/chiusura form',
+      );
     });
 
-    testWidgets('Navigazione combinata: bottom nav + sezioni + form', (tester) async {
+    testWidgets('Navigazione combinata: bottom nav + sezioni + form', (
+      tester,
+    ) async {
       final db = await _pumpApp(tester);
       for (int i = 0; i < 5; i++) {
         db.addMovement(_makeMovement(i));
@@ -501,7 +597,7 @@ void main() {
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Categorie'));
+      await tester.tap(find.byKey(const Key('archive_section_categories')));
       await tester.pumpAndSettle();
 
       // Dashboard
@@ -512,15 +608,11 @@ void main() {
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Conti'));
-      await tester.pumpAndSettle();
-
-      // Archivio → Calendario
-      await tester.tap(find.text('Calendario'));
+      await tester.tap(find.byKey(const Key('archive_section_accounts')));
       await tester.pumpAndSettle();
 
       // Torna a Movimenti
-      await tester.tap(find.text('Movimenti'));
+      await tester.tap(find.byKey(const Key('archive_section_movements')));
       await tester.pumpAndSettle();
 
       // Apri form e chiudi
@@ -530,10 +622,16 @@ void main() {
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
 
-      expect(db.movements.length, 5,
-          reason: 'Movimenti creati involontariamente');
-      expect(db.categories.length, greaterThanOrEqualTo(7),
-          reason: 'Categorie perse');
+      expect(
+        db.movements.length,
+        5,
+        reason: 'Movimenti creati involontariamente',
+      );
+      expect(
+        db.categories.length,
+        greaterThanOrEqualTo(7),
+        reason: 'Categorie perse',
+      );
     });
   });
 }

@@ -6,19 +6,27 @@ import 'package:stream_app/main.dart';
 import 'package:stream_app/data/database.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
+import 'package:stream_app/screens/calendar_screen.dart';
 
 String _monthLabel(int year, int month) {
   const months = [
-    'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+    'gennaio',
+    'febbraio',
+    'marzo',
+    'aprile',
+    'maggio',
+    'giugno',
+    'luglio',
+    'agosto',
+    'settembre',
+    'ottobre',
+    'novembre',
+    'dicembre',
   ];
   return '${months[month - 1]} $year';
 }
 
 Future<void> _openCalendar(WidgetTester tester) async {
-  await tester.tap(find.text('Archivio'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Calendario'));
   await tester.pumpAndSettle();
 }
 
@@ -26,11 +34,11 @@ void main() {
   SharedPreferences.setMockInitialValues({});
 
   group('CalendarScreen', () {
-    testWidgets('shows month header with current month', (WidgetTester tester) async {
+    testWidgets('shows month header with current month', (
+      WidgetTester tester,
+    ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: MainScaffold(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);
@@ -41,9 +49,7 @@ void main() {
 
     testWidgets('shows weekday headers', (WidgetTester tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: MainScaffold(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);
@@ -56,9 +62,7 @@ void main() {
 
     testWidgets('navigation arrows change month', (WidgetTester tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: MainScaffold(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);
@@ -72,23 +76,25 @@ void main() {
       expect(find.text(_monthLabel(nextY, nextM)), findsOneWidget);
     });
 
-    testWidgets('shows movement indicators on days', (WidgetTester tester) async {
+    testWidgets('shows movement indicators on days', (
+      WidgetTester tester,
+    ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: MainScaffold(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       final now = DateTime.now();
-      db.addMovement(Movement(
-        id: 'cal_test',
-        title: 'Calendario test',
-        amount: 50,
-        type: MovementType.expense,
-        date: DateTime(now.year, now.month, now.day),
-        categoryId: 'exp_1',
-        createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'cal_test',
+          title: 'Calendario test',
+          amount: 50,
+          type: MovementType.expense,
+          date: DateTime(now.year, now.month, now.day),
+          categoryId: 'exp_1',
+          createdAt: now,
+        ),
+      );
 
       await _openCalendar(tester);
 
@@ -96,23 +102,25 @@ void main() {
       expect(find.text('${now.day}'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('tapping a day shows movements for that day', (WidgetTester tester) async {
+    testWidgets('tapping a day shows movements for that day', (
+      WidgetTester tester,
+    ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: MainScaffold(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       final now = DateTime.now();
-      db.addMovement(Movement(
-        id: 'day_test',
-        title: 'Day movement',
-        amount: 100,
-        type: MovementType.income,
-        date: DateTime(now.year, now.month, now.day),
-        categoryId: 'inc_1',
-        createdAt: now,
-      ));
+      db.addMovement(
+        Movement(
+          id: 'day_test',
+          title: 'Day movement',
+          amount: 100,
+          type: MovementType.income,
+          date: DateTime(now.year, now.month, now.day),
+          categoryId: 'inc_1',
+          createdAt: now,
+        ),
+      );
 
       await _openCalendar(tester);
 
@@ -131,11 +139,11 @@ void main() {
       expect(find.text('Impostazioni'), findsOneWidget);
     });
 
-    testWidgets('tapping month label resets to today', (WidgetTester tester) async {
+    testWidgets('tapping month label resets to today', (
+      WidgetTester tester,
+    ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(
-        home: MainScaffold(db: db),
-      ));
+      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);

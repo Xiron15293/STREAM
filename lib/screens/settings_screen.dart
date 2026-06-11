@@ -32,27 +32,29 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Backup & Restore',
-                    style: StreamTypography.h3,
-                  ),
+                  Text('Backup & Restore', style: StreamTypography.h3),
                   const SizedBox(height: StreamSpacing.sm),
                   Text(
                     'Gestisci esportazione e ripristino dei dati del dispositivo.',
-                    style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                    style: StreamTypography.body.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: StreamSpacing.md),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.backup_outlined, color: StreamColors.primary),
+                    leading: Icon(
+                      Icons.backup_outlined,
+                      color: StreamColors.primary,
+                    ),
                     title: const Text('Backup & Restore'),
-                    subtitle: const Text('Apri la schermata di esportazione e ripristino'),
+                    subtitle: const Text(
+                      'Apri la schermata di esportazione e ripristino',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => BackupScreen(db: db),
-                        ),
+                        MaterialPageRoute(builder: (_) => BackupScreen(db: db)),
                       );
                     },
                   ),
@@ -74,7 +76,10 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.info_outline, color: StreamColors.primary),
+                    leading: Icon(
+                      Icons.info_outline,
+                      color: StreamColors.primary,
+                    ),
                     title: const Text('Info app'),
                     subtitle: const Text('Versione e dettagli dell\'app'),
                     trailing: const Icon(Icons.chevron_right),
@@ -92,17 +97,18 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Aspetto',
-                    style: StreamTypography.h3,
-                  ),
+                  Text('Aspetto', style: StreamTypography.h3),
                   const SizedBox(height: StreamSpacing.sm),
                   Text(
                     'Personalizza l\'interfaccia dell\'app.',
-                    style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                    style: StreamTypography.body.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: StreamSpacing.md),
                   _CategoryLayoutTile(db: db),
+                  const SizedBox(height: StreamSpacing.sm),
+                  _MovementsViewModeTile(),
                 ],
               ),
             ),
@@ -115,14 +121,13 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Dati',
-                    style: StreamTypography.h3,
-                  ),
+                  Text('Dati', style: StreamTypography.h3),
                   const SizedBox(height: StreamSpacing.sm),
                   Text(
                     'Azioni distruttive e manutenzione dei dati locali.',
-                    style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                    style: StreamTypography.body.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: StreamSpacing.md),
                   KeyedSubtree(
@@ -130,9 +135,14 @@ class SettingsScreen extends StatelessWidget {
                     child: ListTile(
                       key: const Key('reset_data_tile'),
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.delete_forever_outlined, color: StreamColors.expense),
+                      leading: const Icon(
+                        Icons.delete_forever_outlined,
+                        color: StreamColors.expense,
+                      ),
                       title: const Text('Reset dati app'),
-                      subtitle: const Text('Cancella dati utente e ripristina i default'),
+                      subtitle: const Text(
+                        'Cancella dati utente e ripristina i default',
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _confirmReset(context),
                     ),
@@ -176,7 +186,9 @@ class SettingsScreen extends StatelessWidget {
               child: const Text('Annulla'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: StreamColors.expense),
+              style: FilledButton.styleFrom(
+                backgroundColor: StreamColors.expense,
+              ),
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Continua'),
             ),
@@ -190,14 +202,14 @@ class SettingsScreen extends StatelessWidget {
       await db.resetAllData();
       await PreferencesService.clearForReset();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dati app resettati')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Dati app resettati')));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore durante il reset: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Errore durante il reset: $e')));
     }
   }
 
@@ -210,7 +222,12 @@ class SettingsScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.xxl),
+        padding: const EdgeInsets.fromLTRB(
+          StreamSpacing.lg,
+          StreamSpacing.lg,
+          StreamSpacing.lg,
+          StreamSpacing.xxl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -256,7 +273,12 @@ class SettingsScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: StreamTypography.body.copyWith(color: StreamColors.textSecondary)),
+          Text(
+            label,
+            style: StreamTypography.body.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
           Text(value, style: StreamTypography.bodyBold),
         ],
       ),
@@ -379,7 +401,150 @@ class _CategoryLayoutDialogState extends State<_CategoryLayoutDialog> {
               final desc = option.$3;
               return RadioListTile<String>(
                 title: Text(label),
-                subtitle: Text(desc, style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+                subtitle: Text(
+                  desc,
+                  style: StreamTypography.caption.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
+                value: value,
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+      ],
+    );
+  }
+}
+
+class _MovementsViewModeTile extends StatefulWidget {
+  @override
+  State<_MovementsViewModeTile> createState() => _MovementsViewModeTileState();
+}
+
+class _MovementsViewModeTileState extends State<_MovementsViewModeTile> {
+  MovementsViewMode _currentMode = PreferencesService.defaultMovementsViewMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final mode = await PreferencesService.loadMovementsViewMode();
+    if (mounted) setState(() => _currentMode = mode);
+  }
+
+  String _modeLabel(MovementsViewMode mode) {
+    switch (mode) {
+      case MovementsViewMode.listHeatmap:
+        return 'Lista + mini heatmap';
+      case MovementsViewMode.calendar:
+        return 'Calendario mensile';
+      case MovementsViewMode.advancedHeatmap:
+        return 'Heatmap avanzata';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: const Key('movements_view_mode_setting'),
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        Icons.calendar_view_month_outlined,
+        color: StreamColors.primary,
+      ),
+      title: const Text('Modello Movimenti'),
+      subtitle: Text(_modeLabel(_currentMode)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final result = await showDialog<MovementsViewMode>(
+          context: context,
+          builder: (_) => _MovementsViewModeDialog(current: _currentMode),
+        );
+        if (result != null && result != _currentMode) {
+          await PreferencesService.saveMovementsViewMode(result);
+          if (mounted) setState(() => _currentMode = result);
+        }
+      },
+    );
+  }
+}
+
+class _MovementsViewModeDialog extends StatefulWidget {
+  final MovementsViewMode current;
+
+  const _MovementsViewModeDialog({required this.current});
+
+  @override
+  State<_MovementsViewModeDialog> createState() =>
+      _MovementsViewModeDialogState();
+}
+
+class _MovementsViewModeDialogState extends State<_MovementsViewModeDialog> {
+  late MovementsViewMode _selected;
+
+  static const _options = [
+    (
+      MovementsViewMode.listHeatmap,
+      'Lista + mini heatmap',
+      'Elenco movimenti con barra spese mensile',
+    ),
+    (
+      MovementsViewMode.calendar,
+      'Calendario mensile',
+      'Calendario heatmap con riepilogo giorno',
+    ),
+    (
+      MovementsViewMode.advancedHeatmap,
+      'Heatmap avanzata',
+      'Heatmap grande con pannello giorno e filtri',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.current;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      key: const Key('movements_view_mode_dialog'),
+      title: const Text('Modello Movimenti'),
+      content: SingleChildScrollView(
+        child: RadioGroup<MovementsViewMode>(
+          groupValue: _selected,
+          onChanged: (v) {
+            if (v != null) {
+              setState(() => _selected = v);
+              Navigator.of(context).pop(v);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _options.map((option) {
+              final value = option.$1;
+              final label = option.$2;
+              final desc = option.$3;
+              return RadioListTile<MovementsViewMode>(
+                key: Key('movements_view_mode_${value.name}'),
+                title: Text(label),
+                subtitle: Text(
+                  desc,
+                  style: StreamTypography.micro.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
                 value: value,
               );
             }).toList(),
@@ -455,7 +620,9 @@ class _ResetDataDialogState extends State<_ResetDataDialog> {
         FilledButton(
           key: const Key('reset_data_confirm_button'),
           style: FilledButton.styleFrom(backgroundColor: StreamColors.expense),
-          onPressed: _isConfirmed ? () => Navigator.of(context).pop(true) : null,
+          onPressed: _isConfirmed
+              ? () => Navigator.of(context).pop(true)
+              : null,
           child: const Text('Resetta'),
         ),
       ],

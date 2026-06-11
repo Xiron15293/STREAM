@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import '../models/category.dart';
 import '../models/daily_group.dart';
 import '../theme.dart';
 
 class DayHeader extends StatelessWidget {
   final DailyMovementGroup group;
+  final MovementType? filterType;
 
-  const DayHeader({super.key, required this.group});
+  const DayHeader({super.key, required this.group, this.filterType});
 
   static const _weekdays = ['LUNEDÌ', 'MARTEDÌ', 'MERCOLEDÌ', 'GIOVEDÌ', 'VENERDÌ', 'SABATO', 'DOMENICA'];
   static const _months = [
@@ -31,6 +33,38 @@ class DayHeader extends StatelessWidget {
   String _balancePrefix() {
     if (group.balance > 0) return '+';
     return '';
+  }
+
+  Widget _buildSummaryRow() {
+    if (filterType == MovementType.expense) {
+      return Row(
+        children: [
+          Text('Uscite: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+          Text(_format(group.totalExpenses), style: StreamTypography.captionBold.copyWith(color: StreamColors.expense)),
+        ],
+      );
+    }
+    if (filterType == MovementType.income) {
+      return Row(
+        children: [
+          Text('Entrate: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+          Text(_format(group.totalIncome), style: StreamTypography.captionBold.copyWith(color: StreamColors.income)),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Text('Entrate: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+        Text(_format(group.totalIncome), style: StreamTypography.captionBold.copyWith(color: StreamColors.income)),
+        const SizedBox(width: StreamSpacing.md),
+        Text('Uscite: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+        Text(_format(group.totalExpenses), style: StreamTypography.captionBold.copyWith(color: StreamColors.expense)),
+        const SizedBox(width: StreamSpacing.md),
+        Text('Saldo: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
+        Text('${_balancePrefix()}${_format(group.balance)}',
+          style: StreamTypography.captionBold.copyWith(color: _balanceColor())),
+      ],
+    );
   }
 
   @override
@@ -74,19 +108,7 @@ class DayHeader extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Row(
-              children: [
-                Text('Entrate: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-                Text(_format(group.totalIncome), style: StreamTypography.captionBold.copyWith(color: StreamColors.income)),
-                const SizedBox(width: StreamSpacing.md),
-                Text('Uscite: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-                Text(_format(group.totalExpenses), style: StreamTypography.captionBold.copyWith(color: StreamColors.expense)),
-                const SizedBox(width: StreamSpacing.md),
-                Text('Saldo: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-                Text('${_balancePrefix()}${_format(group.balance)}',
-                  style: StreamTypography.captionBold.copyWith(color: _balanceColor())),
-              ],
-            ),
+            child: _buildSummaryRow(),
           ),
           const SizedBox(height: StreamSpacing.sm),
           Divider(color: StreamColors.divider, height: 1),

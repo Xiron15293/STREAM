@@ -1489,6 +1489,8 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                         label: _totalLabel,
                         value: _formatMoney(_periodTotal),
                         key: const Key('category_sheet_total'),
+                        labelKey: const Key('category_sheet_type_total_label'),
+                        valueKey: const Key('category_sheet_type_total'),
                       ),
                     ),
                     KeyedSubtree(
@@ -1545,6 +1547,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                         movements: movements,
                         db: widget.db,
                         showNotes: true,
+                        filterType: category.type,
                       )
                     : Center(
                         child: Text(
@@ -1595,8 +1598,16 @@ class _SheetActionButton extends StatelessWidget {
 class _StatChip extends StatelessWidget {
   final String label;
   final String value;
+  final Key? labelKey;
+  final Key? valueKey;
 
-  const _StatChip({super.key, required this.label, required this.value});
+  const _StatChip({
+    super.key,
+    required this.label,
+    required this.value,
+    this.labelKey,
+    this.valueKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1612,6 +1623,7 @@ class _StatChip extends StatelessWidget {
         children: [
           Text(
             label,
+            key: labelKey,
             style: StreamTypography.micro.copyWith(
               color: StreamColors.textSecondary,
             ),
@@ -1619,6 +1631,7 @@ class _StatChip extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
+            key: valueKey,
             style: StreamTypography.amount.copyWith(
               color: StreamColors.textPrimary,
             ),
