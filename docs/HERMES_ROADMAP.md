@@ -41,14 +41,18 @@
 | V0.8.0 | Calculator Pad | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.1 | Categories Layout Modes | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.2 | Financial KPI Corrections | ✅ COMPLETATO | 2026-06-10 |
+| V0.8.3 | Date Filter Categories/Accounts | ✅ COMPLETATO | 2026-06-10 |
+| V0.8.4 | Interactive Category/Account Menus | ✅ COMPLETATO | 2026-06-10 |
+| V0.8.5 | Movimenti Heatmap / Calendar integration | ✅ COMPLETATO | 2026-06-11 |
+| V0.8.6 | Period Category Treemap | ✅ COMPLETATO | 2026-06-11 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
 | V0.9.0 | Global Tap-to-Edit Movement | 📋 CONSIGLIATA |
-| V0.9.1 | Movimenti: Vista Calendario | 📋 CONSIGLIATA |
-| V0.9.2 | Calendar Heatmap | 💡 IDEA |
+| V0.9.1 | FASE 3 — Settings colori/soglie heatmap | 📋 CONSIGLIATA |
+| V0.9.2 | FASE 4 — Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
 | V0.9.3 | Fondi / Obiettivi | 💡 IDEA |
 | V0.9.4 | Beneficiario + Etichette | 💡 IDEA |
 | V1.0 | Prima Beta STREAM | ⏳ PIANIFICATA |
@@ -64,8 +68,8 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | Versione | Focus |
 |----------|-------|
 | V0.9.0 | Global Tap-to-Edit Movement (📋) — modifica movimento da ogni lista/dettaglio |
-| V0.9.1 | Movimenti: Vista Calendario (📋) — navigazione calendario dei movimenti |
-| V0.9.2 | Calendar Heatmap (💡) — intensità colore, filtro categoria, navigazione |
+| V0.9.1 | FASE 3 — Settings colori/soglie heatmap (📋) — soglie configurabili, colori configurabili, restore defaults, preview impostazioni, SharedPreferences only |
+| V0.9.2 | FASE 4 — Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
 | V0.9.3 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
 | V0.9.4 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
@@ -77,6 +81,96 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 ---
 
 ## Dettaglio feature per versione
+
+### V0.8.6 — Period Category Treemap ✅
+
+> **Interventi**: treemap categorie del periodo attivo in Movimenti, integrata in Calendario e Heatmap/AdvancedHeatmap
+> **Test**: 653/653 test pass | `flutter analyze` 0 issues
+
+**Cosa è stato fatto:**
+- Nuovo widget `PeriodCategoryTreemap` in `lib/widgets/period_category_treemap.dart`
+- Integrazione nella schermata Movimenti:
+  - modalità Calendario: sotto heatmap/calendario e sopra lista movimenti
+  - modalità Heatmap/AdvancedHeatmap: sotto riepilogo periodo/giorno e sopra lista movimenti
+  - modalità Lista: nessuna treemap completa, resta la preview compatta esistente
+  - tab Categorie generale: non integrata
+- Treemap del periodo attivo:
+  - Giorno = categorie del giorno
+  - Mese = categorie del mese
+  - Anno = categorie dell'anno
+  - Intervallo = categorie del periodo
+- `selectedDay` non limita Mese/Anno/Intervallo; resta per evidenziazione/drill-down
+- Rispetta la search attiva usando i movimenti gia filtrati da periodo + search
+- Tipo movimento:
+  - `Tutti` = default Uscite
+  - `Uscite` = categorie spesa
+  - `Entrate` = categorie entrata
+  - `Transfer` = empty state `I trasferimenti non sono distribuiti per categoria.`
+- Colori treemap derivati da `category.color`
+
+**Non completato / futuro:**
+- Treemap nella tab Categorie generale
+- Refinement Treemap dentro Lista, da decidere piu avanti
+
+---
+
+### V0.8.5 — Movimenti Heatmap / Calendar integration ✅
+
+> **Interventi**: Archivio senza tab Calendario separata, modalita interne Movimenti, heatmap uscite, preview compatta, search coerente
+> **Test**: 653/653 test pass | `flutter analyze` 0 issues
+
+**Cosa è stato fatto:**
+- Archivio riorganizzato:
+  - tab visibili: `Movimenti`, `Conti`, `Categorie`
+  - tab Calendario separata rimossa
+  - Calendario ora vive dentro Movimenti
+- Modalita interne Movimenti:
+  - Lista
+  - Calendario
+  - Heatmap / AdvancedHeatmap
+  - selector interno con preferenza persistita via `PreferencesService` / Settings
+- Heatmap Movimenti:
+  - basata sulle uscite
+  - income esclusi dalla heatmap spese
+  - transfer esclusi dai colori/metriche heatmap
+  - legenda/range heatmap
+  - utility dedicate in `lib/utils/heatmap_utils.dart`
+  - widget dedicato `lib/widgets/expense_heatmap.dart`
+- Preview heatmap compatta:
+  - sostituisce la striscia orizzontale fragile
+  - file `lib/widgets/movements_heatmap_preview_card.dart`
+  - bottone `Apri calendario`
+  - nessun overlay sopra `MovementCard`
+- Search + Heatmap coerenti:
+  - la ricerca filtra anche i dati della heatmap
+  - ricerca su titolo, nota, categoria e conto
+  - case-insensitive/parziale
+- Filtro periodo corretto:
+  - Giorno = movimenti del giorno
+  - Mese = tutti i movimenti del mese
+  - Anno = tutti i movimenti dell'anno
+  - Intervallo = tutti i movimenti dell'intervallo
+  - `selectedDay` non limita piu Mese/Anno/Intervallo
+- Picker data/anno coerente:
+  - aggiorna stato, mese visibile, heatmap e lista quando previsto
+  - `TimeFilterBar` supporta `onDatePicked`
+- Menu `MovementCard` stabile:
+  - resta `PopupMenuButton`
+  - key `movement_card_action`
+  - `showMenu` sperimentale non presente
+
+**Non completato / futuro:**
+- FASE 3 — Settings colori/soglie heatmap
+- FASE 4 — Lista Movimenti Premium con heatmap annuale stile reference
+- Redesign completo Lista Movimenti
+
+**Confini rispettati:**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+---
 
 ### V0.8.2 — Financial KPI Corrections ✅
 

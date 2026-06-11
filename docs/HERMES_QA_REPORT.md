@@ -1,6 +1,109 @@
 # HERMES QA REPORT
 
-> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes e V0.8.2 Financial KPI Corrections.
+> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections e V0.8.5/V0.8.6 Movimenti Analytics.
+
+---
+
+## Hermes V0.8.5 / V0.8.6 — Movimenti Analytics, Heatmap e Period Category Treemap ✅ COMPLETATO
+
+### Stato sintetico
+
+- Archivio riorganizzato con tab visibili:
+  - Movimenti
+  - Conti
+  - Categorie
+- Tab Calendario separata rimossa; il calendario ora vive dentro Movimenti
+- Movimenti ha modalita interne:
+  - Lista
+  - Calendario
+  - Heatmap / AdvancedHeatmap
+- Preferenza modalita Movimenti persistita via `PreferencesService` / Settings
+- Heatmap Movimenti basata sulle uscite:
+  - income esclusi dai colori/metriche heatmap spese
+  - transfer esclusi dai colori/metriche heatmap spese
+  - legenda/range heatmap presenti
+  - utility dedicate in `lib/utils/heatmap_utils.dart`
+  - widget dedicato `lib/widgets/expense_heatmap.dart`
+- Preview heatmap compatta in Lista:
+  - file `lib/widgets/movements_heatmap_preview_card.dart`
+  - bottone `Apri calendario`
+  - nessun overlay sopra `MovementCard`
+- Menu `MovementCard` stabile:
+  - `PopupMenuButton` mantenuto
+  - key `movement_card_action`
+  - `showMenu` sperimentale non presente
+
+### Search + filtro periodo
+
+- Pipeline dati chiarita:
+  - `periodFilteredMovements`
+  - `searchFilteredMovements`
+  - dati per lista/heatmap/riepilogo
+- Search applicata anche alla heatmap
+- Search case-insensitive/parziale su:
+  - titolo
+  - nota
+  - categoria
+  - conto
+- Filtro periodo corretto:
+  - Giorno: solo movimenti del giorno
+  - Mese: tutti i movimenti del mese
+  - Anno: tutti i movimenti dell'anno
+  - Intervallo: tutti i movimenti dell'intervallo
+- `selectedDay` non limita Mese/Anno/Intervallo; resta per evidenziazione/drill-down
+- Picker data/anno coerente: aggiorna stato, mese visibile, heatmap e lista quando previsto
+
+### Period Category Treemap
+
+- Nuovo widget: `PeriodCategoryTreemap`
+- File: `lib/widgets/period_category_treemap.dart`
+- Integrata in Calendario e Heatmap/AdvancedHeatmap
+- Non integrata nella tab Categorie generale
+- Non e solo giornaliera: usa il periodo attivo
+  - Giorno: `Categorie del giorno`
+  - Mese: `Categorie del mese`
+  - Anno: `Categorie dell'anno`
+  - Intervallo: `Categorie del periodo`
+- Rispetta la search attiva dopo il filtro periodo
+- `selectedDay` non limita Mese/Anno/Intervallo
+- Tipo movimento:
+  - Tutti: default Uscite
+  - Uscite: categorie spesa
+  - Entrate: categorie entrata
+  - Transfer: empty state `I trasferimenti non sono distribuiti per categoria.`
+- Colori treemap derivati da `category.color`
+
+### Regressioni coperte
+
+- Search applicata a heatmap
+- Mese/Anno non limitati da `selectedDay`
+- Picker data/anno coerente con label, mese visibile, heatmap e lista
+- `PopupMenuButton` stabile su `MovementCard`
+- Transfer esclusi dalla heatmap spese
+- Income esclusi dalla heatmap spese
+- Period Category Treemap con search e tipo movimento
+- Transfer empty state nella treemap
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: **PASS** — 0 issues
+- `flutter test --no-pub test/movements_view_modes_test.dart`: **PASS** — 25/25
+- `flutter test --no-pub test/dashboard_after_delete_test.dart`: **PASS** — 21/21
+- `flutter test --no-pub test/accounts_navigation_test.dart`: **PASS** — 8/8
+- `flutter test --no-pub test/categories_navigation_test.dart`: **PASS** — 5/5
+- `flutter test --no-pub test/qa_movements_test.dart`: **PASS** — 85/85
+- `flutter test --no-pub`: **PASS** — 653/653 test verdi
+- Nessuno skip aggiunto
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessun commit/push
+
+### Non completato / futuro
+
+- Settings colori/soglie heatmap
+- Annual heatmap premium
+- Redesign completo Lista Movimenti
+- Treemap nella tab Categorie generale
 
 ---
 

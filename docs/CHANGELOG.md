@@ -6,6 +6,85 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **V0.8.5 / V0.8.6 — Movimenti Analytics, Heatmap e Period Category Treemap**
+  - Archivio riorganizzato: tab visibili `Movimenti`, `Conti`, `Categorie`
+  - tab Calendario separata rimossa; il calendario ora vive dentro `Movimenti`
+  - `Movimenti` ha modalità interne `Lista`, `Calendario`, `Heatmap`
+  - selector interno Movimenti con preferenza persistita via `PreferencesService` / Settings
+- **Heatmap Movimenti**
+  - heatmap basata sulle uscite
+  - income e transfer esclusi da colori e metriche heatmap spese
+  - legenda/range heatmap
+  - utility dedicate in `lib/utils/heatmap_utils.dart`
+  - widget dedicato `lib/widgets/expense_heatmap.dart`
+- **Preview heatmap compatta**
+  - sostituita la striscia orizzontale fragile con preview card compatta in Lista
+  - file `lib/widgets/movements_heatmap_preview_card.dart`
+  - bottone `Apri calendario`
+  - nessun overlay sopra `MovementCard`
+- **Period Category Treemap**
+  - nuovo widget `PeriodCategoryTreemap`
+  - file `lib/widgets/period_category_treemap.dart`
+  - integrata in `Calendario` e `Heatmap` / `AdvancedHeatmap`
+  - non integrata nella tab Categorie generale
+  - treemap del periodo attivo, non solo giornaliera:
+    - Giorno: categorie del giorno
+    - Mese: categorie del mese
+    - Anno: categorie dell'anno
+    - Intervallo: categorie del periodo
+  - rispetta la ricerca attiva dopo il filtro periodo
+  - `selectedDay` non limita Mese/Anno/Intervallo; resta solo per evidenziazione/drill-down
+  - `Tutti` usa come default le Uscite
+  - `Uscite` mostra categorie spesa
+  - `Entrate` mostra categorie entrata
+  - `Transfer` mostra empty state: `I trasferimenti non sono distribuiti per categoria.`
+  - colori treemap derivati da `category.color`
+
+### Changed
+- Search + Heatmap rese coerenti:
+  - pipeline esplicita con `periodFilteredMovements`, `searchFilteredMovements`, dati per lista/heatmap/riepilogo
+  - la ricerca filtra anche i dati della heatmap
+  - ricerca case-insensitive/parziale su titolo, nota, categoria e conto
+- Filtro periodo corretto in Movimenti:
+  - Giorno mostra movimenti del giorno
+  - Mese mostra tutti i movimenti del mese
+  - Anno mostra tutti i movimenti dell'anno
+  - Intervallo mostra tutti i movimenti dell'intervallo
+  - `selectedDay` non limita piu Mese/Anno/Intervallo
+- Picker data/anno reso coerente:
+  - aggiorna selected date / mese visibile / heatmap / lista quando previsto
+  - `TimeFilterBar` supporta `onDatePicked`
+
+### Fixed
+- Menu `MovementCard` stabile:
+  - `showMenu` sperimentale non presente
+  - resta `PopupMenuButton`
+  - key `movement_card_action`
+  - menu `...` tappabile e stabile
+
+### Unchanged
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+- Colori heatmap invariati
+- Settings colori/soglie heatmap non implementati
+- Annual heatmap premium / redesign completo Lista non implementati
+- Treemap nella tab Categorie non implementata
+
+### QA
+- `flutter analyze --no-pub`: PASS
+- `flutter test --no-pub`: **653/653 All tests passed**
+- Test mirati:
+  - `test/movements_view_modes_test.dart`: 25 passed
+  - `test/dashboard_after_delete_test.dart`: 21 passed
+  - `test/accounts_navigation_test.dart`: 8 passed
+  - `test/categories_navigation_test.dart`: 5 passed
+  - `test/qa_movements_test.dart`: 85 passed
+
+---
+
 ### Planned
 - Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3 + V0.8.4
 - QA manuale Pixel/iPhone
