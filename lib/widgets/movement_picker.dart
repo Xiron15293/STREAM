@@ -492,6 +492,7 @@ class _ManualFormState extends State<_ManualForm> {
         TextField(
           controller: _titleCtrl,
           decoration: const InputDecoration(labelText: 'Titolo'),
+          textInputAction: TextInputAction.done,
         ),
         const SizedBox(height: StreamSpacing.md),
         CalculatorAmountField(
@@ -629,6 +630,7 @@ class _ManualFormState extends State<_ManualForm> {
         TextField(
           controller: _noteCtrl,
           decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
+          textInputAction: TextInputAction.done,
           maxLines: 2,
         ),
         const SizedBox(height: StreamSpacing.lg),
@@ -923,6 +925,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
           TextField(
             controller: _titleCtrl,
             decoration: const InputDecoration(labelText: 'Titolo'),
+            textInputAction: TextInputAction.done,
           ),
           const SizedBox(height: StreamSpacing.md),
           CalculatorAmountField(
@@ -1379,6 +1382,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
           TextField(
             controller: _titleCtrl,
             decoration: const InputDecoration(labelText: 'Titolo'),
+            textInputAction: TextInputAction.done,
           ),
           const SizedBox(height: StreamSpacing.md),
           CalculatorAmountField(
@@ -1463,6 +1467,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
           TextField(
             controller: _noteCtrl,
             decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
+            textInputAction: TextInputAction.done,
             maxLines: 2,
           ),
           const SizedBox(height: StreamSpacing.lg),

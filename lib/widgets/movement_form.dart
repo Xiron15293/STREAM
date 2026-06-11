@@ -241,6 +241,7 @@ class _MovementFormState extends State<MovementForm> {
           TextField(
             controller: _titleCtrl,
             decoration: const InputDecoration(labelText: 'Titolo'),
+            textInputAction: TextInputAction.done,
           ),
           const SizedBox(height: StreamSpacing.md),
           CalculatorAmountField(
@@ -381,6 +382,7 @@ class _MovementFormState extends State<MovementForm> {
           TextField(
             controller: _noteCtrl,
             decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
+            textInputAction: TextInputAction.done,
             maxLines: 2,
           ),
           const SizedBox(height: StreamSpacing.lg),

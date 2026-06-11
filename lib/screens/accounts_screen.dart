@@ -158,6 +158,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(labelText: 'Nome'),
+                  textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: StreamSpacing.lg),
                 DropdownButtonFormField<AccountType>(

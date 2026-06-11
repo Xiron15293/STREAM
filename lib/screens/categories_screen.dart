@@ -1225,6 +1225,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
             TextField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Nome'),
+              textInputAction: TextInputAction.done,
             ),
             if (widget.existing == null) ...[
               const SizedBox(height: 16),

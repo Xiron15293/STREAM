@@ -227,7 +227,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 child: TextField(
                   controller: _searchCtrl,
                   onChanged: (value) => setState(() => _searchQuery = value),
-                  textInputAction: TextInputAction.search,
+                  textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     hintText: 'Cerca titolo, nota, categoria o conto',
                     prefixIcon: const Icon(Icons.search),

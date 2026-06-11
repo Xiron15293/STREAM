@@ -99,6 +99,7 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
                 hintText: 'Cerca icona o gruppo...',
                 prefixIcon: Icon(Icons.search, size: 20),
               ),
+              textInputAction: TextInputAction.done,
               onChanged: _onSearch,
             ),
             const SizedBox(height: StreamSpacing.md),

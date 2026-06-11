@@ -747,6 +747,7 @@ class _HeatmapSettingsSectionState extends State<_HeatmapSettingsSection> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       labelText: 'Soglia ${i + 1}',
                       suffixText: '€',
@@ -898,6 +899,7 @@ class _ResetDataDialogState extends State<_ResetDataDialog> {
               controller: _controller,
               autofocus: true,
               textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.done,
               decoration: const InputDecoration(
                 labelText: 'Digita RESET per continuare',
               ),
