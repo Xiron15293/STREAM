@@ -1,10 +1,73 @@
 # HERMES QA REPORT
 
-> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections e V0.8.5/V0.8.6 Movimenti Analytics.
+> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics e V0.8.6 Category Treemap Analytics.
 
 ---
 
-## Hermes V0.8.5 / V0.8.6 — Movimenti Analytics, Heatmap e Period Category Treemap ✅ COMPLETATO
+## Hermes V0.8.6 — Category Treemap Analytics ✅ COMPLETATO
+
+### Stato sintetico
+
+- Treemap aggiunta nella schermata `Categorie` come modalita visuale dedicata
+- La treemap definitiva vive in `Categorie`, non in `Movimenti`
+- Modalita visuali Categorie ora disponibili:
+  - Lista pulita
+  - Lista grouped
+  - Card Stream
+  - Treemap
+- Stile market map:
+  - ogni blocco rappresenta una categoria
+  - area proporzionale al totale categoria nel periodo
+  - colore derivato da `category.color`
+  - testo con nome categoria, importo e/o numero movimenti
+- Tap su blocco categoria apre il dettaglio/sheet categoria esistente
+- Empty state dedicato: `Nessun dato categorie nel periodo selezionato.`
+
+### Filtri e ordinamenti coperti
+
+- Filtro periodo sulla treemap:
+  - Giorno
+  - Mese
+  - Anno
+  - Intervallo
+- Ordinamenti treemap:
+  - totale decrescente
+  - totale crescente
+  - nome A-Z
+  - numero movimenti decrescente
+- Transfer esclusi dai totali categoria
+- Categorie archiviate escluse dalla treemap principale, coerentemente con Categorie
+- Colori blocchi verificati da `category.color`
+
+### Test aggiunti / aggiornati
+
+- Nuovo file `test/categories_treemap_test.dart`
+- Aggiornato `test/categories_layout_test.dart`
+- Aggiornato `test/movements_view_modes_test.dart` per verificare che Movimenti non renderizzi piu la treemap del periodo
+- Regressioni coperte:
+  - filtro giorno/mese/anno/intervallo sulla treemap
+  - ordinamenti treemap
+  - transfer esclusi
+  - colori `category.color`
+  - empty state
+  - tap categoria apre sheet/dettaglio categoria
+  - nessun overflow con molte categorie a 800x600
+
+### Verifica locale finale
+
+- `flutter analyze --no-pub`: **PASS** — 0 issues
+- `flutter test --no-pub test/categories_treemap_test.dart`: **PASS** — 10/10
+- `flutter test --no-pub test/categories_layout_test.dart`: **PASS** — 28/28
+- `flutter test --no-pub test/categories_navigation_test.dart test/accounts_navigation_test.dart test/dashboard_filtered_test.dart test/qa_movements_test.dart test/movements_view_modes_test.dart`: **PASS**
+- `flutter test --no-pub`: **PASS** — 664/664 test verdi
+- Nessuno skip aggiunto
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessun commit/push
+
+---
+
+## Hermes V0.8.5 — Movimenti Analytics e Heatmap ✅ COMPLETATO
 
 ### Stato sintetico
 
@@ -53,25 +116,11 @@
 - `selectedDay` non limita Mese/Anno/Intervallo; resta per evidenziazione/drill-down
 - Picker data/anno coerente: aggiorna stato, mese visibile, heatmap e lista quando previsto
 
-### Period Category Treemap
+### Nota treemap
 
-- Nuovo widget: `PeriodCategoryTreemap`
-- File: `lib/widgets/period_category_treemap.dart`
-- Integrata in Calendario e Heatmap/AdvancedHeatmap
-- Non integrata nella tab Categorie generale
-- Non e solo giornaliera: usa il periodo attivo
-  - Giorno: `Categorie del giorno`
-  - Mese: `Categorie del mese`
-  - Anno: `Categorie dell'anno`
-  - Intervallo: `Categorie del periodo`
-- Rispetta la search attiva dopo il filtro periodo
-- `selectedDay` non limita Mese/Anno/Intervallo
-- Tipo movimento:
-  - Tutti: default Uscite
-  - Uscite: categorie spesa
-  - Entrate: categorie entrata
-  - Transfer: empty state `I trasferimenti non sono distribuiti per categoria.`
-- Colori treemap derivati da `category.color`
+- La treemap del periodo non appartiene piu alla UI di Movimenti
+- Movimenti mantiene Lista / Calendario / Heatmap
+- L'analisi per categorie tramite treemap e stata spostata nella schermata `Categorie` con V0.8.6
 
 ### Regressioni coperte
 
@@ -81,18 +130,17 @@
 - `PopupMenuButton` stabile su `MovementCard`
 - Transfer esclusi dalla heatmap spese
 - Income esclusi dalla heatmap spese
-- Period Category Treemap con search e tipo movimento
-- Transfer empty state nella treemap
+- Assenza della treemap nella UI Movimenti dopo lo spostamento in Categorie
 
 ### Verifica locale
 
 - `flutter analyze --no-pub`: **PASS** — 0 issues
-- `flutter test --no-pub test/movements_view_modes_test.dart`: **PASS** — 25/25
+- `flutter test --no-pub test/movements_view_modes_test.dart`: **PASS**
 - `flutter test --no-pub test/dashboard_after_delete_test.dart`: **PASS** — 21/21
 - `flutter test --no-pub test/accounts_navigation_test.dart`: **PASS** — 8/8
 - `flutter test --no-pub test/categories_navigation_test.dart`: **PASS** — 5/5
 - `flutter test --no-pub test/qa_movements_test.dart`: **PASS** — 85/85
-- `flutter test --no-pub`: **PASS** — 653/653 test verdi
+- `flutter test --no-pub`: **PASS** — 664/664 test verdi
 - Nessuno skip aggiunto
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
@@ -103,7 +151,7 @@
 - Settings colori/soglie heatmap
 - Annual heatmap premium
 - Redesign completo Lista Movimenti
-- Treemap nella tab Categorie generale
+- Dashboard analytics avanzata non implementata
 
 ---
 

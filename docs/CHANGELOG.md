@@ -7,7 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- **V0.8.5 / V0.8.6 — Movimenti Analytics, Heatmap e Period Category Treemap**
+- **V0.8.6 — Category Treemap Analytics**
+  - Treemap aggiunta nella schermata `Categorie` come quarta modalita visiva dedicata
+  - treemap stile market map:
+    - ogni blocco rappresenta una categoria
+    - area proporzionale al totale categoria nel periodo selezionato
+    - colore basato su `category.color`
+    - mostra nome categoria, importo e/o numero movimenti
+  - supporto filtri periodo gia presenti in Categorie:
+    - Giorno
+    - Mese
+    - Anno
+    - Intervallo
+  - supporto ordinamenti:
+    - totale decrescente
+    - totale crescente
+    - nome A-Z
+    - numero movimenti decrescente
+  - transfer esclusi dai totali categoria
+  - tap su blocco categoria apre il dettaglio/sheet categoria esistente
+  - empty state dedicato quando non ci sono dati nel periodo
+  - nessun DB/schema modificato
+- **V0.8.5 — Movimenti Analytics e Heatmap**
   - Archivio riorganizzato: tab visibili `Movimenti`, `Conti`, `Categorie`
   - tab Calendario separata rimossa; il calendario ora vive dentro `Movimenti`
   - `Movimenti` ha modalità interne `Lista`, `Calendario`, `Heatmap`
@@ -23,29 +44,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - file `lib/widgets/movements_heatmap_preview_card.dart`
   - bottone `Apri calendario`
   - nessun overlay sopra `MovementCard`
-- **Period Category Treemap**
-  - nuovo widget `PeriodCategoryTreemap`
-  - file `lib/widgets/period_category_treemap.dart`
-  - integrata in `Calendario` e `Heatmap` / `AdvancedHeatmap`
-  - non integrata nella tab Categorie generale
-  - treemap del periodo attivo, non solo giornaliera:
-    - Giorno: categorie del giorno
-    - Mese: categorie del mese
-    - Anno: categorie dell'anno
-    - Intervallo: categorie del periodo
-  - rispetta la ricerca attiva dopo il filtro periodo
-  - `selectedDay` non limita Mese/Anno/Intervallo; resta solo per evidenziazione/drill-down
-  - `Tutti` usa come default le Uscite
-  - `Uscite` mostra categorie spesa
-  - `Entrate` mostra categorie entrata
-  - `Transfer` mostra empty state: `I trasferimenti non sono distribuiti per categoria.`
-  - colori treemap derivati da `category.color`
 
 ### Changed
 - Search + Heatmap rese coerenti:
   - pipeline esplicita con `periodFilteredMovements`, `searchFilteredMovements`, dati per lista/heatmap/riepilogo
   - la ricerca filtra anche i dati della heatmap
   - ricerca case-insensitive/parziale su titolo, nota, categoria e conto
+- Treemap spostata concettualmente fuori da Movimenti:
+  - la visualizzazione analitica per categorie vive ora in `Categorie`
+  - `Movimenti` mantiene Lista / Calendario / Heatmap
 - Filtro periodo corretto in Movimenti:
   - Giorno mostra movimenti del giorno
   - Mese mostra tutti i movimenti del mese
@@ -71,14 +78,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Colori heatmap invariati
 - Settings colori/soglie heatmap non implementati
 - Annual heatmap premium / redesign completo Lista non implementati
-- Treemap nella tab Categorie non implementata
 
 ### QA
 - `flutter analyze --no-pub`: PASS
-- `flutter test --no-pub`: **653/653 All tests passed**
+- `flutter test --no-pub`: **664/664 All tests passed**
 - Test mirati:
-  - `test/movements_view_modes_test.dart`: 25 passed
-  - `test/dashboard_after_delete_test.dart`: 21 passed
+  - `test/categories_treemap_test.dart`: 10 passed
+  - `test/categories_layout_test.dart`: 28 passed
+  - `test/movements_view_modes_test.dart`: PASS
   - `test/accounts_navigation_test.dart`: 8 passed
   - `test/categories_navigation_test.dart`: 5 passed
   - `test/qa_movements_test.dart`: 85 passed
@@ -86,12 +93,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ---
 
 ### Planned
-- Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3 + V0.8.4
 - QA manuale Pixel/iPhone
-- Build release Android/iOS
+- Build release Android/iOS aggiornate
 - Prossimo sprint consigliato:
-  - Global Tap-to-Edit Movement
-  - oppure Movimenti: Vista Calendario
+  - FASE 3 — Heatmap Settings:
+    - soglie configurabili
+    - colori configurabili
+    - restore defaults
+    - preview
+    - SharedPreferences only
+  - FASE 4 — Lista Movimenti Premium:
+    - heatmap annuale stile reference utente
+    - card giornaliere aggregate
+    - layout premium
+  - QA hardening opzionale:
+    - risolvere warning hit-test sul bottone Salva nei test
+    - non indebolire test
 
 ---
 

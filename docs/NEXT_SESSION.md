@@ -1,6 +1,6 @@
 # NEXT SESSION — Stato Progetto e Priorità
 
-> Aggiornato: 2026-06-10
+> Aggiornato: 2026-06-11
 
 ---
 
@@ -26,8 +26,10 @@
 | Hermes V0.8.2 — Financial KPI Corrections | Transfer esclusi dai KPI globali, helper centralizzati, Dashboard corretta | ✅ COMPLETATO |
 | Hermes V0.8.3 — Date Filter Categories/Accounts | TimeFilter nelle schermate principali, saldo conto storico/as-of per periodo | ✅ COMPLETATO |
 | Hermes V0.8.4 — Interactive Category/Account Menus | Sheet operativi con azioni rapide e prefill movimento/transfer | ✅ COMPLETATO |
+| Hermes V0.8.5 — Movimenti Analytics / Heatmap | Lista, Calendario, Heatmap, search coerente, preview compatta | ✅ COMPLETATO |
+| Hermes V0.8.6 — Category Treemap Analytics | Treemap stile market map in Categorie con filtri periodo e ordinamenti | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS — 0 issues |
-| `flutter test --no-pub` | — | ✅ 627/627 All tests passed |
+| `flutter test --no-pub` | — | ✅ 664/664 All tests passed |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -35,103 +37,65 @@
 
 ## 2. Ultima Milestone Completata
 
-**Hermes V0.8.0 — Calculator Pad**
+**Hermes V0.8.5 — Movimenti Analytics / Heatmap**
 
 ### Cosa è stato completato
-- `CalculatorAmountField` riusabile per tutti i campi importo
-- `AmountExpressionEvaluator` senza `eval` con supporto operatori, decimali, precedenza
-- `readOnly: true`, `showCursor: false`, `keyboardType: TextInputType.none` — tastiera nativa bloccata
-- `unfocus()` prima dell'apertura del bottom sheet
-- Integrazione: movimento manuale, modifica, trasferimento, rapidi, preferiti, saldo iniziale conto
-
-### Test helper creati
-- `test/helpers/calculator_test_helpers.dart`:
-  - `enterAmountWithCalculator()` — per test UI che inseriscono importi
-  - `openPadAndType()` — per espressioni invalide
-  - `closeCalculatorPad()` — chiusura forzata
+- Archivio senza tab Calendario separata
+- Movimenti con modalita interne:
+  - Lista
+  - Calendario
+  - Heatmap / AdvancedHeatmap
+- Heatmap Movimenti basata sulle uscite
+- Income e transfer esclusi dai colori/metriche heatmap spese
+- Search coerente con heatmap:
+  - titolo
+  - nota
+  - categoria
+  - conto
+- Filtro periodo corretto:
+  - Giorno
+  - Mese
+  - Anno
+  - Intervallo
+- Picker data/anno coerente con mese visibile, heatmap e lista
+- Preview heatmap compatta in Lista
+- `MovementCard` mantiene `PopupMenuButton` stabile
 
 ### QA
 - `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: PASS
-- 49 test legacy aggiornati per usare Calculator Pad al posto di `enterText`
+- `flutter test --no-pub`: **664/664 All tests passed**
 
-**Hermes V0.8.1 — Categories Layout Modes**
+**Hermes V0.8.6 — Category Treemap Analytics**
 
 ### Cosa è stato completato
-- `Impostazioni > Aspetto > Modello categoria`
-- Layout categorie:
+- Treemap Categorie come quarta modalita visuale:
   - Lista pulita
   - Lista grouped
   - Card Stream
-- Filtro `[ Uscite | Entrate ]` nella schermata Categorie
-- KPI riepilogo categorie con key testabili
-- FAB categoria precompilato in base al filtro attivo
-- Layout differenziati visivamente
-- Conti archiviati esclusi dal saldo disponibile
-- Saldo attuale conto resta derivato da `initialBalance + movimenti netti`
-
-**Hermes V0.8.2 — Financial KPI Corrections**
-
-### Cosa è stato completato
-- Transfer esclusi da Entrate/Uscite/Bilancio globali
-- Dashboard corretta: rimossa la logica `if income else expense`
-- Helper centralizzati in `movement.dart`:
-  - `isIncome`
-  - `isExpense`
-  - `isTransfer`
-  - `sumIncome`
-  - `sumExpenses`
-  - `sumTransfers`
-  - `netIncomeExpense`
-- Spese per categoria = solo `expense`
-- Riepiloghi giornalieri = solo `income` / `expense`
-- Saldo conto invariato: transfer ancora inclusi su origine/destinazione
-
-### QA finale
-- `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **619/619 All tests passed**
-- Nessun DB/schema/migrazione modificato
-- Backup/restore/import/reset non modificati
-- Nessuno skip aggiunto
-- Nessun commit/push eseguito
-
-**Hermes V0.8.3 — Date Filter in Categories and Accounts**
-
-### Cosa è stato completato
-- Categorie: filtro periodo nella schermata principale con `TimeFilterBar`
-- KPI categorie, Card Stream e ordinamento Top categorie filtrati per periodo
+  - Treemap
+- Treemap stile market map:
+  - blocco = categoria
+  - area = totale categoria nel periodo
+  - colore = `category.color`
+  - testo = nome categoria, importo e/o numero movimenti
+- Filtri periodo supportati:
+  - Giorno
+  - Mese
+  - Anno
+  - Intervallo
+- Ordinamenti:
+  - totale decrescente
+  - totale crescente
+  - nome A-Z
+  - numero movimenti decrescente
 - Transfer esclusi dai totali categoria
-- Dettaglio categoria aperto con lo stesso filtro della schermata principale
-- Conti: filtro periodo nella schermata principale con riepilogo entrate/uscite/trasferimenti/movimenti
-- Saldo conto visibile storico/as-of al termine del periodo selezionato
-- Formula saldo fine periodo: `initialBalance + impatto di tutti i movimenti con data <= fine periodo`
-- Formula saldo inizio periodo: `initialBalance + impatto di tutti i movimenti con data < inizio periodo`
-- Movimenti netti periodo: entrate periodo - uscite periodo + trasferimenti netti periodo
-- Dettaglio conto allineato allo stesso filtro iniziale
-- Helper aggiunti in `movement.dart`: `transferNetForAccount`, `periodTransferNetForAccount`, `movementNetForAccount`, `periodNetForAccount`, `balanceForAccountUntil`, `balanceForAccountBefore`
+- Tap su blocco apre lo sheet/dettaglio categoria esistente
+- Empty state per periodo senza dati
+- Movimenti non contiene piu la treemap del periodo; mantiene heatmap e calendario
 
 ### QA finale
 - `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **625/625 All tests passed**
-- Nessun DB/schema/migrazione modificato
-- Backup/restore/import/reset non modificati
-- Nessuno skip aggiunto
-- Nessun commit/push eseguito
-
-**Hermes V0.8.4 — Interactive Category/Account Menus**
-
-### Cosa è stato completato
-- Sheet categoria interattivo con header, riepilogo periodo, azioni rapide e lista movimenti filtrata
-- Azioni categoria: Movimento, Modifica, Archivia/Ripristina
-- Movimento da categoria apre `MovementPicker` con categoria e tipo precompilati
-- Sheet conto interattivo con header, saldo storico/as-of, riepilogo periodo e lista movimenti filtrata
-- Azioni conto: Movimento, Trasferisci, Modifica, Archivia per conti attivi
-- Movimento/Trasferisci da conto aprono `MovementPicker` con conto origine precompilato
-- `MovementPicker` ora supporta `accountPreFill` e `initialType`
-
-### QA finale
-- `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **627/627 All tests passed**
+- `flutter test --no-pub`: **664/664 All tests passed**
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
@@ -143,15 +107,24 @@
 
 Una volta ripresa la sessione:
 
-**Prima di nuove feature:**
-1. Commit/push stato finale V0.8.0 + V0.8.1 + V0.8.2 + V0.8.3 + V0.8.4
-2. QA manuale Pixel/iPhone
-3. Build release APK/iOS aggiornate
-4. Eventuale fix minori UX emersi da QA manuale
+1. **FASE 3 — Heatmap Settings**
+   - soglie heatmap configurabili
+   - colori heatmap configurabili
+   - restore defaults
+   - preview impostazioni
+   - SharedPreferences only
+   - nessun DB/schema
 
-**Prossimo sprint prodotto (scegliere):**
-- ✏️ **Global Tap-to-Edit Movement**
-- 🗓️ **Movimenti: Vista Calendario**
+2. **FASE 4 — Lista Movimenti Premium**
+   - heatmap annuale tipo reference utente
+   - card giornaliere aggregate
+   - layout premium
+   - mantenere pipeline dati esistente
+
+3. **QA hardening opzionale**
+   - risolvere warning hit-test sul bottone Salva nei test
+   - rendere fatali i warning solo dopo fix helper
+   - non indebolire test
 
 ---
 
@@ -172,14 +145,17 @@ Una volta ripresa la sessione:
 - Financial KPI Corrections: Dashboard, database totals e riepiloghi giornalieri usano helper income/expense espliciti; i transfer restano neutrali sui KPI globali e attivi sui saldi conto
 - Date Filter Categories/Accounts: Categorie e Conti hanno `TimeFilterBar` nella schermata principale; nei Conti il saldo visibile è storico/as-of al termine del periodo selezionato
 - Interactive Category/Account Menus: restore conto non implementato perché non esiste una API esistente da riusare; archiviazione conto attivo disponibile
+- Movimenti Analytics: Lista/Calendario/Heatmap completati; search, filtro periodo e picker data/anno coerenti
+- Category Treemap Analytics: treemap definitiva in Categorie, non in Movimenti; usa `category.color`, filtri periodo e ordinamenti dedicati
+- QA hardening: resta un warning hit-test noto sul bottone Salva nei test; non blocca la suite ma puo essere ripulito in una sessione dedicata
 
 ---
 
 ## 5. Handoff Rapido
 
 Quando si riparte:
-- verificare stato git e preparare commit/push finale
-- eseguire QA manuale Pixel/iPhone
-- rilanciare build release APK/iOS
-- mantenere Dashboard insight-only
-- scegliere il prossimo sprint tra Global Tap-to-Edit Movement e Movimenti: Vista Calendario
+- verificare stato git
+- scegliere tra FASE 3 Heatmap Settings e FASE 4 Lista Movimenti Premium
+- mantenere SharedPreferences-only per le impostazioni heatmap
+- non modificare DB/schema per le prossime impostazioni visuali
+- considerare QA hardening hit-test prima di rendere warning fatali

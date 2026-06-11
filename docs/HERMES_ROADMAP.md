@@ -44,7 +44,7 @@
 | V0.8.3 | Date Filter Categories/Accounts | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.4 | Interactive Category/Account Menus | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.5 | Movimenti Heatmap / Calendar integration | ✅ COMPLETATO | 2026-06-11 |
-| V0.8.6 | Period Category Treemap | ✅ COMPLETATO | 2026-06-11 |
+| V0.8.6 | Category Treemap Analytics | ✅ COMPLETATO | 2026-06-11 |
 
 ## Approvate / Future (V0.9+)
 
@@ -53,6 +53,7 @@
 | V0.9.0 | Global Tap-to-Edit Movement | 📋 CONSIGLIATA |
 | V0.9.1 | FASE 3 — Settings colori/soglie heatmap | 📋 CONSIGLIATA |
 | V0.9.2 | FASE 4 — Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
+| V0.9.x | QA hardening hit-test warning nei test | 💡 IDEA |
 | V0.9.3 | Fondi / Obiettivi | 💡 IDEA |
 | V0.9.4 | Beneficiario + Etichette | 💡 IDEA |
 | V1.0 | Prima Beta STREAM | ⏳ PIANIFICATA |
@@ -70,6 +71,7 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | V0.9.0 | Global Tap-to-Edit Movement (📋) — modifica movimento da ogni lista/dettaglio |
 | V0.9.1 | FASE 3 — Settings colori/soglie heatmap (📋) — soglie configurabili, colori configurabili, restore defaults, preview impostazioni, SharedPreferences only |
 | V0.9.2 | FASE 4 — Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
+| V0.9.x | QA hardening opzionale (💡) — risolvere warning hit-test nei test prima di renderli fatali |
 | V0.9.3 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
 | V0.9.4 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
@@ -82,35 +84,46 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 ## Dettaglio feature per versione
 
-### V0.8.6 — Period Category Treemap ✅
+### V0.8.6 — Category Treemap Analytics ✅
 
-> **Interventi**: treemap categorie del periodo attivo in Movimenti, integrata in Calendario e Heatmap/AdvancedHeatmap
-> **Test**: 653/653 test pass | `flutter analyze` 0 issues
+> **Interventi**: treemap stile market map nella schermata Categorie come modalita visuale dedicata
+> **Test**: 664/664 test pass | `flutter analyze` 0 issues
 
 **Cosa è stato fatto:**
-- Nuovo widget `PeriodCategoryTreemap` in `lib/widgets/period_category_treemap.dart`
-- Integrazione nella schermata Movimenti:
-  - modalità Calendario: sotto heatmap/calendario e sopra lista movimenti
-  - modalità Heatmap/AdvancedHeatmap: sotto riepilogo periodo/giorno e sopra lista movimenti
-  - modalità Lista: nessuna treemap completa, resta la preview compatta esistente
-  - tab Categorie generale: non integrata
-- Treemap del periodo attivo:
-  - Giorno = categorie del giorno
-  - Mese = categorie del mese
-  - Anno = categorie dell'anno
-  - Intervallo = categorie del periodo
-- `selectedDay` non limita Mese/Anno/Intervallo; resta per evidenziazione/drill-down
-- Rispetta la search attiva usando i movimenti gia filtrati da periodo + search
-- Tipo movimento:
-  - `Tutti` = default Uscite
-  - `Uscite` = categorie spesa
-  - `Entrate` = categorie entrata
-  - `Transfer` = empty state `I trasferimenti non sono distribuiti per categoria.`
-- Colori treemap derivati da `category.color`
+- La treemap definitiva vive in `Categorie`, non nella tab `Movimenti`
+- `Categorie` ora ha quattro modalita visuali:
+  - Lista pulita
+  - Lista grouped
+  - Card Stream
+  - Treemap
+- Nuovo widget `CategoriesTreemap` in `lib/widgets/categories_treemap.dart`
+- Ogni blocco rappresenta una categoria
+- Area blocco proporzionale al totale categoria nel periodo selezionato
+- Colore blocco derivato da `category.color`
+- Testo blocco con nome categoria, importo e numero movimenti quando lo spazio lo consente
+- Filtri periodo supportati:
+  - Giorno
+  - Mese
+  - Anno
+  - Intervallo
+- Ordinamenti supportati:
+  - totale decrescente
+  - totale crescente
+  - nome A-Z
+  - numero movimenti decrescente
+- Transfer esclusi dai totali categoria
+- Tap su blocco categoria apre il dettaglio/sheet categoria esistente
+- Empty state dedicato per periodo senza dati
 
 **Non completato / futuro:**
-- Treemap nella tab Categorie generale
-- Refinement Treemap dentro Lista, da decidere piu avanti
+- FASE 3 — Settings colori/soglie heatmap:
+  - soglie configurabili
+  - colori configurabili
+  - restore defaults
+  - preview impostazioni
+- FASE 4 — Lista Movimenti Premium con heatmap annuale stile reference
+- QA hardening opzionale sul warning hit-test nei test
+- Dashboard analytics avanzata non implementata
 
 ---
 
@@ -163,6 +176,7 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 - FASE 3 — Settings colori/soglie heatmap
 - FASE 4 — Lista Movimenti Premium con heatmap annuale stile reference
 - Redesign completo Lista Movimenti
+- Dashboard analytics avanzata non implementata
 
 **Confini rispettati:**
 - Nessun DB/schema/migrazione modificato
