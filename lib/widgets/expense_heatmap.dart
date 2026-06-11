@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/preferences_service.dart';
 import '../models/movement.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
@@ -31,127 +32,133 @@ class ExpenseHeatmap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (rowCompact) return _buildRowCompact();
+    return ValueListenableBuilder<HeatmapSettings>(
+      valueListenable: PreferencesService.heatmapSettingsNotifier,
+      builder: (context, settings, _) {
+        if (rowCompact) return _buildRowCompact(settings);
 
-    final daysInMonth = DateTime(year, month + 1, 0).day;
-    final firstWeekday = DateTime(year, month, 1).weekday;
-    final leadingEmpty = firstWeekday - 1;
-    final dailyTotals = dailyExpenseTotals(year, month, allMovements);
+        final daysInMonth = DateTime(year, month + 1, 0).day;
+        final firstWeekday = DateTime(year, month, 1).weekday;
+        final leadingEmpty = firstWeekday - 1;
+        final dailyTotals = dailyExpenseTotals(year, month, allMovements);
 
-    final isAdvanced = variant == ExpenseHeatmapVariant.advanced;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+        final isAdvanced = variant == ExpenseHeatmapVariant.advanced;
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
 
-    final cells = <_HeatmapCellData>[];
-    for (int i = 0; i < leadingEmpty; i++) {
-      cells.add(_HeatmapCellData.empty());
-    }
-
-    for (int day = 1; day <= daysInMonth; day++) {
-      final total = dailyTotals[day] ?? 0.0;
-      final dayDate = DateTime(year, month, day);
-      final isToday = dayDate == today;
-      final isSelected =
-          selectedDay != null &&
-          selectedDay!.year == year &&
-          selectedDay!.month == month &&
-          selectedDay!.day == day;
-
-      cells.add(
-        _HeatmapCellData.day(
-          day: day,
-          date: dayDate,
-          total: total,
-          isToday: isToday,
-          isSelected: isSelected,
-        ),
-      );
-    }
-
-    final totalCells = cells.length;
-    final trailingEmpty = (7 - totalCells % 7) % 7;
-    for (int i = 0; i < trailingEmpty; i++) {
-      cells.add(_HeatmapCellData.empty());
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.sizeOf(context).width;
-        final gap = compact
-            ? 3.0
-            : isAdvanced
-            ? 6.0
-            : 4.0;
-        final cellWidth = ((availableWidth - gap * 6) / 7)
-            .clamp(28.0, 76.0)
-            .toDouble();
-        final cellHeight = compact
-            ? cellWidth
-            : isAdvanced
-            ? cellWidth * 0.98
-            : cellWidth * 0.92;
-        final rows = <Widget>[];
-        for (int i = 0; i < cells.length; i += 7) {
-          rows.add(
-            Row(
-              children: [
-                for (int j = 0; j < 7; j++) ...[
-                  if (j > 0) SizedBox(width: gap),
-                  Expanded(
-                    child: _HeatmapCell(
-                      data: cells[i + j],
-                      height: cellHeight,
-                      compact: compact,
-                      isAdvanced: isAdvanced,
-                      onDaySelected: onDaySelected,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-          if (i + 7 < cells.length) {
-            rows.add(SizedBox(height: gap));
-          }
+        final cells = <_HeatmapCellData>[];
+        for (int i = 0; i < leadingEmpty; i++) {
+          cells.add(_HeatmapCellData.empty());
         }
 
-        return Column(
-          key: const Key('heatmap_no_horizontal_scroll_block'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!compact)
-              Padding(
-                padding: EdgeInsets.only(bottom: gap),
-                child: Row(
-                  children: _weekdays.map((d) {
-                    final isWeekend = d == 'Sab' || d == 'Dom';
-                    return Expanded(
-                      child: Text(
-                        d.toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: StreamTypography.micro.copyWith(
-                          color: isWeekend
-                              ? StreamColors.textMuted
-                              : StreamColors.textSecondary,
+        for (int day = 1; day <= daysInMonth; day++) {
+          final total = dailyTotals[day] ?? 0.0;
+          final dayDate = DateTime(year, month, day);
+          final isToday = dayDate == today;
+          final isSelected =
+              selectedDay != null &&
+              selectedDay!.year == year &&
+              selectedDay!.month == month &&
+              selectedDay!.day == day;
+
+          cells.add(
+            _HeatmapCellData.day(
+              day: day,
+              date: dayDate,
+              total: total,
+              isToday: isToday,
+              isSelected: isSelected,
+            ),
+          );
+        }
+
+        final totalCells = cells.length;
+        final trailingEmpty = (7 - totalCells % 7) % 7;
+        for (int i = 0; i < trailingEmpty; i++) {
+          cells.add(_HeatmapCellData.empty());
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final availableWidth = constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : MediaQuery.sizeOf(context).width;
+            final gap = compact
+                ? 3.0
+                : isAdvanced
+                ? 6.0
+                : 4.0;
+            final cellWidth = ((availableWidth - gap * 6) / 7)
+                .clamp(28.0, 76.0)
+                .toDouble();
+            final cellHeight = compact
+                ? cellWidth
+                : isAdvanced
+                ? cellWidth * 0.98
+                : cellWidth * 0.92;
+            final rows = <Widget>[];
+            for (int i = 0; i < cells.length; i += 7) {
+              rows.add(
+                Row(
+                  children: [
+                    for (int j = 0; j < 7; j++) ...[
+                      if (j > 0) SizedBox(width: gap),
+                      Expanded(
+                        child: _HeatmapCell(
+                          data: cells[i + j],
+                          height: cellHeight,
+                          compact: compact,
+                          isAdvanced: isAdvanced,
+                          settings: settings,
+                          onDaySelected: onDaySelected,
                         ),
                       ),
-                    );
-                  }).toList(),
+                    ],
+                  ],
                 ),
-              ),
-            Column(
-              key: const Key('movements_calendar_month_grid'),
-              children: rows,
-            ),
-          ],
+              );
+              if (i + 7 < cells.length) {
+                rows.add(SizedBox(height: gap));
+              }
+            }
+
+            return Column(
+              key: const Key('heatmap_no_horizontal_scroll_block'),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!compact)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: gap),
+                    child: Row(
+                      children: _weekdays.map((d) {
+                        final isWeekend = d == 'Sab' || d == 'Dom';
+                        return Expanded(
+                          child: Text(
+                            d.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: StreamTypography.micro.copyWith(
+                              color: isWeekend
+                                  ? StreamColors.textMuted
+                                  : StreamColors.textSecondary,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                Column(
+                  key: const Key('movements_calendar_month_grid'),
+                  children: rows,
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildRowCompact() {
+  Widget _buildRowCompact(HeatmapSettings settings) {
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final dailyTotals = dailyExpenseTotals(year, month, allMovements);
     final now = DateTime.now();
@@ -173,7 +180,11 @@ class ExpenseHeatmap extends StatelessWidget {
                 selectedDay!.month == month &&
                 selectedDay!.day == day;
             final bgColor = total > 0
-                ? heatmapColorForAmount(total, compact: true)
+                ? heatmapColorForAmount(
+                    total,
+                    compact: true,
+                    settings: settings,
+                  )
                 : Colors.transparent;
 
             return Expanded(
@@ -236,6 +247,7 @@ class _HeatmapCell extends StatelessWidget {
   final double height;
   final bool compact;
   final bool isAdvanced;
+  final HeatmapSettings settings;
   final ValueChanged<DateTime>? onDaySelected;
 
   const _HeatmapCell({
@@ -243,6 +255,7 @@ class _HeatmapCell extends StatelessWidget {
     required this.height,
     required this.compact,
     required this.isAdvanced,
+    required this.settings,
     required this.onDaySelected,
   });
 
@@ -254,7 +267,7 @@ class _HeatmapCell extends StatelessWidget {
 
     final total = data.total;
     final bgColor = total > 0
-        ? heatmapColorForAmount(total, compact: compact)
+        ? heatmapColorForAmount(total, compact: compact, settings: settings)
         : StreamColors.surfaceElevated;
     final border = data.isSelected
         ? Border.all(color: StreamColors.primary, width: 2)
@@ -361,57 +374,57 @@ class HeatmapLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        key: const Key('heatmap_legend'),
-        children: [
-          for (int i = 0; i < heatmapBands.length; i++)
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  KeyedSubtree(
-                    key: const Key('heatmap_legend_item'),
-                    child: const SizedBox.shrink(),
-                  ),
-                  Container(
-                    key: const Key('heatmap_legend_color'),
-                    width: 28,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: heatmapColorForAmount(
-                        i == 0
-                            ? 0.5
-                            : (i == heatmapBands.length - 1
-                                  ? 1000
-                                  : heatmapBands[i].max),
+    return ValueListenableBuilder<HeatmapSettings>(
+      valueListenable: PreferencesService.heatmapSettingsNotifier,
+      builder: (context, settings, _) {
+        final bands = settings.bands;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            key: const Key('heatmap_legend'),
+            children: [
+              for (int i = 0; i < bands.length; i++)
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      KeyedSubtree(
+                        key: const Key('heatmap_legend_item'),
+                        child: const SizedBox.shrink(),
                       ),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        width: 0.7,
+                      Container(
+                        key: const Key('heatmap_legend_color'),
+                        width: 28,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Color(settings.colors[i]),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            width: 0.7,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      Text(
+                        bands[i].label,
+                        key: const Key('heatmap_legend_label'),
+                        textAlign: TextAlign.center,
+                        style: StreamTypography.micro.copyWith(
+                          color: StreamColors.textSecondary,
+                          fontSize: 10,
+                          letterSpacing: 0,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    heatmapBands[i].label,
-                    key: const Key('heatmap_legend_label'),
-                    textAlign: TextAlign.center,
-                    style: StreamTypography.micro.copyWith(
-                      color: StreamColors.textSecondary,
-                      fontSize: 10,
-                      letterSpacing: 0,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.visible,
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

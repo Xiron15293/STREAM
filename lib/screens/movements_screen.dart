@@ -43,6 +43,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
     _visibleCalendarMonth = DateTime(now.year, now.month, 1);
     _loadShowNotes();
     _initViewMode();
+    PreferencesService.loadHeatmapSettings();
     _modeListener = () {
       if (mounted) setState(() {});
     };

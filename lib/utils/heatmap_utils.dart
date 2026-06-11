@@ -73,37 +73,94 @@ Map<int, double> dailyExpenseTotals(
   return result;
 }
 
-const heatmapBands = [
-  (max: 1.0, label: '< 1€'),
-  (max: 5.0, label: '1–5€'),
-  (max: 20.0, label: '5–20€'),
-  (max: 50.0, label: '20–50€'),
-  (max: 150.0, label: '50–150€'),
-  (max: 500.0, label: '150–500€'),
-  (max: double.infinity, label: '> 500€'),
-];
+class HeatmapSettings {
+  static const defaultThresholds = [1.0, 5.0, 20.0, 50.0, 150.0, 500.0];
+  static const defaultColors = [
+    0xFFC8E6C9, // < 1€
+    0xFFA5D6A7, // 1–5€
+    0xFF81C784, // 5–20€
+    0xFFEF9A9A, // 20–50€
+    0xFFE57373, // 50–150€
+    0xFFEF5350, // 150–500€
+    0xFFC62828, // > 500€
+  ];
 
-int heatmapBandIndex(double amount) {
-  if (amount <= 0) return -1;
-  for (int i = 0; i < heatmapBands.length; i++) {
-    if (amount <= heatmapBands[i].max) return i;
+  final List<double> thresholds;
+  final List<int> colors;
+
+  const HeatmapSettings({
+    this.thresholds = defaultThresholds,
+    this.colors = defaultColors,
+  });
+
+  static const defaults = HeatmapSettings();
+
+  List<({double max, String label})> get bands {
+    return [
+      for (var i = 0; i <= thresholds.length; i++)
+        (
+          max: i < thresholds.length ? thresholds[i] : double.infinity,
+          label: rangeLabel(i, thresholds),
+        ),
+    ];
   }
-  return heatmapBands.length - 1;
+
+  bool get isValid =>
+      validateThresholds(thresholds) && colors.length == thresholds.length + 1;
+
+  HeatmapSettings copyWith({List<double>? thresholds, List<int>? colors}) {
+    return HeatmapSettings(
+      thresholds: List.unmodifiable(thresholds ?? this.thresholds),
+      colors: List.unmodifiable(colors ?? this.colors),
+    );
+  }
+
+  static bool validateThresholds(List<double> values) {
+    if (values.isEmpty) return false;
+    var previous = 0.0;
+    for (final value in values) {
+      if (!value.isFinite || value <= 0 || value <= previous) return false;
+      previous = value;
+    }
+    return true;
+  }
+
+  static String rangeLabel(int index, List<double> thresholds) {
+    if (index == 0) return '< ${formatHeatmapAmount(thresholds.first)}';
+    if (index == thresholds.length) {
+      return '> ${formatHeatmapAmount(thresholds.last)}';
+    }
+    return '${_formatThresholdLabel(thresholds[index - 1])}–${formatHeatmapAmount(thresholds[index])}';
+  }
+
+  static String _formatThresholdLabel(double value) {
+    if (value == value.truncateToDouble()) return value.toInt().toString();
+    return value.toStringAsFixed(1);
+  }
 }
 
-Color heatmapColorForAmount(double amount, {bool compact = false}) {
-  final band = heatmapBandIndex(amount);
+List<({double max, String label})> get heatmapBands =>
+    HeatmapSettings.defaults.bands;
+
+int heatmapBandIndex(double amount, {HeatmapSettings? settings}) {
+  if (amount <= 0) return -1;
+  final bands = (settings ?? HeatmapSettings.defaults).bands;
+  for (int i = 0; i < bands.length; i++) {
+    if (amount <= bands[i].max) return i;
+  }
+  return bands.length - 1;
+}
+
+Color heatmapColorForAmount(
+  double amount, {
+  bool compact = false,
+  HeatmapSettings? settings,
+}) {
+  final config = settings ?? HeatmapSettings.defaults;
+  final band = heatmapBandIndex(amount, settings: config);
   if (band < 0) return compact ? Colors.transparent : const Color(0xFFF5F5F5);
-  final colors = [
-    const Color(0xFFC8E6C9), // < 1€
-    const Color(0xFFA5D6A7), // 1–5€
-    const Color(0xFF81C784), // 5–20€
-    const Color(0xFFEF9A9A), // 20–50€
-    const Color(0xFFE57373), // 50–150€
-    const Color(0xFFEF5350), // 150–500€
-    const Color(0xFFC62828), // > 500€
-  ];
-  return colors[band.clamp(0, colors.length - 1)];
+  final colors = config.colors;
+  return Color(colors[band.clamp(0, colors.length - 1)]);
 }
 
 String formatHeatmapAmount(double value) {
