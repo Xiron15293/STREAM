@@ -28,8 +28,9 @@
 | Hermes V0.8.4 — Interactive Category/Account Menus | Sheet operativi con azioni rapide e prefill movimento/transfer | ✅ COMPLETATO |
 | Hermes V0.8.5 — Movimenti Analytics / Heatmap | Lista, Calendario, Heatmap, search coerente, preview compatta | ✅ COMPLETATO |
 | Hermes V0.8.6 — Category Treemap Analytics | Treemap stile market map in Categorie con filtri periodo e ordinamenti | ✅ COMPLETATO |
+| Hermes V0.8.7 — Heatmap Settings | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS — 0 issues |
-| `flutter test --no-pub` | — | ✅ 664/664 All tests passed |
+| `flutter test --no-pub` | — | ✅ 672/672 All tests passed |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -37,94 +38,61 @@
 
 ## 2. Ultima Milestone Completata
 
-**Hermes V0.8.5 — Movimenti Analytics / Heatmap**
+**Hermes V0.8.7 — Heatmap Settings**
 
 ### Cosa è stato completato
-- Archivio senza tab Calendario separata
-- Movimenti con modalita interne:
-  - Lista
-  - Calendario
-  - Heatmap / AdvancedHeatmap
-- Heatmap Movimenti basata sulle uscite
-- Income e transfer esclusi dai colori/metriche heatmap spese
-- Search coerente con heatmap:
-  - titolo
-  - nota
-  - categoria
-  - conto
-- Filtro periodo corretto:
-  - Giorno
-  - Mese
-  - Anno
-  - Intervallo
-- Picker data/anno coerente con mese visibile, heatmap e lista
-- Preview heatmap compatta in Lista
-- `MovementCard` mantiene `PopupMenuButton` stabile
+- `HeatmapSettings` class in `heatmap_utils.dart`:
+  - soglie e colori configurabili
+  - bands generate dinamicamente con label localizzate
+  - validazione soglie (positive, crescenti, non duplicate)
+  - fallback a default se preferenze corrotte
+- `PreferencesService` esteso:
+  - chiavi `heatmap_thresholds` / `heatmap_colors`
+  - `heatmapSettingsNotifier` per aggiornamenti live
+  - `loadHeatmapSettings()`, `saveHeatmapSettings()`, `restoreDefaultHeatmapSettings()`
+  - `clearForReset()` non pulisce heatmap (impostazioni visive sopravvivono al reset)
+- UI `_HeatmapSettingsSection` in `Impostazioni > Heatmap`:
+  - anteprima visiva a barre colorate con label
+  - editor soglie: 6 campi numerici con validazione
+  - editor colori: tap su ogni banda → palette modale (12 colori)
+  - pulsante "Ripristina default"
+  - salvataggio immediato su `onChanged`
+- Heatmap Movimenti live:
+  - `ExpenseHeatmap` e `HeatmapLegend` usano `ValueListenableBuilder<HeatmapSettings>`
+  - aggiornamento in tempo reale alla modifica delle impostazioni
+- Treemap Categorie separata: continua a usare `category.color`, non coinvolta
 
-### QA
+### QA finali
 - `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **664/664 All tests passed**
-
-**Hermes V0.8.6 — Category Treemap Analytics**
-
-### Cosa è stato completato
-- Treemap Categorie come quarta modalita visuale:
-  - Lista pulita
-  - Lista grouped
-  - Card Stream
-  - Treemap
-- Treemap stile market map:
-  - blocco = categoria
-  - area = totale categoria nel periodo
-  - colore = `category.color`
-  - testo = nome categoria, importo e/o numero movimenti
-- Filtri periodo supportati:
-  - Giorno
-  - Mese
-  - Anno
-  - Intervallo
-- Ordinamenti:
-  - totale decrescente
-  - totale crescente
-  - nome A-Z
-  - numero movimenti decrescente
-- Transfer esclusi dai totali categoria
-- Tap su blocco apre lo sheet/dettaglio categoria esistente
-- Empty state per periodo senza dati
-- Movimenti non contiene piu la treemap del periodo; mantiene heatmap e calendario
-
-### QA finale
-- `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **664/664 All tests passed**
+- `flutter test --no-pub`: **672/672 All tests passed** (+8 rispetto a V0.8.6)
+- `test/heatmap_settings_test.dart`: 7 tests (defaults, corruzione prefs, salvataggio invalido, UI controls, edit soglia, rifiuto soglie non valide, colore edit, treemap separazione)
+- `flutter test --no-pub test/heatmap_settings_test.dart test/movements_view_modes_test.dart test/categories_treemap_test.dart test/categories_layout_test.dart`: PASS
+- `test/qa_movements_test.dart`: PASS (resta warning hit-test noto sul bottone Salva, non blocca)
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
-- Nessun commit/push eseguito
+- Nessun commit/push
 
 ---
 
 ## 3. Priorità Immediata (Prossima Sessione)
 
-Una volta ripresa la sessione:
-
-1. **FASE 3 — Heatmap Settings**
-   - soglie heatmap configurabili
-   - colori heatmap configurabili
-   - restore defaults
-   - preview impostazioni
-   - SharedPreferences only
-   - nessun DB/schema
-
-2. **FASE 4 — Lista Movimenti Premium**
+1. **FASE 4 — Lista Movimenti Premium**
    - heatmap annuale tipo reference utente
    - card giornaliere aggregate
    - layout premium
    - mantenere pipeline dati esistente
 
-3. **QA hardening opzionale**
+2. **QA hardening opzionale**
    - risolvere warning hit-test sul bottone Salva nei test
    - rendere fatali i warning solo dopo fix helper
    - non indebolire test
+
+3. **Fondi / Obiettivi**
+   - evoluzione area insight e goal
+
+4. **Beneficiario + Etichette**
+   - tagging avanzato movimenti
 
 ---
 
@@ -147,6 +115,7 @@ Una volta ripresa la sessione:
 - Interactive Category/Account Menus: restore conto non implementato perché non esiste una API esistente da riusare; archiviazione conto attivo disponibile
 - Movimenti Analytics: Lista/Calendario/Heatmap completati; search, filtro periodo e picker data/anno coerenti
 - Category Treemap Analytics: treemap definitiva in Categorie, non in Movimenti; usa `category.color`, filtri periodo e ordinamenti dedicati
+- **Heatmap Settings (V0.8.7)**: soglie/colori configurabili in `Settings > Heatmap`; aggiornamento live della heatmap via `heatmapSettingsNotifier`; fallback a default se prefs corrotte; `clearForReset()` non tocca le preferenze heatmap (scelta deliberata — le impostazioni visive sopravvivono al reset dati)
 - QA hardening: resta un warning hit-test noto sul bottone Salva nei test; non blocca la suite ma puo essere ripulito in una sessione dedicata
 
 ---
@@ -155,7 +124,7 @@ Una volta ripresa la sessione:
 
 Quando si riparte:
 - verificare stato git
-- scegliere tra FASE 3 Heatmap Settings e FASE 4 Lista Movimenti Premium
-- mantenere SharedPreferences-only per le impostazioni heatmap
-- non modificare DB/schema per le prossime impostazioni visuali
+- proseguire con FASE 4 — Lista Movimenti Premium
+- mantenere SharedPreferences-only per le impostazioni visuali
+- non modificare DB/schema per le prossime feature
 - considerare QA hardening hit-test prima di rendere warning fatali

@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.8.7 — Heatmap Settings**
+  - soglie heatmap configurabili da `Impostazioni > Heatmap`
+  - colori heatmap configurabili da palette di 12 colori
+  - anteprima visiva in tempo reale delle bande colore
+  - editor soglie con 6 campi numerici e validazione
+  - editor colori per ogni banda con palette modale
+  - ripristino default con pulsante dedicato
+  - persistenza via SharedPreferences: `heatmap_thresholds`, `heatmap_colors`
+  - fallback a default se preferenze corrotte
+  - aggiornamento live della heatmap Movimenti e legenda via `ValueListenableBuilder`
+  - Treemap Categorie separata: continua a usare `category.color`, non toccata
 - **V0.8.6 — Category Treemap Analytics**
   - Treemap aggiunta nella schermata `Categorie` come quarta modalita visiva dedicata
   - treemap stile market map:
@@ -28,6 +39,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - tap su blocco categoria apre il dettaglio/sheet categoria esistente
   - empty state dedicato quando non ci sono dati nel periodo
   - nessun DB/schema modificato
+
+### Changed
+- Soglie e colori heatmap non più hardcoded: `heatmapColorForAmount()` e `heatmapBandIndex()` accettano `HeatmapSettings` opzionale
+- `HeatmapSettings` class introdotta in `heatmap_utils.dart` con validazione, bands dinamiche e label legenda configurabili
+- `PreferencesService` esteso con `heatmapSettingsNotifier`, chiavi `heatmap_thresholds`/`heatmap_colors`, metodi load/save/restore
+- `MovementsScreen.initState()` carica `loadHeatmapSettings()` per inizializzare il notifier
+- `ExpenseHeatmap` e `HeatmapLegend` usano `ValueListenableBuilder<HeatmapSettings>` per aggiornamenti live
+- `clearForReset()` non pulisce le preferenze heatmap (impostazioni visive sopravvivono al reset dati)
+
+### Unchanged
+- Treemap Categorie separata: continua a usare `category.color`, non influenzata dalle impostazioni heatmap
+- Colori e soglie heatmap di default invariati rispetto a V0.8.5
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+
+### QA
+- `flutter analyze --no-pub`: PASS, 0 issues
+- `flutter test --no-pub`: **672/672 All tests passed**
+- Test mirati:
+  - `test/heatmap_settings_test.dart`: 7 tests (defaults, corruption, invalid save, UI controls, threshold edit, rejection, color update, treemap separation)
+  - `test/movements_view_modes_test.dart`: PASS
+  - `test/categories_treemap_test.dart`: PASS
+  - `test/categories_layout_test.dart`: PASS
+  - `test/qa_movements_test.dart`: PASS (nota: warning hit-test noto sul bottone Salva, non blocca)
+
+---
+
+### Planned
+- FASE 4 — Lista Movimenti Premium:
+  - heatmap annuale stile reference utente
+  - card giornaliere aggregate
+  - layout premium
+- QA hardening opzionale:
+  - risolvere warning hit-test sul bottone Salva nei test
+  - non indebolire test
+
+---
+
 - **V0.8.5 — Movimenti Analytics e Heatmap**
   - Archivio riorganizzato: tab visibili `Movimenti`, `Conti`, `Categorie`
   - tab Calendario separata rimossa; il calendario ora vive dentro `Movimenti`
@@ -76,7 +126,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nessuno skip aggiunto
 - Nessun commit/push
 - Colori heatmap invariati
-- Settings colori/soglie heatmap non implementati
 - Annual heatmap premium / redesign completo Lista non implementati
 
 ### QA
@@ -89,26 +138,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `test/accounts_navigation_test.dart`: 8 passed
   - `test/categories_navigation_test.dart`: 5 passed
   - `test/qa_movements_test.dart`: 85 passed
-
----
-
-### Planned
-- QA manuale Pixel/iPhone
-- Build release Android/iOS aggiornate
-- Prossimo sprint consigliato:
-  - FASE 3 — Heatmap Settings:
-    - soglie configurabili
-    - colori configurabili
-    - restore defaults
-    - preview
-    - SharedPreferences only
-  - FASE 4 — Lista Movimenti Premium:
-    - heatmap annuale stile reference utente
-    - card giornaliere aggregate
-    - layout premium
-  - QA hardening opzionale:
-    - risolvere warning hit-test sul bottone Salva nei test
-    - non indebolire test
 
 ---
 

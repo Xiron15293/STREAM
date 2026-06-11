@@ -29,10 +29,9 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 6.4 | Hermes V0.6.5 — Reset dati app | 📋 APPROVATA | TBD | Reset controllato, conferma, ripartenza pulita |
 | 6.5 | Hermes V0.6.6 — Trasferimenti tra Conti | 📋 APPROVATA | TBD | MovementType.transfer, saldo duale, backup compatibile |
 | 6.6 | Hermes V0.6.7 — Import CSV 1Money | 📋 APPROVATA | TBD | Import dopo supporto transfer, molti record "Trasferimento" |
-| 6.7 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
-| 6.8 | Hermes V0.6.9 — Fondi / Obiettivi | 💡 IDEA | TBD | Evoluzione area insight e goal |
-| 7 | Hermes V0.7 — Athena Foundation | 💡 IDEA | TBD | Budget, AI categorization, insight |
-| 8 | Hermes V0.8 — Import CSV | 💡 IDEA | TBD | Import da banche, export dati |
+| 6.7 | Hermes V0.8.7 — Heatmap Settings | ✅ COMPLETATO | TBD | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences only |
+| 6.8 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
+| 8 | Hermes V0.8 — Import CSV | ✅ COMPLETATO (parziale) | TBD | Import CSV 1Money completato in V0.7.0 |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |
 | 10 | Hermes V1.0 — Prima Beta STREAM | ⏳ POST-MVP | TBD | Distribuzione pubblica beta |
 | 11 | Hermes V1.1 — Backup Locale | ✅ COMPLETATO | V0.5.6 | Export/import JSON, restore transazionale, share sheet nativo |

@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes V0.6.4 completato | **Test:** 492 | **Analyze:** 0 issues | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
+**Stato:** Hermes V0.8.7 completato | **Test:** 672 | **Analyze:** 0 issues | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
 
 ## Stack
 
@@ -155,6 +155,36 @@ categoryId, type, amount, title NON influenzano
 - **Problema**: Row riepilogo (Entrate/Uscite/Saldo) overflowava in `DraggableScrollableSheet` stretto (iPhone)
 - **Fix**: `FittedBox(boxFit.scaleDown)` sul Row
 - **File**: `lib/widgets/day_header.dart:74`
+
+### HeatmapSettings Architecture (V0.8.7)
+
+> Soglie e colori heatmap configurabili, persistiti via SharedPreferences, aggiornamento live della heatmap.
+
+**File**: `lib/utils/heatmap_utils.dart` — classe `HeatmapSettings`
+**Prefs**: `heatmap_thresholds` (List<String> di double), `heatmap_colors` (List<String> di int)
+**Notifier**: `PreferencesService.heatmapSettingsNotifier` (ValueNotifier<HeatmapSettings>)
+**Default soglie**: `[1, 5, 20, 50, 150, 500]`
+**Default colori**: 7 gradazioni verde→rosso + grigio (palette invariata rispetto a V0.8.5)
+
+**Flusso di caricamento**:
+1. `MovementsScreen.initState()` chiama `PreferencesService.loadHeatmapSettings()` per inizializzare il notifier
+2. `ExpenseHeatmap` e `HeatmapLegend` usano `ValueListenableBuilder<HeatmapSettings>` wrappato attorno a `PreferencesService.heatmapSettingsNotifier`
+3. La UI si ricostruisce automaticamente quando il notifier cambia
+
+**Validazione**:
+- `HeatmapSettings.isValid` → soglie positive/crescenti + colors.count == thresholds.length + 1
+- `HeatmapSettings.validateThresholds(List<double>)` → statico, riusato nell'editor
+- `saveHeatmapSettings()` → salva solo se `isValid`, altrimenti return false
+- `loadHeatmapSettings()` → fallback a default se prefs corrotte (parse fallito o isValid false)
+
+**Separazione Treemap**:
+- `CategoriesTreemap` continua a usare `category.color` — non coinvolta da `HeatmapSettings`
+- Scelta architetturale: la heatmap Movimenti è una metrica di spesa per giorno, la treemap Categorie è una metrica per categoria con colori indipendenti
+
+**`clearForReset()`**:
+- Non pulisce le preferenze heatmap (scelta deliberata)
+- Le impostazioni visive (soglie, colori) sopravvivono al reset dati, come aspetto UI
+- L'utente può sempre usare "Ripristina default" nella sezione Heatmap di Impostazioni
 
 ### Note tecniche aperte
 
@@ -576,10 +606,9 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.1 | V0.2 | V0.3.2 | V0.3.3 | V0.4 | V0.4.1 | V0.4.2 | V0.5.4 | V0.5.5+refactor | V0.5.6 | V0.6.1 | V0.6.2 |
-|---------|------|------|--------|--------|------|--------|--------|--------|-----------------|--------|--------|--------|
-| Test | 50 | 65 | 166 | 193 | 193 | 235 | 235 | 299 | 326 | 363 | 447 | 457 |
-| Analyze issues | 0 | 0 | 1 warning | 0 | 0 | 0 | 0 | 2 pre-existing | 2 pre-existing | 0 | 0 | 0 |
-| Build APK release | — | — | — | — | — | — | — | — | — | 98.6s (66.1MB) | 24.0s (66.2MB) | 24.1s (66.2MB) |
-| Build iOS release | — | — | — | — | — | — | — | — | — | 44.1s (32.7MB) | 41.8s (32.6MB) | 22.9s (32.7MB) |
-| share_plus | — | — | — | — | — | — | — | — | — | ^12.0.2 | ^12.0.2 | ^12.0.2 |
+| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 |
+|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | **672** |
+| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
+| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
+| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ |

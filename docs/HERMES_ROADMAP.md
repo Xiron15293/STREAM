@@ -45,16 +45,16 @@
 | V0.8.4 | Interactive Category/Account Menus | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.5 | Movimenti Heatmap / Calendar integration | ✅ COMPLETATO | 2026-06-11 |
 | V0.8.6 | Category Treemap Analytics | ✅ COMPLETATO | 2026-06-11 |
+| V0.8.7 | Heatmap Settings (soglie/colori configurabili) | ✅ COMPLETATO | 2026-06-11 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
 | V0.9.0 | Global Tap-to-Edit Movement | 📋 CONSIGLIATA |
-| V0.9.1 | FASE 3 — Settings colori/soglie heatmap | 📋 CONSIGLIATA |
-| V0.9.2 | FASE 4 — Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
+| V0.9.1 | FASE 4 — Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
 | V0.9.x | QA hardening hit-test warning nei test | 💡 IDEA |
-| V0.9.3 | Fondi / Obiettivi | 💡 IDEA |
+| V0.9.2 | Fondi / Obiettivi | 💡 IDEA |
 | V0.9.4 | Beneficiario + Etichette | 💡 IDEA |
 | V1.0 | Prima Beta STREAM | ⏳ PIANIFICATA |
 | V1.0+ | Adaptive / Tablet Layout | 💡 IDEA |
@@ -69,10 +69,9 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | Versione | Focus |
 |----------|-------|
 | V0.9.0 | Global Tap-to-Edit Movement (📋) — modifica movimento da ogni lista/dettaglio |
-| V0.9.1 | FASE 3 — Settings colori/soglie heatmap (📋) — soglie configurabili, colori configurabili, restore defaults, preview impostazioni, SharedPreferences only |
-| V0.9.2 | FASE 4 — Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
+| V0.9.1 | FASE 4 — Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
 | V0.9.x | QA hardening opzionale (💡) — risolvere warning hit-test nei test prima di renderli fatali |
-| V0.9.3 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
+| V0.9.2 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
 | V0.9.4 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
 | V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
@@ -116,14 +115,60 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 - Empty state dedicato per periodo senza dati
 
 **Non completato / futuro:**
-- FASE 3 — Settings colori/soglie heatmap:
-  - soglie configurabili
-  - colori configurabili
-  - restore defaults
-  - preview impostazioni
 - FASE 4 — Lista Movimenti Premium con heatmap annuale stile reference
 - QA hardening opzionale sul warning hit-test nei test
 - Dashboard analytics avanzata non implementata
+
+**V0.8.7 completato separatamente** — vedi sezione dedicata qui sotto.
+
+---
+
+### V0.8.7 — Heatmap Settings ✅
+
+> **Interventi**: soglie e colori heatmap configurabili, editor in Impostazioni, preview, restore defaults, aggiornamento live
+> **Test**: 672/672 test pass | `flutter analyze` 0 issues
+
+**Cosa è stato fatto:**
+- `HeatmapSettings` class in `lib/utils/heatmap_utils.dart`:
+  - soglie default: `[1, 5, 20, 50, 150, 500]`
+  - colori default: palette heatmap esistente mantenuta (7 gradazioni verde→rosso + grigio)
+  - `bands` getter con label dinamiche basate sulle soglie
+  - `isValid` che controlla soglie positive/crescenti e count colori = thresholds + 1
+  - `validateThresholds()` statico riusabile nell'editor
+  - `rangeLabel()` per label legenda localizzate (`< 1€`, `1–5€`, ..., `> 500€`)
+- `PreferencesService` esteso:
+  - `heatmapThresholdsKey`, `heatmapColorsKey` (SharedPreferences)
+  - `heatmapSettingsNotifier` — aggiornamenti live
+  - `loadHeatmapSettings()` con fallback a default se prefs corrotte
+  - `saveHeatmapSettings()` con validazione pre-salvataggio
+  - `restoreDefaultHeatmapSettings()` — rimuove chiavi, resetta notifier
+- UI `_HeatmapSettingsSection` in `Impostazioni > Heatmap`:
+  - anteprima a barre colorate con label delle bande
+  - 6 campi soglia numerici con validazione immediata su `onChanged`
+  - errori inline: "Inserisci solo numeri validi", "Le soglie devono essere positive e crescenti"
+  - colori editabili: tap su ogni banda → palette modale di 12 colori
+  - pulsante "Ripristina default"
+- Heatmap Movimenti live:
+  - `ExpenseHeatmap` e `HeatmapLegend` wrappati in `ValueListenableBuilder<HeatmapSettings>`
+  - aggiornamento in tempo reale alla modifica di soglie/colori
+- Treemap Categorie separata: continua a usare `category.color`, non coinvolta dalle impostazioni heatmap
+- `clearForReset()` non tocca le preferenze heatmap (scelta deliberata: impostazioni visive sopravvivono al reset dati)
+
+**File principali modificati:**
+| File | Modifica |
+|------|----------|
+| `lib/utils/heatmap_utils.dart` | `HeatmapSettings` class + metodi validazione/label |
+| `lib/data/preferences_service.dart` | Chiavi, notifier, load/save/restore + integrazione `clearForReset()` |
+| `lib/widgets/expense_heatmap.dart` | `ValueListenableBuilder<HeatmapSettings>` per aggiornamento live |
+| `lib/screens/settings_screen.dart` | `_HeatmapSettingsSection` con preview, editor soglie, editor colori, restore |
+| `lib/screens/movements_screen.dart` | `loadHeatmapSettings()` in `initState()` per inizializzare notifier |
+| `test/heatmap_settings_test.dart` | **NUOVO** — 7 tests: defaults, corruzione, invalid save, UI, edit, rejection, color, treemap separazione |
+
+**Confini rispettati:**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
 
 ---
 
@@ -173,7 +218,6 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
   - `showMenu` sperimentale non presente
 
 **Non completato / futuro:**
-- FASE 3 — Settings colori/soglie heatmap
 - FASE 4 — Lista Movimenti Premium con heatmap annuale stile reference
 - Redesign completo Lista Movimenti
 - Dashboard analytics avanzata non implementata

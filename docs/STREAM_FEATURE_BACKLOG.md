@@ -47,16 +47,16 @@
 | F12 | V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker | V0.6.4 | 2026-06-08 |
 | F37 | V0.6.2 Comparator Centralizzato + Fix Ordinamento | V0.6.2 | 2026-06-08 |
 | F38 | V0.6.2 GroupedMovementsList riusabile | V0.6.2 | 2026-06-08 |
+| F39 | V0.8.7 Heatmap Settings — soglie/colori configurabili | V0.8.7 | 2026-06-11 |
 
 ---
 
 ## Priorità prossime
 
-1. Reset dati app controllato
-2. Trasferimenti tra conti
-3. Import CSV 1Money
-4. Calendar Heatmap
-5. Fondi / Obiettivi
+1. FASE 4 — Lista Movimenti Premium con heatmap annuale
+2. QA hardening hit-test warning nei test
+3. Fondi / Obiettivi
+4. Beneficiario + Etichette
 
 ---
 
@@ -111,6 +111,32 @@
 **Test richiesti:** ~12-15 test (intensità colore, filtri, navigazione, tap giorno)
 
 **Rischio tecnico:** MEDIO — UI complessa ma dati già disponibili, nessuna migration
+
+---
+
+### F39 — V0.8.7 Heatmap Settings ✅ COMPLETATA
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Soglie e colori heatmap configurabili da Impostazioni, con preview, editor soglie, editor colori da palette, restore defaults, aggiornamento live della heatmap Movimenti |
+| **Motivazione** | I colori e le soglie della heatmap erano hardcoded; l'utente non poteva personalizzare la scala |
+| **Priorità** | Alta |
+| **Dipendenze** | V0.8.5 Heatmap Movimenti, `PreferencesService` |
+| **Versione candidata** | V0.8.7 |
+| **Stato** | ✅ COMPLETATA |
+
+**Sotto-feature:**
+1. **`HeatmapSettings` class** — model con validazione, bands dinamiche, label legenda configurabili
+2. **Persistenza SharedPreferences** — `heatmap_thresholds`, `heatmap_colors`
+3. **`heatmapSettingsNotifier`** — aggiornamento live della heatmap senza ricaricare la pagina
+4. **UI Impostazioni** — sezione Heatmap con preview, editor soglie, editor colori, restore defaults
+5. **Validazione** — soglie positive, crescenti, non duplicate; fallback a default se prefs corrotte
+6. **Separazione Treemap** — `CategoriesTreemap` continua a usare `category.color`, non toccata
+7. **`clearForReset()`** non pulisce le preferenze heatmap (impostazioni visive sopravvivono al reset dati)
+
+**Test:** 7 test in `test/heatmap_settings_test.dart` + regressioni suite completa (672 test)
+
+**Rischio tecnico:** BASSO — SharedPreferences only, nessuna migration, nessun DB
 
 ---
 
@@ -337,9 +363,9 @@
 
 | Metrica | Valore |
 |---------|--------|
-| **Totale feature censite** | 32 |
-| **Feature completate** | 22+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F38; + MovementCard, Backup, Build fix, Share) |
-| **Feature approvate** | 4 (F13, F30, F35–F36) |
+| **Totale feature censite** | 33 |
+| **Feature completate** | 23+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F39; + MovementCard, Backup, Build fix, Share) |
+| **Feature approvate** | 3 (F13, F30, F35–F36) |
 | **Feature in valutazione** | 3 (F17–F18, F32) |
 | **Feature future** | 6 (F19–F22, F24, F31) |
 | **Feature post-MVP** | 3 (F25, F27–F29) |
@@ -347,37 +373,9 @@
 
 ---
 
-## 8. Priorità consigliate prima della Beta
-
-### 🥇 Priorità Alta (prossima sessione — V0.6.5)
-
-| Ordine | Feature | Impatto | Sforzo | Note |
-|--------|---------|---------|--------|------|
-| 1 | Reset dati app | Alto | Medio | Ripartenza pulita prima di nuove importazioni |
-| 2 | F36 — Trasferimenti tra Conti | Alto | Alto | Prerequisito pratico per CSV 1Money |
-| 3 | F21 — Import CSV 1Money | Alto | Alto | Va fatto dopo il supporto ai transfer |
-| 4 | F13 — Calendar Heatmap | Medio | Basso | V0.5 Foundation ✅ |
-| 5 | Fondi / Obiettivi | Medio | Medio | Nuova area insight/goal da definire |
-
-### 🥈 Priorità Media (V0.6.6–V0.6.7)
-
-| Ordine | Feature | Impatto | Sforzo |
-|--------|---------|---------|--------|
-| 5 | F35 — Beneficiario ed Etichette | Medio | Alto (migration) |
-| 6 | F36 — Trasferimenti tra Conti | Alto | Alto |
-
-### 🥉 Priorità Bassa (V0.7+)
-
-| Ordine | Feature | Impatto | Sforzo |
-|--------|---------|---------|--------|
-| 7 | F20 — Athena Foundation | Alto | Alto |
-| 8 | F21 — Import CSV | Alto | Alto |
-| 9 | F22 — Scenari | Medio | Alto |
-| 10 | F24 — Refactor Grafico Categorie | Basso | Basso |
-
 ---
 
-## 9. Conflitti e duplicazioni individuati
+## 8. Conflitti e duplicazioni individuati
 
 | # | Descrizione | Risoluzione |
 |---|-------------|-------------|
@@ -390,7 +388,7 @@
 
 ---
 
-## 10. Riferimenti
+## 9. Riferimenti
 
 - `docs/HERMES_ROADMAP.md` — cronologia versioni Hermes
 - `docs/NEXT_SESSION.md` — piano prossima sessione
