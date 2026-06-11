@@ -8,10 +8,12 @@ import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
+import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/movements_screen.dart';
 import 'package:stream_app/utils/heatmap_utils.dart';
 import 'package:stream_app/widgets/grouped_movements_list.dart';
 import 'package:stream_app/widgets/movement_card.dart';
+import 'package:stream_app/widgets/period_category_treemap.dart';
 
 void main() {
   late DateTime today;
@@ -710,6 +712,286 @@ void main() {
     expect(find.text('Picker giugno', skipOffstage: false), findsOneWidget);
     expect(_heatmapCellColor(tester, picked.day), isNot(Colors.transparent));
   });
+
+  testWidgets('period category treemap day uses only selected day categories', (
+    tester,
+  ) async {
+    final db = AppDatabase();
+    final day = DateTime(today.year, today.month, today.day, 10);
+    final otherDay = day.add(const Duration(days: 1));
+    db.addMovement(
+      Movement(
+        id: 'treemap_day_spesa',
+        title: 'Spesa giorno',
+        amount: 10,
+        type: MovementType.expense,
+        date: day,
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        createdAt: day,
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'treemap_day_casa',
+        title: 'Casa altro giorno',
+        amount: 12,
+        type: MovementType.expense,
+        date: otherDay,
+        categoryId: 'exp_2',
+        accountId: defaultAccountId,
+        createdAt: otherDay,
+      ),
+    );
+
+    await pumpPeriodCategoryTreemap(
+      tester,
+      movements: db.movements.filterByTime(TimeFilter.day(day)),
+      categories: db.categories,
+      filter: TimeFilter.day(day),
+    );
+
+    expect(find.text('Categorie del giorno'), findsOneWidget);
+    expect(_periodTreemapLabels(tester), contains('Spesa'));
+    expect(_periodTreemapLabels(tester), isNot(contains('Casa')));
+  });
+
+  testWidgets('period category treemap custom range uses interval categories', (
+    tester,
+  ) async {
+    final db = AppDatabase();
+    final start = DateTime(today.year, today.month, 3, 10);
+    final middle = DateTime(today.year, today.month, 5, 10);
+    final outside = DateTime(today.year, today.month, 9, 10);
+    db.addMovement(
+      Movement(
+        id: 'treemap_range_spesa',
+        title: 'Range spesa',
+        amount: 10,
+        type: MovementType.expense,
+        date: start,
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        createdAt: start,
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'treemap_range_casa',
+        title: 'Range casa',
+        amount: 12,
+        type: MovementType.expense,
+        date: middle,
+        categoryId: 'exp_2',
+        accountId: defaultAccountId,
+        createdAt: middle,
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'treemap_range_auto',
+        title: 'Fuori range',
+        amount: 40,
+        type: MovementType.expense,
+        date: outside,
+        categoryId: 'exp_3',
+        accountId: defaultAccountId,
+        createdAt: outside,
+      ),
+    );
+    final filter = TimeFilter.customRange(start, middle);
+
+    await pumpPeriodCategoryTreemap(
+      tester,
+      movements: db.movements.filterByTime(filter),
+      categories: db.categories,
+      filter: filter,
+    );
+
+    expect(find.text('Categorie del periodo'), findsOneWidget);
+    expect(_periodTreemapLabels(tester), containsAll(['Spesa', 'Casa']));
+    expect(_periodTreemapLabels(tester), isNot(contains('Auto')));
+  });
+
+  testWidgets('calendar month no longer renders period category treemap', (
+    tester,
+  ) async {
+    final db = AppDatabase();
+    final firstDay = DateTime(today.year, today.month, 4, 10);
+    final secondDay = DateTime(today.year, today.month, 22, 10);
+    db.addMovement(
+      Movement(
+        id: 'treemap_month_spesa',
+        title: 'Mese spesa',
+        amount: 10,
+        type: MovementType.expense,
+        date: firstDay,
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        createdAt: firstDay,
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'treemap_month_casa',
+        title: 'Mese casa',
+        amount: 12,
+        type: MovementType.expense,
+        date: secondDay,
+        categoryId: 'exp_2',
+        accountId: defaultAccountId,
+        createdAt: secondDay,
+      ),
+    );
+
+    await pumpMovements(tester, db, mode: 'calendar');
+    await tester.tap(find.byKey(Key('heatmap_day_cell_${firstDay.day}')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('period_category_treemap')), findsNothing);
+    expect(find.text('Mese spesa', skipOffstage: false), findsOneWidget);
+    expect(find.text('Mese casa', skipOffstage: false), findsOneWidget);
+  });
+
+  testWidgets('calendar year no longer renders period category treemap', (
+    tester,
+  ) async {
+    final db = AppDatabase();
+    final january = DateTime(today.year, 1, 8, 10);
+    final june = DateTime(today.year, 6, 8, 10);
+    db.addMovement(
+      Movement(
+        id: 'treemap_year_spesa',
+        title: 'Anno spesa',
+        amount: 10,
+        type: MovementType.expense,
+        date: january,
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        createdAt: january,
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'treemap_year_casa',
+        title: 'Anno casa',
+        amount: 12,
+        type: MovementType.expense,
+        date: june,
+        categoryId: 'exp_2',
+        accountId: defaultAccountId,
+        createdAt: june,
+      ),
+    );
+
+    await pumpMovements(tester, db, mode: 'calendar');
+    await tester.tap(find.text('Anno'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('heatmap_day_cell_${june.day}')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('period_category_treemap')), findsNothing);
+    expect(find.text('Anno spesa', skipOffstage: false), findsOneWidget);
+    expect(find.text('Anno casa', skipOffstage: false), findsOneWidget);
+  });
+
+  testWidgets('calendar year search still filters movements without treemap', (
+    tester,
+  ) async {
+    final db = AppDatabase();
+    final coffeeDay = DateTime(today.year, 1, 8, 10);
+    final rentDay = DateTime(today.year, 6, 8, 10);
+    db.addMovement(
+      Movement(
+        id: 'treemap_search_spesa',
+        title: 'Caffe annuale',
+        amount: 10,
+        type: MovementType.expense,
+        date: coffeeDay,
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        createdAt: coffeeDay,
+      ),
+    );
+    db.addMovement(
+      Movement(
+        id: 'treemap_search_casa',
+        title: 'Affitto annuale',
+        amount: 12,
+        type: MovementType.expense,
+        date: rentDay,
+        categoryId: 'exp_2',
+        accountId: defaultAccountId,
+        createdAt: rentDay,
+      ),
+    );
+
+    await pumpMovements(tester, db, mode: 'calendar');
+    await tester.tap(find.text('Anno'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'caffe');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('period_category_treemap')), findsNothing);
+    expect(find.text('Caffe annuale', skipOffstage: false), findsOneWidget);
+    expect(find.text('Affitto annuale', skipOffstage: false), findsNothing);
+  });
+
+  testWidgets(
+    'period category treemap shows transfer empty state and income categories',
+    (tester) async {
+      final db = seededDb();
+      final filter = TimeFilter.day(today);
+
+      await pumpPeriodCategoryTreemap(
+        tester,
+        movements: db.movements.filterByTime(filter),
+        categories: db.categories,
+        filter: filter,
+        selectedType: MovementType.transfer,
+      );
+
+      expect(
+        find.byKey(const Key('period_category_treemap_transfer_empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('I trasferimenti non sono distribuiti per categoria.'),
+        findsOneWidget,
+      );
+
+      await pumpPeriodCategoryTreemap(
+        tester,
+        movements: db.movements.filterByTime(filter),
+        categories: db.categories,
+        filter: filter,
+        selectedType: MovementType.income,
+      );
+
+      expect(_periodTreemapLabels(tester), contains('Stipendio'));
+    },
+  );
+}
+
+Future<void> pumpPeriodCategoryTreemap(
+  WidgetTester tester, {
+  required List<Movement> movements,
+  required List<Category> categories,
+  required TimeFilter filter,
+  MovementType? selectedType,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: PeriodCategoryTreemap(
+          movements: movements,
+          categories: categories,
+          filter: filter,
+          selectedType: selectedType,
+        ),
+      ),
+    ),
+  );
 }
 
 bool _hasHorizontalScroll(WidgetTester tester) {
@@ -730,4 +1012,17 @@ Color? _heatmapCellColor(WidgetTester tester, int day) {
   };
   if (decoration is BoxDecoration) return decoration.color;
   return null;
+}
+
+List<String> _periodTreemapLabels(WidgetTester tester) {
+  return tester
+      .widgetList<Text>(
+        find.byKey(
+          const Key('period_category_treemap_label'),
+          skipOffstage: false,
+        ),
+      )
+      .map((text) => text.data ?? '')
+      .where((text) => text.isNotEmpty)
+      .toList();
 }

@@ -8,6 +8,7 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
+import '../widgets/categories_treemap.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/movement_picker.dart';
@@ -261,6 +262,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     List<Movement> periodTypeMovements,
   ) {
     switch (_layoutMode) {
+      case 'treemap':
+        return CategoriesTreemap(
+          categories: active,
+          movements: periodTypeMovements,
+          onCategoryTap: (category) =>
+              _showCategoryMovements(context, widget.db, category),
+        );
       case 'groupedList':
         return _buildGroupedList(active, archived, periodTypeMovements);
       case 'streamCards':

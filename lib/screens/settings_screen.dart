@@ -329,6 +329,8 @@ class _CategoryLayoutTileState extends State<_CategoryLayoutTile> {
         return 'Lista grouped';
       case 'streamCards':
         return 'Card Stream';
+      case 'treemap':
+        return 'Treemap';
       default:
         return 'Lista pulita';
     }
@@ -372,6 +374,7 @@ class _CategoryLayoutDialogState extends State<_CategoryLayoutDialog> {
     ('cleanList', 'Lista pulita', 'Elenco semplice e minimale'),
     ('groupedList', 'Lista grouped', 'Raggruppata con stile iOS'),
     ('streamCards', 'Card Stream', 'Card dettagliate in stile Stream'),
+    ('treemap', 'Treemap', 'Mappa visuale dei totali per categoria'),
   ];
 
   @override

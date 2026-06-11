@@ -141,6 +141,43 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('treemap layout renders as fourth category mode', (
+      WidgetTester tester,
+    ) async {
+      await SharedPreferences.getInstance().then(
+        (prefs) => prefs.setString('category_layout', 'treemap'),
+      );
+      PreferencesService.categoryLayoutNotifier.value = 'treemap';
+      final db = AppDatabase();
+      await db.addCategory('Prova Treemap', MovementType.expense, 0xFF42A5F5);
+      final cat = db.categories.firstWhere((c) => c.name == 'Prova Treemap');
+      await db.addMovement(
+        Movement(
+          id: 'treemap_layout_mov',
+          title: 'Movimento treemap',
+          amount: 22,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: cat.id,
+          accountId: defaultAccountId,
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: CategoriesScreen(db: db)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('categories_layout_treemap')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('categories_treemap')), findsOneWidget);
+    });
   });
 
   group('Type Filter', () {
@@ -953,6 +990,14 @@ void main() {
           skipOffstage: false,
         ),
         findsNothing,
+      );
+
+      PreferencesService.categoryLayoutNotifier.value = 'treemap';
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('categories_layout_treemap'), skipOffstage: false),
+        findsOneWidget,
       );
     });
   });
