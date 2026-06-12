@@ -7,6 +7,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.8.8 — Subcategories Foundation**
+  - Nuova entità `Subcategory` (`lib/models/subcategory.dart`):
+    - campi: `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
+    - nessun `color`/`iconKey` — le sottocategorie ereditano identità visiva dalla categoria madre
+  - DB version v8 → v9:
+    - nuova tabella `subcategories` con `UNIQUE(category_id, name)`
+    - colonna nullable `subcategory_id` su `movements`, `quick_movements`, `favorite_movements`
+    - CRUD sottocategorie e mappers aggiornati
+    - `resetAllData` cancella anche `subcategories`
+  - Movement/QuickMovement/FavoriteMovement: aggiunto `subcategoryId` opzionale, retrocompatibile
+  - Backup/Restore aggiornato:
+    - backup include `subcategories`
+    - restore vecchio JSON (senza subcategories) funziona
+    - restore nuovo JSON (con subcategories) funziona
+    - `subcategoryId` orfani normalizzati a `null` (sicurezza)
+    - nessuna perdita dati
+  - UI Categorie: gestione sottocategorie dentro la schermata Categorie
+    - sezione `Aggiungi/Rinomina/Archivia/Ripristina` sottocategoria nel dialog categoria
+  - Form movimento: dropdown sottocategoria opzionale
+    - appare solo quando la categoria selezionata ha sottocategorie attive
+    - cambio categoria resetta `subcategoryId` se non compatibile
+    - movimento salvabile anche senza sottocategoria
+  - Movimenti Rapidi/Favorite: subcategoryId opzionale
+  - UX Fix: campo Nota aggiunto nel form movimento rapido (`QuickMovement`)
+  - UX Fix: soglie heatmap con `textInputAction: TextInputAction.done` e `onSubmitted: (_) => FocusScope.of(context).unfocus()`
+  - CSV Import 1Money: NON implementato parsing sottocategorie in questa fase
+  - Nessuna conversione automatica di categorie flat con parentesi
+
+### Planned
+- V0.8.9 — 1Money Subcategory Import
+- V0.9.x — Converti categorie flat con parentesi in sottocategorie
+- V0.9.x — Subcategories Analytics / Budget / Actual / Scenari
+- FASE 4 — Lista Movimenti Premium
+
+### QA
+- `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings
+- `flutter test --no-pub`: **689/689 All tests passed**
+- 17 nuovi test sottocategorie (`test/subcategories_test.dart`):
+  - creazione, dedup, archivia/ripristino, movimento con/senza subcategoryId
+  - persistenza SQLite dopo reload
+  - backup/restore old/new, orphan normalization
+  - resetAllData
+  - compatibilità analytics
+- DB version v9 confermato
+- 3 info deprecations pre-existing (`value` → `initialValue`) — non introdotte da V0.8.8
+
+---
+
+### Added
 - **V0.8.7 — Heatmap Settings**
   - soglie heatmap configurabili da `Impostazioni > Heatmap`
   - colori heatmap configurabili da palette di 12 colori

@@ -46,21 +46,20 @@
 | V0.8.5 | Movimenti Heatmap / Calendar integration | ✅ COMPLETATO | 2026-06-11 |
 | V0.8.6 | Category Treemap Analytics | ✅ COMPLETATO | 2026-06-11 |
 | V0.8.7 | Heatmap Settings (soglie/colori configurabili) | ✅ COMPLETATO | 2026-06-11 |
+| V0.8.8 | Subcategories Foundation | ✅ COMPLETATO | 2026-06-12 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.9.0 | Global Tap-to-Edit Movement | 📋 CONSIGLIATA |
-| V0.9.1 | FASE 4 — Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
+| V0.8.9 | 1Money Subcategory Import | 📋 PRIORITARIA |
+| V0.9.0 | Converti categorie flat con parentesi in sottocategorie | 📋 APPROVATA |
+| V0.9.1 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
+| V0.9.2 | Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
 | V0.9.x | QA hardening hit-test warning nei test | 💡 IDEA |
-| V0.9.2 | Fondi / Obiettivi | 💡 IDEA |
-| V0.9.4 | Beneficiario + Etichette | 💡 IDEA |
+| V0.9.x | Fondi / Obiettivi | 💡 IDEA |
+| V0.9.x | Beneficiario + Etichette | 💡 IDEA |
 | V1.0 | Prima Beta STREAM | ⏳ PIANIFICATA |
-| V1.0+ | Adaptive / Tablet Layout | 💡 IDEA |
-| V1.0+ | Cloud Sync (backup premium, multi-dispositivo) | 💡 IDEA |
-| V1.0+ | Scenari (what-if, pianificazione) | 💡 IDEA |
-| V1.0+ | Athena Foundation (Budget, AI categorization, insight) | 💡 IDEA |
 
 Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato aggiornato delle feature.
 
@@ -68,13 +67,14 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 | Versione | Focus |
 |----------|-------|
-| V0.9.0 | Global Tap-to-Edit Movement (📋) — modifica movimento da ogni lista/dettaglio |
-| V0.9.1 | FASE 4 — Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
+| V0.8.9 | 1Money Subcategory Import (📋) — parser `Categoria (Sottocategoria)`, dedup, report |
+| V0.9.0 | Converti categorie flat con parentesi in sottocategorie (📋) — azione manuale controllata con conferma, riassegna movimenti, archivia categoria flat |
+| V0.9.1 | Subcategories Analytics (💡) — treemap toggle categorie/sottocategorie, filtri, breakdown Budget/Actual/Scenari |
+| V0.9.2 | Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
 | V0.9.x | QA hardening opzionale (💡) — risolvere warning hit-test nei test prima di renderli fatali |
-| V0.9.2 | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
-| V0.9.4 | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
+| V0.9.x | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
+| V0.9.x | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
 | V1.0 | Prima Beta STREAM (⏳) — distribuzione pubblica |
-| V1.0+ | Adaptive / Tablet Layout (💡) — layout reattivi |
 | V1.0+ | Cloud Sync (💡) — backup premium, multi-dispositivo |
 | V1.0+ | Scenari (💡) — proiezioni what-if, pianificazione |
 | V1.0+ | Athena Foundation (💡) — Budget, AI categorization, insight |
@@ -82,6 +82,82 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 ---
 
 ## Dettaglio feature per versione
+
+### V0.8.8 — Subcategories Foundation ✅
+
+> **Interventi**: nuova entità Subcategory, DB v8→v9, subcategory_id opzionale su movimenti, backup/restore compatibile, UI categorie e form movimento aggiornati, fix UX nota rapida e soglie heatmap
+> **Test**: 689/689 test pass | `flutter analyze` 0 errors, 0 warnings | **DB v9**
+
+**Cosa è stato fatto:**
+
+1. **Nuovo modello:** `lib/models/subcategory.dart`
+   - `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
+   - Nessun `color`/`iconKey` — ereditati dalla categoria madre (scelta architetturale)
+
+2. **Movement / QuickMovement / FavoriteMovement:**
+   - Aggiunto `subcategoryId` opzionale (nullable)
+   - Retrocompatibile: movimenti esistenti restano con `subcategoryId = null`
+
+3. **DB / SQLite (v8 → v9):**
+   - Nuova tabella `subcategories` con `UNIQUE(category_id, name)`
+   - Colonne nullable `subcategory_id` su `movements`, `quick_movements`, `favorite_movements`
+   - CRUD sottocategorie, mappers aggiornati, `resetAllData` include subcategories
+
+4. **Backup & Restore:**
+   - `BackupData` include `subcategories` (opzionali)
+   - Restore vecchio JSON senza subcategories funziona
+   - Restore nuovo JSON con subcategories funziona
+   - `subcategoryId` orfani normalizzati a `null`
+   - Nessuna perdita dati
+
+5. **UI Categorie:**
+   - Gestione sottocategorie nello stesso dialog categoria
+   - Azioni: aggiungi, rinomina, archivia, ripristina
+
+6. **Form movimento:**
+   - Dropdown sottocategoria opzionale (solo per income/expense, non transfer)
+   - Appare solo se la categoria selezionata ha sottocategorie attive
+   - Cambiando categoria, subcategoryId non compatibile viene resettato
+
+7. **Quick / Favorite Movement:**
+   - `subcategoryId` opzionale supportato
+   - Nota nel form rapido (model/DB già supportava, UI aggiunta ora)
+
+8. **Heatmap Settings UX:**
+   - Campi soglia con `textInputAction.done` + `onSubmitted` unfocus
+
+**Non completato / futuro:**
+- V0.8.9 — 1Money Subcategory Import (parser `Categoria (Sottocategoria)`)
+- V0.9.x — Converti categorie flat con parentesi in sottocategorie
+- V0.9.x — Subcategories Analytics / Budget / Actual / Scenari
+- FASE 4 — Lista Movimenti Premium
+
+**File principali modificati:**
+| File | Modifica |
+|------|----------|
+| `lib/models/subcategory.dart` | **NUOVO** — Subcategory model |
+| `lib/models/movement.dart` | `subcategoryId?` field |
+| `lib/models/quick_movement.dart` | `subcategoryId?` field |
+| `lib/models/favorite_movement.dart` | `subcategoryId?` field |
+| `lib/models/backup_data.dart` | `subcategories` list, `subcategoryId` in maps |
+| `lib/data/sqlite_service.dart` | DB v8→v9, subcategories table + CRUD, migration |
+| `lib/data/database.dart` | Subcategories state + API + replaceState + resetAllData |
+| `lib/services/backup_service.dart` | Subcategories export/restore/normalize |
+| `lib/services/one_money_csv_import_service.dart` | replaceState con subcategories vuote |
+| `lib/screens/categories_screen.dart` | `_SubcategorySection` widget |
+| `lib/widgets/movement_form.dart` | Subcategory dropdown |
+| `lib/widgets/movement_picker.dart` | Subcategory dropdown + Nota in QuickForm |
+| `lib/screens/settings_screen.dart` | Heatmap soglie onSubmitted unfocus |
+| `test/subcategories_test.dart` | **NUOVO** — 17 tests |
+| `test/qa_extensive_test.dart` | `_ThrowingMovement.copyWith` fix |
+
+**Confini rispettati:**
+- Nessuna conversione automatica categorie flat con parentesi
+- Nessuna migrazione movimenti esistenti (subcategoryId = null)
+- Nessun import CSV 1Money sottocategorie (V0.8.9+)
+- Nessun commit/push
+
+---
 
 ### V0.8.6 — Category Treemap Analytics ✅
 

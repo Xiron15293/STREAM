@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes V0.8.7 completato | **Test:** 672 | **Analyze:** 0 issues | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
+**Stato:** Hermes V0.8.8 completato | **Test:** 689 | **Analyze:** 0 errors, 0 warnings | **DB:** v9 | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
 
 ## Stack
 
@@ -186,8 +186,49 @@ categoryId, type, amount, title NON influenzano
 - Le impostazioni visive (soglie, colori) sopravvivono al reset dati, come aspetto UI
 - L'utente può sempre usare "Ripristina default" nella sezione Heatmap di Impostazioni
 
+### Subcategories Architecture (V0.8.8)
+
+> Nuova entità Subcategory per gerarchia Categoria → Sottocategoria. DB v9.
+
+**Modello:** `lib/models/subcategory.dart`
+- `id` (UUID v4), `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
+- Nessun `color`/`iconKey` — ereditati dalla categoria madre (scelta architetturale)
+- `UNIQUE(category_id, name)` in SQL — stesso nome sotto categorie diverse è permesso
+
+**DB (v9):**
+```sql
+CREATE TABLE subcategories (
+  id TEXT PRIMARY KEY,
+  category_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  archived INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name);
+```
+- Colonne `subcategory_id TEXT` nullable aggiunte a `movements`, `quick_movements`, `favorite_movements`
+- Nessuna FK SQLite — validazione applicativa coerente con lo schema attuale
+- `resetAllData` cancella anche `subcategories`
+
+**Backup/Restore:**
+- `BackupData` include `subcategories` come lista opzionale (backup version 2 invariato)
+- `_normalizeSubcategoryId` azzera subcategoryId se orfano o categoria mismatch
+- Restore vecchio JSON senza subcategories funziona senza modifiche
+
+**UI:**
+- Categories screen: `_SubcategorySection` nel dialog categoria (aggiungi/rinomina/archivia/ripristina)
+- Movement form: dropdown sottocategoria (solo income/expense con subcategories attive)
+- Movimenti nulli subcategoryId in tutti i form — obbligatorio solo se una subcategory è selezionata
+
+**Non implementato:**
+- CSV import 1Money sottocategorie (V0.8.9+)
+- Conversione categorie flat con parentesi (V0.9.1+)
+- Budget/Actual/Scenari con subcategories (V0.9.2+)
+
 ### Note tecniche aperte
 
+- DB version corrente: **v9**
 - Migration V6: rumore `duplicate column name: date` nei test, ma non blocca
 - Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
 
@@ -606,9 +647,10 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 |
-|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | **672** |
-| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
-| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
-| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
+| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 |
+|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | **689** |
+| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
+| DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | **9** |
+| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ |
+| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ |

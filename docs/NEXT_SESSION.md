@@ -1,6 +1,6 @@
 # NEXT SESSION — Stato Progetto e Priorità
 
-> Aggiornato: 2026-06-11
+> Aggiornato: 2026-06-12
 
 ---
 
@@ -29,8 +29,9 @@
 | Hermes V0.8.5 — Movimenti Analytics / Heatmap | Lista, Calendario, Heatmap, search coerente, preview compatta | ✅ COMPLETATO |
 | Hermes V0.8.6 — Category Treemap Analytics | Treemap stile market map in Categorie con filtri periodo e ordinamenti | ✅ COMPLETATO |
 | Hermes V0.8.7 — Heatmap Settings | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences | ✅ COMPLETATO |
-| Flutter analyze | — | ✅ PASS — 0 issues |
-| `flutter test --no-pub` | — | ✅ 672/672 All tests passed |
+| Hermes V0.8.8 — Subcategories Foundation | Nuova entità Subcategory, DB v8→v9, subcategory_id nullable, backup/restore, UI categorie e form, fix UX nota rapida e soglie heatmap | ✅ COMPLETATO |
+| Flutter analyze | — | ✅ PASS — 0 errors, 0 warnings |
+| `flutter test --no-pub` | — | ✅ 689/689 All tests passed |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -38,38 +39,30 @@
 
 ## 2. Ultima Milestone Completata
 
-**Hermes V0.8.7 — Heatmap Settings**
+**Hermes V0.8.8 — Subcategories Foundation**
 
 ### Cosa è stato completato
-- `HeatmapSettings` class in `heatmap_utils.dart`:
-  - soglie e colori configurabili
-  - bands generate dinamicamente con label localizzate
-  - validazione soglie (positive, crescenti, non duplicate)
-  - fallback a default se preferenze corrotte
-- `PreferencesService` esteso:
-  - chiavi `heatmap_thresholds` / `heatmap_colors`
-  - `heatmapSettingsNotifier` per aggiornamenti live
-  - `loadHeatmapSettings()`, `saveHeatmapSettings()`, `restoreDefaultHeatmapSettings()`
-  - `clearForReset()` non pulisce heatmap (impostazioni visive sopravvivono al reset)
-- UI `_HeatmapSettingsSection` in `Impostazioni > Heatmap`:
-  - anteprima visiva a barre colorate con label
-  - editor soglie: 6 campi numerici con validazione
-  - editor colori: tap su ogni banda → palette modale (12 colori)
-  - pulsante "Ripristina default"
-  - salvataggio immediato su `onChanged`
-- Heatmap Movimenti live:
-  - `ExpenseHeatmap` e `HeatmapLegend` usano `ValueListenableBuilder<HeatmapSettings>`
-  - aggiornamento in tempo reale alla modifica delle impostazioni
-- Treemap Categorie separata: continua a usare `category.color`, non coinvolta
+- Nuova entità `Subcategory` (`lib/models/subcategory.dart`):
+  - `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
+  - nessun `color`/`iconKey` — ereditati dalla categoria madre
+- DB version v8 → v9:
+  - nuova tabella `subcategories` con `UNIQUE(category_id, name)`
+  - colonna nullable `subcategory_id` su `movements`, `quick_movements`, `favorite_movements`
+  - CRUD sottocategorie, mappers, migration
+- Movement/QuickMovement/FavoriteMovement: `subcategoryId` opzionale
+- Backup/Restore: include `subcategories`, orfani normalizzati a `null`
+- UI Categorie: sezione sottocategorie nel dialog (aggiungi/rinomina/archivia/ripristina)
+- Form movimento: dropdown sottocategoria opzionale
+- QuickMovement: campo Nota nel form rapido
+- Heatmap Settings: soglie con Done/Fatto (onSubmitted unfocus)
+- CSV Import 1Money: NON implementato parsing sottocategorie
 
 ### QA finali
-- `flutter analyze --no-pub`: PASS — 0 issues
-- `flutter test --no-pub`: **672/672 All tests passed** (+8 rispetto a V0.8.6)
-- `test/heatmap_settings_test.dart`: 7 tests (defaults, corruzione prefs, salvataggio invalido, UI controls, edit soglia, rifiuto soglie non valide, colore edit, treemap separazione)
-- `flutter test --no-pub test/heatmap_settings_test.dart test/movements_view_modes_test.dart test/categories_treemap_test.dart test/categories_layout_test.dart`: PASS
-- `test/qa_movements_test.dart`: PASS (resta warning hit-test noto sul bottone Salva, non blocca)
-- Nessun DB/schema/migrazione modificato
-- Backup/restore/import/reset non modificati
+- `flutter analyze --no-pub`: PASS — 0 errors, 0 warnings
+- `flutter test --no-pub`: **689/689 All tests passed** (+17 nuovi test sottocategorie)
+- `test/subcategories_test.dart`: 17 tests (creazione, dedup, archivia, persistenza, backup/restore old/new, orphan normalization, resetAllData, analytics compatibilità)
+- DB v9 confermato
+- 3 info deprecations pre-existing (`value` → `initialValue`) — non introdotte
 - Nessuno skip aggiunto
 - Nessun commit/push
 
@@ -77,27 +70,39 @@
 
 ## 3. Priorità Immediata (Prossima Sessione)
 
-1. **FASE 4 — Lista Movimenti Premium**
+1. **V0.8.9 — 1Money Subcategory Import**
+   - parser `Categoria (Sottocategoria)` nel CSV import
+   - dedup categoria/sottocategoria, transfer esclusi
+   - report import con dettaglio sottocategorie
+   - nessuna conversione automatica vecchie categorie
+
+2. **V0.9.1 — Converti categorie flat con parentesi**
+   - azione manuale controllata
+   - esempio: `Spesa (Alimentari)` → `Spesa` → `Alimentari`
+   - conferma prima della conversione
+   - riassegna movimenti/quick/favorite
+   - archivia categoria flat vecchia
+
+3. **V0.9.2 — Subcategories Analytics**
+   - treemap toggle categorie/sottocategorie
+   - filtri sottocategoria
+   - breakdown Budget/Actual/Scenari
+
+4. **FASE 4 — Lista Movimenti Premium**
    - heatmap annuale tipo reference utente
    - card giornaliere aggregate
    - layout premium
-   - mantenere pipeline dati esistente
-
-2. **QA hardening opzionale**
-   - risolvere warning hit-test sul bottone Salva nei test
-   - rendere fatali i warning solo dopo fix helper
-   - non indebolire test
-
-3. **Fondi / Obiettivi**
-   - evoluzione area insight e goal
-
-4. **Beneficiario + Etichette**
-   - tagging avanzato movimenti
 
 ---
 
 ## 4. Note Tecniche Aperte
 
+- DB version corrente: **v9** (da V0.8.8)
+- Subcategories: nessuna FK SQLite, validazione applicativa (coerente con lo schema attuale)
+- Color/icon su Subcategory: assenti per scelta architetturale (ereditati dalla categoria madre); futura aggiunta come nullable columns backward compatible
+- Backup v2 invariato — `subcategories` è una lista opzionale in `BackupData`
+- Csv import sottocategorie: non implementato in V0.8.8 (previsto V0.8.9)
+- Budget/Actual/Scenari potranno usare `categoryId` + `subcategoryId` opzionale
 - Rumore in migrazione V6: `duplicate column name: date` nei test, ma non blocca l'esecuzione
 - Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
 - Reset dati app: verificato manualmente su Pixel 6; i failure QA residui erano dovuti a helper/test fragili e non a un bug confermato del prodotto
@@ -124,7 +129,8 @@
 
 Quando si riparte:
 - verificare stato git
-- proseguire con FASE 4 — Lista Movimenti Premium
+- proseguire con **V0.8.9 — 1Money Subcategory Import**
+- DB è ora v9, `subcategories` tabella e `subcategory_id` colonne disponibili
 - mantenere SharedPreferences-only per le impostazioni visuali
-- non modificare DB/schema per le prossime feature
+- non modificare DB/schema oltre v9 senza progettazione
 - considerare QA hardening hit-test prima di rendere warning fatali

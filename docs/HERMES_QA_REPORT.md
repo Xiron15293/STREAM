@@ -4,6 +4,71 @@
 
 ---
 
+## Hermes V0.8.8 — Subcategories Foundation ✅ COMPLETATO
+
+### Stato sintetico
+
+- Nuova entità `Subcategory` con `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
+- Nessun `color`/`iconKey` — le sottocategorie ereditano identità visiva dalla categoria madre
+- DB version v8 → v9:
+  - nuova tabella `subcategories` con `UNIQUE(category_id, name)`
+  - colonna nullable `subcategory_id` su `movements`, `quick_movements`, `favorite_movements`
+  - CRUD sottocategorie e mappers aggiornati
+  - `resetAllData` cancella anche `subcategories`
+- Movement/QuickMovement/FavoriteMovement: `subcategoryId` opzionale, retrocompatibile
+- Backup/Restore aggiornato:
+  - backup include `subcategories`
+  - restore vecchio JSON (senza subcategories) funziona
+  - restore nuovo JSON (con subcategories) funziona
+  - `subcategoryId` orfani normalizzati a `null`
+  - nessuna perdita dati
+- UI Categorie: sezione sottocategorie nel dialog categoria (aggiungi/rinomina/archivia/ripristina)
+- Form movimento: dropdown sottocategoria opzionale (solo per income/expense con subcategories attive)
+- QuickMovement/FavoriteMovement: subcategoryId opzionale
+- UX Fix: campo Nota nel form movimento rapido
+- UX Fix: soglie heatmap con `textInputAction.done` + `onSubmitted` unfocus
+- CSV Import 1Money: NON implementato parsing sottocategorie in questa fase
+- Nessuna conversione automatica di categorie flat con parentesi
+
+### Test aggiunti / aggiornati
+
+- Nuovo file `test/subcategories_test.dart` — 17 tests:
+  - creazione sottocategoria sotto categoria
+  - dedup sottocategoria stessa categoria (permesso)
+  - stesso nome ammesso sotto categorie diverse
+  - movimento con `subcategoryId` valido
+  - archiviazione non rompe storico
+  - movimento senza sottocategoria (null)
+  - movimento con subcategory contribuisce alla categoria madre
+  - `getActiveSubcategoriesForCategory` filtra archiviate
+  - categoria senza subcategories ha lista vuota
+  - persistenza SQLite dopo reload
+  - archiviazione persiste dopo reload
+  - backup include subcategories
+  - restore con subcategories funziona
+  - restore vecchio JSON senza subcategories funziona
+  - restore con subcategoryId orfano normalizzato a null
+  - resetAllData cancella subcategories
+  - compatibilità analytics (spese categoria includono subcategory)
+
+### Verifica locale finale
+
+- `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings
+- `flutter test --no-pub`: **689/689 All tests passed** (672 pre-esistenti + 17 nuovi)
+- DB version v9 confermato
+- 3 info deprecations pre-existing (`value` → `initialValue`) — non introdotte
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+### Non completato / futuro
+
+- V0.8.9 — 1Money Subcategory Import
+- V0.9.x — Converti categorie flat con parentesi in sottocategorie
+- V0.9.x — Subcategories Analytics / Budget / Actual / Scenari
+- FASE 4 — Lista Movimenti Premium
+
+---
+
 ## Hermes V0.8.6 — Category Treemap Analytics ✅ COMPLETATO
 
 ### Stato sintetico

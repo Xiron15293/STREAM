@@ -48,15 +48,16 @@
 | F37 | V0.6.2 Comparator Centralizzato + Fix Ordinamento | V0.6.2 | 2026-06-08 |
 | F38 | V0.6.2 GroupedMovementsList riusabile | V0.6.2 | 2026-06-08 |
 | F39 | V0.8.7 Heatmap Settings — soglie/colori configurabili | V0.8.7 | 2026-06-11 |
+| F40 | V0.8.8 Subcategories Foundation — subcategory entity, DB v9, UI | V0.8.8 | 2026-06-12 |
 
 ---
 
 ## Priorità prossime
 
-1. FASE 4 — Lista Movimenti Premium con heatmap annuale
-2. QA hardening hit-test warning nei test
-3. Fondi / Obiettivi
-4. Beneficiario + Etichette
+1. V0.8.9 — 1Money Subcategory Import
+2. V0.9.1 — Converti categorie flat con parentesi in sottocategorie
+3. V0.9.2 — Subcategories Analytics (Budget/Actual/Scenari)
+4. FASE 4 — Lista Movimenti Premium con heatmap annuale
 
 ---
 
@@ -114,29 +115,80 @@
 
 ---
 
-### F39 — V0.8.7 Heatmap Settings ✅ COMPLETATA
+### F40 — V0.8.8 Subcategories Foundation ✅ COMPLETATA
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Soglie e colori heatmap configurabili da Impostazioni, con preview, editor soglie, editor colori da palette, restore defaults, aggiornamento live della heatmap Movimenti |
-| **Motivazione** | I colori e le soglie della heatmap erano hardcoded; l'utente non poteva personalizzare la scala |
+| **Descrizione** | Nuova entità Subcategory, DB v8→v9, subcategory_id opzionale su movements/quick/favorite, backup/restore compatibile, UI gestione in Categorie, dropdown nel form movimento, fix UX nota rapida e soglie heatmap |
+| **Motivazione** | Necessaria gerarchia Categoria→Sottocategoria per futuro Budget/Actual/Scenari e import CSV 1Money |
 | **Priorità** | Alta |
-| **Dipendenze** | V0.8.5 Heatmap Movimenti, `PreferencesService` |
-| **Versione candidata** | V0.8.7 |
+| **Dipendenze** | V0.8.7 (nessuna diretta) |
+| **Versione candidata** | V0.8.8 |
 | **Stato** | ✅ COMPLETATA |
 
 **Sotto-feature:**
-1. **`HeatmapSettings` class** — model con validazione, bands dinamiche, label legenda configurabili
-2. **Persistenza SharedPreferences** — `heatmap_thresholds`, `heatmap_colors`
-3. **`heatmapSettingsNotifier`** — aggiornamento live della heatmap senza ricaricare la pagina
-4. **UI Impostazioni** — sezione Heatmap con preview, editor soglie, editor colori, restore defaults
-5. **Validazione** — soglie positive, crescenti, non duplicate; fallback a default se prefs corrotte
-6. **Separazione Treemap** — `CategoriesTreemap` continua a usare `category.color`, non toccata
-7. **`clearForReset()`** non pulisce le preferenze heatmap (impostazioni visive sopravvivono al reset dati)
+1. **Subcategory model** — `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`; nessun color/iconKey
+2. **DB v9** — tabella `subcategories`, colonne `subcategory_id` nullable su movements/quick/favorite, CRUD, migration
+3. **Backup/Restore** — export/import subcategories, orfani normalizzati a null, backward compat
+4. **UI Categorie** — sezione sottocategorie nel dialog (aggiungi/rinomina/archivia/ripristina)
+5. **Form movimento** — dropdown sottocategoria opzionale, reset su cambio categoria
+6. **Quick/Favorite** — subcategoryId opzionale + Nota nel form rapido
+7. **Heatmap soglie UX** — Done/Fatto con onSubmitted unfocus
+8. **Non implementato:** CSV import sottocategorie, conversione categorie flat, Budget/Actual/Scenari
 
-**Test:** 7 test in `test/heatmap_settings_test.dart` + regressioni suite completa (672 test)
+**Test:** 17 test in `test/subcategories_test.dart` + regressioni suite completa (689 test)
 
-**Rischio tecnico:** BASSO — SharedPreferences only, nessuna migration, nessun DB
+**Rischio tecnico:** MEDIO — migration SQLite, backup compatibilità, UI form integrata
+
+---
+
+### F39 — V0.8.7 Heatmap Settings ✅ COMPLETATA
+
+### F41 — V0.8.9 1Money Subcategory Import 📋 APPROVATA
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Parsing `Categoria (Sottocategoria)` nel CSV 1Money, dedup categoria/sottocategoria, report import, nessuna conversione automatica vecchie categorie |
+| **Motivazione** | Completare l'import CSV 1Money con supporto sottocategorie esportate da 1Money |
+| **Priorità** | Alta |
+| **Dipendenze** | V0.8.8 Subcategories Foundation ✅, V0.7.0 Import CSV 1Money ✅ |
+| **Versione candidata** | V0.8.9 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **Parser** — riconoscere `Categoria (Sottocategoria)` nel campo `AL CONTO / ALLA CATEGORIA`
+2. **Dedup** — crea categoria e sottocategoria se non esistono
+3. **Trasferimenti** — esclusi (non hanno categoria)
+4. **Movimenti con/senza sottocategoria** — import corretti
+5. **Report** — conteggio sottocategorie importate
+
+**Test richiesti:** ~8-10 test
+
+**Rischio tecnico:** BASSO — logica import già matura, modello subcategory già disponibile
+
+---
+
+### F42 — V0.9.1 Converti categorie flat con parentesi 📋 APPROVATA
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Azione manuale controllata per convertire categorie flat come `Spesa (Alimentari)` in `Spesa` + sottocategoria `Alimentari` |
+| **Motivazione** | Utenti 1Money hanno categorie flat con parentesi che meritano conversione in sottocategorie native Stream |
+| **Priorità** | Media |
+| **Dipendenze** | V0.8.8 Subcategories Foundation ✅ |
+| **Versione candidata** | V0.9.1 |
+| **Stato** | 📋 APPROVATA |
+
+**Sotto-feature:**
+1. **UI** — pulsante "Converti in sottocategoria" nel dialog categoria
+2. **Parser parentesi** — estrae nome categoria e nome sottocategoria
+3. **Conferma** — dialog prima della conversione
+4. **Riassegnazione** — tutti i movimenti/quick/favorite della vecchia categoria flat riassegnati
+5. **Archiviazione** — categoria flat archiviata dopo conversione
+
+**Test richiesti:** ~10-12 test
+
+**Rischio tecnico:** MEDIO — modifica movimenti esistenti, attenzione alla retrocompatibilità backup
 
 ---
 
@@ -246,41 +298,22 @@
 
 ## 4. Future (💡)
 
-### F19 — V0.6 Ricorrenze
+### F43 — V0.9.2 Subcategories Analytics (Budget/Actual/Scenari) 💡 IDEA FUTURA
 
 | Campo | Valore |
 |-------|--------|
 | **Priorità** | Media |
-| **Dipendenze** | F09 (date), F11 (TimeFilter), F14 (Calendario tab) |
-| **Versione candidata** | V0.6 |
+| **Dipendenze** | V0.8.8 Subcategories Foundation ✅, Budget/Actual foundation |
+| **Versione candidata** | V0.9.2 |
 | **Stato** | 💡 IDEA FUTURA |
 
-### F20 — V0.7 Athena Foundation (Budget, AI, Insight)
+**Sotto-feature:**
+1. **Treemap toggle** — switch tra vista categorie e vista sottocategorie
+2. **Filtri** — filtra per sottocategoria
+3. **Budget/Actual** — breakdown per sottocategoria
+4. **Scenari** — pianificazione con sottocategorie
 
-| Campo | Valore |
-|-------|--------|
-| **Priorità** | Media |
-| **Dipendenze** | F09, F11, F16 |
-| **Versione candidata** | V0.7 |
-| **Stato** | 💡 IDEA FUTURA |
-
-### F21 — V0.8 Import CSV
-
-| Campo | Valore |
-|-------|--------|
-| **Priorità** | Media |
-| **Dipendenze** | F09 (date) |
-| **Versione candidata** | V0.8 |
-| **Stato** | 💡 IDEA FUTURA |
-
-### F22 — V0.9 Scenari
-
-| Campo | Valore |
-|-------|--------|
-| **Priorità** | Bassa |
-| **Dipendenze** | F20, F11 |
-| **Versione candidata** | V0.9 |
-| **Stato** | 💡 IDEA FUTURA |
+---
 
 ### F24 — Refactor Grafico Categorie
 
@@ -363,11 +396,11 @@
 
 | Metrica | Valore |
 |---------|--------|
-| **Totale feature censite** | 33 |
-| **Feature completate** | 23+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F39; + MovementCard, Backup, Build fix, Share) |
-| **Feature approvate** | 3 (F13, F30, F35–F36) |
+| **Totale feature censite** | 36 |
+| **Feature completate** | 24+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40; + MovementCard, Backup, Build fix, Share) |
+| **Feature approvate** | 3 (F41, F42, F30, F35–F36) |
 | **Feature in valutazione** | 3 (F17–F18, F32) |
-| **Feature future** | 6 (F19–F22, F24, F31) |
+| **Feature future** | 4 (F43, F19–F22, F24, F31) |
 | **Feature post-MVP** | 3 (F25, F27–F29) |
 | **Feature escluse** | 9 (E01–E09) |
 
