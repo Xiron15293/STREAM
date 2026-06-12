@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
+import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../theme.dart';
 
 class MovementCard extends StatelessWidget {
   final Movement movement;
   final Category? category;
+  final Subcategory? subcategory;
   final Account? account;
   final Account? destinationAccount;
   final VoidCallback? onTap;
@@ -22,6 +24,7 @@ class MovementCard extends StatelessWidget {
     super.key,
     required this.movement,
     this.category,
+    this.subcategory,
     this.account,
     this.destinationAccount,
     this.onTap,
@@ -103,6 +106,19 @@ class MovementCard extends StatelessWidget {
                               icon: Icons.help_outline,
                               iconColor: StreamColors.textMuted,
                               text: movement.categoryId,
+                            ),
+                          if (subcategory != null && category != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: _MetadataRow(
+                                icon: StreamIconLibrary.getIcon(
+                                  subcategory!.iconKey ?? category!.iconKey,
+                                ),
+                                iconColor: Color(
+                                  subcategory!.color ?? category!.color,
+                                ),
+                                text: subcategory!.name,
+                              ),
                             ),
                           if (!isTransfer && account != null)
                             Padding(

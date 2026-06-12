@@ -784,9 +784,15 @@ class _MovementsScreenState extends State<MovementsScreen> {
             : widget.db.accounts
                   .where((a) => a.id == m.destinationAccountId)
                   .firstOrNull;
+        final subcat = m.subcategoryId == null
+            ? null
+            : widget.db.subcategories
+                  .where((s) => s.id == m.subcategoryId)
+                  .firstOrNull;
         return MovementCard(
           movement: m,
           category: cat,
+          subcategory: subcat,
           account: acc,
           destinationAccount: destAcc,
           onTap: () => _showPicker(context, prefill: m),

@@ -122,9 +122,13 @@ class GroupedMovementsList extends StatelessWidget {
             : db.accounts
                   .where((a) => a.id == m.destinationAccountId)
                   .firstOrNull;
+        final subcat = m.subcategoryId == null
+            ? null
+            : db.subcategories.where((s) => s.id == m.subcategoryId).firstOrNull;
         return MovementCard(
           movement: m,
           category: cat,
+          subcategory: subcat,
           account: acc,
           destinationAccount: destinationAcc,
           showNotes: showNotes,
