@@ -193,7 +193,7 @@ class ExpenseHeatmap extends StatelessWidget {
                     ? () => onDaySelected!(dayDate)
                     : null,
                 child: Container(
-                  key: Key('heatmap_day_cell_$day'),
+                  key: Key('heatmap_day_cell_${month}_$day'),
                   margin: const EdgeInsets.symmetric(horizontal: 1),
                   decoration: BoxDecoration(
                     color: bgColor,

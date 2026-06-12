@@ -14,6 +14,7 @@ import 'package:stream_app/utils/heatmap_utils.dart';
 import 'package:stream_app/widgets/grouped_movements_list.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 import 'package:stream_app/widgets/period_category_treemap.dart';
+import 'package:stream_app/widgets/time_filter_bar.dart';
 
 void main() {
   late DateTime today;
@@ -498,8 +499,8 @@ void main() {
 
     expect(find.text('Caffe filtro anno'), findsOneWidget);
     expect(find.text('Spesa filtro anno'), findsNothing);
-    expect(_heatmapCellColor(tester, coffeeDay.day), isNot(Colors.transparent));
-    expect(_heatmapCellColor(tester, groceriesDay.day), Colors.transparent);
+    expect(_heatmapCellColor(tester, coffeeDay.day, month: today.month), isNot(Colors.transparent));
+    expect(_heatmapCellColor(tester, groceriesDay.day, month: today.month), Colors.transparent);
   });
 
   testWidgets('search in month matches notes and keeps all matching days', (
@@ -616,7 +617,7 @@ void main() {
     await pumpMovements(tester, db, mode: 'calendar');
     await tester.tap(find.text('Anno'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('heatmap_day_cell_${june.day}')));
+    await tester.tap(find.byKey(Key('heatmap_day_cell_${june.month}_${june.day}')));
     await tester.pumpAndSettle();
 
     expect(find.text('Gennaio anno', skipOffstage: false), findsOneWidget);
@@ -656,7 +657,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'caffe');
     await tester.pumpAndSettle();
     expect(find.text('Spesa clear'), findsNothing);
-    expect(_heatmapCellColor(tester, groceriesDay.day), Colors.transparent);
+    expect(_heatmapCellColor(tester, groceriesDay.day, month: today.month), Colors.transparent);
 
     await tester.tap(find.byTooltip('Pulisci ricerca'));
     await tester.pumpAndSettle();
@@ -664,7 +665,7 @@ void main() {
     expect(find.text('Caffe clear'), findsOneWidget);
     expect(find.text('Spesa clear'), findsOneWidget);
     expect(
-      _heatmapCellColor(tester, groceriesDay.day),
+      _heatmapCellColor(tester, groceriesDay.day, month: today.month),
       isNot(Colors.transparent),
     );
   });
@@ -697,7 +698,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Anno'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('${today.year}'));
+    await tester.tap(find.descendant(
+      of: find.byType(TimeFilterBar),
+      matching: find.text('${today.year}'),
+    ));
     await tester.pumpAndSettle();
 
     final picker = tester.widget<CupertinoDatePicker>(
@@ -708,9 +712,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('${today.year}'), findsWidgets);
-    expect(find.text('giugno ${today.year}'), findsOneWidget);
     expect(find.text('Picker giugno', skipOffstage: false), findsOneWidget);
-    expect(_heatmapCellColor(tester, picked.day), isNot(Colors.transparent));
+    expect(_heatmapCellColor(tester, picked.day, month: 6), isNot(Colors.transparent));
   });
 
   testWidgets('period category treemap day uses only selected day categories', (
@@ -887,7 +890,7 @@ void main() {
     await pumpMovements(tester, db, mode: 'calendar');
     await tester.tap(find.text('Anno'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('heatmap_day_cell_${june.day}')));
+    await tester.tap(find.byKey(Key('heatmap_day_cell_${june.month}_${june.day}')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('period_category_treemap')), findsNothing);
@@ -1003,8 +1006,11 @@ bool _hasHorizontalScroll(WidgetTester tester) {
   );
 }
 
-Color? _heatmapCellColor(WidgetTester tester, int day) {
-  final widget = tester.widget(find.byKey(Key('heatmap_day_cell_$day')).first);
+Color? _heatmapCellColor(WidgetTester tester, int day, {int? month}) {
+  final key = month != null
+      ? Key('heatmap_day_cell_${month}_$day')
+      : Key('heatmap_day_cell_$day');
+  final widget = tester.widget(find.byKey(key).first);
   final decoration = switch (widget) {
     Container(:final decoration) => decoration,
     AnimatedContainer(:final decoration) => decoration,

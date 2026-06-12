@@ -157,6 +157,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
             if (searchFilteredMovements.isEmpty) {
               body = hasQuery ? _buildEmptySearch() : _buildEmptyPeriod();
             } else {
+              final isYearMode = _activeFilter.mode == TimeFilterMode.year;
               body = GroupedMovementsList(
                 key: const Key('movements_layout_list_heatmap'),
                 topWidget: Padding(
@@ -166,18 +167,36 @@ class _MovementsScreenState extends State<MovementsScreen> {
                     StreamSpacing.lg,
                     0,
                   ),
-                  child: MovementsHeatmapPreviewCard(
-                    allMovements: searchFilteredMovements,
-                    year: _visibleCalendarMonth.year,
-                    month: _visibleCalendarMonth.month,
-                    selectedDay: _selectedDay,
-                    onDaySelected: (day) => setState(() => _selectedDay = day),
-                    onOpenCalendar: () {
-                      PreferencesService.saveMovementsViewMode(
-                        MovementsViewMode.calendar,
-                      );
-                    },
-                  ),
+                  child: isYearMode
+                      ? Container(
+                          key: const Key('annual_heatmap_preview_card'),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: StreamColors.surface,
+                            borderRadius: BorderRadius.circular(StreamRadius.md),
+                            border: Border.all(color: StreamColors.divider),
+                          ),
+                          child: _buildAnnualHeatmap(
+                            allMovements: searchFilteredMovements,
+                            year: _activeFilter.startDate.year,
+                            selectedDay: _selectedDay,
+                            onDaySelected: (day) =>
+                                setState(() => _selectedDay = day),
+                          ),
+                        )
+                      : MovementsHeatmapPreviewCard(
+                          allMovements: searchFilteredMovements,
+                          year: _visibleCalendarMonth.year,
+                          month: _visibleCalendarMonth.month,
+                          selectedDay: _selectedDay,
+                          onDaySelected: (day) =>
+                              setState(() => _selectedDay = day),
+                          onOpenCalendar: () {
+                            PreferencesService.saveMovementsViewMode(
+                              MovementsViewMode.calendar,
+                            );
+                          },
+                        ),
                 ),
                 movements: searchFilteredMovements,
                 db: widget.db,
@@ -416,6 +435,10 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }) {
     final year = _visibleCalendarMonth.year;
     final month = _visibleCalendarMonth.month;
+    final isYearMode = _activeFilter.mode == TimeFilterMode.year;
+    final heatmapYear = isYearMode
+        ? _activeFilter.startDate.year
+        : year;
     final displayedMovements = _displayedMovementsForActiveFilter(
       searchFilteredMovements,
     );
@@ -436,15 +459,24 @@ class _MovementsScreenState extends State<MovementsScreen> {
           ),
           child: Column(
             children: [
-              ExpenseHeatmap(
-                key: const Key('calendar_large_month_heatmap'),
-                allMovements: searchFilteredMovements,
-                year: year,
-                month: month,
-                selectedDay: _selectedDay,
-                onDaySelected: (day) => setState(() => _selectedDay = day),
-                variant: ExpenseHeatmapVariant.calendar,
-              ),
+              if (isYearMode)
+                _buildAnnualHeatmap(
+                  allMovements: searchFilteredMovements,
+                  year: heatmapYear,
+                  selectedDay: _selectedDay,
+                  onDaySelected: (day) => setState(() => _selectedDay = day),
+                )
+              else ...[
+                ExpenseHeatmap(
+                  key: const Key('calendar_large_month_heatmap'),
+                  allMovements: searchFilteredMovements,
+                  year: year,
+                  month: month,
+                  selectedDay: _selectedDay,
+                  onDaySelected: (day) => setState(() => _selectedDay = day),
+                  variant: ExpenseHeatmapVariant.calendar,
+                ),
+              ],
               const HeatmapLegend(),
             ],
           ),
@@ -466,6 +498,10 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }) {
     final year = _visibleCalendarMonth.year;
     final month = _visibleCalendarMonth.month;
+    final isYearMode = _activeFilter.mode == TimeFilterMode.year;
+    final heatmapYear = isYearMode
+        ? _activeFilter.startDate.year
+        : year;
     final displayedMovements = _displayedMovementsForActiveFilter(
       searchFilteredMovements,
     );
@@ -501,18 +537,29 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 ],
               ),
               const SizedBox(height: StreamSpacing.md),
-              KeyedSubtree(
-                key: const Key('advanced_heatmap_grid'),
-                child: ExpenseHeatmap(
-                  key: const Key('advanced_large_heatmap'),
-                  allMovements: searchFilteredMovements,
-                  year: year,
-                  month: month,
-                  selectedDay: _selectedDay,
-                  onDaySelected: (day) => setState(() => _selectedDay = day),
-                  variant: ExpenseHeatmapVariant.advanced,
+              if (isYearMode)
+                KeyedSubtree(
+                  key: const Key('advanced_heatmap_grid'),
+                  child: _buildAnnualHeatmap(
+                    allMovements: searchFilteredMovements,
+                    year: heatmapYear,
+                    selectedDay: _selectedDay,
+                    onDaySelected: (day) => setState(() => _selectedDay = day),
+                  ),
+                )
+              else
+                KeyedSubtree(
+                  key: const Key('advanced_heatmap_grid'),
+                  child: ExpenseHeatmap(
+                    key: const Key('advanced_large_heatmap'),
+                    allMovements: searchFilteredMovements,
+                    year: year,
+                    month: month,
+                    selectedDay: _selectedDay,
+                    onDaySelected: (day) => setState(() => _selectedDay = day),
+                    variant: ExpenseHeatmapVariant.advanced,
+                  ),
                 ),
-              ),
               const HeatmapLegend(),
             ],
           ),
@@ -531,17 +578,20 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }
 
   Widget _buildMonthNavigator({required String keyName}) {
-    final monthLabel = TimeFilter.month(
-      _visibleCalendarMonth.year,
-      _visibleCalendarMonth.month,
-    ).label;
+    final isYearMode = _activeFilter.mode == TimeFilterMode.year;
+    final label = isYearMode
+        ? '${_activeFilter.startDate.year}'
+        : TimeFilter.month(
+            _visibleCalendarMonth.year,
+            _visibleCalendarMonth.month,
+          ).label;
 
     return Row(
       key: Key(keyName),
       children: [
         IconButton.filledTonal(
           key: Key('${keyName}_prev'),
-          tooltip: 'Mese precedente',
+          tooltip: isYearMode ? 'Anno precedente' : 'Mese precedente',
           icon: const Icon(Icons.chevron_left),
           onPressed: () => _moveCalendarMonth(-1),
         ),
@@ -558,7 +608,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
               borderRadius: BorderRadius.circular(StreamRadius.md),
             ),
             child: Text(
-              monthLabel,
+              label,
               textAlign: TextAlign.center,
               style: StreamTypography.h3,
             ),
@@ -567,10 +617,63 @@ class _MovementsScreenState extends State<MovementsScreen> {
         const SizedBox(width: StreamSpacing.sm),
         IconButton.filledTonal(
           key: Key('${keyName}_next'),
-          tooltip: 'Mese successivo',
+          tooltip: isYearMode ? 'Anno successivo' : 'Mese successivo',
           icon: const Icon(Icons.chevron_right),
           onPressed: () => _moveCalendarMonth(1),
         ),
+      ],
+    );
+  }
+
+  Widget _buildAnnualHeatmap({
+    required List<Movement> allMovements,
+    required int year,
+    required DateTime? selectedDay,
+    required ValueChanged<DateTime>? onDaySelected,
+  }) {
+    const monthLabels = [
+      'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
+      'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
+    ];
+
+    return Column(
+      key: const Key('annual_heatmap'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int row = 0; row < 4; row++)
+          Padding(
+            padding: EdgeInsets.only(bottom: row < 3 ? 2 : 0),
+            child: Row(
+              children: [
+                for (int col = 0; col < 3; col++)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: col > 0 ? 2 : 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            monthLabels[row * 3 + col],
+                            style: StreamTypography.micro.copyWith(fontSize: 9),
+                          ),
+                          const SizedBox(height: 1),
+                          ExpenseHeatmap(
+                            key: Key('annual_heatmap_month_${row * 3 + col + 1}'),
+                            year: year,
+                            month: row * 3 + col + 1,
+                            allMovements: allMovements,
+                            selectedDay: selectedDay,
+                            onDaySelected: onDaySelected,
+                            rowCompact: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
       ],
     );
   }
