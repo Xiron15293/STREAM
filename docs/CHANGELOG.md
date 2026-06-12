@@ -7,10 +7,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.9.0 — Category / Subcategory UX alignment**
+  - nuovo selector unificato `Categoria / Sottocategoria` riusabile in `lib/widgets/category_subcategory_selector.dart`
+  - key test/UI introdotte:
+    - `movement_category_subcategory_field`
+    - `category_subcategory_picker`
+    - `category_subcategory_search_field`
+  - il selector mostra solo categorie e sottocategorie attive
+  - supporta selezione categoria madre oppure percorso `Categoria / Sottocategoria`
+  - ricerca su nome categoria e nome sottocategoria
+  - form movimento manuale, rapidi e preferiti aggiornati al selector unico
+  - `MovementCard` mostra una sola label combinata `Categoria / Sottocategoria`
+- **Subcategory edit/save hardening**
+  - aggiornamento nome + icona + colore della sottocategoria confermato al primo tap
+  - persistenza immediata in cache UI e su SQLite dopo reload
+  - copertura widget/integration aggiunta per il dialog di modifica sottocategoria
+
 - **V0.8.8 — Subcategories Foundation**
   - Nuova entità `Subcategory` (`lib/models/subcategory.dart`):
-    - campi: `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
-    - nessun `color`/`iconKey` — le sottocategorie ereditano identità visiva dalla categoria madre
+    - campi: `id`, `categoryId`, `name`, `iconKey`, `color`, `archived`, `createdAt`, `updatedAt`
+    - `iconKey` e `color` opzionali: se null la sottocategoria eredita l'identità visiva della categoria madre
   - DB version v8 → v9:
     - nuova tabella `subcategories` con `UNIQUE(category_id, name)`
     - colonna nullable `subcategory_id` su `movements`, `quick_movements`, `favorite_movements`
@@ -42,8 +58,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - FASE 4 — Lista Movimenti Premium
 
 ### QA
-- `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings
-- `flutter test --no-pub`: **689/689 All tests passed**
+- `test/subcategories_test.dart`: copertura esplicita per:
+  - update nome/icona/colore al primo save
+  - persistenza SQLite dopo reload
+  - dialog UI che salva al primo tap
+  - selector unificato categoria/sottocategoria in form manuale, rapidi e preferiti
 - 17 nuovi test sottocategorie (`test/subcategories_test.dart`):
   - creazione, dedup, archivia/ripristino, movimento con/senza subcategoryId
   - persistenza SQLite dopo reload

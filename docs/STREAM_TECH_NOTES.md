@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes V0.8.9 completato | **Test:** 711 | **Analyze:** 0 errors, 0 warnings | **DB:** v9 | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
+**Stato:** Hermes V0.8.9 + UX selector unificato completato | **DB:** v10 | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
 
 ## Stack
 
@@ -191,16 +191,18 @@ categoryId, type, amount, title NON influenzano
 > Nuova entità Subcategory per gerarchia Categoria → Sottocategoria. DB v9.
 
 **Modello:** `lib/models/subcategory.dart`
-- `id` (UUID v4), `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
-- Nessun `color`/`iconKey` — ereditati dalla categoria madre (scelta architetturale)
+- `id` (UUID v4), `categoryId`, `name`, `iconKey?`, `color?`, `archived`, `createdAt`, `updatedAt`
+- `iconKey` e `color` sono opzionali: se null la sottocategoria eredita dalla categoria madre
 - `UNIQUE(category_id, name)` in SQL — stesso nome sotto categorie diverse è permesso
 
-**DB (v9):**
+**DB (v9/v10):**
 ```sql
 CREATE TABLE subcategories (
   id TEXT PRIMARY KEY,
   category_id TEXT NOT NULL,
   name TEXT NOT NULL,
+  icon_key TEXT,
+  color INTEGER,
   archived INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -208,6 +210,7 @@ CREATE TABLE subcategories (
 CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name);
 ```
 - Colonne `subcategory_id TEXT` nullable aggiunte a `movements`, `quick_movements`, `favorite_movements`
+- Migrazione v10: aggiunta colonne `icon_key` e `color` a `subcategories`
 - Nessuna FK SQLite — validazione applicativa coerente con lo schema attuale
 - `resetAllData` cancella anche `subcategories`
 
@@ -218,8 +221,40 @@ CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)
 
 **UI:**
 - Categories screen: `_SubcategorySection` nel dialog categoria (aggiungi/rinomina/archivia/ripristina)
-- Movement form: dropdown sottocategoria (solo income/expense con subcategories attive)
-- Movimenti nulli subcategoryId in tutti i form — obbligatorio solo se una subcategory è selezionata
+- Dialog modifica sottocategoria: salva nome, icona e colore in un solo update
+- Movement form / picker: selector unificato `Categoria / Sottocategoria`
+- Movimenti nulli `subcategoryId` in tutti i form — obbligatorio solo se una subcategory è selezionata
+
+### Category / Subcategory Selector UX
+
+> Selector gerarchico riusabile introdotto per eliminare la duplicazione tra categoria e sottocategoria nei form movimento.
+
+**File:** `lib/widgets/category_subcategory_selector.dart`
+
+**Contract UI / test keys:**
+- field: `movement_category_subcategory_field`
+- picker: `category_subcategory_picker`
+- search: `category_subcategory_search_field`
+
+**Regole:**
+- mostra solo categorie e sottocategorie attive del `MovementType` corrente
+- la categoria madre resta selezionabile anche se ha figli
+- una sottocategoria selezionata salva:
+  - `categoryId = parent.id`
+  - `subcategoryId = child.id`
+- una categoria madre selezionata salva:
+  - `categoryId = parent.id`
+  - `subcategoryId = null`
+- ricerca su categoria e sottocategoria
+- label combinata standard: `Categoria / Sottocategoria`
+
+**Punti d'uso correnti:**
+- `lib/widgets/movement_form.dart`
+- `lib/widgets/movement_picker.dart`:
+  - form manuale
+  - rapidi
+  - preferiti
+- `lib/widgets/movement_card.dart` per il rendering combinato
 
 **Completato (V0.8.9):**
 - Conversione manuale categorie flat con parentesi (V0.8.9 ✅)

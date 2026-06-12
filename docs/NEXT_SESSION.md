@@ -30,9 +30,10 @@
 | Hermes V0.8.6 — Category Treemap Analytics | Treemap stile market map in Categorie con filtri periodo e ordinamenti | ✅ COMPLETATO |
 | Hermes V0.8.7 — Heatmap Settings | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences | ✅ COMPLETATO |
 | Hermes V0.8.8 — Subcategories Foundation | Nuova entità Subcategory, DB v8→v9, subcategory_id nullable, backup/restore, UI categorie e form, fix UX nota rapida e soglie heatmap | ✅ COMPLETATO |
-| Hermes V0.8.9 — Category Conversion & Suggested UX Polish | Fix crash menu categorie, categorie con movimenti modificabili, conversione manuale flat→sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune, test 711 | ✅ COMPLETATO |
-| Flutter analyze | — | ✅ PASS — 0 errors, 0 warnings |
-| `flutter test --no-pub` | — | ✅ 711/711 All tests passed |
+| Hermes V0.8.9 — Category Conversion & Suggested UX Polish | Fix crash menu categorie, categorie con movimenti modificabili, conversione manuale flat→sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune | ✅ COMPLETATO |
+| Post V0.8.9 — Selector unico Categoria / Sottocategoria | Form manuale, rapidi, preferiti e rendering card riallineati; bug salvataggio sottocategoria coperto da test espliciti | ✅ COMPLETATO |
+| Flutter analyze | — | ⚠️ da tenere distinto: presenti issue legacy non legate a questa lavorazione |
+| `flutter test --no-pub` | — | ✅ rilanciato in questa sessione |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -40,23 +41,28 @@
 
 ## 2. Ultima Milestone Completata
 
-**Hermes V0.8.9 — Category Conversion & Suggested UX Polish**
+**Post V0.8.9 — Selector unico Categoria / Sottocategoria + subcategory save verification**
 
 ### Cosa è stato completato
-- Fix crash menu categorie su nomi senza parentesi (`_isConvertibleCategory`)
-- Categorie con movimenti modificabili (nome/colore/icona) — tipo bloccato
-- Conversione manuale `Spesa (Alimentari)` → `Spesa` + `Alimentari`
-  - Madre creata/riusata, sottocategoria creata/riusata
-  - Movimenti/Quick/Favorite riassegnati
-  - Categoria flat archiviata (non eliminata)
-  - Report conversione con conteggi
-- Azione "Converti in sottocategoria" in tutti e 3 i layout, sheet movimenti, dialog modifica
-- Suggeriti espandibili, ricercabili, raggruppati per categoria
-- Heatmap palette comune (`StreamColorPalette.colors`)
+- Verificato il salvataggio sottocategoria su nome + icona + colore:
+  - update immediato in memoria
+  - persistenza SQLite confermata dopo reload
+  - dialog UI coperto con test del primo tap
+- Introdotto il selector unico `Categoria / Sottocategoria`
+  - field key `movement_category_subcategory_field`
+  - bottom sheet key `category_subcategory_picker`
+  - search key `category_subcategory_search_field`
+  - selezione categoria madre o `Categoria / Sottocategoria`
+  - solo elementi attivi
+- Flussi aggiornati:
+  - movimento manuale
+  - rapidi
+  - preferiti
+  - rendering `MovementCard`
 
 ### QA finali
-- `flutter analyze --no-pub`: PASS — 0 errors, 0 warnings
-- `flutter test --no-pub`: **711/711 All tests passed** (+7 nuovi da V0.8.8)
+- `test/subcategories_test.dart`: copertura esplicita del bug salvataggio sottocategoria e del selector unificato
+- `test/movement_card_test.dart`: copertura rendering combinato `Categoria / Sottocategoria`
 - Nessuno skip aggiunto
 - Nessun commit/push
 
@@ -81,7 +87,7 @@
 
 - DB version corrente: **v9** (da V0.8.8)
 - Subcategories: nessuna FK SQLite, validazione applicativa (coerente con lo schema attuale)
-- Color/icon su Subcategory: assenti per scelta architetturale (ereditati dalla categoria madre)
+- Color/icon su Subcategory: supportati come campi opzionali; se null resta il fallback alla categoria madre
 - Backup v2 invariato — `subcategories` è una lista opzionale in `BackupData`
 - Budget/Actual/Scenari potranno usare `categoryId` + `subcategoryId` opzionale
 - Rumore in migrazione V6: `duplicate column name: date` nei test, ma non blocca l'esecuzione
@@ -102,7 +108,7 @@
 - Movimenti Analytics: Lista/Calendario/Heatmap completati; search, filtro periodo e picker data/anno coerenti
 - Category Treemap Analytics: treemap definitiva in Categorie, non in Movimenti; usa `category.color`, filtri periodo e ordinamenti dedicati
 - **Heatmap Settings (V0.8.7)**: soglie/colori configurabili in `Settings > Heatmap`; aggiornamento live della heatmap via `heatmapSettingsNotifier`; fallback a default se prefs corrotte; `clearForReset()` non tocca le preferenze heatmap (scelta deliberata — le impostazioni visive sopravvivono al reset dati)
-- QA hardening: resta un warning hit-test noto sul bottone Salva nei test; non blocca la suite ma puo essere ripulito in una sessione dedicata
+- QA hardening: resta del rumore legacy in analyze e un warning hit-test noto sul bottone Salva in parte della suite; non appartiene al fix sottocategorie
 
 ---
 
