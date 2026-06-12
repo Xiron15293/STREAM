@@ -1303,7 +1303,8 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
       if (widget.db.categoryHasMovements(e.id)) {
         _typeLocked = true;
         _typeLockMessage =
-            'Tipo non modificabile: la categoria contiene movimenti.';
+            'Il tipo non è modificabile per via dei movimenti collegati. '
+            'Puoi comunque modificare nome, colore e icona.';
       }
     } else {
       _type = widget.preferredType ?? MovementType.expense;
@@ -1471,6 +1472,45 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
               currentColor: _color,
               onChanged: (c) => setState(() => _color = c),
             ),
+            if (widget.existing != null &&
+                _isConvertibleCategory(widget.existing!.name)) ...[
+              const SizedBox(height: 12),
+              Container(
+                key: const Key('category_convert_to_subcategory_hint'),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: StreamColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: StreamColors.textMuted.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.merge_type,
+                        size: 18, color: StreamColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Questa categoria può essere convertita in sottocategoria.',
+                        style: TextStyle(
+                            fontSize: 12, color: StreamColors.textSecondary),
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('category_convert_to_subcategory_action'),
+                      onPressed: () {
+                        final cat = widget.existing!;
+                        Navigator.pop(context);
+                        _showConvertDialog(
+                            context, widget.db, cat, widget.onChanged);
+                      },
+                      child: const Text('Converti'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (widget.existing != null) ...[
               const SizedBox(height: 16),
               _SubcategorySection(
@@ -1894,6 +1934,15 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                     label: category.archived ? 'Ripristina' : 'Archivia',
                     onPressed: _toggleArchive,
                   ),
+                  if (!category.archived &&
+                      _isConvertibleCategory(category.name))
+                    _SheetActionButton(
+                      key: const Key('category_sheet_convert_action'),
+                      icon: Icons.merge_type,
+                      label: 'Converti',
+                      onPressed: () => _showConvertDialog(
+                          context, widget.db, category, () => setState(() {})),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
