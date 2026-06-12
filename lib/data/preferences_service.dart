@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/heatmap_utils.dart';
 
-enum MovementsViewMode { listHeatmap, calendar, advancedHeatmap }
+enum MovementsViewMode { list, calendar, heatmap }
 
 class PreferencesService {
   static const _showNotesKey = 'show_notes';
@@ -13,7 +13,7 @@ class PreferencesService {
   static const heatmapColorsKey = 'heatmap_colors';
 
   static const defaultCategoryLayout = 'cleanList';
-  static const defaultMovementsViewMode = MovementsViewMode.listHeatmap;
+  static const defaultMovementsViewMode = MovementsViewMode.list;
   static const defaultHeatmapSettings = HeatmapSettings.defaults;
 
   static final categoryLayoutNotifier = ValueNotifier<String>(
@@ -61,10 +61,18 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getString(_movementsViewModeKey);
     if (value == null) return defaultMovementsViewMode;
-    return MovementsViewMode.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => defaultMovementsViewMode,
-    );
+    switch (value) {
+      case 'list':
+      case 'listHeatmap':
+        return MovementsViewMode.list;
+      case 'calendar':
+        return MovementsViewMode.calendar;
+      case 'heatmap':
+      case 'advancedHeatmap':
+        return MovementsViewMode.heatmap;
+      default:
+        return defaultMovementsViewMode;
+    }
   }
 
   static Future<void> saveMovementsViewMode(MovementsViewMode mode) async {

@@ -14,6 +14,8 @@ class ExpenseHeatmap extends StatelessWidget {
   final ValueChanged<DateTime>? onDaySelected;
   final bool compact;
   final bool rowCompact;
+  final double rowCompactHeight;
+  final double rowCompactSpacing;
   final ExpenseHeatmapVariant variant;
 
   const ExpenseHeatmap({
@@ -25,6 +27,8 @@ class ExpenseHeatmap extends StatelessWidget {
     this.onDaySelected,
     this.compact = false,
     this.rowCompact = false,
+    this.rowCompactHeight = 16,
+    this.rowCompactSpacing = 1,
     this.variant = ExpenseHeatmapVariant.calendar,
   });
 
@@ -165,7 +169,7 @@ class ExpenseHeatmap extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
 
     return SizedBox(
-      height: 16,
+      height: rowCompactHeight,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(3),
         child: Row(
@@ -194,7 +198,9 @@ class ExpenseHeatmap extends StatelessWidget {
                     : null,
                 child: Container(
                   key: Key('heatmap_day_cell_${month}_$day'),
-                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                  margin: EdgeInsets.symmetric(
+                    horizontal: rowCompactSpacing / 2,
+                  ),
                   decoration: BoxDecoration(
                     color: bgColor,
                     borderRadius: BorderRadius.circular(2),

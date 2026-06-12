@@ -163,6 +163,19 @@ Color heatmapColorForAmount(
   return Color(colors[band.clamp(0, colors.length - 1)]);
 }
 
+String formatEuro(double value) {
+  final isNegative = value < 0;
+  final parts = value.abs().toStringAsFixed(2).split('.');
+  final whole = parts[0];
+  final cents = parts[1];
+  final buffer = StringBuffer();
+  for (int i = 0; i < whole.length; i++) {
+    if (i > 0 && (whole.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(whole[i]);
+  }
+  return '${isNegative ? '-' : ''}${buffer.toString()},$cents €';
+}
+
 String formatHeatmapAmount(double value) {
   if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}k';
   if (value == value.truncateToDouble()) return '${value.toInt()}€';

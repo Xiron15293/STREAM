@@ -5,13 +5,9 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
-import '../utils/heatmap_utils.dart';
 import '../utils/movement_search.dart';
-import '../widgets/expense_heatmap.dart';
-import '../widgets/grouped_movements_list.dart';
-import '../widgets/movement_card.dart';
 import '../widgets/movement_picker.dart';
-import '../widgets/movements_heatmap_preview_card.dart';
+import '../widgets/movement_view_renderer.dart';
 import '../widgets/time_filter_bar.dart';
 
 class MovementsScreen extends StatefulWidget {
@@ -153,89 +149,45 @@ class _MovementsScreenState extends State<MovementsScreen> {
           Widget body;
           if (allMovements.isEmpty) {
             body = _buildEmptyAll();
-          } else if (viewMode == MovementsViewMode.listHeatmap) {
+          } else {
             if (searchFilteredMovements.isEmpty) {
               body = hasQuery ? _buildEmptySearch() : _buildEmptyPeriod();
             } else {
-              final isYearMode = _activeFilter.mode == TimeFilterMode.year;
-              body = GroupedMovementsList(
-                key: const Key('movements_layout_list_heatmap'),
-                topWidget: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    StreamSpacing.lg,
-                    0,
-                    StreamSpacing.lg,
-                    0,
-                  ),
-                  child: isYearMode
-                      ? Container(
-                          key: const Key('annual_heatmap_preview_card'),
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: StreamColors.surface,
-                            borderRadius: BorderRadius.circular(StreamRadius.md),
-                            border: Border.all(color: StreamColors.divider),
-                          ),
-                          child: _buildAnnualHeatmap(
-                            allMovements: searchFilteredMovements,
-                            year: _activeFilter.startDate.year,
-                            selectedDay: _selectedDay,
-                            onDaySelected: (day) =>
-                                setState(() => _selectedDay = day),
-                          ),
-                        )
-                      : MovementsHeatmapPreviewCard(
-                          allMovements: searchFilteredMovements,
-                          year: _visibleCalendarMonth.year,
-                          month: _visibleCalendarMonth.month,
-                          selectedDay: _selectedDay,
-                          onDaySelected: (day) =>
-                              setState(() => _selectedDay = day),
-                          onOpenCalendar: () {
-                            PreferencesService.saveMovementsViewMode(
-                              MovementsViewMode.calendar,
-                            );
-                          },
-                        ),
-                ),
+              body = MovementViewRenderer(
+                viewMode: viewMode,
+                timeFilter: _activeFilter,
                 movements: searchFilteredMovements,
+                periodMovements: periodFilteredMovements,
                 db: widget.db,
                 showNotes: _showNotes || _searchQuery.trim().isNotEmpty,
-                onEdit: (m) => _showPicker(context, prefill: m),
-                onDuplicate: (m) {
-                  widget.db.duplicateMovement(m);
+                hasQuery: hasQuery,
+                selectedDay: _selectedDay,
+                onDaySelected: (day) => setState(() => _selectedDay = day),
+                dayFilter: _dayFilter,
+                onDayFilterChanged: (MovementType? type) =>
+                    setState(() => _dayFilter = type),
+                onEdit: (movement) => _showPicker(context, prefill: movement),
+                onDuplicate: (movement) {
+                  widget.db.duplicateMovement(movement);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Movimento duplicato')),
                   );
                 },
-                onSaveAsFavorite: (m) {
-                  widget.db.saveMovementAsFavorite(m);
+                onSaveAsFavorite: (movement) {
+                  widget.db.saveMovementAsFavorite(movement);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Salvato nei preferiti')),
                   );
                 },
-                onDelete: (m) {
-                  widget.db.deleteMovement(m.id);
+                onDelete: (movement) {
+                  widget.db.deleteMovement(movement.id);
                 },
               );
             }
-          } else if (viewMode == MovementsViewMode.calendar) {
-            body = _buildCalendar(
-              periodFilteredMovements: periodFilteredMovements,
-              searchFilteredMovements: searchFilteredMovements,
-              hasQuery: hasQuery,
-            );
-          } else {
-            body = _buildAdvancedHeatmap(
-              periodFilteredMovements: periodFilteredMovements,
-              searchFilteredMovements: searchFilteredMovements,
-              hasQuery: hasQuery,
-            );
           }
 
           return Column(
             children: [
-              _buildInlineSelector(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   StreamSpacing.lg,
@@ -280,55 +232,6 @@ class _MovementsScreenState extends State<MovementsScreen> {
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-    );
-  }
-
-  Widget _buildInlineSelector() {
-    final viewMode = PreferencesService.movementsViewModeNotifier.value;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        StreamSpacing.lg,
-        0,
-        StreamSpacing.lg,
-        0,
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<MovementsViewMode>(
-          key: const Key('movements_mode_inline_selector'),
-          segments: [
-            ButtonSegment<MovementsViewMode>(
-              value: MovementsViewMode.listHeatmap,
-              label: const KeyedSubtree(
-                key: Key('movements_mode_inline_list'),
-                child: Text('Lista'),
-              ),
-              icon: const Icon(Icons.list, size: 18),
-            ),
-            ButtonSegment<MovementsViewMode>(
-              value: MovementsViewMode.calendar,
-              label: const KeyedSubtree(
-                key: Key('movements_mode_inline_calendar'),
-                child: Text('Calendario'),
-              ),
-              icon: const Icon(Icons.calendar_month, size: 18),
-            ),
-            ButtonSegment<MovementsViewMode>(
-              value: MovementsViewMode.advancedHeatmap,
-              label: const KeyedSubtree(
-                key: Key('movements_mode_inline_advanced'),
-                child: Text('Heatmap'),
-              ),
-              icon: const Icon(Icons.analytics_outlined, size: 18),
-            ),
-          ],
-          selected: {viewMode},
-          onSelectionChanged: (Set<MovementsViewMode> v) {
-            PreferencesService.saveMovementsViewMode(v.first);
-          },
-          showSelectedIcon: false,
-        ),
-      ),
     );
   }
 
@@ -401,507 +304,6 @@ class _MovementsScreenState extends State<MovementsScreen> {
           filter.startDate.day,
         );
     }
-  }
-
-  void _moveCalendarMonth(int delta) {
-    switch (_activeFilter.mode) {
-      case TimeFilterMode.day:
-        final newDay = _activeFilter.startDate.add(Duration(days: delta));
-        _setActiveFilter(TimeFilter.day(newDay));
-      case TimeFilterMode.month:
-        final base = DateTime(
-          _activeFilter.startDate.year,
-          _activeFilter.startDate.month + delta,
-          1,
-        );
-        _setActiveFilter(TimeFilter.month(base.year, base.month));
-      case TimeFilterMode.year:
-        _setActiveFilter(TimeFilter.year(_activeFilter.startDate.year + delta));
-      case TimeFilterMode.customRange:
-        final shift = Duration(days: delta * 30);
-        _setActiveFilter(
-          TimeFilter.customRange(
-            _activeFilter.startDate.add(shift),
-            _activeFilter.endDate.add(shift),
-          ),
-        );
-    }
-  }
-
-  Widget _buildCalendar({
-    required List<Movement> periodFilteredMovements,
-    required List<Movement> searchFilteredMovements,
-    required bool hasQuery,
-  }) {
-    final year = _visibleCalendarMonth.year;
-    final month = _visibleCalendarMonth.month;
-    final isYearMode = _activeFilter.mode == TimeFilterMode.year;
-    final heatmapYear = isYearMode
-        ? _activeFilter.startDate.year
-        : year;
-    final displayedMovements = _displayedMovementsForActiveFilter(
-      searchFilteredMovements,
-    );
-
-    return ListView(
-      key: const Key('movements_layout_calendar'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-      children: [
-        _buildMonthNavigator(keyName: 'calendar_month_navigator'),
-        const SizedBox(height: StreamSpacing.md),
-        Container(
-          key: const Key('calendar_month_surface'),
-          padding: const EdgeInsets.all(StreamSpacing.md),
-          decoration: BoxDecoration(
-            color: StreamColors.surface,
-            borderRadius: BorderRadius.circular(StreamRadius.md),
-            border: Border.all(color: StreamColors.divider),
-          ),
-          child: Column(
-            children: [
-              if (isYearMode)
-                _buildAnnualHeatmap(
-                  allMovements: searchFilteredMovements,
-                  year: heatmapYear,
-                  selectedDay: _selectedDay,
-                  onDaySelected: (day) => setState(() => _selectedDay = day),
-                )
-              else ...[
-                ExpenseHeatmap(
-                  key: const Key('calendar_large_month_heatmap'),
-                  allMovements: searchFilteredMovements,
-                  year: year,
-                  month: month,
-                  selectedDay: _selectedDay,
-                  onDaySelected: (day) => setState(() => _selectedDay = day),
-                  variant: ExpenseHeatmapVariant.calendar,
-                ),
-              ],
-              const HeatmapLegend(),
-            ],
-          ),
-        ),
-        const SizedBox(height: StreamSpacing.md),
-        _buildPeriodMovementsPanel(
-          displayedMovements,
-          periodFilteredMovements: periodFilteredMovements,
-          hasQuery: hasQuery,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdvancedHeatmap({
-    required List<Movement> periodFilteredMovements,
-    required List<Movement> searchFilteredMovements,
-    required bool hasQuery,
-  }) {
-    final year = _visibleCalendarMonth.year;
-    final month = _visibleCalendarMonth.month;
-    final isYearMode = _activeFilter.mode == TimeFilterMode.year;
-    final heatmapYear = isYearMode
-        ? _activeFilter.startDate.year
-        : year;
-    final displayedMovements = _displayedMovementsForActiveFilter(
-      searchFilteredMovements,
-    );
-
-    final filteredDayMovements = _dayFilter != null
-        ? displayedMovements.where((m) => m.type == _dayFilter).toList()
-        : displayedMovements;
-
-    return ListView(
-      key: const Key('movements_layout_advanced_heatmap'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-      children: [
-        _buildMonthNavigator(keyName: 'advanced_heatmap_month_navigator'),
-        const SizedBox(height: StreamSpacing.md),
-        Container(
-          key: const Key('advanced_heatmap_surface'),
-          padding: const EdgeInsets.all(StreamSpacing.md),
-          decoration: BoxDecoration(
-            color: StreamColors.surface,
-            borderRadius: BorderRadius.circular(StreamRadius.md),
-            border: Border.all(
-              color: StreamColors.primary.withValues(alpha: 0.24),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.analytics_outlined, color: StreamColors.primary),
-                  const SizedBox(width: StreamSpacing.sm),
-                  Text('Analisi heatmap', style: StreamTypography.h3),
-                ],
-              ),
-              const SizedBox(height: StreamSpacing.md),
-              if (isYearMode)
-                KeyedSubtree(
-                  key: const Key('advanced_heatmap_grid'),
-                  child: _buildAnnualHeatmap(
-                    allMovements: searchFilteredMovements,
-                    year: heatmapYear,
-                    selectedDay: _selectedDay,
-                    onDaySelected: (day) => setState(() => _selectedDay = day),
-                  ),
-                )
-              else
-                KeyedSubtree(
-                  key: const Key('advanced_heatmap_grid'),
-                  child: ExpenseHeatmap(
-                    key: const Key('advanced_large_heatmap'),
-                    allMovements: searchFilteredMovements,
-                    year: year,
-                    month: month,
-                    selectedDay: _selectedDay,
-                    onDaySelected: (day) => setState(() => _selectedDay = day),
-                    variant: ExpenseHeatmapVariant.advanced,
-                  ),
-                ),
-              const HeatmapLegend(),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: StreamSpacing.md),
-          child: _buildPeriodMovementsPanel(
-            filteredDayMovements,
-            periodFilteredMovements: periodFilteredMovements,
-            hasQuery: hasQuery,
-            includeTypeFilters: true,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMonthNavigator({required String keyName}) {
-    final isYearMode = _activeFilter.mode == TimeFilterMode.year;
-    final label = isYearMode
-        ? '${_activeFilter.startDate.year}'
-        : TimeFilter.month(
-            _visibleCalendarMonth.year,
-            _visibleCalendarMonth.month,
-          ).label;
-
-    return Row(
-      key: Key(keyName),
-      children: [
-        IconButton.filledTonal(
-          key: Key('${keyName}_prev'),
-          tooltip: isYearMode ? 'Anno precedente' : 'Mese precedente',
-          icon: const Icon(Icons.chevron_left),
-          onPressed: () => _moveCalendarMonth(-1),
-        ),
-        const SizedBox(width: StreamSpacing.sm),
-        Expanded(
-          child: Container(
-            key: const Key('movements_month_title'),
-            padding: const EdgeInsets.symmetric(
-              horizontal: StreamSpacing.md,
-              vertical: StreamSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              color: StreamColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(StreamRadius.md),
-            ),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: StreamTypography.h3,
-            ),
-          ),
-        ),
-        const SizedBox(width: StreamSpacing.sm),
-        IconButton.filledTonal(
-          key: Key('${keyName}_next'),
-          tooltip: isYearMode ? 'Anno successivo' : 'Mese successivo',
-          icon: const Icon(Icons.chevron_right),
-          onPressed: () => _moveCalendarMonth(1),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAnnualHeatmap({
-    required List<Movement> allMovements,
-    required int year,
-    required DateTime? selectedDay,
-    required ValueChanged<DateTime>? onDaySelected,
-  }) {
-    const monthLabels = [
-      'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
-      'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
-    ];
-
-    return Column(
-      key: const Key('annual_heatmap'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int row = 0; row < 4; row++)
-          Padding(
-            padding: EdgeInsets.only(bottom: row < 3 ? 2 : 0),
-            child: Row(
-              children: [
-                for (int col = 0; col < 3; col++)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(left: col > 0 ? 2 : 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            monthLabels[row * 3 + col],
-                            style: StreamTypography.micro.copyWith(fontSize: 9),
-                          ),
-                          const SizedBox(height: 1),
-                          ExpenseHeatmap(
-                            key: Key('annual_heatmap_month_${row * 3 + col + 1}'),
-                            year: year,
-                            month: row * 3 + col + 1,
-                            allMovements: allMovements,
-                            selectedDay: selectedDay,
-                            onDaySelected: onDaySelected,
-                            rowCompact: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  List<Movement> _displayedMovementsForActiveFilter(List<Movement> movements) {
-    return movements;
-  }
-
-  Widget _buildPeriodMovementsPanel(
-    List<Movement> displayedMovements, {
-    required List<Movement> periodFilteredMovements,
-    required bool hasQuery,
-    bool includeTypeFilters = false,
-  }) {
-    return Container(
-      key: const Key('day_movements_panel'),
-      decoration: BoxDecoration(
-        color: StreamColors.surface,
-        borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(color: StreamColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          includeTypeFilters
-              ? KeyedSubtree(
-                  key: const Key('advanced_heatmap_kpi_panel'),
-                  child: _buildPeriodSummary(displayedMovements),
-                )
-              : _buildPeriodSummary(displayedMovements),
-          if (includeTypeFilters) _buildDayFilterChips(),
-          const Divider(height: 1, color: StreamColors.divider),
-          displayedMovements.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(StreamSpacing.xl),
-                  child: Center(
-                    child: Text(
-                      hasQuery
-                          ? 'Nessun risultato in questo periodo'
-                          : periodFilteredMovements.isEmpty
-                          ? 'Nessun movimento in questo periodo'
-                          : 'Nessun movimento per questo filtro',
-                      style: StreamTypography.body.copyWith(
-                        color: StreamColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              : _buildDayMovementsList(displayedMovements),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPeriodSummary(List<Movement> movements) {
-    final income = _incomeTotal(movements);
-    final expense = _expenseTotal(movements);
-    final balance = income - expense;
-    final count = movements.length;
-
-    return Padding(
-      key: const Key('day_summary'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(_activeFilter.label, style: StreamTypography.h3),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _dayKpi(
-                'Entrate',
-                formatHeatmapAmount(income),
-                StreamColors.income,
-                'day_income_total',
-              ),
-              const SizedBox(width: 12),
-              _dayKpi(
-                'Uscite',
-                formatHeatmapAmount(expense),
-                StreamColors.expense,
-                'day_expense_total',
-              ),
-              const SizedBox(width: 12),
-              _dayKpi(
-                'Saldo',
-                '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)}€',
-                balance >= 0 ? StreamColors.income : StreamColors.expense,
-                'day_balance',
-              ),
-              const SizedBox(width: 12),
-              _dayKpi(
-                'Movimenti',
-                '$count',
-                StreamColors.textPrimary,
-                'day_movement_count',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  double _incomeTotal(List<Movement> movements) {
-    return movements.fold<double>(
-      0,
-      (sum, movement) => movement.isIncome && !movement.isTransfer
-          ? sum + movement.amount
-          : sum,
-    );
-  }
-
-  double _expenseTotal(List<Movement> movements) {
-    return movements.fold<double>(
-      0,
-      (sum, movement) => movement.isExpense && !movement.isTransfer
-          ? sum + movement.amount
-          : sum,
-    );
-  }
-
-  Widget _dayKpi(String label, String value, Color color, String keyName) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            key: Key(keyName),
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: StreamTypography.captionBold.copyWith(color: color),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDayFilterChips() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _dayFilterChip('Tutti', null, 'day_filter_all'),
-          const SizedBox(width: 4),
-          _dayFilterChip('Entrate', MovementType.income, 'day_filter_income'),
-          const SizedBox(width: 4),
-          _dayFilterChip('Uscite', MovementType.expense, 'day_filter_expense'),
-          const SizedBox(width: 4),
-          _dayFilterChip(
-            'Transfer',
-            MovementType.transfer,
-            'day_filter_transfer',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dayFilterChip(String label, MovementType? type, String keyName) {
-    final selected = _dayFilter == type;
-    return GestureDetector(
-      onTap: () => setState(() => _dayFilter = type),
-      child: Container(
-        key: Key(keyName),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: selected ? StreamColors.primary : StreamColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: StreamTypography.micro.copyWith(
-            color: selected ? Colors.white : StreamColors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDayMovementsList(
-    List<Movement> movements, {
-    bool scrollable = false,
-  }) {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-      shrinkWrap: !scrollable,
-      physics: scrollable
-          ? const AlwaysScrollableScrollPhysics()
-          : const NeverScrollableScrollPhysics(),
-      itemCount: movements.length,
-      separatorBuilder: (_, index) => const SizedBox(height: 4),
-      itemBuilder: (context, index) {
-        final m = movements[index];
-        final cat = widget.db.categories
-            .where((c) => c.id == m.categoryId)
-            .firstOrNull;
-        final acc = widget.db.accounts
-            .where((a) => a.id == m.accountId)
-            .firstOrNull;
-        final destAcc = m.destinationAccountId == null
-            ? null
-            : widget.db.accounts
-                  .where((a) => a.id == m.destinationAccountId)
-                  .firstOrNull;
-        final subcat = m.subcategoryId == null
-            ? null
-            : widget.db.subcategories
-                  .where((s) => s.id == m.subcategoryId)
-                  .firstOrNull;
-        return MovementCard(
-          movement: m,
-          category: cat,
-          subcategory: subcat,
-          account: acc,
-          destinationAccount: destAcc,
-          onTap: () => _showPicker(context, prefill: m),
-        );
-      },
-    );
   }
 
   void _showPicker(BuildContext context, {Movement? prefill}) {

@@ -2204,13 +2204,13 @@ void main() {
 
         await _openMovementPicker(tester);
         expect(find.text('Conto'), findsWidgets);
-        expect(find.text('Categoria'), findsWidgets);
+        expect(find.text('Categoria / Sottocategoria'), findsWidgets);
 
         await tester.tap(find.text('Trasferimento'));
         await tester.pumpAndSettle();
         expect(find.text('Conto origine'), findsWidgets);
         expect(find.text('Conto destinazione'), findsWidgets);
-        expect(find.text('Categoria'), findsNothing);
+        expect(find.text('Categoria / Sottocategoria'), findsNothing);
 
         await _fillManualMovementForm(
           tester,

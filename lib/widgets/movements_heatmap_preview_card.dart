@@ -10,7 +10,7 @@ class MovementsHeatmapPreviewCard extends StatelessWidget {
   final int month;
   final DateTime? selectedDay;
   final ValueChanged<DateTime>? onDaySelected;
-  final VoidCallback? onOpenCalendar;
+  final VoidCallback? onOpenSettings;
 
   const MovementsHeatmapPreviewCard({
     super.key,
@@ -19,7 +19,7 @@ class MovementsHeatmapPreviewCard extends StatelessWidget {
     required this.month,
     this.selectedDay,
     this.onDaySelected,
-    this.onOpenCalendar,
+    this.onOpenSettings,
   });
 
   @override
@@ -63,9 +63,9 @@ class MovementsHeatmapPreviewCard extends StatelessWidget {
             ),
             const SizedBox(width: StreamSpacing.sm),
             TextButton.icon(
-              key: const Key('movements_list_open_calendar_action'),
-              icon: const Icon(Icons.calendar_month, size: 16),
-              label: const Text('Apri calendario'),
+              key: const Key('movements_open_calendar_default_settings'),
+              icon: const Icon(Icons.settings_outlined, size: 16),
+              label: const Text('Vista calendario predefinita'),
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, 32),
                 padding: const EdgeInsets.symmetric(
@@ -74,7 +74,7 @@ class MovementsHeatmapPreviewCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              onPressed: onOpenCalendar,
+              onPressed: onOpenSettings,
             ),
           ],
         ),

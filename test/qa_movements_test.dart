@@ -1926,6 +1926,16 @@ void main() {
     await tester.tap(find.text('Anno'));
     await tester.pumpAndSettle();
 
+    // The premium annual heatmap card pushes movements below the fold;
+    // verify the annual heatmap is rendered premium
+    expect(find.byKey(const Key('annual_heatmap')), findsOneWidget);
+    expect(find.byKey(const Key('annual_heatmap_legend')), findsOneWidget);
+    expect(find.byKey(const Key('annual_heatmap_subtitle')), findsOneWidget);
+    expect(find.text('Andamento annuale'), findsOneWidget);
+    // Scroll the main list so the first movement becomes visible
+    final listFinder = find.byKey(const Key('movements_layout_list'));
+    await tester.drag(listFinder, const Offset(0, -2000));
+    await tester.pumpAndSettle();
     expect(find.text('Anno corrente'), findsOneWidget);
     expect(find.text('Anno scorso'), findsNothing);
   });

@@ -458,12 +458,12 @@ class _MovementsViewModeTileState extends State<_MovementsViewModeTile> {
 
   String _modeLabel(MovementsViewMode mode) {
     switch (mode) {
-      case MovementsViewMode.listHeatmap:
-        return 'Lista + mini heatmap';
+      case MovementsViewMode.list:
+        return 'Lista';
       case MovementsViewMode.calendar:
-        return 'Calendario mensile';
-      case MovementsViewMode.advancedHeatmap:
-        return 'Heatmap avanzata';
+        return 'Calendario';
+      case MovementsViewMode.heatmap:
+        return 'Heatmap';
     }
   }
 
@@ -476,7 +476,7 @@ class _MovementsViewModeTileState extends State<_MovementsViewModeTile> {
         Icons.calendar_view_month_outlined,
         color: StreamColors.primary,
       ),
-      title: const Text('Modello Movimenti'),
+      title: const Text('Vista movimenti predefinita'),
       subtitle: Text(_modeLabel(_currentMode)),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
@@ -508,19 +508,19 @@ class _MovementsViewModeDialogState extends State<_MovementsViewModeDialog> {
 
   static const _options = [
     (
-      MovementsViewMode.listHeatmap,
-      'Lista + mini heatmap',
-      'Elenco movimenti con barra spese mensile',
+      MovementsViewMode.list,
+      'Lista',
+      'Mostra direttamente l\'elenco dei movimenti',
     ),
     (
       MovementsViewMode.calendar,
-      'Calendario mensile',
-      'Calendario heatmap con riepilogo giorno',
+      'Calendario',
+      'Mostra la heatmap mensile del periodo selezionato',
     ),
     (
-      MovementsViewMode.advancedHeatmap,
-      'Heatmap avanzata',
-      'Heatmap grande con pannello giorno e filtri',
+      MovementsViewMode.heatmap,
+      'Heatmap',
+      'Mostra la vista heatmap con filtri rapidi dei movimenti',
     ),
   ];
 
@@ -534,7 +534,7 @@ class _MovementsViewModeDialogState extends State<_MovementsViewModeDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       key: const Key('movements_view_mode_dialog'),
-      title: const Text('Modello Movimenti'),
+      title: const Text('Vista movimenti predefinita'),
       content: SingleChildScrollView(
         child: RadioGroup<MovementsViewMode>(
           groupValue: _selected,
