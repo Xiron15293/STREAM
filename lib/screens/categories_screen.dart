@@ -171,6 +171,20 @@ int _countFavForSubcategory(AppDatabase db, String subcategoryId) {
   return db.favoriteMovements.where((f) => f.subcategoryId == subcategoryId).length;
 }
 
+class _ChildSubOption {
+  final String subcategoryId;
+  final String subcategoryName;
+  String action = 'move';
+  String? targetSubcategoryId;
+  String? createTargetSubcategoryName;
+  TextEditingController? newSubCtrl;
+
+  _ChildSubOption({
+    required this.subcategoryId,
+    required this.subcategoryName,
+  });
+}
+
 void _showCategoryMergeDialog(
   BuildContext context,
   AppDatabase db,
@@ -181,6 +195,14 @@ void _showCategoryMergeDialog(
   String? selectedTargetSubcategoryId;
   bool createNewSubcategory = false;
   final newSubNameCtrl = TextEditingController();
+
+  final childSubs = db.getSubcategoriesForCategory(sourceCategory.id)
+      .where((s) => !s.archived)
+      .toList();
+  final childOptions = <_ChildSubOption>[
+    for (final s in childSubs)
+      _ChildSubOption(subcategoryId: s.id, subcategoryName: s.name),
+  ];
 
   final movCount = _countMovementsForCategory(db, sourceCategory.id);
   final quickCount = _countQuickForCategory(db, sourceCategory.id);
@@ -333,6 +355,121 @@ void _showCategoryMergeDialog(
                       ),
                     ],
                   ],
+                  // Child subcategories section
+                  if (childOptions.isNotEmpty && selectedTargetCategoryId != null) ...[
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Sottocategorie figlie (${childOptions.length})',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Scegli cosa fare di ogni sottocategoria di "${sourceCategory.name}"',
+                      style: TextStyle(fontSize: 12, color: StreamColors.textSecondary),
+                    ),
+                    const SizedBox(height: 8),
+                    ...childOptions.map((opt) {
+                      final targetSubsForChild = selectedTargetCategoryId != null
+                          ? db.getActiveSubcategoriesForCategory(selectedTargetCategoryId!)
+                          : <Subcategory>[];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              opt.subcategoryName,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 4),
+                            DropdownButtonFormField<String>(
+                              key: Key('child_sub_action_${opt.subcategoryId}'),
+                              value: opt.action,
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'move', child: Text('Sposta in destinazione')),
+                                DropdownMenuItem(value: 'merge', child: Text('Unisci a sottocategoria...')),
+                                DropdownMenuItem(value: 'archive', child: Text('Archivia')),
+                                DropdownMenuItem(value: 'keep', child: Text('Mantieni (non archiviare)')),
+                              ],
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  opt.action = val!;
+                                  if (val != 'merge') {
+                                    opt.targetSubcategoryId = null;
+                                    opt.createTargetSubcategoryName = null;
+                                    opt.newSubCtrl?.dispose();
+                                    opt.newSubCtrl = null;
+                                  }
+                                });
+                              },
+                            ),
+                            if (opt.action == 'merge') ...[
+                              const SizedBox(height: 4),
+                              DropdownButtonFormField<String?>(
+                                key: Key('child_sub_merge_target_${opt.subcategoryId}'),
+                                value: opt.targetSubcategoryId,
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  hintText: 'Seleziona o crea...',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<String?>(
+                                    value: null,
+                                    child: Text('Seleziona...'),
+                                  ),
+                                  ...targetSubsForChild.map((s) => DropdownMenuItem<String?>(
+                                    value: s.id,
+                                    child: Text(s.name),
+                                  )),
+                                  const DropdownMenuItem<String?>(
+                                    value: '__create__',
+                                    child: Text('Crea nuova...'),
+                                  ),
+                                ],
+                                onChanged: (val) {
+                                  setDialogState(() {
+                                    if (val == '__create__') {
+                                      opt.targetSubcategoryId = null;
+                                      if (opt.newSubCtrl == null) {
+                                        opt.newSubCtrl = TextEditingController();
+                                      }
+                                    } else {
+                                      opt.targetSubcategoryId = val;
+                                      opt.newSubCtrl?.dispose();
+                                      opt.newSubCtrl = null;
+                                    }
+                                  });
+                                },
+                              ),
+                              if (opt.newSubCtrl != null) ...[
+                                const SizedBox(height: 4),
+                                TextField(
+                                  key: Key('child_sub_create_name_${opt.subcategoryId}'),
+                                  controller: opt.newSubCtrl,
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    hintText: 'Nome nuova sottocategoria',
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  ),
+                                  onChanged: (_) => setDialogState(() {}),
+                                ),
+                              ],
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                   if (previewText.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Container(
@@ -361,6 +498,25 @@ void _showCategoryMergeDialog(
                 key: const Key('category_merge_confirm'),
                 onPressed: canConfirm
                     ? () {
+                        final childActions = childOptions.isEmpty
+                            ? null
+                            : childOptions.map((opt) {
+                                String? mergeTargetSubId;
+                                String? mergeCreateName;
+                                if (opt.action == 'merge') {
+                                  if (opt.newSubCtrl != null && opt.newSubCtrl!.text.trim().isNotEmpty) {
+                                    mergeCreateName = opt.newSubCtrl!.text.trim();
+                                  } else {
+                                    mergeTargetSubId = opt.targetSubcategoryId;
+                                  }
+                                }
+                                return ChildSubcategoryAction(
+                                  subcategoryId: opt.subcategoryId,
+                                  action: opt.action,
+                                  targetSubcategoryId: mergeTargetSubId,
+                                  createTargetSubcategoryName: mergeCreateName,
+                                );
+                              }).toList();
                         final request = CategoryMergeRequest(
                           sourceCategoryId: sourceCategory.id,
                           targetCategoryId: selectedTargetCategoryId!,
@@ -372,6 +528,7 @@ void _showCategoryMergeDialog(
                               : null,
                           archiveSource: true,
                           archiveEmptySourceCategory: false,
+                          childSubcategoryActions: childActions,
                         );
                         final report = db.mergeCategoryOrSubcategory(request);
                         Navigator.pop(ctx);
@@ -682,6 +839,34 @@ void _showMergeReport(BuildContext context, CategoryMergeReport report) {
           _reportRow('Movimenti rapidi agg.', '${report.quickMovementsUpdated}'),
           _reportRow('Preferiti aggiornati', '${report.favoriteMovementsUpdated}'),
           const Divider(height: 16),
+          if (report.childSubcategoriesMoved > 0 ||
+              report.childSubcategoriesMerged > 0 ||
+              report.childSubcategoriesArchived > 0 ||
+              report.childSubcategoriesKept > 0) ...[
+            const Divider(height: 16),
+            _reportRow('Sottocat. figlie spostate', '${report.childSubcategoriesMoved}'),
+            _reportRow('Sottocat. figlie unite', '${report.childSubcategoriesMerged}'),
+            _reportRow('Sottocat. figlie archiviate', '${report.childSubcategoriesArchived}'),
+            _reportRow('Sottocat. figlie mantenute', '${report.childSubcategoriesKept}'),
+            if (report.childSubcategoryDetails.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              ...report.childSubcategoryDetails.map((d) {
+                final actionLabel = switch (d.action) {
+                  'move' => 'Spostata',
+                  'merge' => 'Unita',
+                  'archive' => 'Archiviata',
+                  _ => 'Mantenuta',
+                };
+                return Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    ' • ${d.subcategoryName}: $actionLabel',
+                    style: TextStyle(fontSize: 12, color: StreamColors.textSecondary),
+                  ),
+                );
+              }),
+            ],
+          ],
           if (report.sourceType == 'subcategory') ...[
             _reportRow('Sottocat. sorgente', report.sourceSubcategoryArchived ? 'Archiviata' : '-'),
             if (report.emptySourceCategoryArchived)
@@ -2148,78 +2333,67 @@ class _SubcategorySection extends StatefulWidget {
 class _SubcategorySectionState extends State<_SubcategorySection> {
   void _addSubcategory() {
     final ctrl = TextEditingController();
+    String iconKey = StreamIconLibrary.defaultCategoryIcon;
+    int color = 0xFF42A5F5;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nuova sottocategoria'),
-        content: TextField(
-          key: const Key('subcategory_name_field'),
-          controller: ctrl,
-          decoration: const InputDecoration(
-            hintText: 'Nome sottocategoria',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Nuova sottocategoria'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  key: const Key('subcategory_name_field'),
+                  controller: ctrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Nome sottocategoria',
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _saveAndPop(ctrl, iconKey, color),
+                ),
+                const SizedBox(height: 16),
+                _SubcategoryIconColorWidget(
+                  iconKey: iconKey,
+                  color: color,
+                  onIconChanged: (v) => setDialogState(() => iconKey = v),
+                  onColorChanged: (v) => setDialogState(() => color = v),
+                ),
+              ],
+            ),
           ),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _saveAndPop(ctrl),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              key: const Key('subcategory_save_button'),
+              onPressed: () => _saveAndPop(ctrl, iconKey, color),
+              child: const Text('Aggiungi'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            key: const Key('subcategory_save_button'),
-            onPressed: () => _saveAndPop(ctrl),
-            child: const Text('Aggiungi'),
-          ),
-        ],
       ),
     );
   }
 
-  void _saveAndPop(TextEditingController ctrl) {
+  void _saveAndPop(TextEditingController ctrl, String iconKey, int color) {
     final name = ctrl.text.trim();
     if (name.isEmpty) return;
-    widget.db.createSubcategory(widget.categoryId, name);
+    widget.db.createSubcategory(widget.categoryId, name, iconKey: iconKey, color: color);
     Navigator.of(context).pop();
   }
 
-  void _renameSubcategory(String id, String currentName) {
-    final ctrl = TextEditingController(text: currentName);
+  void _showSubcategoryFormDialog(Subcategory sub) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Modifica sottocategoria'),
-        content: TextField(
-          key: const Key('subcategory_name_field'),
-          controller: ctrl,
-          decoration: const InputDecoration(
-            hintText: 'Nome sottocategoria',
-          ),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) {
-            final name = ctrl.text.trim();
-            if (name.isNotEmpty) {
-              widget.db.updateSubcategory(id, name);
-              Navigator.pop(ctx);
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            key: const Key('subcategory_save_button'),
-            onPressed: () {
-              final name = ctrl.text.trim();
-              if (name.isEmpty) return;
-              widget.db.updateSubcategory(id, name);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Salva'),
-          ),
-        ],
+      builder: (ctx) => _SubcategoryFormDialog(
+        db: widget.db,
+        subcategory: sub,
+        onChanged: () => setState(() {}),
       ),
     );
   }
@@ -2260,14 +2434,27 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
           )
         else
           ...subcategories.map(
-            (sub) => Padding(
+            (sub) {
+              final parentCat = widget.db.categories.firstWhere(
+                (c) => c.id == widget.categoryId,
+                orElse: () => widget.db.categories.first,
+              );
+              final subIcon = StreamIconLibrary.getIcon(
+                sub.iconKey ?? parentCat.iconKey,
+              );
+              final subColor = Color(sub.color ?? parentCat.color);
+              return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.subdirectory_arrow_right,
-                    size: 16,
-                    color: StreamColors.textMuted,
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: subColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(subIcon, size: 14, color: subColor),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -2314,13 +2501,14 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                   IconButton(
                     icon: Icon(Icons.edit_outlined,
                         size: 18, color: StreamColors.textMuted),
-                    onPressed: () => _renameSubcategory(sub.id, sub.name),
+                    onPressed: () => _showSubcategoryFormDialog(sub),
                     tooltip: 'Modifica',
                     visualDensity: VisualDensity.compact,
                   ),
                 ],
               ),
-            ),
+            );
+          },
           ),
       ],
     );
@@ -2329,6 +2517,287 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
   void _archiveSubcategory(String id) {
     widget.db.archiveSubcategory(id);
     setState(() {});
+  }
+}
+
+class _SubcategoryFormDialog extends StatefulWidget {
+  final AppDatabase db;
+  final Subcategory subcategory;
+  final VoidCallback onChanged;
+
+  const _SubcategoryFormDialog({
+    required this.db,
+    required this.subcategory,
+    required this.onChanged,
+  });
+
+  @override
+  State<_SubcategoryFormDialog> createState() => _SubcategoryFormDialogState();
+}
+
+class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
+  late final TextEditingController _nameCtrl;
+  late String _iconKey;
+  late int _color;
+
+  Subcategory get _sub => widget.subcategory;
+  int get _movementCount => widget.db.subcategoryMovementCount(_sub.id);
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: _sub.name);
+    _iconKey = _sub.iconKey ?? StreamIconLibrary.defaultCategoryIcon;
+    _color = _sub.color ?? 0xFF42A5F5;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inserisci un nome')),
+      );
+      return;
+    }
+    widget.db.updateSubcategory(_sub.id, name, iconKey: _iconKey, color: _color);
+    widget.onChanged();
+    Navigator.pop(context);
+  }
+
+  Future<void> _confirmDelete({required bool cascade}) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminare sottocategoria?'),
+        content: Text(
+          cascade
+              ? 'I movimenti associati perderanno questa sottocategoria.'
+              : 'La sottocategoria "${_sub.name}" sarà eliminata definitivamente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: StreamColors.expense,
+            ),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (cascade) {
+      await widget.db.deleteSubcategoryCascade(_sub.id);
+    } else {
+      await widget.db.deleteSubcategory(_sub.id);
+    }
+    widget.onChanged();
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasMovements = _movementCount > 0;
+
+    return AlertDialog(
+      title: const Text('Modifica sottocategoria'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              key: const Key('subcategory_name_field'),
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: 'Nome'),
+              textInputAction: TextInputAction.done,
+            ),
+            if (hasMovements) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 14, color: StreamColors.warning),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Movimenti associati: $_movementCount',
+                    style: TextStyle(
+                        fontSize: 12, color: StreamColors.warning),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            _SubcategoryIconColorWidget(
+              iconKey: _iconKey,
+              color: _color,
+              onIconChanged: (v) => setState(() => _iconKey = v),
+              onColorChanged: (v) => setState(() => _color = v),
+            ),
+            const SizedBox(height: 16),
+            if (_sub.archived) ...[
+              FilledButton.tonalIcon(
+                key: const Key('subcategory_restore_button'),
+                icon: const Icon(Icons.unarchive_outlined, size: 18),
+                onPressed: () {
+                  widget.db.restoreSubcategory(_sub.id);
+                  widget.onChanged();
+                  Navigator.pop(context);
+                },
+                label: const Text('Ripristina'),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('subcategory_delete_button'),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                onPressed: () => _confirmDelete(cascade: false),
+                style: TextButton.styleFrom(
+                  foregroundColor: StreamColors.expense,
+                ),
+                label: const Text('Elimina definitivamente'),
+              ),
+            ] else ...[
+              FilledButton.tonalIcon(
+                key: const Key('subcategory_archive_button'),
+                icon: const Icon(Icons.archive_outlined, size: 18),
+                onPressed: () {
+                  widget.db.archiveSubcategory(_sub.id);
+                  widget.onChanged();
+                  Navigator.pop(context);
+                },
+                label: const Text('Archivia'),
+              ),
+              if (hasMovements) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  key: const Key('subcategory_delete_cascade_button'),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  onPressed: () => _confirmDelete(cascade: true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: StreamColors.expense,
+                  ),
+                  label: const Text('Elimina (movimenti perderanno sub)'),
+                ),
+              ] else ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  key: const Key('subcategory_delete_button'),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  onPressed: () => _confirmDelete(cascade: false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: StreamColors.expense,
+                  ),
+                  label: const Text('Elimina'),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('Salva'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SubcategoryIconColorWidget extends StatelessWidget {
+  final String iconKey;
+  final int color;
+  final ValueChanged<String> onIconChanged;
+  final ValueChanged<int> onColorChanged;
+
+  const _SubcategoryIconColorWidget({
+    required this.iconKey,
+    required this.color,
+    required this.onIconChanged,
+    required this.onColorChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final previewIcon = StreamIconLibrary.getIcon(iconKey);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Icona',
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                final result = await showDialog<String>(
+                  context: context,
+                  builder: (_) => IconPickerDialog(
+                    currentIconKey: iconKey,
+                    isAccount: false,
+                  ),
+                );
+                if (result != null) onIconChanged(result);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: StreamColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(previewIcon, size: 20, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      StreamIconLibrary.getLabel(iconKey),
+                      style: StreamTypography.caption,
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: StreamColors.textMuted,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Colore',
+          style: StreamTypography.caption.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ColorPicker(
+          currentColor: color,
+          onChanged: onColorChanged,
+        ),
+      ],
+    );
   }
 }
 

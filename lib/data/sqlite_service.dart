@@ -16,7 +16,7 @@ class SQLiteService {
   Future<void> open({String? path}) async {
     _db = await openDatabase(
       path ?? join(await getDatabasesPath(), 'stream.db'),
-      version: 9,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -72,6 +72,8 @@ class SQLiteService {
         id TEXT PRIMARY KEY,
         category_id TEXT NOT NULL,
         name TEXT NOT NULL,
+        icon_key TEXT,
+        color INTEGER,
         archived INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
@@ -246,6 +248,8 @@ class SQLiteService {
           id TEXT PRIMARY KEY,
           category_id TEXT NOT NULL,
           name TEXT NOT NULL,
+          icon_key TEXT,
+          color INTEGER,
           archived INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
@@ -281,6 +285,22 @@ class SQLiteService {
         column: 'subcategory_id',
         definition: 'TEXT',
         migrationLabel: 'Migration V9 add subcategory_id to favorite_movements',
+      );
+    }
+    if (oldVersion < 10) {
+      await _addColumnIfMissing(
+        db,
+        table: 'subcategories',
+        column: 'icon_key',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V10 add icon_key to subcategories',
+      );
+      await _addColumnIfMissing(
+        db,
+        table: 'subcategories',
+        column: 'color',
+        definition: 'INTEGER',
+        migrationLabel: 'Migration V10 add color to subcategories',
       );
     }
   }
@@ -535,6 +555,8 @@ class SQLiteService {
       'subcategories',
       {
         'name': s.name,
+        'icon_key': s.iconKey,
+        'color': s.color,
         'archived': s.archived ? 1 : 0,
         'updated_at': now,
       },
@@ -564,12 +586,31 @@ class SQLiteService {
     await db.delete('subcategories', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> clearSubcategoryFromMovements(String subcategoryId) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.rawUpdate(
+      'UPDATE movements SET subcategory_id = NULL, updated_at = ? WHERE subcategory_id = ?',
+      [now, subcategoryId],
+    );
+    await db.rawUpdate(
+      'UPDATE quick_movements SET subcategory_id = NULL WHERE subcategory_id = ?',
+      [subcategoryId],
+    );
+    await db.rawUpdate(
+      'UPDATE favorite_movements SET subcategory_id = NULL WHERE subcategory_id = ?',
+      [subcategoryId],
+    );
+  }
+
   Map<String, dynamic> _subcategoryToMap(Subcategory s) {
     final now = DateTime.now().toIso8601String();
     return {
       'id': s.id,
       'category_id': s.categoryId,
       'name': s.name,
+      'icon_key': s.iconKey,
+      'color': s.color,
       'archived': s.archived ? 1 : 0,
       'created_at': now,
       'updated_at': now,
@@ -580,6 +621,8 @@ class SQLiteService {
         id: map['id'] as String,
         categoryId: map['category_id'] as String,
         name: map['name'] as String,
+        iconKey: map['icon_key'] as String?,
+        color: map['color'] as int?,
         archived: (map['archived'] as int) == 1,
         createdAt: DateTime.parse(map['created_at'] as String),
         updatedAt: DateTime.parse(map['updated_at'] as String),

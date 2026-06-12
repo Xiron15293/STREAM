@@ -488,6 +488,219 @@ void main() {
     });
   });
 
+  group('Merge — categoria con sottocategorie figlie', () {
+    late AppDatabase db;
+    late Category source;
+    late Category target;
+
+    setUp(() {
+      db = AppDatabase();
+      source = Category(
+        id: 'src_parent', name: 'Genitore',
+        type: MovementType.expense, color: 0xFF42A5F5,
+      );
+      target = db.categories.firstWhere((c) => c.name == 'Spesa');
+      db.internalAddCategory(source);
+    });
+
+    test('21. merge categoria senza sottocategorie figlie resta invariato', () {
+      db.addMovement(Movement(
+        id: 'm21', title: 'M21', amount: 10,
+        type: MovementType.expense, date: DateTime.now(),
+        categoryId: source.id, createdAt: DateTime.now(),
+      ));
+
+      final report = db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+      ));
+
+      expect(report.movementsUpdated, 1);
+      expect(report.sourceCategoryArchived, true);
+      expect(report.childSubcategoriesMoved, 0);
+      expect(report.childSubcategoriesMerged, 0);
+      expect(report.childSubcategoriesArchived, 0);
+    });
+
+    test('22. merge categoria con sottocategorie figlie spostate sotto target', () async {
+      await db.createSubcategory(source.id, 'Figlia1');
+      final child = db.subcategories.firstWhere((s) => s.name == 'Figlia1');
+
+      db.addMovement(Movement(
+        id: 'm22a', title: 'M22a', amount: 10,
+        type: MovementType.expense, date: DateTime.now(),
+        categoryId: source.id, subcategoryId: child.id,
+        createdAt: DateTime.now(),
+      ));
+      db.addMovement(Movement(
+        id: 'm22b', title: 'M22b', amount: 20,
+        type: MovementType.expense, date: DateTime.now(),
+        categoryId: source.id, createdAt: DateTime.now(),
+      ));
+
+      final report = db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+        childSubcategoryActions: [
+          ChildSubcategoryAction(
+            subcategoryId: child.id, action: 'move',
+          ),
+        ],
+      ));
+
+      expect(report.movementsUpdated, 2);
+      expect(report.childSubcategoriesMoved, 1);
+      expect(report.sourceCategoryArchived, true);
+
+      // Child subcategory moved to target
+      final movedSub = db.subcategories.firstWhere((s) => s.id == child.id);
+      expect(movedSub.categoryId, target.id);
+      expect(movedSub.archived, false);
+
+      // Movement with subcategory now points to target
+      final m = db.movements.firstWhere((m) => m.id == 'm22a');
+      expect(m.categoryId, target.id);
+      expect(m.subcategoryId, child.id);
+    });
+
+    test('23. merge categoria con sottocategoria figlia unita a sottocategoria target esistente', () async {
+      await db.createSubcategory(source.id, 'Bar');
+      final child = db.subcategories.firstWhere((s) => s.name == 'Bar');
+      await db.createSubcategory(target.id, 'Caffetteria');
+      final targetSub = db.subcategories.firstWhere((s) => s.name == 'Caffetteria');
+
+      db.addMovement(Movement(
+        id: 'm23', title: 'M23', amount: 10,
+        type: MovementType.expense, date: DateTime.now(),
+        categoryId: source.id, subcategoryId: child.id,
+        createdAt: DateTime.now(),
+      ));
+
+      final report = db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+        childSubcategoryActions: [
+          ChildSubcategoryAction(
+            subcategoryId: child.id,
+            action: 'merge',
+            targetSubcategoryId: targetSub.id,
+          ),
+        ],
+      ));
+
+      expect(report.movementsUpdated, 1);
+      expect(report.childSubcategoriesMerged, 1);
+      expect(db.subcategories.firstWhere((s) => s.id == child.id).archived, true);
+
+      final m = db.movements.firstWhere((m) => m.id == 'm23');
+      expect(m.categoryId, target.id);
+      expect(m.subcategoryId, targetSub.id);
+    });
+
+    test('24. quick/favorite seguono mapping figlie', () async {
+      await db.createSubcategory(source.id, 'QM');
+      final child = db.subcategories.firstWhere((s) => s.name == 'QM');
+
+      db.internalAddQuickMovement(QuickMovement(
+        id: 'qm_child', title: 'QM', amount: 5,
+        type: MovementType.expense, categoryId: source.id,
+        subcategoryId: child.id,
+      ));
+      db.internalAddFavoriteMovement(FavoriteMovement(
+        id: 'fm_child', title: 'FM', amount: 3,
+        type: MovementType.expense, categoryId: source.id,
+        subcategoryId: child.id,
+      ));
+
+      db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+        childSubcategoryActions: [
+          ChildSubcategoryAction(subcategoryId: child.id, action: 'move'),
+        ],
+      ));
+
+      expect(db.quickMovements.firstWhere((q) => q.id == 'qm_child').categoryId, target.id);
+      expect(db.favoriteMovements.firstWhere((f) => f.id == 'fm_child').categoryId, target.id);
+    });
+
+    test('25. sottocategoria figlia archiviata esplicitamente', () async {
+      await db.createSubcategory(source.id, 'Archivia');
+      final child = db.subcategories.firstWhere((s) => s.name == 'Archivia');
+
+      db.addMovement(Movement(
+        id: 'm25', title: 'M25', amount: 10,
+        type: MovementType.expense, date: DateTime.now(),
+        categoryId: source.id, subcategoryId: child.id,
+        createdAt: DateTime.now(),
+      ));
+
+      db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+        childSubcategoryActions: [
+          ChildSubcategoryAction(subcategoryId: child.id, action: 'archive'),
+        ],
+      ));
+
+      expect(db.subcategories.firstWhere((s) => s.id == child.id).archived, true);
+      // Movement still moved to target category (no subcategory)
+      final m = db.movements.firstWhere((m) => m.id == 'm25');
+      expect(m.categoryId, target.id);
+    });
+
+    test('26. sottocategoria figlia mantenuta (non archiviata)', () async {
+      await db.createSubcategory(source.id, 'Mantieni');
+      final child = db.subcategories.firstWhere((s) => s.name == 'Mantieni');
+
+      db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+        childSubcategoryActions: [
+          ChildSubcategoryAction(subcategoryId: child.id, action: 'keep'),
+        ],
+      ));
+
+      // Child stays under source category (which is archived)
+      expect(db.subcategories.firstWhere((s) => s.id == child.id).archived, false);
+    });
+
+    test('27. report dettagliato corretto con figlie multiple', () async {
+      await db.createSubcategory(source.id, 'A');
+      await db.createSubcategory(source.id, 'B');
+      await db.createSubcategory(source.id, 'C');
+      final a = db.subcategories.firstWhere((s) => s.name == 'A');
+      final b = db.subcategories.firstWhere((s) => s.name == 'B');
+      final c = db.subcategories.firstWhere((s) => s.name == 'C');
+
+      await db.createSubcategory(target.id, 'Btarget');
+      final bTarget = db.subcategories.firstWhere((s) => s.name == 'Btarget');
+
+      final report = db.mergeCategoryOrSubcategory(CategoryMergeRequest(
+        sourceCategoryId: source.id,
+        targetCategoryId: target.id,
+        childSubcategoryActions: [
+          ChildSubcategoryAction(subcategoryId: a.id, action: 'move'),
+          ChildSubcategoryAction(
+            subcategoryId: b.id, action: 'merge',
+            targetSubcategoryId: bTarget.id,
+          ),
+          ChildSubcategoryAction(subcategoryId: c.id, action: 'archive'),
+        ],
+      ));
+
+      expect(report.childSubcategoriesMoved, 1);
+      expect(report.childSubcategoriesMerged, 1);
+      expect(report.childSubcategoriesArchived, 1);
+      expect(report.childSubcategoriesKept, 0);
+      expect(report.childSubcategoryDetails.length, 3);
+
+      expect(db.subcategories.firstWhere((s) => s.id == a.id).categoryId, target.id);
+      expect(db.subcategories.firstWhere((s) => s.id == b.id).archived, true);
+      expect(db.subcategories.firstWhere((s) => s.id == c.id).archived, true);
+    });
+  });
+
   group('Merge — SQLite persistence', () {
     late SQLiteService sqlite;
     late AppDatabase db;
