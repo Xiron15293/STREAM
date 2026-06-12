@@ -748,6 +748,7 @@ class _HeatmapSettingsSectionState extends State<_HeatmapSettingsSection> {
                       decimal: true,
                     ),
                     textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => FocusScope.of(context).unfocus(),
                     decoration: InputDecoration(
                       labelText: 'Soglia ${i + 1}',
                       suffixText: '€',

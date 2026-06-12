@@ -5,6 +5,7 @@ import 'categories_data.dart';
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
+import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
@@ -15,7 +16,7 @@ class SQLiteService {
   Future<void> open({String? path}) async {
     _db = await openDatabase(
       path ?? join(await getDatabasesPath(), 'stream.db'),
-      version: 8,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -43,6 +44,7 @@ class SQLiteService {
         amount REAL NOT NULL,
         type TEXT NOT NULL,
         category_id TEXT NOT NULL,
+        subcategory_id TEXT,
         account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
         destination_account_id TEXT,
         date TEXT NOT NULL,
@@ -66,12 +68,26 @@ class SQLiteService {
     ''');
 
     await db.execute('''
+      CREATE TABLE subcategories (
+        id TEXT PRIMARY KEY,
+        category_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        archived INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_subcategories_category_id ON subcategories(category_id)');
+    await db.execute('CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)');
+
+    await db.execute('''
       CREATE TABLE quick_movements (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         amount REAL NOT NULL,
         type TEXT NOT NULL,
         category_id TEXT NOT NULL,
+        subcategory_id TEXT,
         account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
         note TEXT,
         created_at TEXT NOT NULL,
@@ -86,6 +102,7 @@ class SQLiteService {
         amount REAL NOT NULL,
         type TEXT NOT NULL,
         category_id TEXT NOT NULL,
+        subcategory_id TEXT,
         account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
         note TEXT,
         created_at TEXT NOT NULL,
@@ -223,6 +240,49 @@ class SQLiteService {
         debugPrint('Migration V8 backfill initial_balance error: $e');
       }
     }
+    if (oldVersion < 9) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS subcategories (
+          id TEXT PRIMARY KEY,
+          category_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+      try {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories(category_id)');
+      } catch (e) {
+        debugPrint('Migration V9 create index error: $e');
+      }
+      try {
+        await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_subcategories_unique ON subcategories(category_id, name)');
+      } catch (e) {
+        debugPrint('Migration V9 create unique index error: $e');
+      }
+      await _addColumnIfMissing(
+        db,
+        table: 'movements',
+        column: 'subcategory_id',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V9 add subcategory_id to movements',
+      );
+      await _addColumnIfMissing(
+        db,
+        table: 'quick_movements',
+        column: 'subcategory_id',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V9 add subcategory_id to quick_movements',
+      );
+      await _addColumnIfMissing(
+        db,
+        table: 'favorite_movements',
+        column: 'subcategory_id',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V9 add subcategory_id to favorite_movements',
+      );
+    }
   }
 
   Future<void> _insertDefaultAccount(DatabaseExecutor db) async {
@@ -278,6 +338,7 @@ class SQLiteService {
     await db.transaction((txn) async {
       await txn.delete('movements');
       await txn.delete('categories');
+      await txn.delete('subcategories');
       await txn.delete('quick_movements');
       await txn.delete('favorite_movements');
       await txn.delete('accounts');
@@ -340,6 +401,7 @@ class SQLiteService {
         'amount': m.amount,
         'type': m.type.name,
         'category_id': m.categoryId,
+        'subcategory_id': m.subcategoryId,
         'account_id': m.accountId,
         'destination_account_id': m.destinationAccountId,
         'date': _toDateOnly(m.date),
@@ -361,6 +423,7 @@ class SQLiteService {
         amount: (map['amount'] as num).toDouble(),
         type: MovementType.values.byName(map['type'] as String),
         categoryId: map['category_id'] as String,
+        subcategoryId: map['subcategory_id'] as String?,
         accountId: map['account_id'] as String? ?? defaultAccountId,
         destinationAccountId: map['destination_account_id'] as String?,
         date: _parseDateSafe(map['date'], fallback: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1))),
@@ -444,6 +507,84 @@ class SQLiteService {
         archived: (map['archived'] as int) == 1,
       );
 
+  // ── Subcategories ──
+
+  Future<List<Subcategory>> loadSubcategories() async {
+    final db = _database;
+    final rows = await db.query('subcategories');
+    return rows.map(_subcategoryFromMap).toList();
+  }
+
+  Future<List<Subcategory>> loadSubcategoriesForCategory(String categoryId) async {
+    final db = _database;
+    final rows = await db.query('subcategories',
+        where: 'category_id = ?', whereArgs: [categoryId]);
+    return rows.map(_subcategoryFromMap).toList();
+  }
+
+  Future<void> insertSubcategory(Subcategory s) async {
+    final db = _database;
+    await db.insert('subcategories', _subcategoryToMap(s),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> updateSubcategory(Subcategory s) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.update(
+      'subcategories',
+      {
+        'name': s.name,
+        'archived': s.archived ? 1 : 0,
+        'updated_at': now,
+      },
+      where: 'id = ?',
+      whereArgs: [s.id],
+    );
+  }
+
+  Future<void> archiveSubcategory(String id) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.update('subcategories',
+        {'archived': 1, 'updated_at': now},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> restoreSubcategory(String id) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.update('subcategories',
+        {'archived': 0, 'updated_at': now},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteSubcategory(String id) async {
+    final db = _database;
+    await db.delete('subcategories', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Map<String, dynamic> _subcategoryToMap(Subcategory s) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': s.id,
+      'category_id': s.categoryId,
+      'name': s.name,
+      'archived': s.archived ? 1 : 0,
+      'created_at': now,
+      'updated_at': now,
+    };
+  }
+
+  Subcategory _subcategoryFromMap(Map<String, dynamic> map) => Subcategory(
+        id: map['id'] as String,
+        categoryId: map['category_id'] as String,
+        name: map['name'] as String,
+        archived: (map['archived'] as int) == 1,
+        createdAt: DateTime.parse(map['created_at'] as String),
+        updatedAt: DateTime.parse(map['updated_at'] as String),
+      );
+
   // ── Quick Movements ──
 
   Future<List<QuickMovement>> loadQuickMovements() async {
@@ -477,6 +618,7 @@ class SQLiteService {
       'amount': qm.amount,
       'type': qm.type.name,
       'category_id': qm.categoryId,
+      'subcategory_id': qm.subcategoryId,
       'account_id': qm.accountId,
       'note': qm.note,
       'created_at': now,
@@ -491,6 +633,7 @@ class SQLiteService {
         amount: (map['amount'] as num).toDouble(),
         type: MovementType.values.byName(map['type'] as String),
         categoryId: map['category_id'] as String,
+        subcategoryId: map['subcategory_id'] as String?,
         accountId: map['account_id'] as String? ?? defaultAccountId,
         note: map['note'] as String?,
       );
@@ -522,6 +665,7 @@ class SQLiteService {
       'amount': fm.amount,
       'type': fm.type.name,
       'category_id': fm.categoryId,
+      'subcategory_id': fm.subcategoryId,
       'account_id': fm.accountId,
       'note': fm.note,
       'created_at': now,
@@ -536,6 +680,7 @@ class SQLiteService {
         amount: (map['amount'] as num).toDouble(),
         type: MovementType.values.byName(map['type'] as String),
         categoryId: map['category_id'] as String,
+        subcategoryId: map['subcategory_id'] as String?,
         accountId: map['account_id'] as String? ?? defaultAccountId,
         note: map['note'] as String?,
       );
@@ -608,6 +753,7 @@ class SQLiteService {
     final db = _database;
     await db.delete('movements');
     await db.delete('categories');
+    await db.delete('subcategories');
     await db.delete('quick_movements');
     await db.delete('favorite_movements');
     await db.delete('accounts');

@@ -4,6 +4,7 @@ import '../design/stream_icon_library.dart';
 import '../design/stream_date_picker.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
+import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
@@ -279,6 +280,7 @@ class _ManualFormState extends State<_ManualForm> {
   late final TextEditingController _noteCtrl;
   MovementType _type = MovementType.expense;
   String? _selectedCategoryId;
+  String? _selectedSubcategoryId;
   String? _selectedAccountId;
   String? _selectedDestinationAccountId;
   late DateTime _date;
@@ -296,6 +298,7 @@ class _ManualFormState extends State<_ManualForm> {
     if (p != null) {
       _type = p.type;
       _selectedCategoryId = p.categoryId;
+      _selectedSubcategoryId = p.subcategoryId;
       _selectedAccountId = p.accountId;
       _selectedDestinationAccountId = p.destinationAccountId;
     } else {
@@ -326,6 +329,49 @@ class _ManualFormState extends State<_ManualForm> {
       : widget.db.categories
             .where((c) => c.type == _type && !c.archived)
             .toList();
+
+  List<Subcategory> _subcategoriesForCategory(String? categoryId) {
+    if (categoryId == null) return [];
+    return widget.db.getActiveSubcategoriesForCategory(categoryId);
+  }
+
+  Widget _subcategoryDropdown() {
+    final subs = _subcategoriesForCategory(_selectedCategoryId);
+    if (_type == MovementType.transfer || subs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: StreamSpacing.md),
+      child: DropdownButtonFormField<String>(
+        key: const Key('movement_subcategory_dropdown'),
+        value: _selectedSubcategoryId,
+        decoration: const InputDecoration(
+          labelText: 'Sottocategoria',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: StreamColors.surfaceElevated,
+        ),
+        isExpanded: true,
+        items: [
+          const DropdownMenuItem<String>(
+            key: Key('movement_subcategory_none'),
+            value: null,
+            child: Text('Nessuna'),
+          ),
+          for (final sub in subs)
+            DropdownMenuItem<String>(
+              key: Key('movement_subcategory_option_${sub.id}'),
+              value: sub.id,
+              child: Text(sub.name),
+            ),
+        ],
+        onChanged: (v) => setState(() => _selectedSubcategoryId = v),
+      ),
+    );
+  }
 
   void _submit() {
     final title = _titleCtrl.text.trim();
@@ -395,6 +441,7 @@ class _ManualFormState extends State<_ManualForm> {
         type: _type,
         date: _date,
         categoryId: _selectedCategoryId!,
+        subcategoryId: _selectedSubcategoryId,
         accountId: _selectedAccountId,
         note: note,
         updatedAt: DateTime.now(),
@@ -407,6 +454,7 @@ class _ManualFormState extends State<_ManualForm> {
         type: _type,
         date: _date,
         categoryId: _selectedCategoryId!,
+        subcategoryId: _selectedSubcategoryId,
         accountId: _selectedAccountId,
         note: note,
       );
@@ -482,6 +530,7 @@ class _ManualFormState extends State<_ManualForm> {
             setState(() {
               _type = set.first;
               _selectedCategoryId = null;
+              _selectedSubcategoryId = null;
               if (_type != MovementType.transfer) {
                 _selectedDestinationAccountId = null;
               }
@@ -553,9 +602,15 @@ class _ManualFormState extends State<_ManualForm> {
                   ),
                 )
                 .toList(),
-            onChanged: (v) => setState(() => _selectedCategoryId = v),
+            onChanged: (v) => setState(() {
+              _selectedCategoryId = v;
+              if (!_subcategoriesForCategory(v).any((s) => s.id == _selectedSubcategoryId)) {
+                _selectedSubcategoryId = null;
+              }
+            }),
           ),
           const SizedBox(height: StreamSpacing.md),
+          _subcategoryDropdown(),
         ],
         DropdownButtonFormField<String>(
           initialValue: _selectedAccountId,
@@ -803,6 +858,7 @@ class _QuickFormDialog extends StatefulWidget {
 class _QuickFormDialogState extends State<_QuickFormDialog> {
   late final TextEditingController _titleCtrl;
   late final TextEditingController _amountCtrl;
+  late final TextEditingController _noteCtrl;
   MovementType _type = MovementType.expense;
   String? _selectedCategoryId;
   String? _selectedAccountId;
@@ -815,6 +871,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
     _amountCtrl = TextEditingController(
       text: e != null ? e.amount.toString() : '',
     );
+    _noteCtrl = TextEditingController(text: e?.note ?? '');
     if (e != null) {
       _type = e.type;
       _selectedCategoryId = e.categoryId;
@@ -826,6 +883,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
   void dispose() {
     _titleCtrl.dispose();
     _amountCtrl.dispose();
+    _noteCtrl.dispose();
     super.dispose();
   }
 
@@ -850,6 +908,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
       return;
     }
 
+    final note = _noteCtrl.text.trim();
     final qm = QuickMovement(
       id:
           widget.existing?.id ??
@@ -859,6 +918,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
       type: _type,
       categoryId: _selectedCategoryId!,
       accountId: _selectedAccountId ?? defaultAccountId,
+      note: note.isNotEmpty ? note : null,
     );
 
     if (widget.existing != null) {
@@ -1005,6 +1065,16 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
                 )
                 .toList(),
             onChanged: (v) => setState(() => _selectedAccountId = v),
+          ),
+          const SizedBox(height: StreamSpacing.md),
+          TextField(
+            key: const Key('quick_movement_note_input'),
+            controller: _noteCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Nota (opzionale)',
+            ),
+            textInputAction: TextInputAction.done,
+            maxLines: 2,
           ),
           const SizedBox(height: StreamSpacing.lg),
           FilledButton(
@@ -1258,6 +1328,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
   late final TextEditingController _noteCtrl;
   MovementType _type = MovementType.expense;
   String? _selectedCategoryId;
+  String? _selectedSubcategoryId;
   String? _selectedAccountId;
 
   @override
@@ -1272,6 +1343,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
     if (e != null) {
       _type = e.type;
       _selectedCategoryId = e.categoryId;
+      _selectedSubcategoryId = e.subcategoryId;
       _selectedAccountId = e.accountId;
     }
   }
@@ -1287,6 +1359,49 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
   List<Category> get _availableCategories => widget.db.categories
       .where((c) => c.type == _type && !c.archived)
       .toList();
+
+  List<Subcategory> _subcategoriesForCategory(String? categoryId) {
+    if (categoryId == null) return [];
+    return widget.db.getActiveSubcategoriesForCategory(categoryId);
+  }
+
+  Widget _subcategoryDropdown() {
+    final subs = _subcategoriesForCategory(_selectedCategoryId);
+    if (_type == MovementType.transfer || subs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: StreamSpacing.md),
+      child: DropdownButtonFormField<String>(
+        key: const Key('movement_subcategory_dropdown'),
+        value: _selectedSubcategoryId,
+        decoration: const InputDecoration(
+          labelText: 'Sottocategoria',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: StreamColors.surfaceElevated,
+        ),
+        isExpanded: true,
+        items: [
+          const DropdownMenuItem<String>(
+            key: Key('movement_subcategory_none'),
+            value: null,
+            child: Text('Nessuna'),
+          ),
+          for (final sub in subs)
+            DropdownMenuItem<String>(
+              key: Key('movement_subcategory_option_${sub.id}'),
+              value: sub.id,
+              child: Text(sub.name),
+            ),
+        ],
+        onChanged: (v) => setState(() => _selectedSubcategoryId = v),
+      ),
+    );
+  }
 
   void _save() {
     final title = _titleCtrl.text.trim();
@@ -1318,6 +1433,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
         amount: amount,
         type: _type,
         categoryId: _selectedCategoryId!,
+        subcategoryId: _selectedSubcategoryId,
         accountId: _selectedAccountId ?? defaultAccountId,
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       ),
@@ -1375,6 +1491,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
               setState(() {
                 _type = set.first;
                 _selectedCategoryId = null;
+                _selectedSubcategoryId = null;
               });
             },
           ),
@@ -1426,8 +1543,15 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
                   ),
                 )
                 .toList(),
-            onChanged: (v) => setState(() => _selectedCategoryId = v),
+            onChanged: (v) => setState(() {
+              _selectedCategoryId = v;
+              if (!_subcategoriesForCategory(v).any((s) => s.id == _selectedSubcategoryId)) {
+                _selectedSubcategoryId = null;
+              }
+            }),
           ),
+          const SizedBox(height: StreamSpacing.md),
+          _subcategoryDropdown(),
           const SizedBox(height: StreamSpacing.md),
           DropdownButtonFormField<String>(
             initialValue: _selectedAccountId,

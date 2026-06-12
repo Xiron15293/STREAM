@@ -8,6 +8,7 @@ class Movement {
   final MovementType type;
   final DateTime date;
   final String categoryId;
+  final String? subcategoryId;
   final String accountId;
   final String? destinationAccountId;
   final String? note;
@@ -21,6 +22,7 @@ class Movement {
     required this.type,
     required this.date,
     required this.categoryId,
+    this.subcategoryId,
     String? accountId,
     this.destinationAccountId,
     this.note,
@@ -45,6 +47,7 @@ class Movement {
     MovementType? type,
     DateTime? date,
     String? categoryId,
+    String? subcategoryId,
     String? accountId,
     String? destinationAccountId,
     String? note,
@@ -58,6 +61,7 @@ class Movement {
       type: type ?? this.type,
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
+      subcategoryId: subcategoryId ?? this.subcategoryId,
       accountId: accountId ?? this.accountId,
       destinationAccountId: destinationAccountId ?? this.destinationAccountId,
       note: note ?? this.note,

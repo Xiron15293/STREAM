@@ -63,6 +63,7 @@ class _ThrowingMovement extends Movement {
     MovementType? type,
     DateTime? date,
     String? categoryId,
+    String? subcategoryId,
     String? accountId,
     String? destinationAccountId,
     String? note,

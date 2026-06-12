@@ -7,6 +7,7 @@ class FavoriteMovement {
   final double amount;
   final MovementType type;
   final String categoryId;
+  final String? subcategoryId;
   final String accountId;
   final String? note;
 
@@ -16,6 +17,7 @@ class FavoriteMovement {
     required this.amount,
     required this.type,
     required this.categoryId,
+    this.subcategoryId,
     this.accountId = defaultAccountId,
     this.note,
   });

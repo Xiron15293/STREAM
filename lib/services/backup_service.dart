@@ -9,6 +9,7 @@ import '../design/stream_icon_library.dart';
 import '../models/account.dart';
 import '../models/backup_data.dart';
 import '../models/category.dart';
+import '../models/subcategory.dart';
 import '../models/favorite_movement.dart';
 import '../models/movement.dart';
 import '../models/quick_movement.dart';
@@ -53,6 +54,7 @@ class BackupService {
       createdAt: DateTime.now().toIso8601String(),
       accounts: db.accounts.toList(),
       categories: db.categories.toList(),
+      subcategories: db.subcategories.toList(),
       movements: db.movements.toList(),
       quickMovements: db.quickMovements.toList(),
       favoriteMovements: db.favoriteMovements.toList(),
@@ -234,6 +236,7 @@ class BackupService {
     try {
       if (sqlite != null) {
         await sqlite.transaction((txn) async {
+          await txn.delete('subcategories');
           await txn.delete('movements');
           await txn.delete('categories');
           await txn.delete('quick_movements');
@@ -252,6 +255,14 @@ class BackupService {
             await txn.insert(
               'categories',
               _categoryToRow(cat),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+
+          for (final sub in snapshot.subcategories) {
+            await txn.insert(
+              'subcategories',
+              _subcategoryToRow(sub),
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
@@ -285,6 +296,7 @@ class BackupService {
       db.replaceState(
         movements: snapshot.movements,
         categories: snapshot.categories,
+        subcategories: snapshot.subcategories,
         quickMovements: snapshot.quickMovements,
         favoriteMovements: snapshot.favoriteMovements,
         accounts: snapshot.accounts,
@@ -355,8 +367,13 @@ class BackupService {
       categoryMap[cat.id] = cat;
     }
 
+    final subcategoryMap = <String, Subcategory>{
+      for (final sub in data.subcategories) sub.id: sub,
+    };
+
     final accounts = accountMap.values.toList();
     final categories = categoryMap.values.toList();
+    final subcategories = subcategoryMap.values.toList();
     final quickMovementMap = <String, QuickMovement>{
       for (final quickMovement in _defaultQuickMovements())
         quickMovement.id: quickMovement,
@@ -365,18 +382,19 @@ class BackupService {
       quickMovementMap[quickMovement.id] = quickMovement;
     }
     final movements = data.movements
-        .map((m) => _normalizeMovement(m, accountMap, categoryMap))
+        .map((m) => _normalizeMovement(m, accountMap, categoryMap, subcategoryMap))
         .toList();
     final quickMovements = quickMovementMap.values
-        .map((q) => _normalizeQuickMovement(q, accountMap, categoryMap))
+        .map((q) => _normalizeQuickMovement(q, accountMap, categoryMap, subcategoryMap))
         .toList();
     final favoriteMovements = data.favoriteMovements
-        .map((f) => _normalizeFavoriteMovement(f, accountMap, categoryMap))
+        .map((f) => _normalizeFavoriteMovement(f, accountMap, categoryMap, subcategoryMap))
         .toList();
 
     return _RestoreSnapshot(
       accounts: accounts,
       categories: categories,
+      subcategories: subcategories,
       movements: movements,
       quickMovements: quickMovements,
       favoriteMovements: favoriteMovements,
@@ -398,6 +416,7 @@ class BackupService {
     Movement movement,
     Map<String, Account> accounts,
     Map<String, Category> categories,
+    Map<String, Subcategory> subcategories,
   ) {
     final accountId = accounts.containsKey(movement.accountId)
         ? movement.accountId
@@ -412,18 +431,37 @@ class BackupService {
         : category != null && category.type == movement.type
             ? category.id
             : _defaultCategoryIdForType(movement.type);
+    final subcategoryId = _normalizeSubcategoryId(
+      movement.subcategoryId,
+      categoryId,
+      subcategories,
+    );
 
     return movement.copyWith(
       accountId: accountId,
       categoryId: categoryId,
+      subcategoryId: subcategoryId,
       destinationAccountId: destinationAccountId,
     );
+  }
+
+  static String? _normalizeSubcategoryId(
+    String? subcategoryId,
+    String categoryId,
+    Map<String, Subcategory> subcategories,
+  ) {
+    if (subcategoryId == null) return null;
+    final sub = subcategories[subcategoryId];
+    if (sub == null) return null;
+    if (sub.categoryId != categoryId) return null;
+    return sub.id;
   }
 
   static QuickMovement _normalizeQuickMovement(
     QuickMovement quickMovement,
     Map<String, Account> accounts,
     Map<String, Category> categories,
+    Map<String, Subcategory> subcategories,
   ) {
     final accountId = accounts.containsKey(quickMovement.accountId)
         ? quickMovement.accountId
@@ -432,6 +470,11 @@ class BackupService {
     final categoryId = category != null && category.type == quickMovement.type
         ? category.id
         : _defaultCategoryIdForType(quickMovement.type);
+    final subcategoryId = _normalizeSubcategoryId(
+      quickMovement.subcategoryId,
+      categoryId,
+      subcategories,
+    );
 
     return QuickMovement(
       id: quickMovement.id,
@@ -439,6 +482,7 @@ class BackupService {
       amount: quickMovement.amount,
       type: quickMovement.type,
       categoryId: categoryId,
+      subcategoryId: subcategoryId,
       accountId: accountId,
       note: quickMovement.note,
     );
@@ -448,6 +492,7 @@ class BackupService {
     FavoriteMovement favoriteMovement,
     Map<String, Account> accounts,
     Map<String, Category> categories,
+    Map<String, Subcategory> subcategories,
   ) {
     final accountId = accounts.containsKey(favoriteMovement.accountId)
         ? favoriteMovement.accountId
@@ -456,6 +501,11 @@ class BackupService {
     final categoryId = category != null && category.type == favoriteMovement.type
         ? category.id
         : _defaultCategoryIdForType(favoriteMovement.type);
+    final subcategoryId = _normalizeSubcategoryId(
+      favoriteMovement.subcategoryId,
+      categoryId,
+      subcategories,
+    );
 
     return FavoriteMovement(
       id: favoriteMovement.id,
@@ -463,6 +513,7 @@ class BackupService {
       amount: favoriteMovement.amount,
       type: favoriteMovement.type,
       categoryId: categoryId,
+      subcategoryId: subcategoryId,
       accountId: accountId,
       note: favoriteMovement.note,
     );
@@ -470,6 +521,18 @@ class BackupService {
 
   static String _defaultCategoryIdForType(MovementType type) {
     return type == MovementType.income ? 'inc_1' : 'exp_1';
+  }
+
+  static Map<String, dynamic> _subcategoryToRow(Subcategory subcategory) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': subcategory.id,
+      'category_id': subcategory.categoryId,
+      'name': subcategory.name,
+      'archived': subcategory.archived ? 1 : 0,
+      'created_at': now,
+      'updated_at': now,
+    };
   }
 
   static Map<String, dynamic> _accountToRow(Account account) => {
@@ -547,6 +610,7 @@ class BackupService {
 class _RestoreSnapshot {
   final List<Account> accounts;
   final List<Category> categories;
+  final List<Subcategory> subcategories;
   final List<Movement> movements;
   final List<QuickMovement> quickMovements;
   final List<FavoriteMovement> favoriteMovements;
@@ -554,6 +618,7 @@ class _RestoreSnapshot {
   const _RestoreSnapshot({
     required this.accounts,
     required this.categories,
+    required this.subcategories,
     required this.movements,
     required this.quickMovements,
     required this.favoriteMovements,

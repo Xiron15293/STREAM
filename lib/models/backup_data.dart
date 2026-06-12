@@ -1,6 +1,7 @@
 import '../design/stream_icon_library.dart';
 import 'account.dart';
 import 'category.dart';
+import 'subcategory.dart';
 import 'movement.dart';
 import 'quick_movement.dart';
 import 'favorite_movement.dart';
@@ -22,6 +23,7 @@ class BackupData {
   final String createdAt;
   final List<Account> accounts;
   final List<Category> categories;
+  final List<Subcategory> subcategories;
   final List<Movement> movements;
   final List<QuickMovement> quickMovements;
   final List<FavoriteMovement> favoriteMovements;
@@ -32,6 +34,7 @@ class BackupData {
     required this.createdAt,
     required this.accounts,
     required this.categories,
+    this.subcategories = const [],
     required this.movements,
     this.quickMovements = const [],
     this.favoriteMovements = const [],
@@ -43,6 +46,7 @@ class BackupData {
         'createdAt': createdAt,
         'accounts': accounts.map((a) => _accountToMap(a)).toList(),
         'categories': categories.map((c) => _categoryToMap(c)).toList(),
+        'subcategories': subcategories.map((s) => _subcategoryToMap(s)).toList(),
         'movements': movements.map((m) => _movementToMap(m)).toList(),
         'quickMovements': quickMovements.map((q) => _quickMovementToMap(q)).toList(),
         'favoriteMovements': favoriteMovements.map((f) => _favoriteMovementToMap(f)).toList(),
@@ -55,6 +59,7 @@ class BackupData {
       createdAt: json['createdAt'] as String? ?? '',
       accounts: (json['accounts'] as List<dynamic>?)?.map((e) => _accountFromMap(e as Map<String, dynamic>)).toList() ?? [],
       categories: (json['categories'] as List<dynamic>?)?.map((e) => _categoryFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      subcategories: (json['subcategories'] as List<dynamic>?)?.map((e) => _subcategoryFromMap(e as Map<String, dynamic>)).toList() ?? [],
       movements: (json['movements'] as List<dynamic>?)?.map((e) => _movementFromMap(e as Map<String, dynamic>)).toList() ?? [],
       quickMovements: (json['quickMovements'] as List<dynamic>?)?.map((e) => _quickMovementFromMap(e as Map<String, dynamic>)).toList() ?? [],
       favoriteMovements: (json['favoriteMovements'] as List<dynamic>?)?.map((e) => _favoriteMovementFromMap(e as Map<String, dynamic>)).toList() ?? [],
@@ -93,6 +98,22 @@ class BackupData {
         updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,
       );
 
+  static Map<String, dynamic> _subcategoryToMap(Subcategory s) => {
+        'id': s.id,
+        'categoryId': s.categoryId,
+        'name': s.name,
+        'archived': s.archived,
+      };
+
+  static Subcategory _subcategoryFromMap(Map<String, dynamic> m) => Subcategory(
+        id: m['id'] as String,
+        categoryId: m['categoryId'] as String,
+        name: m['name'] as String,
+        archived: m['archived'] as bool? ?? false,
+        createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
+        updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,
+      );
+
   static Map<String, dynamic> _categoryToMap(Category c) => {
         'id': c.id,
         'name': c.name,
@@ -118,6 +139,7 @@ class BackupData {
         'type': m.type.name,
         'date': m.date.toIso8601String(),
         'categoryId': m.categoryId,
+        'subcategoryId': m.subcategoryId,
         'accountId': m.accountId,
         'destinationAccountId': m.destinationAccountId,
         'note': m.note,
@@ -132,6 +154,7 @@ class BackupData {
         type: MovementType.values.byName(m['type'] as String),
         date: _parseDateSafe(m['date'], fallback: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1))),
         categoryId: m['categoryId'] as String,
+        subcategoryId: m['subcategoryId'] as String?,
         accountId: m['accountId'] as String?,
         destinationAccountId: m['destinationAccountId'] as String?,
         note: m['note'] as String?,
@@ -145,6 +168,7 @@ class BackupData {
         'amount': q.amount,
         'type': q.type.name,
         'categoryId': q.categoryId,
+        'subcategoryId': q.subcategoryId,
         'accountId': q.accountId,
         'note': q.note,
       };
@@ -155,6 +179,7 @@ class BackupData {
         amount: (m['amount'] as num).toDouble(),
         type: MovementType.values.byName(m['type'] as String),
         categoryId: m['categoryId'] as String,
+        subcategoryId: m['subcategoryId'] as String?,
         accountId: m['accountId'] as String? ?? defaultAccountId,
         note: m['note'] as String?,
       );
@@ -165,6 +190,7 @@ class BackupData {
         'amount': f.amount,
         'type': f.type.name,
         'categoryId': f.categoryId,
+        'subcategoryId': f.subcategoryId,
         'accountId': f.accountId,
         'note': f.note,
       };
@@ -175,6 +201,7 @@ class BackupData {
         amount: (m['amount'] as num).toDouble(),
         type: MovementType.values.byName(m['type'] as String),
         categoryId: m['categoryId'] as String,
+        subcategoryId: m['subcategoryId'] as String?,
         accountId: m['accountId'] as String? ?? defaultAccountId,
         note: m['note'] as String?,
       );

@@ -160,6 +160,7 @@ class OneMoneyCsvImportService {
       db.replaceState(
         movements: plan.movements,
         categories: plan.categories,
+        subcategories: const [],
         quickMovements: plan.quickMovements,
         favoriteMovements: plan.favoriteMovements,
         accounts: plan.accounts,

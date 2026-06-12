@@ -1312,6 +1312,13 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
               currentColor: _color,
               onChanged: (c) => setState(() => _color = c),
             ),
+            if (widget.existing != null) ...[
+              const SizedBox(height: 16),
+              _SubcategorySection(
+                db: widget.db,
+                categoryId: widget.existing!.id,
+              ),
+            ],
           ],
         ),
       ),
@@ -1326,6 +1333,196 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
         ),
       ],
     );
+  }
+}
+
+class _SubcategorySection extends StatefulWidget {
+  final AppDatabase db;
+  final String categoryId;
+
+  const _SubcategorySection({
+    required this.db,
+    required this.categoryId,
+  });
+
+  @override
+  State<_SubcategorySection> createState() => _SubcategorySectionState();
+}
+
+class _SubcategorySectionState extends State<_SubcategorySection> {
+  void _addSubcategory() {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nuova sottocategoria'),
+        content: TextField(
+          key: const Key('subcategory_name_field'),
+          controller: ctrl,
+          decoration: const InputDecoration(
+            hintText: 'Nome sottocategoria',
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _saveAndPop(ctrl),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            key: const Key('subcategory_save_button'),
+            onPressed: () => _saveAndPop(ctrl),
+            child: const Text('Aggiungi'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _saveAndPop(TextEditingController ctrl) {
+    final name = ctrl.text.trim();
+    if (name.isEmpty) return;
+    widget.db.createSubcategory(widget.categoryId, name);
+    Navigator.of(context).pop();
+  }
+
+  void _renameSubcategory(String id, String currentName) {
+    final ctrl = TextEditingController(text: currentName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Modifica sottocategoria'),
+        content: TextField(
+          key: const Key('subcategory_name_field'),
+          controller: ctrl,
+          decoration: const InputDecoration(
+            hintText: 'Nome sottocategoria',
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            final name = ctrl.text.trim();
+            if (name.isNotEmpty) {
+              widget.db.updateSubcategory(id, name);
+              Navigator.pop(ctx);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            key: const Key('subcategory_save_button'),
+            onPressed: () {
+              final name = ctrl.text.trim();
+              if (name.isEmpty) return;
+              widget.db.updateSubcategory(id, name);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final subcategories = widget.db.getSubcategoriesForCategory(widget.categoryId);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Sottocategorie (${subcategories.length})',
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
+            TextButton.icon(
+              key: const Key('category_add_subcategory_button'),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Aggiungi'),
+              onPressed: _addSubcategory,
+            ),
+          ],
+        ),
+        if (subcategories.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Nessuna sottocategoria',
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textMuted,
+              ),
+            ),
+          )
+        else
+          ...subcategories.map(
+            (sub) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.subdirectory_arrow_right,
+                    size: 16,
+                    color: StreamColors.textMuted,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      sub.name,
+                      style: TextStyle(
+                        color: sub.archived
+                            ? StreamColors.textMuted
+                            : null,
+                        decoration: sub.archived
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                  ),
+                  if (!sub.archived)
+                    IconButton(
+                      key: const Key('subcategory_archive_button'),
+                      icon: Icon(Icons.archive_outlined,
+                          size: 18, color: StreamColors.textMuted),
+                      onPressed: () => _archiveSubcategory(sub.id),
+                      tooltip: 'Archivia',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (sub.archived)
+                    IconButton(
+                      key: const Key('subcategory_restore_button'),
+                      icon: Icon(Icons.unarchive_outlined,
+                          size: 18, color: StreamColors.textMuted),
+                      onPressed: () => widget.db.restoreSubcategory(sub.id),
+                      tooltip: 'Ripristina',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  IconButton(
+                    icon: Icon(Icons.edit_outlined,
+                        size: 18, color: StreamColors.textMuted),
+                    onPressed: () => _renameSubcategory(sub.id, sub.name),
+                    tooltip: 'Modifica',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _archiveSubcategory(String id) {
+    widget.db.archiveSubcategory(id);
+    setState(() {});
   }
 }
 

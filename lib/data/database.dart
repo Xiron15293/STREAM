@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' hide Category;
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
+import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
@@ -12,6 +13,7 @@ class AppDatabase extends ChangeNotifier {
   final SQLiteService? _sqlite;
   final List<Movement> _movements = [];
   List<Category> _categories = [];
+  final List<Subcategory> _subcategories = [];
   List<QuickMovement> _quickMovements = [];
   final List<FavoriteMovement> _favoriteMovements = [];
   List<Account> _accounts = [];
@@ -71,6 +73,9 @@ class AppDatabase extends ChangeNotifier {
     }
 
     _categories = await _sqlite.loadCategories();
+    _subcategories
+      ..clear()
+      ..addAll(await _sqlite.loadSubcategories());
     _movements
       ..clear()
       ..addAll(await _sqlite.loadMovements());
@@ -92,6 +97,7 @@ class AppDatabase extends ChangeNotifier {
 
   List<Movement> get movements => List.unmodifiable(_movements);
   List<Category> get categories => List.unmodifiable(_categories);
+  List<Subcategory> get subcategories => List.unmodifiable(_subcategories);
   List<QuickMovement> get quickMovements => List.unmodifiable(_quickMovements);
   List<FavoriteMovement> get favoriteMovements =>
       List.unmodifiable(_favoriteMovements);
@@ -255,6 +261,7 @@ class AppDatabase extends ChangeNotifier {
       type: m.type,
       date: DateTime.now(),
       categoryId: m.categoryId,
+      subcategoryId: m.subcategoryId,
       accountId: m.accountId,
       note: m.note,
       createdAt: DateTime.now(),
@@ -277,6 +284,7 @@ class AppDatabase extends ChangeNotifier {
       amount: m.amount,
       type: m.type,
       categoryId: m.categoryId,
+      subcategoryId: m.subcategoryId,
       accountId: m.accountId,
       note: m.note,
     );
@@ -296,6 +304,7 @@ class AppDatabase extends ChangeNotifier {
     required double amount,
     required MovementType type,
     required String categoryId,
+    String? subcategoryId,
     String? note,
     String? accountId,
     String? destinationAccountId,
@@ -315,6 +324,7 @@ class AppDatabase extends ChangeNotifier {
       type: type,
       date: date ?? DateTime.now(),
       categoryId: categoryId,
+      subcategoryId: subcategoryId,
       accountId: originAccountId,
       destinationAccountId: destinationAccountId,
       note: note,
@@ -406,6 +416,124 @@ class AppDatabase extends ChangeNotifier {
   Future<void> restoreCategory(String id) async {
     final cat = _categories.firstWhere((c) => c.id == id);
     await updateCategory(id, cat.name, cat.color, archived: false);
+  }
+
+  // ── Subcategories CRUD ──
+
+  List<Subcategory> getSubcategoriesForCategory(String categoryId) {
+    return _subcategories.where((s) => s.categoryId == categoryId).toList();
+  }
+
+  List<Subcategory> getActiveSubcategoriesForCategory(String categoryId) {
+    return _subcategories
+        .where((s) => s.categoryId == categoryId && !s.archived)
+        .toList();
+  }
+
+  bool subcategoryNameExists(String categoryId, String name) {
+    return _subcategories.any(
+      (s) => s.categoryId == categoryId &&
+          s.name.toLowerCase() == name.trim().toLowerCase(),
+    );
+  }
+
+  Future<void> createSubcategory(String categoryId, String name) async {
+    final id = 'sub_${DateTime.now().microsecondsSinceEpoch.toString()}';
+    final now = DateTime.now();
+    final s = Subcategory(
+      id: id,
+      categoryId: categoryId,
+      name: name.trim(),
+      createdAt: now,
+    );
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertSubcategory(s);
+      } catch (_) {
+        return;
+      }
+    }
+    _subcategories.add(s);
+    notifyListeners();
+  }
+
+  Future<void> updateSubcategory(String id, String name) async {
+    final index = _subcategories.indexWhere((s) => s.id == id);
+    if (index < 0) return;
+    final old = _subcategories[index];
+    final updated = Subcategory(
+      id: id,
+      categoryId: old.categoryId,
+      name: name.trim(),
+      archived: old.archived,
+      createdAt: old.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateSubcategory(updated);
+      } catch (_) {
+        return;
+      }
+    }
+    _subcategories[index] = updated;
+    notifyListeners();
+  }
+
+  Future<void> archiveSubcategory(String id) async {
+    final index = _subcategories.indexWhere((s) => s.id == id);
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.archiveSubcategory(id);
+      } catch (_) {
+        return;
+      }
+    }
+    final old = _subcategories[index];
+    _subcategories[index] = Subcategory(
+      id: id,
+      categoryId: old.categoryId,
+      name: old.name,
+      archived: true,
+      createdAt: old.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  Future<void> restoreSubcategory(String id) async {
+    final index = _subcategories.indexWhere((s) => s.id == id);
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.restoreSubcategory(id);
+      } catch (_) {
+        return;
+      }
+    }
+    final old = _subcategories[index];
+    _subcategories[index] = Subcategory(
+      id: id,
+      categoryId: old.categoryId,
+      name: old.name,
+      archived: false,
+      createdAt: old.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  Future<void> deleteSubcategory(String id) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.deleteSubcategory(id);
+      } catch (_) {
+        return;
+      }
+    }
+    _subcategories.removeWhere((s) => s.id == id);
+    notifyListeners();
   }
 
   // ── Accounts ──
@@ -504,6 +632,9 @@ class AppDatabase extends ChangeNotifier {
         ..clear()
         ..addAll(await _sqlite.loadMovements());
       _categories = await _sqlite.loadCategories();
+      _subcategories
+        ..clear()
+        ..addAll(await _sqlite.loadSubcategories());
       _quickMovements = await _sqlite.loadQuickMovements();
       _favoriteMovements
         ..clear()
@@ -519,6 +650,7 @@ class AppDatabase extends ChangeNotifier {
     if (_sqlite == null) {
       _movements.clear();
       _categories = List.from(DefaultCategories.all);
+      _subcategories.clear();
       _quickMovements = _defaultQuickMovements();
       _favoriteMovements.clear();
       _accounts = [
@@ -550,6 +682,7 @@ class AppDatabase extends ChangeNotifier {
   void clearMemory() {
     _movements.clear();
     _categories.clear();
+    _subcategories.clear();
     _quickMovements.clear();
     _favoriteMovements.clear();
     _accounts.clear();
@@ -558,6 +691,7 @@ class AppDatabase extends ChangeNotifier {
   void replaceState({
     required List<Movement> movements,
     required List<Category> categories,
+    required List<Subcategory> subcategories,
     required List<QuickMovement> quickMovements,
     required List<FavoriteMovement> favoriteMovements,
     required List<Account> accounts,
@@ -566,6 +700,9 @@ class AppDatabase extends ChangeNotifier {
       ..clear()
       ..addAll(movements);
     _categories = List.from(categories);
+    _subcategories
+      ..clear()
+      ..addAll(subcategories);
     _quickMovements = List.from(quickMovements);
     _favoriteMovements
       ..clear()
@@ -636,6 +773,17 @@ class AppDatabase extends ChangeNotifier {
       }
     }
     _quickMovements.add(qm);
+  }
+
+  Future<void> internalAddSubcategory(Subcategory s) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertSubcategory(s);
+      } catch (_) {
+        return;
+      }
+    }
+    _subcategories.add(s);
   }
 
   Future<void> internalAddFavoriteMovement(FavoriteMovement fm) async {
