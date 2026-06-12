@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/preferences_service.dart';
+import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
@@ -17,6 +18,7 @@ class PeriodHeatmapCard extends StatelessWidget {
   final Widget? footerAction;
   final bool compactHeader;
   final bool annualCompact;
+  final List<Category>? categories;
 
   const PeriodHeatmapCard({
     super.key,
@@ -27,6 +29,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     this.footerAction,
     this.compactHeader = false,
     this.annualCompact = false,
+    this.categories,
   });
 
   @override
@@ -101,7 +104,7 @@ class PeriodHeatmapCard extends StatelessWidget {
   String get _subtitle {
     switch (timeFilter.mode) {
       case TimeFilterMode.day:
-        return 'Dettaglio del giorno selezionato';
+        return '';
       case TimeFilterMode.month:
         return 'Heatmap mensile del periodo selezionato';
       case TimeFilterMode.year:
@@ -155,7 +158,12 @@ class PeriodHeatmapCard extends StatelessWidget {
     dayMoves.sort((a, b) => a.date.compareTo(b.date));
     final firstExpense = dayMoves.where((m) => m.isExpense).firstOrNull;
     final lastExpense = dayMoves.where((m) => m.isExpense).lastOrNull;
-    final firstIncome = dayMoves.where((m) => m.isIncome).firstOrNull;
+
+    final topCategory = _topCategoryForDay(dayDate);
+
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final isToday = dayDate == todayDate;
 
     final balanceColor = balance > 0
         ? StreamColors.income
@@ -165,7 +173,7 @@ class PeriodHeatmapCard extends StatelessWidget {
 
     return Container(
       key: const Key('day_period_card'),
-      padding: const EdgeInsets.all(StreamSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.md),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(StreamRadius.xl),
         gradient: LinearGradient(
@@ -190,96 +198,148 @@ class PeriodHeatmapCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.today_outlined,
-                  color: StreamColors.primary, size: 20),
-              const SizedBox(width: StreamSpacing.sm),
               Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isToday ? 'OGGI' : 'GIORNO',
+                      key: const Key('day_period_title'),
+                      style: StreamTypography.h3.copyWith(
+                        color: StreamColors.primary,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(dayDate),
+                      key: const Key('day_period_date'),
+                      style: StreamTypography.caption.copyWith(
+                        color: StreamColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StreamSpacing.sm,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: StreamColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(StreamRadius.full),
+                ),
                 child: Text(
-                  _formatDayHeader(dayDate),
-                  key: const Key('day_period_date'),
-                  style: StreamTypography.h2.copyWith(
-                    color: StreamColors.textPrimary,
+                  'Giorno',
+                  style: StreamTypography.micro.copyWith(
+                    color: StreamColors.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: StreamSpacing.lg),
-          Row(
+          Wrap(
+            spacing: StreamSpacing.sm,
+            runSpacing: StreamSpacing.sm,
             children: [
-              Expanded(
-                child: _MetricChip(
-                  keyName: 'day_period_income',
-                  label: 'Entrate',
-                  value: formatEuro(income),
-                  color: StreamColors.income,
-                ),
-              ),
-              const SizedBox(width: StreamSpacing.md),
-              Expanded(
-                child: _MetricChip(
-                  keyName: 'day_period_expense',
-                  label: 'Uscite',
-                  value: formatEuro(expense),
+              if (firstExpense != null)
+                _DayChip(
+                  keyName: 'day_period_first_movement',
+                  icon: Icons.arrow_upward,
+                  label: 'Prima uscita',
+                  value: formatEuro(firstExpense.amount),
                   color: StreamColors.expense,
                 ),
-              ),
-              const SizedBox(width: StreamSpacing.md),
-              Expanded(
-                child: _MetricChip(
-                  keyName: 'day_period_balance',
-                  label: 'Saldo',
-                  value:
-                      '${balance > 0 ? '+' : balance < 0 ? '-' : ''}${formatEuro(balance.abs())}',
-                  color: balanceColor,
+              if (lastExpense != null && lastExpense != firstExpense)
+                _DayChip(
+                  keyName: 'day_period_last_movement',
+                  icon: Icons.arrow_downward,
+                  label: 'Ultima uscita',
+                  value: formatEuro(lastExpense.amount),
+                  color: StreamColors.expense,
                 ),
+              if (topCategory != null)
+                _DayChip(
+                  keyName: 'day_period_top_category',
+                  icon: Icons.category_outlined,
+                  label: topCategory.$1,
+                  value: formatEuro(topCategory.$2),
+                  color: topCategory.$3,
+                )
+              else
+                _DayChip(
+                  keyName: 'day_period_top_category',
+                  icon: Icons.category_outlined,
+                  label: 'Nessuna uscita',
+                  value: '—',
+                  color: StreamColors.textMuted,
+                ),
+              _DayChip(
+                keyName: 'day_period_movements_count',
+                icon: Icons.receipt_long_outlined,
+                label: 'Movimenti',
+                value: '$count',
+                color: StreamColors.primary,
               ),
             ],
           ),
           const SizedBox(height: StreamSpacing.md),
-          _MetricChip(
-            keyName: 'day_period_movements_count',
-            label: 'Movimenti del giorno',
-            value: '$count',
-            color: StreamColors.textPrimary,
+          Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.08),
           ),
-          if (firstExpense != null || firstIncome != null) ...[
-            const SizedBox(height: StreamSpacing.md),
-            Container(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
-            const SizedBox(height: StreamSpacing.md),
-            if (firstExpense != null) ...[
-              _MovementRow(
-                keyName: 'day_period_first_movement',
-                label: 'Primo movimento',
-                movement: firstExpense,
+          const SizedBox(height: StreamSpacing.md),
+          Row(
+            children: [
+              _DayKpi(
+                keyName: 'day_period_income',
+                label: 'Entrate',
+                value: formatEuro(income),
+                color: StreamColors.income,
               ),
-              const SizedBox(height: StreamSpacing.sm),
-            ],
-            if (firstIncome != null && firstIncome != firstExpense) ...[
-              _MovementRow(
-                keyName: 'day_period_first_income',
-                label: 'Prima entrata',
-                movement: firstIncome,
+              const SizedBox(width: StreamSpacing.md),
+              _DayKpi(
+                keyName: 'day_period_expense',
+                label: 'Uscite',
+                value: formatEuro(expense),
+                color: StreamColors.expense,
               ),
-              const SizedBox(height: StreamSpacing.sm),
-            ],
-            if (lastExpense != null && lastExpense != firstExpense) ...[
-              _MovementRow(
-                keyName: 'day_period_last_movement',
-                label: 'Ultima uscita',
-                movement: lastExpense,
+              const SizedBox(width: StreamSpacing.md),
+              _DayKpi(
+                keyName: 'day_period_balance',
+                label: 'Saldo',
+                value:
+                    '${balance > 0 ? '+' : balance < 0 ? '-' : ''}${formatEuro(balance.abs())}',
+                color: balanceColor,
               ),
             ],
-          ],
+          ),
         ],
       ),
     );
   }
 
-  String _formatDayHeader(DateTime date) {
+  (String, double, Color)? _topCategoryForDay(DateTime day) {
+    final dayMoves = movementsForDay(day, movements);
+    final expenseByCat = <String, double>{};
+    for (final m in dayMoves) {
+      if (m.isTransfer) continue;
+      if (!m.isExpense) continue;
+      expenseByCat.update(m.categoryId, (v) => v + m.amount, ifAbsent: () => m.amount);
+    }
+    if (expenseByCat.isEmpty) return null;
+    final topId = expenseByCat.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+    final cat = categories?.firstWhere((c) => c.id == topId, orElse: () => Category(id: topId, name: topId, type: MovementType.expense, color: 0xFF888888));
+    if (cat == null) {
+      return (topId, expenseByCat[topId]!, const Color(0xFF888888));
+    }
+    return (cat.name, expenseByCat[topId]!, Color(cat.color));
+  }
+
+  String _formatDate(DateTime date) {
     return '${date.day} ${_monthNames[date.month - 1]} ${date.year}';
   }
 
@@ -775,47 +835,95 @@ class _MetricChip extends StatelessWidget {
   }
 }
 
-class _MovementRow extends StatelessWidget {
+class _DayChip extends StatelessWidget {
   final String keyName;
+  final IconData icon;
   final String label;
-  final Movement movement;
+  final String value;
+  final Color color;
 
-  const _MovementRow({
+  const _DayChip({
     required this.keyName,
+    required this.icon,
     required this.label,
-    required this.movement,
+    required this.value,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
       key: Key(keyName),
-      children: [
-        Icon(
-          movement.isExpense ? Icons.arrow_upward : Icons.arrow_downward,
-          size: 14,
-          color: movement.isExpense
-              ? StreamColors.expense
-              : StreamColors.income,
-        ),
-        const SizedBox(width: StreamSpacing.sm),
-        Expanded(
-          child: Text(
-            movement.title,
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textPrimary,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(StreamRadius.lg),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: StreamTypography.micro.copyWith(color: StreamColors.textSecondary),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: StreamTypography.micro.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayKpi extends StatelessWidget {
+  final String keyName;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _DayKpi({
+    required this.keyName,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        key: Key(keyName),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(StreamRadius.md),
+          border: Border.all(color: color.withValues(alpha: 0.10)),
         ),
-        Text(
-          '${movement.isExpense ? '-' : '+'}${formatEuro(movement.amount)}',
-          style: StreamTypography.captionBold.copyWith(
-            color: movement.isExpense
-                ? StreamColors.expense
-                : StreamColors.income,
-          ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: StreamTypography.bodyBold.copyWith(color: color),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: StreamTypography.micro.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

@@ -83,6 +83,7 @@ class MovementViewRenderer extends StatelessWidget {
                 selectedDay: selectedDay,
                 onDaySelected: onDaySelected,
                 compactHeader: true,
+                categories: db.categories,
               footerAction: OutlinedButton.icon(
                 key: const Key('movements_open_calendar_default_settings'),
                 onPressed: () {
@@ -151,6 +152,7 @@ class MovementViewRenderer extends StatelessWidget {
           movements: movements,
           selectedDay: selectedDay,
           onDaySelected: onDaySelected,
+          categories: db.categories,
         ),
         if (timeFilter.mode != TimeFilterMode.day)
           Padding(
