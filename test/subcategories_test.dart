@@ -9,6 +9,9 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/services/backup_service.dart';
+import 'package:stream_app/widgets/movement_picker.dart';
+
+import 'helpers/calculator_test_helpers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -280,7 +283,9 @@ void main() {
       await tester.tap(find.byKey(const Key('icon_picker_option_car')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('color_picker_option_ffff7043')).last);
+      await tester.tap(
+        find.byKey(const Key('color_picker_option_ffff7043')).last,
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Salva').last);
       await tester.pumpAndSettle();
@@ -291,6 +296,337 @@ void main() {
       expect(updated.color, 0xFFFF7043);
       expect(find.text('Modificata'), findsOneWidget);
       expect(find.text('Da modificare'), findsNothing);
+    });
+  });
+
+  group('Subcategories — Movement selector UX', () {
+    testWidgets(
+      '22. form movimento mostra un solo campo Categoria / Sottocategoria',
+      (tester) async {
+        final db = await _buildMovementSelectorDb();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: MovementPicker(db: db)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('movement_category_subcategory_field')),
+          findsOneWidget,
+        );
+        expect(find.text('Categoria / Sottocategoria'), findsOneWidget);
+        expect(
+          find.byKey(const Key('movement_subcategory_dropdown')),
+          findsNothing,
+        );
+        expect(find.text('Sottocategoria'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      '23. selezione categoria madre salva categoryId e subcategoryId null',
+      (tester) async {
+        final db = await _buildMovementSelectorDb();
+        final parent = db.categories.firstWhere(
+          (c) => c.name == 'Tempo libero',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: MovementPicker(db: db)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Titolo'),
+          'Cena',
+        );
+        await enterAmountWithCalculator(tester, '25');
+        await _selectCategoryOrSubcategory(
+          tester,
+          optionKey: Key('category_option_${parent.id}'),
+          searchText: 'Tempo libero',
+        );
+        expect(find.text('Tempo libero'), findsOneWidget);
+
+        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+        await tester.pumpAndSettle();
+
+        final movement = db.movements.singleWhere((m) => m.title == 'Cena');
+        expect(movement.categoryId, parent.id);
+        expect(movement.subcategoryId, isNull);
+      },
+    );
+
+    testWidgets(
+      '24. selezione sottocategoria salva parent e valore combinato',
+      (tester) async {
+        final db = await _buildMovementSelectorDb();
+        final parent = db.categories.firstWhere(
+          (c) => c.name == 'Tempo libero',
+        );
+        final sub = db.subcategories.firstWhere((s) => s.name == 'Ristorante');
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: MovementPicker(db: db)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Titolo'),
+          'Pranzo',
+        );
+        await enterAmountWithCalculator(tester, '18');
+        await _selectCategoryOrSubcategory(
+          tester,
+          optionKey: Key('subcategory_option_${sub.id}'),
+          searchText: 'Ristorante',
+        );
+        expect(find.text('Tempo libero / Ristorante'), findsOneWidget);
+
+        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+        await tester.pumpAndSettle();
+
+        final movement = db.movements.singleWhere((m) => m.title == 'Pranzo');
+        expect(movement.categoryId, parent.id);
+        expect(movement.subcategoryId, sub.id);
+      },
+    );
+
+    testWidgets(
+      '25. picker mostra solo attive e ricerca categoria o sottocategoria',
+      (tester) async {
+        final db = await _buildMovementSelectorDb();
+        final parent = db.categories.firstWhere(
+          (c) => c.name == 'Tempo libero',
+        );
+        final archivedCategory = db.categories.firstWhere(
+          (c) => c.name == 'Archivio nascosto',
+        );
+        final sub = db.subcategories.firstWhere((s) => s.name == 'Ristorante');
+        final archivedSub = db.subcategories.firstWhere(
+          (s) => s.name == 'Archiviata',
+        );
+        final flat = db.categories.firstWhere(
+          (c) => c.name == 'Spesa (Alimentari)',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: MovementPicker(db: db)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const Key('movement_category_subcategory_field')),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const Key('category_subcategory_search_field')),
+          'tempo libero',
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(Key('category_option_${parent.id}')), findsOneWidget);
+        expect(
+          find.byKey(Key('category_option_${archivedCategory.id}')),
+          findsNothing,
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('category_subcategory_search_field')),
+          'rist',
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(Key('category_option_${parent.id}')), findsOneWidget);
+        expect(find.byKey(Key('subcategory_option_${sub.id}')), findsOneWidget);
+        expect(
+          find.byKey(Key('subcategory_option_${archivedSub.id}')),
+          findsNothing,
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('category_subcategory_search_field')),
+          'spesa (',
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(Key('category_option_${flat.id}')), findsOneWidget);
+        expect(find.byKey(Key('category_option_${parent.id}')), findsNothing);
+      },
+    );
+
+    testWidgets('26. cambio tipo resetta selezione incompatibile', (
+      tester,
+    ) async {
+      final db = await _buildMovementSelectorDb();
+      final sub = db.subcategories.firstWhere((s) => s.name == 'Ristorante');
+      final income = db.categories.firstWhere((c) => c.name == 'Bonus');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: MovementPicker(db: db)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectCategoryOrSubcategory(
+        tester,
+        optionKey: Key('subcategory_option_${sub.id}'),
+        searchText: 'Ristorante',
+      );
+      expect(find.text('Tempo libero / Ristorante'), findsOneWidget);
+
+      await tester.tap(find.text('Entrata'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tempo libero / Ristorante'), findsNothing);
+      await tester.tap(
+        find.byKey(const Key('movement_category_subcategory_field')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(Key('category_option_${income.id}')), findsOneWidget);
+      expect(find.text('Tempo libero'), findsNothing);
+    });
+
+    testWidgets(
+      '27. categoria flat resta selezionabile come categoria normale',
+      (tester) async {
+        final db = await _buildMovementSelectorDb();
+        final flat = db.categories.firstWhere(
+          (c) => c.name == 'Spesa (Alimentari)',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: MovementPicker(db: db)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Titolo'),
+          'Flat',
+        );
+        await enterAmountWithCalculator(tester, '14');
+      await _selectCategoryOrSubcategory(
+        tester,
+        optionKey: Key('category_option_${flat.id}'),
+        searchText: 'Spesa (',
+      );
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+        await tester.pumpAndSettle();
+
+        final movement = db.movements.singleWhere((m) => m.title == 'Flat');
+        expect(movement.categoryId, flat.id);
+        expect(movement.subcategoryId, isNull);
+      },
+    );
+
+    testWidgets('28. quick form usa selector unico e salva sottocategoria', (
+      tester,
+    ) async {
+      final db = await _buildMovementSelectorDb();
+      final parent = db.categories.firstWhere((c) => c.name == 'Tempo libero');
+      final sub = db.subcategories.firstWhere((s) => s.name == 'Ristorante');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: MovementPicker(db: db)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Rapidi'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.add_circle_outline));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('movement_category_subcategory_field')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('movement_subcategory_dropdown')),
+        findsNothing,
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Titolo'),
+        'Quick Sub',
+      );
+      await enterAmountWithCalculator(tester, '9');
+      await _selectCategoryOrSubcategory(
+        tester,
+        optionKey: Key('subcategory_option_${sub.id}'),
+        searchText: 'Ristorante',
+      );
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Crea'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Crea'));
+      await tester.pumpAndSettle();
+
+      final quick = db.quickMovements.singleWhere(
+        (q) => q.title == 'Quick Sub',
+      );
+      expect(quick.categoryId, parent.id);
+      expect(quick.subcategoryId, sub.id);
+    });
+
+    testWidgets('29. favorite form usa selector unico e salva sottocategoria', (
+      tester,
+    ) async {
+      final db = await _buildMovementSelectorDb();
+      final parent = db.categories.firstWhere((c) => c.name == 'Tempo libero');
+      final sub = db.subcategories.firstWhere((s) => s.name == 'Ristorante');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: MovementPicker(db: db)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preferiti'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nuovo'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('movement_category_subcategory_field')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('movement_subcategory_dropdown')),
+        findsNothing,
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Titolo'),
+        'Fav Sub',
+      );
+      await enterAmountWithCalculator(tester, '11');
+      await _selectCategoryOrSubcategory(
+        tester,
+        optionKey: Key('subcategory_option_${sub.id}'),
+        searchText: 'Ristorante',
+      );
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Crea'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Crea'));
+      await tester.pumpAndSettle();
+
+      final favorite = db.favoriteMovements.singleWhere(
+        (f) => f.title == 'Fav Sub',
+      );
+      expect(favorite.categoryId, parent.id);
+      expect(favorite.subcategoryId, sub.id);
     });
   });
 
@@ -415,4 +751,81 @@ void main() {
       },
     );
   });
+}
+
+Future<AppDatabase> _buildMovementSelectorDb() async {
+  final db = AppDatabase();
+  await db.addCategory(
+    'Tempo libero',
+    MovementType.expense,
+    0xFF1E88E5,
+    iconKey: 'star',
+  );
+  await db.addCategory(
+    'Archivio nascosto',
+    MovementType.expense,
+    0xFF8E24AA,
+    iconKey: 'wallet',
+  );
+  await db.addCategory(
+    'Spesa (Alimentari)',
+    MovementType.expense,
+    0xFF43A047,
+    iconKey: 'shopping-cart',
+  );
+  await db.addCategory(
+    'Bonus',
+    MovementType.income,
+    0xFFFB8C00,
+    iconKey: 'coins',
+  );
+
+  final parent = db.categories.firstWhere((c) => c.name == 'Tempo libero');
+  final archivedCategory = db.categories.firstWhere(
+    (c) => c.name == 'Archivio nascosto',
+  );
+  await db.createSubcategory(
+    parent.id,
+    'Ristorante',
+    iconKey: 'restaurant',
+    color: 0xFFFF7043,
+  );
+  await db.createSubcategory(
+    parent.id,
+    'Archiviata',
+    iconKey: 'coffee',
+    color: 0xFF8D6E63,
+  );
+  final archivedSub = db.subcategories.firstWhere(
+    (s) => s.name == 'Archiviata',
+  );
+  await db.archiveSubcategory(archivedSub.id);
+  await db.archiveCategory(archivedCategory.id);
+  return db;
+}
+
+Future<void> _selectCategoryOrSubcategory(
+  WidgetTester tester, {
+  required Key optionKey,
+  String? searchText,
+}) async {
+  await tester.tap(
+    find.byKey(const Key('movement_category_subcategory_field')).last,
+  );
+  await tester.pumpAndSettle();
+  if (searchText != null) {
+    await tester.enterText(
+      find.byKey(const Key('category_subcategory_search_field')),
+      searchText,
+    );
+    await tester.pumpAndSettle();
+  }
+  final optionFinder = find.byKey(optionKey);
+  await tester.scrollUntilVisible(
+    optionFinder,
+    120,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.tap(optionFinder.last);
+  await tester.pumpAndSettle();
 }

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
 import '../models/category.dart';
-import '../models/subcategory.dart';
 import '../models/movement.dart';
 import '../theme.dart';
 import 'calculator_amount_pad.dart';
+import 'category_subcategory_selector.dart';
 
 class MovementForm extends StatefulWidget {
   final AppDatabase db;
@@ -60,51 +60,6 @@ class _MovementFormState extends State<MovementForm> {
       : widget.db.categories
             .where((c) => c.type == _type && !c.archived)
             .toList();
-
-  List<Subcategory> _subcategoriesForCategory(String? categoryId) {
-    if (categoryId == null) return [];
-    return widget.db.getActiveSubcategoriesForCategory(categoryId);
-  }
-
-  Widget get _subcategoryDropdown {
-    final subs = _subcategoriesForCategory(_selectedCategoryId);
-    if (_type == MovementType.transfer || subs.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: StreamSpacing.md),
-      child: DropdownButtonFormField<String>(
-        key: const Key('movement_subcategory_dropdown'),
-        value: _selectedSubcategoryId,
-        decoration: const InputDecoration(
-          labelText: 'Sottocategoria',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(StreamRadius.md),
-            ),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: StreamColors.surfaceElevated,
-        ),
-        isExpanded: true,
-        items: [
-          const DropdownMenuItem<String>(
-            key: Key('movement_subcategory_none'),
-            value: null,
-            child: Text('Nessuna'),
-          ),
-          for (final sub in subs)
-            DropdownMenuItem<String>(
-              key: Key('movement_subcategory_option_${sub.id}'),
-              value: sub.id,
-              child: Text(sub.name),
-            ),
-        ],
-        onChanged: (v) => setState(() => _selectedSubcategoryId = v),
-      ),
-    );
-  }
 
   void _submit() {
     final title = _titleCtrl.text.trim();
@@ -282,6 +237,7 @@ class _MovementFormState extends State<MovementForm> {
               setState(() {
                 _type = set.first;
                 _selectedCategoryId = null;
+                _selectedSubcategoryId = null;
                 if (_type != MovementType.transfer) {
                   _selectedDestinationAccountId = null;
                 }
@@ -312,56 +268,17 @@ class _MovementFormState extends State<MovementForm> {
           ),
           const SizedBox(height: StreamSpacing.md),
           if (_type != MovementType.transfer) ...[
-            DropdownButtonFormField<String>(
-              initialValue: _selectedCategoryId,
-              decoration: const InputDecoration(
-                labelText: 'Categoria',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(StreamRadius.md),
-                  ),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: StreamColors.surfaceElevated,
-              ),
-              items: _availableCategories
-                  .map(
-                    (c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Color(c.color),
-                              borderRadius: BorderRadius.circular(
-                                StreamRadius.sm,
-                              ),
-                            ),
-                            child: Icon(
-                              StreamIconLibrary.getIcon(c.iconKey),
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(c.name),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() {
-                _selectedCategoryId = v;
-                if (!_subcategoriesForCategory(v).any(
-                    (s) => s.id == _selectedSubcategoryId)) {
-                  _selectedSubcategoryId = null;
-                }
+            CategorySubcategorySelector(
+              categories: widget.db.categories,
+              subcategories: widget.db.subcategories,
+              type: _type,
+              selectedCategoryId: _selectedCategoryId,
+              selectedSubcategoryId: _selectedSubcategoryId,
+              onChanged: (categoryId, subcategoryId) => setState(() {
+                _selectedCategoryId = categoryId;
+                _selectedSubcategoryId = subcategoryId;
               }),
             ),
-            _subcategoryDropdown,
             const SizedBox(height: StreamSpacing.md),
           ],
           DropdownButtonFormField<String>(

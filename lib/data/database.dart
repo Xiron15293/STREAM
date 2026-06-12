@@ -1079,6 +1079,7 @@ class AppDatabase extends ChangeNotifier {
     }
     _favoriteMovements.add(fm);
   }
+
 }
 
 class CategoryConversionReport {
@@ -1750,7 +1751,7 @@ extension AppDatabaseMerge on AppDatabase {
       }
     }
 
-    notifyListeners();
+    notify();
 
     return CategoryMergeReport(
       sourceType: isSubcategoryMerge ? 'subcategory' : 'category',

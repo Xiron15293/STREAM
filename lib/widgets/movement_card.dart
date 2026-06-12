@@ -5,6 +5,7 @@ import '../models/category.dart';
 import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../theme.dart';
+import 'category_subcategory_selector.dart';
 
 class MovementCard extends StatelessWidget {
   final Movement movement;
@@ -39,10 +40,16 @@ class MovementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTransfer = movement.type == MovementType.transfer;
+    final resolvedSelection = category == null
+        ? null
+        : CategorySubcategoryResolvedSelection(
+            category: category!,
+            subcategory: subcategory,
+          );
     final iconData = isTransfer
         ? Icons.swap_horiz
-        : category != null
-        ? StreamIconLibrary.getIcon(category!.iconKey)
+        : resolvedSelection != null
+        ? StreamIconLibrary.getIcon(resolvedSelection.iconKey)
         : Icons.help_outline;
     final hasPopup =
         onEdit != null ||
@@ -71,7 +78,11 @@ class MovementCard extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Color(category?.color ?? 0xFF636366),
+                        color: Color(
+                          resolvedSelection?.color ??
+                              category?.color ??
+                              0xFF636366,
+                        ),
                         borderRadius: BorderRadius.circular(StreamRadius.sm),
                       ),
                       child: Icon(iconData, color: Colors.white, size: 16),
@@ -96,29 +107,16 @@ class MovementCard extends StatelessWidget {
                           else if (category != null)
                             _MetadataRow(
                               icon: StreamIconLibrary.getIcon(
-                                category!.iconKey,
+                                resolvedSelection!.iconKey,
                               ),
-                              iconColor: Color(category!.color),
-                              text: category!.name,
+                              iconColor: Color(resolvedSelection.color),
+                              text: resolvedSelection.label,
                             )
                           else
                             _MetadataRow(
                               icon: Icons.help_outline,
                               iconColor: StreamColors.textMuted,
                               text: movement.categoryId,
-                            ),
-                          if (subcategory != null && category != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 1),
-                              child: _MetadataRow(
-                                icon: StreamIconLibrary.getIcon(
-                                  subcategory!.iconKey ?? category!.iconKey,
-                                ),
-                                iconColor: Color(
-                                  subcategory!.color ?? category!.color,
-                                ),
-                                text: subcategory!.name,
-                              ),
                             ),
                           if (!isTransfer && account != null)
                             Padding(

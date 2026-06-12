@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/account.dart';
+import 'package:stream_app/models/subcategory.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 import 'package:stream_app/theme.dart';
 
@@ -64,66 +65,149 @@ void main() {
     createdAt: now,
   );
 
+  final subcategory = Subcategory(
+    id: 'sub_1',
+    categoryId: 'inc_1',
+    name: 'Bonus',
+    iconKey: 'coins',
+    color: 0xFFFFA726,
+    createdAt: now,
+  );
+
   group('MovementCard render', () {
     testWidgets('renderizza titolo movimento', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
       expect(find.text('Stipendio'), findsOneWidget);
     });
 
     testWidgets('renderizza importo entrata con segno +', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
       expect(find.textContaining('+2500.00'), findsWidgets);
     });
 
     testWidgets('renderizza importo uscita con segno -', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: expenseMovement, category: category, account: account),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: expenseMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
       expect(find.textContaining('-800.00'), findsWidgets);
     });
 
     testWidgets('renderizza categoria', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
       expect(find.text('Lavoro'), findsOneWidget);
     });
 
     testWidgets('renderizza account', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
       expect(find.text('Conto Corrente'), findsOneWidget);
     });
 
-    testWidgets('entrata e uscita hanno segni diversi', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        Column(
-          children: [
-            MovementCard(movement: incomeMovement, category: category, account: account),
-            MovementCard(movement: expenseMovement, category: category, account: account),
-          ],
+    testWidgets('renderizza categoria e sottocategoria in formato combinato', (
+      tester,
+    ) async {
+      final movementWithSub = incomeMovement.copyWith(
+        subcategoryId: subcategory.id,
+      );
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: movementWithSub,
+            category: category,
+            subcategory: subcategory,
+            account: account,
+          ),
         ),
-      ));
+      );
+      expect(find.text('Lavoro / Bonus'), findsOneWidget);
+      expect(find.text('Bonus'), findsNothing);
+    });
+
+    testWidgets('entrata e uscita hanno segni diversi', (tester) async {
+      await tester.pumpWidget(
+        wrapWithTheme(
+          Column(
+            children: [
+              MovementCard(
+                movement: incomeMovement,
+                category: category,
+                account: account,
+              ),
+              MovementCard(
+                movement: expenseMovement,
+                category: category,
+                account: account,
+              ),
+            ],
+          ),
+        ),
+      );
       expect(find.textContaining('+2500.00'), findsWidgets);
       expect(find.textContaining('-800.00'), findsWidgets);
     });
 
     testWidgets('showDate mostra data formattata', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account, showDate: true),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+            showDate: true,
+          ),
+        ),
+      );
       expect(find.text('15/06/2026'), findsOneWidget);
     });
 
     testWidgets('nasconde data se showDate = false', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account, showDate: false),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+            showDate: false,
+          ),
+        ),
+      );
       expect(find.text('15/06/2026'), findsNothing);
     });
 
@@ -138,9 +222,11 @@ void main() {
         note: 'Nota di test',
         createdAt: now,
       );
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: movementWithNote, showNotes: true),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(movement: movementWithNote, showNotes: true),
+        ),
+      );
       expect(find.text('Nota di test'), findsOneWidget);
     });
 
@@ -155,21 +241,25 @@ void main() {
         note: 'Nota di test',
         createdAt: now,
       );
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: movementWithNote, showNotes: false),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(movement: movementWithNote, showNotes: false),
+        ),
+      );
       expect(find.text('Nota di test'), findsNothing);
     });
 
     testWidgets('renderizza senza categoria e account', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(MovementCard(movement: incomeMovement)),
+      );
       expect(find.text('Stipendio'), findsOneWidget);
       expect(find.text('inc_1'), findsOneWidget);
     });
 
-    testWidgets('renderizza transfer con origine e destinazione', (tester) async {
+    testWidgets('renderizza transfer con origine e destinazione', (
+      tester,
+    ) async {
       final destAccount = Account(
         id: 'acc_2',
         name: 'Carta',
@@ -177,13 +267,15 @@ void main() {
         color: 0xFF4B7BFF,
         createdAt: now,
       );
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(
-          movement: transferMovement,
-          account: account,
-          destinationAccount: destAccount,
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: transferMovement,
+            account: account,
+            destinationAccount: destAccount,
+          ),
         ),
-      ));
+      );
       expect(find.text('Trasferimento conto'), findsOneWidget);
       expect(find.textContaining('Da Conto Corrente → Carta'), findsOneWidget);
       expect(find.textContaining('120.00'), findsOneWidget);
@@ -191,34 +283,44 @@ void main() {
 
     testWidgets('onTap viene chiamato al tap', (tester) async {
       bool tapped = false;
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(
-          movement: incomeMovement,
-          category: category,
-          account: account,
-          onTap: () => tapped = true,
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+            onTap: () => tapped = true,
+          ),
         ),
-      ));
+      );
       await tester.tap(find.byType(InkWell));
       expect(tapped, true);
     });
 
     testWidgets('popup menu appare con onEdit', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(
-          movement: incomeMovement,
-          category: category,
-          account: account,
-          onEdit: () {},
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+            onEdit: () {},
+          ),
         ),
-      ));
+      );
       expect(find.byIcon(Icons.more_horiz), findsOneWidget);
     });
 
     testWidgets('popup menu assente senza callback', (tester) async {
-      await tester.pumpWidget(wrapWithTheme(
-        MovementCard(movement: incomeMovement, category: category, account: account),
-      ));
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
       expect(find.byIcon(Icons.more_horiz), findsNothing);
     });
   });

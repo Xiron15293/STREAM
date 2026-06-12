@@ -4,12 +4,12 @@ import '../design/stream_icon_library.dart';
 import '../design/stream_date_picker.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
-import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
 import '../theme.dart';
 import 'calculator_amount_pad.dart';
+import 'category_subcategory_selector.dart';
 
 enum AddMode { manuale, rapidi, preferiti }
 
@@ -125,6 +125,7 @@ Future<void> _useTemplateMovement({
   required double amount,
   required MovementType type,
   required String categoryId,
+  String? subcategoryId,
   required String accountId,
   String? note,
 }) async {
@@ -136,6 +137,7 @@ Future<void> _useTemplateMovement({
     amount: amount,
     type: type,
     categoryId: categoryId,
+    subcategoryId: subcategoryId,
     accountId: accountId,
     note: note,
     date: date,
@@ -330,49 +332,6 @@ class _ManualFormState extends State<_ManualForm> {
             .where((c) => c.type == _type && !c.archived)
             .toList();
 
-  List<Subcategory> _subcategoriesForCategory(String? categoryId) {
-    if (categoryId == null) return [];
-    return widget.db.getActiveSubcategoriesForCategory(categoryId);
-  }
-
-  Widget _subcategoryDropdown() {
-    final subs = _subcategoriesForCategory(_selectedCategoryId);
-    if (_type == MovementType.transfer || subs.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: StreamSpacing.md),
-      child: DropdownButtonFormField<String>(
-        key: const Key('movement_subcategory_dropdown'),
-        value: _selectedSubcategoryId,
-        decoration: const InputDecoration(
-          labelText: 'Sottocategoria',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: StreamColors.surfaceElevated,
-        ),
-        isExpanded: true,
-        items: [
-          const DropdownMenuItem<String>(
-            key: Key('movement_subcategory_none'),
-            value: null,
-            child: Text('Nessuna'),
-          ),
-          for (final sub in subs)
-            DropdownMenuItem<String>(
-              key: Key('movement_subcategory_option_${sub.id}'),
-              value: sub.id,
-              child: Text(sub.name),
-            ),
-        ],
-        onChanged: (v) => setState(() => _selectedSubcategoryId = v),
-      ),
-    );
-  }
-
   void _submit() {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
@@ -412,6 +371,7 @@ class _ManualFormState extends State<_ManualForm> {
           type: _type,
           date: _date,
           categoryId: '',
+          subcategoryId: null,
           accountId: origin,
           destinationAccountId: destination,
           note: note,
@@ -425,6 +385,7 @@ class _ManualFormState extends State<_ManualForm> {
           type: _type,
           date: _date,
           categoryId: '',
+          subcategoryId: null,
           accountId: origin,
           destinationAccountId: destination,
           note: note,
@@ -561,57 +522,19 @@ class _ManualFormState extends State<_ManualForm> {
         ),
         const SizedBox(height: StreamSpacing.md),
         if (_type != MovementType.transfer) ...[
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCategoryId,
-            decoration: const InputDecoration(
-              labelText: 'Categoria',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(StreamRadius.md),
-                ),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
-            ),
-            items: _availableCategories
-                .map(
-                  (c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Color(c.color),
-                            borderRadius: BorderRadius.circular(
-                              StreamRadius.sm,
-                            ),
-                          ),
-                          child: Icon(
-                            StreamIconLibrary.getIcon(c.iconKey),
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(c.name),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (v) => setState(() {
-              _selectedCategoryId = v;
-              if (!_subcategoriesForCategory(v).any((s) => s.id == _selectedSubcategoryId)) {
-                _selectedSubcategoryId = null;
-              }
+          CategorySubcategorySelector(
+            categories: widget.db.categories,
+            subcategories: widget.db.subcategories,
+            type: _type,
+            selectedCategoryId: _selectedCategoryId,
+            selectedSubcategoryId: _selectedSubcategoryId,
+            onChanged: (categoryId, subcategoryId) => setState(() {
+              _selectedCategoryId = categoryId;
+              _selectedSubcategoryId = subcategoryId;
             }),
           ),
-          const SizedBox(height: StreamSpacing.md),
-          _subcategoryDropdown(),
         ],
+        const SizedBox(height: StreamSpacing.md),
         DropdownButtonFormField<String>(
           initialValue: _selectedAccountId,
           decoration: InputDecoration(
@@ -732,9 +655,15 @@ class _QuickPanel extends StatelessWidget {
               _EmptyPanel(message: 'Nessun movimento rapido')
             else
               ...items.map((qm) {
-                final qmCat = db.categories
-                    .where((c) => c.id == qm.categoryId)
-                    .firstOrNull;
+                final resolved = resolveCategorySubcategorySelection(
+                  categories: db.categories,
+                  subcategories: db.subcategories,
+                  type: qm.type,
+                  categoryId: qm.categoryId,
+                  subcategoryId: qm.subcategoryId,
+                  activeOnly: false,
+                );
+                final qmCat = resolved?.category;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
                   child: Material(
@@ -750,6 +679,7 @@ class _QuickPanel extends StatelessWidget {
                         amount: qm.amount,
                         type: qm.type,
                         categoryId: qm.categoryId,
+                        subcategoryId: qm.subcategoryId,
                         accountId: qm.accountId,
                         note: qm.note,
                       ),
@@ -758,8 +688,10 @@ class _QuickPanel extends StatelessWidget {
                         child: Row(
                           children: [
                             _CategoryIcon(
-                              color: qmCat?.color ?? 0xFF636366,
+                              color:
+                                  resolved?.color ?? qmCat?.color ?? 0xFF636366,
                               iconKey:
+                                  resolved?.iconKey ??
                                   qmCat?.iconKey ??
                                   StreamIconLibrary.defaultCategoryIcon,
                               size: 36,
@@ -775,7 +707,7 @@ class _QuickPanel extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
+                                    '${resolved?.label ?? qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
                                     style: StreamTypography.caption.copyWith(
                                       color: StreamColors.textSecondary,
                                     ),
@@ -813,6 +745,7 @@ class _QuickPanel extends StatelessWidget {
                                     amount: qm.amount,
                                     type: qm.type,
                                     categoryId: qm.categoryId,
+                                    subcategoryId: qm.subcategoryId,
                                     accountId: qm.accountId,
                                     note: qm.note,
                                   ),
@@ -861,6 +794,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
   late final TextEditingController _noteCtrl;
   MovementType _type = MovementType.expense;
   String? _selectedCategoryId;
+  String? _selectedSubcategoryId;
   String? _selectedAccountId;
 
   @override
@@ -875,6 +809,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
     if (e != null) {
       _type = e.type;
       _selectedCategoryId = e.categoryId;
+      _selectedSubcategoryId = e.subcategoryId;
       _selectedAccountId = e.accountId;
     }
   }
@@ -917,6 +852,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
       amount: amount,
       type: _type,
       categoryId: _selectedCategoryId!,
+      subcategoryId: _selectedSubcategoryId,
       accountId: _selectedAccountId ?? defaultAccountId,
       note: note.isNotEmpty ? note : null,
     );
@@ -978,6 +914,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
               setState(() {
                 _type = set.first;
                 _selectedCategoryId = null;
+                _selectedSubcategoryId = null;
               });
             },
           ),
@@ -993,43 +930,16 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
             decoration: const InputDecoration(labelText: 'Importo (€)'),
           ),
           const SizedBox(height: StreamSpacing.md),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCategoryId,
-            decoration: const InputDecoration(
-              labelText: 'Categoria',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(StreamRadius.md),
-                ),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
-            ),
-            items: _availableCategories
-                .map(
-                  (c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Color(c.color),
-                            borderRadius: BorderRadius.circular(
-                              StreamRadius.sm,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(c.name),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (v) => setState(() => _selectedCategoryId = v),
+          CategorySubcategorySelector(
+            categories: widget.db.categories,
+            subcategories: widget.db.subcategories,
+            type: _type,
+            selectedCategoryId: _selectedCategoryId,
+            selectedSubcategoryId: _selectedSubcategoryId,
+            onChanged: (categoryId, subcategoryId) => setState(() {
+              _selectedCategoryId = categoryId;
+              _selectedSubcategoryId = subcategoryId;
+            }),
           ),
           const SizedBox(height: StreamSpacing.md),
           DropdownButtonFormField<String>(
@@ -1070,9 +980,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
           TextField(
             key: const Key('quick_movement_note_input'),
             controller: _noteCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Nota (opzionale)',
-            ),
+            decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
             textInputAction: TextInputAction.done,
             maxLines: 2,
           ),
@@ -1184,10 +1092,16 @@ class _FavoriteTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favCat = db.categories
-        .where((c) => c.id == fm.categoryId)
-        .firstOrNull;
-    final catColor = favCat?.color ?? 0xFF636366;
+    final resolved = resolveCategorySubcategorySelection(
+      categories: db.categories,
+      subcategories: db.subcategories,
+      type: fm.type,
+      categoryId: fm.categoryId,
+      subcategoryId: fm.subcategoryId,
+      activeOnly: false,
+    );
+    final favCat = resolved?.category;
+    final catColor = resolved?.color ?? favCat?.color ?? 0xFF636366;
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
       child: Material(
@@ -1203,6 +1117,7 @@ class _FavoriteTile extends StatelessWidget {
             amount: fm.amount,
             type: fm.type,
             categoryId: fm.categoryId,
+            subcategoryId: fm.subcategoryId,
             accountId: fm.accountId,
             note: fm.note,
           ),
@@ -1213,7 +1128,9 @@ class _FavoriteTile extends StatelessWidget {
                 _CategoryIcon(
                   color: catColor,
                   iconKey:
-                      favCat?.iconKey ?? StreamIconLibrary.defaultCategoryIcon,
+                      resolved?.iconKey ??
+                      favCat?.iconKey ??
+                      StreamIconLibrary.defaultCategoryIcon,
                   size: 36,
                 ),
                 const SizedBox(width: StreamSpacing.md),
@@ -1224,7 +1141,7 @@ class _FavoriteTile extends StatelessWidget {
                       Text(fm.title, style: StreamTypography.bodyBold),
                       const SizedBox(height: 2),
                       Text(
-                        '${db.categories.where((c) => c.id == fm.categoryId).firstOrNull?.name ?? ''} • ${fm.type == MovementType.expense ? '-' : '+'}${fm.amount.toStringAsFixed(2)} €',
+                        '${resolved?.label ?? favCat?.name ?? ''} • ${fm.type == MovementType.expense ? '-' : '+'}${fm.amount.toStringAsFixed(2)} €',
                         style: StreamTypography.caption.copyWith(
                           color: StreamColors.textSecondary,
                         ),
@@ -1269,6 +1186,7 @@ class _FavoriteTile extends StatelessWidget {
                         amount: fm.amount,
                         type: fm.type,
                         categoryId: fm.categoryId,
+                        subcategoryId: fm.subcategoryId,
                         accountId: fm.accountId,
                         note: fm.note,
                       ),
@@ -1343,49 +1261,6 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
   List<Category> get _availableCategories => widget.db.categories
       .where((c) => c.type == _type && !c.archived)
       .toList();
-
-  List<Subcategory> _subcategoriesForCategory(String? categoryId) {
-    if (categoryId == null) return [];
-    return widget.db.getActiveSubcategoriesForCategory(categoryId);
-  }
-
-  Widget _subcategoryDropdown() {
-    final subs = _subcategoriesForCategory(_selectedCategoryId);
-    if (_type == MovementType.transfer || subs.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: StreamSpacing.md),
-      child: DropdownButtonFormField<String>(
-        key: const Key('movement_subcategory_dropdown'),
-        value: _selectedSubcategoryId,
-        decoration: const InputDecoration(
-          labelText: 'Sottocategoria',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: StreamColors.surfaceElevated,
-        ),
-        isExpanded: true,
-        items: [
-          const DropdownMenuItem<String>(
-            key: Key('movement_subcategory_none'),
-            value: null,
-            child: Text('Nessuna'),
-          ),
-          for (final sub in subs)
-            DropdownMenuItem<String>(
-              key: Key('movement_subcategory_option_${sub.id}'),
-              value: sub.id,
-              child: Text(sub.name),
-            ),
-        ],
-        onChanged: (v) => setState(() => _selectedSubcategoryId = v),
-      ),
-    );
-  }
 
   void _save() {
     final title = _titleCtrl.text.trim();
@@ -1491,51 +1366,17 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
             decoration: const InputDecoration(labelText: 'Importo (€)'),
           ),
           const SizedBox(height: StreamSpacing.md),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCategoryId,
-            decoration: const InputDecoration(
-              labelText: 'Categoria',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(StreamRadius.md),
-                ),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
-            ),
-            items: _availableCategories
-                .map(
-                  (c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Color(c.color),
-                            borderRadius: BorderRadius.circular(
-                              StreamRadius.sm,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(c.name),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (v) => setState(() {
-              _selectedCategoryId = v;
-              if (!_subcategoriesForCategory(v).any((s) => s.id == _selectedSubcategoryId)) {
-                _selectedSubcategoryId = null;
-              }
+          CategorySubcategorySelector(
+            categories: widget.db.categories,
+            subcategories: widget.db.subcategories,
+            type: _type,
+            selectedCategoryId: _selectedCategoryId,
+            selectedSubcategoryId: _selectedSubcategoryId,
+            onChanged: (categoryId, subcategoryId) => setState(() {
+              _selectedCategoryId = categoryId;
+              _selectedSubcategoryId = subcategoryId;
             }),
           ),
-          const SizedBox(height: StreamSpacing.md),
-          _subcategoryDropdown(),
           const SizedBox(height: StreamSpacing.md),
           DropdownButtonFormField<String>(
             initialValue: _selectedAccountId,
@@ -1729,9 +1570,7 @@ class _SuggestedSectionState extends State<_SuggestedSection> {
                     _searchQuery.isNotEmpty ||
                     _expandedCategories.contains(categoryName);
                 return KeyedSubtree(
-                  key: Key(
-                    'suggested_category_group_$categoryName',
-                  ),
+                  key: Key('suggested_category_group_$categoryName'),
                   child: Column(
                     children: [
                       InkWell(
@@ -1739,8 +1578,9 @@ class _SuggestedSectionState extends State<_SuggestedSection> {
                         onTap: _searchQuery.isEmpty
                             ? () {
                                 setState(() {
-                                  if (_expandedCategories
-                                      .contains(categoryName)) {
+                                  if (_expandedCategories.contains(
+                                    categoryName,
+                                  )) {
                                     _expandedCategories.remove(categoryName);
                                   } else {
                                     _expandedCategories.add(categoryName);
@@ -1763,8 +1603,7 @@ class _SuggestedSectionState extends State<_SuggestedSection> {
                               Expanded(
                                 child: Text(
                                   '$categoryName (${items.length})',
-                                  style: StreamTypography.captionBold
-                                      .copyWith(
+                                  style: StreamTypography.captionBold.copyWith(
                                     color: StreamColors.textSecondary,
                                   ),
                                 ),
