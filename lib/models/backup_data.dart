@@ -102,6 +102,8 @@ class BackupData {
         'id': s.id,
         'categoryId': s.categoryId,
         'name': s.name,
+        'iconKey': s.iconKey,
+        'color': s.color,
         'archived': s.archived,
       };
 
@@ -109,6 +111,8 @@ class BackupData {
         id: m['id'] as String,
         categoryId: m['categoryId'] as String,
         name: m['name'] as String,
+        iconKey: m['iconKey'] as String?,
+        color: m['color'] as int?,
         archived: m['archived'] as bool? ?? false,
         createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
         updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,

@@ -529,6 +529,8 @@ class BackupService {
       'id': subcategory.id,
       'category_id': subcategory.categoryId,
       'name': subcategory.name,
+      'icon_key': subcategory.iconKey,
+      'color': subcategory.color,
       'archived': subcategory.archived ? 1 : 0,
       'created_at': now,
       'updated_at': now,
