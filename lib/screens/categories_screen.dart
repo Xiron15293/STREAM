@@ -2097,7 +2097,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     );
   }
 
-  void _save() {
+  void _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -2115,7 +2115,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     }
 
     if (widget.existing != null) {
-      widget.db.updateCategory(
+      await widget.db.updateCategory(
         widget.existing!.id,
         name,
         _color,
@@ -2123,7 +2123,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
         iconKey: _iconKey,
       );
     } else {
-      widget.db.addCategory(name, _type, _color, iconKey: _iconKey);
+      await widget.db.addCategory(name, _type, _color, iconKey: _iconKey);
     }
 
     widget.onChanged();
@@ -2380,10 +2380,10 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
     );
   }
 
-  void _saveAndPop(TextEditingController ctrl, String iconKey, int color) {
+  void _saveAndPop(TextEditingController ctrl, String iconKey, int color) async {
     final name = ctrl.text.trim();
     if (name.isEmpty) return;
-    widget.db.createSubcategory(widget.categoryId, name, iconKey: iconKey, color: color);
+    await widget.db.createSubcategory(widget.categoryId, name, iconKey: iconKey, color: color);
     Navigator.of(context).pop();
   }
 
@@ -2557,7 +2557,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
     super.dispose();
   }
 
-  void _save() {
+  void _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2565,7 +2565,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
       );
       return;
     }
-    widget.db.updateSubcategory(_sub.id, name, iconKey: _iconKey, color: _color);
+    await widget.db.updateSubcategory(_sub.id, name, iconKey: _iconKey, color: _color);
     widget.onChanged();
     Navigator.pop(context);
   }

@@ -36,27 +36,39 @@ class AppDatabase extends ChangeNotifier {
   }
 
   List<QuickMovement> _defaultQuickMovements() => [
-        const QuickMovement(
-          id: 'qm_1', title: 'Caffè', amount: 1.50,
-          type: MovementType.expense, categoryId: 'exp_4',
-          accountId: defaultAccountId,
-        ),
-        const QuickMovement(
-          id: 'qm_2', title: 'Benzina', amount: 50.0,
-          type: MovementType.expense, categoryId: 'exp_3',
-          accountId: defaultAccountId,
-        ),
-        const QuickMovement(
-          id: 'qm_3', title: 'Spesa', amount: 80.0,
-          type: MovementType.expense, categoryId: 'exp_1',
-          accountId: defaultAccountId,
-        ),
-        const QuickMovement(
-          id: 'qm_4', title: 'Stipendio', amount: 2500.0,
-          type: MovementType.income, categoryId: 'inc_1',
-          accountId: defaultAccountId,
-        ),
-      ];
+    const QuickMovement(
+      id: 'qm_1',
+      title: 'Caffè',
+      amount: 1.50,
+      type: MovementType.expense,
+      categoryId: 'exp_4',
+      accountId: defaultAccountId,
+    ),
+    const QuickMovement(
+      id: 'qm_2',
+      title: 'Benzina',
+      amount: 50.0,
+      type: MovementType.expense,
+      categoryId: 'exp_3',
+      accountId: defaultAccountId,
+    ),
+    const QuickMovement(
+      id: 'qm_3',
+      title: 'Spesa',
+      amount: 80.0,
+      type: MovementType.expense,
+      categoryId: 'exp_1',
+      accountId: defaultAccountId,
+    ),
+    const QuickMovement(
+      id: 'qm_4',
+      title: 'Stipendio',
+      amount: 2500.0,
+      type: MovementType.income,
+      categoryId: 'inc_1',
+      accountId: defaultAccountId,
+    ),
+  ];
 
   Future<void> initialize() async {
     if (_sqlite == null) return;
@@ -109,12 +121,15 @@ class AppDatabase extends ChangeNotifier {
   }
 
   Account getAccount(String id) {
-    return _accounts.firstWhere((a) => a.id == id, orElse: () => Account(
-      id: id,
-      name: 'Conto eliminato',
-      type: AccountType.bank,
-      createdAt: DateTime(2020),
-    ));
+    return _accounts.firstWhere(
+      (a) => a.id == id,
+      orElse: () => Account(
+        id: id,
+        name: 'Conto eliminato',
+        type: AccountType.bank,
+        createdAt: DateTime(2020),
+      ),
+    );
   }
 
   double getAccountBalance(Account a) {
@@ -329,8 +344,8 @@ class AppDatabase extends ChangeNotifier {
     final finalTitle = sanitizedTitle.isNotEmpty
         ? sanitizedTitle
         : type == MovementType.transfer
-            ? _buildTransferTitle(originAccountId, destinationAccountId)
-            : title;
+        ? _buildTransferTitle(originAccountId, destinationAccountId)
+        : title;
     final movement = Movement(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: finalTitle,
@@ -356,7 +371,10 @@ class AppDatabase extends ChangeNotifier {
     return movement;
   }
 
-  String _buildTransferTitle(String originAccountId, String? destinationAccountId) {
+  String _buildTransferTitle(
+    String originAccountId,
+    String? destinationAccountId,
+  ) {
     final origin = getAccount(originAccountId).name;
     final destination = destinationAccountId == null
         ? 'Conto destinazione'
@@ -373,9 +391,20 @@ class AppDatabase extends ChangeNotifier {
   List<Category> get activeCategories =>
       _categories.where((c) => !c.archived).toList();
 
-  Future<void> addCategory(String name, MovementType type, int color, {String iconKey = StreamIconLibrary.defaultCategoryIcon}) async {
+  Future<void> addCategory(
+    String name,
+    MovementType type,
+    int color, {
+    String iconKey = StreamIconLibrary.defaultCategoryIcon,
+  }) async {
     final id = 'cat_${DateTime.now().microsecondsSinceEpoch.toString()}';
-    final c = Category(id: id, name: name, type: type, color: color, iconKey: iconKey);
+    final c = Category(
+      id: id,
+      name: name,
+      type: type,
+      color: color,
+      iconKey: iconKey,
+    );
     if (_sqlite != null) {
       try {
         await _sqlite.insertCategory(c);
@@ -387,7 +416,14 @@ class AppDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateCategory(String id, String name, int color, {bool? archived, MovementType? type, String? iconKey}) async {
+  Future<void> updateCategory(
+    String id,
+    String name,
+    int color, {
+    bool? archived,
+    MovementType? type,
+    String? iconKey,
+  }) async {
     final index = _categories.indexWhere((c) => c.id == id);
     if (index < 0) return;
     final old = _categories[index];
@@ -446,7 +482,8 @@ class AppDatabase extends ChangeNotifier {
 
   bool subcategoryNameExists(String categoryId, String name) {
     return _subcategories.any(
-      (s) => s.categoryId == categoryId &&
+      (s) =>
+          s.categoryId == categoryId &&
           s.name.toLowerCase() == name.trim().toLowerCase(),
     );
   }
@@ -523,6 +560,8 @@ class AppDatabase extends ChangeNotifier {
       id: id,
       categoryId: old.categoryId,
       name: old.name,
+      iconKey: old.iconKey,
+      color: old.color,
       archived: true,
       createdAt: old.createdAt,
       updatedAt: DateTime.now(),
@@ -545,6 +584,8 @@ class AppDatabase extends ChangeNotifier {
       id: id,
       categoryId: old.categoryId,
       name: old.name,
+      iconKey: old.iconKey,
+      color: old.color,
       archived: false,
       createdAt: old.createdAt,
       updatedAt: DateTime.now(),
@@ -637,7 +678,14 @@ class AppDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateAccount(String id, String name, AccountType type, double initialBalance, {String? iconKey, int? color}) async {
+  Future<void> updateAccount(
+    String id,
+    String name,
+    AccountType type,
+    double initialBalance, {
+    String? iconKey,
+    int? color,
+  }) async {
     final index = _accounts.indexWhere((a) => a.id == id);
     if (index < 0) return;
     final updated = Account(
@@ -674,15 +722,17 @@ class AppDatabase extends ChangeNotifier {
     for (final entry in groups.entries) {
       if (entry.value.length >= 5) {
         final m = entry.value.last;
-        suggestions.add(FavoriteMovement(
-          id: 'sug_${entry.key.hashCode}',
-          title: m.title,
-          amount: m.amount,
-          type: m.type,
-          categoryId: m.categoryId,
-          accountId: m.accountId,
-          note: m.note,
-        ));
+        suggestions.add(
+          FavoriteMovement(
+            id: 'sug_${entry.key.hashCode}',
+            title: m.title,
+            amount: m.amount,
+            type: m.type,
+            categoryId: m.categoryId,
+            accountId: m.accountId,
+            note: m.note,
+          ),
+        );
       }
     }
     return suggestions;
@@ -751,7 +801,9 @@ class AppDatabase extends ChangeNotifier {
     _accounts.clear();
   }
 
-  CategoryConversionReport? convertFlatCategoryToSubcategory(String categoryId) {
+  CategoryConversionReport? convertFlatCategoryToSubcategory(
+    String categoryId,
+  ) {
     final oldIndex = _categories.indexWhere((c) => c.id == categoryId);
     if (oldIndex < 0) return null;
     final oldCat = _categories[oldIndex];
@@ -817,7 +869,10 @@ class AppDatabase extends ChangeNotifier {
     for (var i = 0; i < _movements.length; i++) {
       final m = _movements[i];
       if (m.categoryId == oldCat.id) {
-        final updated = m.copyWith(categoryId: parent.id, subcategoryId: sub.id);
+        final updated = m.copyWith(
+          categoryId: parent.id,
+          subcategoryId: sub.id,
+        );
         _movements[i] = updated;
         if (_sqlite != null) {
           _sqlite.updateMovement(updated);
@@ -1148,7 +1203,9 @@ extension AppDatabaseMerge on AppDatabase {
     if (req.sourceCategoryId == req.targetCategoryId &&
         req.sourceSubcategoryId == req.targetSubcategoryId) {
       return CategoryMergeReport(
-        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceType: req.sourceSubcategoryId != null
+            ? 'subcategory'
+            : 'category',
         sourceCategoryName: _catName(req.sourceCategoryId),
         sourceSubcategoryName: _subcatName(req.sourceSubcategoryId),
         targetCategoryName: _catName(req.targetCategoryId),
@@ -1158,10 +1215,14 @@ extension AppDatabaseMerge on AppDatabase {
     }
 
     // Find source category
-    final sourceCatIdx = _categories.indexWhere((c) => c.id == req.sourceCategoryId);
+    final sourceCatIdx = _categories.indexWhere(
+      (c) => c.id == req.sourceCategoryId,
+    );
     if (sourceCatIdx < 0) {
       return CategoryMergeReport(
-        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceType: req.sourceSubcategoryId != null
+            ? 'subcategory'
+            : 'category',
         sourceCategoryName: req.sourceCategoryId,
         targetCategoryName: _catName(req.targetCategoryId),
         warnings: ['Source category not found'],
@@ -1170,10 +1231,14 @@ extension AppDatabaseMerge on AppDatabase {
     final sourceCat = _categories[sourceCatIdx];
 
     // Find target category
-    final targetCatIdx = _categories.indexWhere((c) => c.id == req.targetCategoryId);
+    final targetCatIdx = _categories.indexWhere(
+      (c) => c.id == req.targetCategoryId,
+    );
     if (targetCatIdx < 0) {
       return CategoryMergeReport(
-        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceType: req.sourceSubcategoryId != null
+            ? 'subcategory'
+            : 'category',
         sourceCategoryName: sourceCat.name,
         targetCategoryName: req.targetCategoryId,
         warnings: ['Target category not found'],
@@ -1183,7 +1248,9 @@ extension AppDatabaseMerge on AppDatabase {
 
     if (targetCat.archived) {
       return CategoryMergeReport(
-        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceType: req.sourceSubcategoryId != null
+            ? 'subcategory'
+            : 'category',
         sourceCategoryName: sourceCat.name,
         sourceSubcategoryName: _subcatName(req.sourceSubcategoryId),
         targetCategoryName: targetCat.name,
@@ -1196,12 +1263,16 @@ extension AppDatabaseMerge on AppDatabase {
     String? resolvedTargetSubcategoryId = req.targetSubcategoryId;
     bool targetSubcatCreated = false;
 
-    if (req.createTargetSubcategoryName != null && req.createTargetSubcategoryName!.trim().isNotEmpty) {
+    if (req.createTargetSubcategoryName != null &&
+        req.createTargetSubcategoryName!.trim().isNotEmpty) {
       final subName = req.createTargetSubcategoryName!.trim();
       Subcategory? existing;
       try {
         existing = _subcategories.firstWhere(
-          (s) => s.categoryId == req.targetCategoryId && s.name == subName && !s.archived,
+          (s) =>
+              s.categoryId == req.targetCategoryId &&
+              s.name == subName &&
+              !s.archived,
         );
       } catch (_) {}
       if (existing != null) {
@@ -1223,7 +1294,9 @@ extension AppDatabaseMerge on AppDatabase {
     } else if (resolvedTargetSubcategoryId != null) {
       // Validate target subcategory is active
       try {
-        final ts = _subcategories.firstWhere((s) => s.id == resolvedTargetSubcategoryId);
+        final ts = _subcategories.firstWhere(
+          (s) => s.id == resolvedTargetSubcategoryId,
+        );
         if (ts.archived) {
           warnings.add('Target subcategory is archived');
         }
@@ -1246,7 +1319,9 @@ extension AppDatabaseMerge on AppDatabase {
 
     if (!isSubcategoryMerge && req.childSubcategoryActions != null) {
       for (final act in req.childSubcategoryActions!) {
-        final subIdx = _subcategories.indexWhere((s) => s.id == act.subcategoryId);
+        final subIdx = _subcategories.indexWhere(
+          (s) => s.id == act.subcategoryId,
+        );
         if (subIdx < 0) {
           warnings.add('Child subcategory ${act.subcategoryId} not found');
           continue;
@@ -1255,42 +1330,63 @@ extension AppDatabaseMerge on AppDatabase {
         switch (act.action) {
           case 'move':
             _subcategories[subIdx] = Subcategory(
-              id: childSub.id, categoryId: req.targetCategoryId,
-              name: childSub.name, archived: childSub.archived,
-              createdAt: childSub.createdAt, updatedAt: DateTime.now(),
+              id: childSub.id,
+              categoryId: req.targetCategoryId,
+              name: childSub.name,
+              archived: childSub.archived,
+              createdAt: childSub.createdAt,
+              updatedAt: DateTime.now(),
             );
-            if (_sqlite != null) _sqlite.updateSubcategory(_subcategories[subIdx]);
+            if (_sqlite != null)
+              _sqlite.updateSubcategory(_subcategories[subIdx]);
             childMoved++;
             handledChildSubIds.add(childSub.id);
-            childDetails.add(ChildSubcategoryReportEntry(
-              subcategoryName: childSub.name, action: 'move', archived: false,
-            ));
+            childDetails.add(
+              ChildSubcategoryReportEntry(
+                subcategoryName: childSub.name,
+                action: 'move',
+                archived: false,
+              ),
+            );
 
           case 'merge':
             String? resolvedId;
-            if (act.createTargetSubcategoryName != null && act.createTargetSubcategoryName!.trim().isNotEmpty) {
+            if (act.createTargetSubcategoryName != null &&
+                act.createTargetSubcategoryName!.trim().isNotEmpty) {
               final subName = act.createTargetSubcategoryName!.trim();
               Subcategory? existing;
               try {
                 existing = _subcategories.firstWhere(
-                  (s) => s.categoryId == req.targetCategoryId && s.name == subName && !s.archived,
+                  (s) =>
+                      s.categoryId == req.targetCategoryId &&
+                      s.name == subName &&
+                      !s.archived,
                 );
               } catch (_) {}
               if (existing != null) {
                 resolvedId = existing.id;
               } else {
-                resolvedId = 'sub_${DateTime.now().microsecondsSinceEpoch.toString()}';
-                _subcategories.add(Subcategory(
-                  id: resolvedId, categoryId: req.targetCategoryId,
-                  name: subName, createdAt: DateTime.now(),
-                ));
-                if (_sqlite != null) _sqlite.insertSubcategory(_subcategories.last);
+                resolvedId =
+                    'sub_${DateTime.now().microsecondsSinceEpoch.toString()}';
+                _subcategories.add(
+                  Subcategory(
+                    id: resolvedId,
+                    categoryId: req.targetCategoryId,
+                    name: subName,
+                    createdAt: DateTime.now(),
+                  ),
+                );
+                if (_sqlite != null)
+                  _sqlite.insertSubcategory(_subcategories.last);
               }
             } else if (act.targetSubcategoryId != null) {
               resolvedId = act.targetSubcategoryId;
               try {
                 final ts = _subcategories.firstWhere((s) => s.id == resolvedId);
-                if (ts.archived) warnings.add('Target child subcategory ${ts.name} is archived');
+                if (ts.archived)
+                  warnings.add(
+                    'Target child subcategory ${ts.name} is archived',
+                  );
               } catch (_) {
                 warnings.add('Target child subcategory not found');
                 resolvedId = null;
@@ -1300,34 +1396,55 @@ extension AppDatabaseMerge on AppDatabase {
               childMergeTargetMap[childSub.id] = resolvedId;
               handledChildSubIds.add(childSub.id);
               childMerged++;
-              childDetails.add(ChildSubcategoryReportEntry(
-                subcategoryName: childSub.name, action: 'merge', archived: true,
-              ));
+              childDetails.add(
+                ChildSubcategoryReportEntry(
+                  subcategoryName: childSub.name,
+                  action: 'merge',
+                  archived: true,
+                ),
+              );
             } else {
-              warnings.add('Could not resolve target for child subcategory ${childSub.name}');
+              warnings.add(
+                'Could not resolve target for child subcategory ${childSub.name}',
+              );
               childKept++;
-              childDetails.add(ChildSubcategoryReportEntry(
-                subcategoryName: childSub.name, action: 'keep', archived: false,
-              ));
+              childDetails.add(
+                ChildSubcategoryReportEntry(
+                  subcategoryName: childSub.name,
+                  action: 'keep',
+                  archived: false,
+                ),
+              );
             }
 
           case 'archive':
             _subcategories[subIdx] = Subcategory(
-              id: childSub.id, categoryId: childSub.categoryId,
-              name: childSub.name, archived: true,
-              createdAt: childSub.createdAt, updatedAt: DateTime.now(),
+              id: childSub.id,
+              categoryId: childSub.categoryId,
+              name: childSub.name,
+              archived: true,
+              createdAt: childSub.createdAt,
+              updatedAt: DateTime.now(),
             );
             if (_sqlite != null) _sqlite.archiveSubcategory(childSub.id);
             childArchived++;
-            childDetails.add(ChildSubcategoryReportEntry(
-              subcategoryName: childSub.name, action: 'archive', archived: true,
-            ));
+            childDetails.add(
+              ChildSubcategoryReportEntry(
+                subcategoryName: childSub.name,
+                action: 'archive',
+                archived: true,
+              ),
+            );
 
           default: // 'keep'
             childKept++;
-            childDetails.add(ChildSubcategoryReportEntry(
-              subcategoryName: childSub.name, action: 'keep', archived: false,
-            ));
+            childDetails.add(
+              ChildSubcategoryReportEntry(
+                subcategoryName: childSub.name,
+                action: 'keep',
+                archived: false,
+              ),
+            );
         }
       }
     }
@@ -1340,22 +1457,36 @@ extension AppDatabaseMerge on AppDatabase {
         // 'merge' action: redirect to target subcategory
         final targetSubId = childMergeTargetMap[m.subcategoryId]!;
         _movements[i] = Movement(
-          id: m.id, title: m.title, amount: m.amount,
-          type: m.type, date: m.date,
-          categoryId: req.targetCategoryId, subcategoryId: targetSubId,
-          accountId: m.accountId, destinationAccountId: m.destinationAccountId,
-          note: m.note, createdAt: m.createdAt, updatedAt: m.updatedAt,
+          id: m.id,
+          title: m.title,
+          amount: m.amount,
+          type: m.type,
+          date: m.date,
+          categoryId: req.targetCategoryId,
+          subcategoryId: targetSubId,
+          accountId: m.accountId,
+          destinationAccountId: m.destinationAccountId,
+          note: m.note,
+          createdAt: m.createdAt,
+          updatedAt: m.updatedAt,
         );
         if (_sqlite != null) _sqlite.updateMovement(_movements[i]);
         movementsUpdated++;
       } else if (handledChildSubIds.contains(m.subcategoryId)) {
         // 'move' action: keep subcategoryId, change categoryId only
         _movements[i] = Movement(
-          id: m.id, title: m.title, amount: m.amount,
-          type: m.type, date: m.date,
-          categoryId: req.targetCategoryId, subcategoryId: m.subcategoryId,
-          accountId: m.accountId, destinationAccountId: m.destinationAccountId,
-          note: m.note, createdAt: m.createdAt, updatedAt: m.updatedAt,
+          id: m.id,
+          title: m.title,
+          amount: m.amount,
+          type: m.type,
+          date: m.date,
+          categoryId: req.targetCategoryId,
+          subcategoryId: m.subcategoryId,
+          accountId: m.accountId,
+          destinationAccountId: m.destinationAccountId,
+          note: m.note,
+          createdAt: m.createdAt,
+          updatedAt: m.updatedAt,
         );
         if (_sqlite != null) _sqlite.updateMovement(_movements[i]);
         movementsUpdated++;
@@ -1365,7 +1496,8 @@ extension AppDatabaseMerge on AppDatabase {
     // ── Generic movement loop (for all other movements from source category) ──
     for (var i = 0; i < _movements.length; i++) {
       final m = _movements[i];
-      if (handledChildSubIds.contains(m.subcategoryId)) continue; // already handled above
+      if (handledChildSubIds.contains(m.subcategoryId))
+        continue; // already handled above
       bool match;
       if (isSubcategoryMerge) {
         match = m.subcategoryId == req.sourceSubcategoryId;
@@ -1374,12 +1506,18 @@ extension AppDatabaseMerge on AppDatabase {
       }
       if (match) {
         _movements[i] = Movement(
-          id: m.id, title: m.title, amount: m.amount,
-          type: m.type, date: m.date,
+          id: m.id,
+          title: m.title,
+          amount: m.amount,
+          type: m.type,
+          date: m.date,
           categoryId: req.targetCategoryId,
           subcategoryId: resolvedTargetSubcategoryId,
-          accountId: m.accountId, destinationAccountId: m.destinationAccountId,
-          note: m.note, createdAt: m.createdAt, updatedAt: m.updatedAt,
+          accountId: m.accountId,
+          destinationAccountId: m.destinationAccountId,
+          note: m.note,
+          createdAt: m.createdAt,
+          updatedAt: m.updatedAt,
         );
         if (_sqlite != null) _sqlite.updateMovement(_movements[i]);
         movementsUpdated++;
@@ -1396,63 +1534,95 @@ extension AppDatabaseMerge on AppDatabase {
           for (var i = 0; i < _quickMovements.length; i++) {
             if (_quickMovements[i].subcategoryId == act.subcategoryId) {
               _quickMovements[i] = QuickMovement(
-                id: _quickMovements[i].id, title: _quickMovements[i].title,
-                amount: _quickMovements[i].amount, type: _quickMovements[i].type,
-                categoryId: req.targetCategoryId, subcategoryId: act.subcategoryId,
-                accountId: _quickMovements[i].accountId, note: _quickMovements[i].note,
+                id: _quickMovements[i].id,
+                title: _quickMovements[i].title,
+                amount: _quickMovements[i].amount,
+                type: _quickMovements[i].type,
+                categoryId: req.targetCategoryId,
+                subcategoryId: act.subcategoryId,
+                accountId: _quickMovements[i].accountId,
+                note: _quickMovements[i].note,
               );
-              if (_sqlite != null) _sqlite.updateQuickMovement(_quickMovements[i].id, _quickMovements[i]);
+              if (_sqlite != null)
+                _sqlite.updateQuickMovement(
+                  _quickMovements[i].id,
+                  _quickMovements[i],
+                );
               quickMovementsUpdated++;
             }
           }
           for (var i = 0; i < _favoriteMovements.length; i++) {
             if (_favoriteMovements[i].subcategoryId == act.subcategoryId) {
               _favoriteMovements[i] = FavoriteMovement(
-                id: _favoriteMovements[i].id, title: _favoriteMovements[i].title,
-                amount: _favoriteMovements[i].amount, type: _favoriteMovements[i].type,
-                categoryId: req.targetCategoryId, subcategoryId: act.subcategoryId,
-                accountId: _favoriteMovements[i].accountId, note: _favoriteMovements[i].note,
+                id: _favoriteMovements[i].id,
+                title: _favoriteMovements[i].title,
+                amount: _favoriteMovements[i].amount,
+                type: _favoriteMovements[i].type,
+                categoryId: req.targetCategoryId,
+                subcategoryId: act.subcategoryId,
+                accountId: _favoriteMovements[i].accountId,
+                note: _favoriteMovements[i].note,
               );
-              if (_sqlite != null) _sqlite.updateFavoriteMovement(_favoriteMovements[i]);
+              if (_sqlite != null)
+                _sqlite.updateFavoriteMovement(_favoriteMovements[i]);
               favoriteMovementsUpdated++;
             }
           }
         }
         // 'merge': use childMergeTargetMap
-        if (act.action == 'merge' && childMergeTargetMap.containsKey(act.subcategoryId)) {
+        if (act.action == 'merge' &&
+            childMergeTargetMap.containsKey(act.subcategoryId)) {
           final targetSubId = childMergeTargetMap[act.subcategoryId]!;
           for (var i = 0; i < _quickMovements.length; i++) {
             if (_quickMovements[i].subcategoryId == act.subcategoryId) {
               _quickMovements[i] = QuickMovement(
-                id: _quickMovements[i].id, title: _quickMovements[i].title,
-                amount: _quickMovements[i].amount, type: _quickMovements[i].type,
-                categoryId: req.targetCategoryId, subcategoryId: targetSubId,
-                accountId: _quickMovements[i].accountId, note: _quickMovements[i].note,
+                id: _quickMovements[i].id,
+                title: _quickMovements[i].title,
+                amount: _quickMovements[i].amount,
+                type: _quickMovements[i].type,
+                categoryId: req.targetCategoryId,
+                subcategoryId: targetSubId,
+                accountId: _quickMovements[i].accountId,
+                note: _quickMovements[i].note,
               );
-              if (_sqlite != null) _sqlite.updateQuickMovement(_quickMovements[i].id, _quickMovements[i]);
+              if (_sqlite != null)
+                _sqlite.updateQuickMovement(
+                  _quickMovements[i].id,
+                  _quickMovements[i],
+                );
               quickMovementsUpdated++;
             }
           }
           for (var i = 0; i < _favoriteMovements.length; i++) {
             if (_favoriteMovements[i].subcategoryId == act.subcategoryId) {
               _favoriteMovements[i] = FavoriteMovement(
-                id: _favoriteMovements[i].id, title: _favoriteMovements[i].title,
-                amount: _favoriteMovements[i].amount, type: _favoriteMovements[i].type,
-                categoryId: req.targetCategoryId, subcategoryId: targetSubId,
-                accountId: _favoriteMovements[i].accountId, note: _favoriteMovements[i].note,
+                id: _favoriteMovements[i].id,
+                title: _favoriteMovements[i].title,
+                amount: _favoriteMovements[i].amount,
+                type: _favoriteMovements[i].type,
+                categoryId: req.targetCategoryId,
+                subcategoryId: targetSubId,
+                accountId: _favoriteMovements[i].accountId,
+                note: _favoriteMovements[i].note,
               );
-              if (_sqlite != null) _sqlite.updateFavoriteMovement(_favoriteMovements[i]);
+              if (_sqlite != null)
+                _sqlite.updateFavoriteMovement(_favoriteMovements[i]);
               favoriteMovementsUpdated++;
             }
           }
           // Archive source child subcategory after merge
-          final subIdx = _subcategories.indexWhere((s) => s.id == act.subcategoryId);
+          final subIdx = _subcategories.indexWhere(
+            (s) => s.id == act.subcategoryId,
+          );
           if (subIdx >= 0) {
             final oldSub = _subcategories[subIdx];
             _subcategories[subIdx] = Subcategory(
-              id: oldSub.id, categoryId: oldSub.categoryId,
-              name: oldSub.name, archived: true,
-              createdAt: oldSub.createdAt, updatedAt: DateTime.now(),
+              id: oldSub.id,
+              categoryId: oldSub.categoryId,
+              name: oldSub.name,
+              archived: true,
+              createdAt: oldSub.createdAt,
+              updatedAt: DateTime.now(),
             );
             if (_sqlite != null) _sqlite.archiveSubcategory(oldSub.id);
           }
@@ -1472,12 +1642,17 @@ extension AppDatabaseMerge on AppDatabase {
       }
       if (match) {
         _quickMovements[i] = QuickMovement(
-          id: qm.id, title: qm.title, amount: qm.amount,
-          type: qm.type, categoryId: req.targetCategoryId,
+          id: qm.id,
+          title: qm.title,
+          amount: qm.amount,
+          type: qm.type,
+          categoryId: req.targetCategoryId,
           subcategoryId: resolvedTargetSubcategoryId,
-          accountId: qm.accountId, note: qm.note,
+          accountId: qm.accountId,
+          note: qm.note,
         );
-        if (_sqlite != null) _sqlite.updateQuickMovement(qm.id, _quickMovements[i]);
+        if (_sqlite != null)
+          _sqlite.updateQuickMovement(qm.id, _quickMovements[i]);
         quickMovementsUpdated++;
       }
     }
@@ -1493,12 +1668,17 @@ extension AppDatabaseMerge on AppDatabase {
       }
       if (match) {
         _favoriteMovements[i] = FavoriteMovement(
-          id: fm.id, title: fm.title, amount: fm.amount,
-          type: fm.type, categoryId: req.targetCategoryId,
+          id: fm.id,
+          title: fm.title,
+          amount: fm.amount,
+          type: fm.type,
+          categoryId: req.targetCategoryId,
           subcategoryId: resolvedTargetSubcategoryId,
-          accountId: fm.accountId, note: fm.note,
+          accountId: fm.accountId,
+          note: fm.note,
         );
-        if (_sqlite != null) _sqlite.updateFavoriteMovement(_favoriteMovements[i]);
+        if (_sqlite != null)
+          _sqlite.updateFavoriteMovement(_favoriteMovements[i]);
         favoriteMovementsUpdated++;
       }
     }
@@ -1510,7 +1690,9 @@ extension AppDatabaseMerge on AppDatabase {
 
     if (req.archiveSource) {
       if (isSubcategoryMerge) {
-        final subIdx = _subcategories.indexWhere((s) => s.id == req.sourceSubcategoryId);
+        final subIdx = _subcategories.indexWhere(
+          (s) => s.id == req.sourceSubcategoryId,
+        );
         if (subIdx >= 0) {
           final old = _subcategories[subIdx];
           _subcategories[subIdx] = Subcategory(
@@ -1573,7 +1755,9 @@ extension AppDatabaseMerge on AppDatabase {
     return CategoryMergeReport(
       sourceType: isSubcategoryMerge ? 'subcategory' : 'category',
       sourceCategoryName: sourceCat.name,
-      sourceSubcategoryName: isSubcategoryMerge ? _subcatName(req.sourceSubcategoryId) : null,
+      sourceSubcategoryName: isSubcategoryMerge
+          ? _subcatName(req.sourceSubcategoryId)
+          : null,
       targetCategoryName: targetCat.name,
       targetSubcategoryName: _subcatName(resolvedTargetSubcategoryId),
       targetSubcategoryCreated: targetSubcatCreated,

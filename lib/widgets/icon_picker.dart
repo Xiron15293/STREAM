@@ -48,10 +48,14 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
       } else {
         _filteredGroups = [];
         for (final group in _allGroups) {
-          final matching = group.entries.where((e) =>
-              e.key.toLowerCase().contains(_searchQuery) ||
-              e.label.toLowerCase().contains(_searchQuery) ||
-              group.name.toLowerCase().contains(_searchQuery)).toList();
+          final matching = group.entries
+              .where(
+                (e) =>
+                    e.key.toLowerCase().contains(_searchQuery) ||
+                    e.label.toLowerCase().contains(_searchQuery) ||
+                    group.name.toLowerCase().contains(_searchQuery),
+              )
+              .toList();
           if (matching.isNotEmpty) {
             _filteredGroups.add(StreamIconGroup(group.name, matching));
           }
@@ -125,16 +129,17 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        crossAxisSpacing: 6,
-                        mainAxisSpacing: 6,
-                        childAspectRatio: 1,
-                      ),
+                            crossAxisCount: 5,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
+                            childAspectRatio: 1,
+                          ),
                       itemCount: group.entries.length,
                       itemBuilder: (context, index) {
                         final entry = group.entries[index];
                         final isSelected = entry.key == _selectedIconKey;
                         return GestureDetector(
+                          key: Key('icon_picker_option_${entry.key}'),
                           onTap: () {
                             setState(() => _selectedIconKey = entry.key);
                             Navigator.of(context).pop(_selectedIconKey);
@@ -144,21 +149,26 @@ class _IconPickerDialogState extends State<IconPickerDialog> {
                               color: isSelected
                                   ? StreamColors.primary.withValues(alpha: 0.2)
                                   : StreamColors.surface,
-                              borderRadius:
-                                  BorderRadius.circular(StreamRadius.sm),
+                              borderRadius: BorderRadius.circular(
+                                StreamRadius.sm,
+                              ),
                               border: isSelected
                                   ? Border.all(
-                                      color: StreamColors.primary, width: 2)
+                                      color: StreamColors.primary,
+                                      width: 2,
+                                    )
                                   : null,
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(entry.icon,
-                                    size: 20,
-                                    color: isSelected
-                                        ? StreamColors.primary
-                                        : StreamColors.textSecondary),
+                                Icon(
+                                  entry.icon,
+                                  size: 20,
+                                  color: isSelected
+                                      ? StreamColors.primary
+                                      : StreamColors.textSecondary,
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   entry.label,
@@ -211,20 +221,25 @@ class ColorPicker extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: StreamColorPalette.colors.map((c) => GestureDetector(
-        onTap: () => onChanged(c),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: Color(c),
-            shape: BoxShape.circle,
-            border: currentColor == c
-                ? Border.all(color: Colors.white, width: 3)
-                : null,
-          ),
-        ),
-      )).toList(),
+      children: StreamColorPalette.colors
+          .map(
+            (c) => GestureDetector(
+              key: Key('color_picker_option_${c.toRadixString(16)}'),
+              onTap: () => onChanged(c),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Color(c),
+                  shape: BoxShape.circle,
+                  border: currentColor == c
+                      ? Border.all(color: Colors.white, width: 3)
+                      : null,
+                ),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }
