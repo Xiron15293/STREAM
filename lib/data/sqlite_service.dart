@@ -652,6 +652,16 @@ class SQLiteService {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  Future<void> updateFavoriteMovement(FavoriteMovement fm) async {
+    final db = _database;
+    await db.update(
+      'favorite_movements',
+      _favoriteMovementToMap(fm),
+      where: 'id = ?',
+      whereArgs: [fm.id],
+    );
+  }
+
   Future<void> deleteFavoriteMovement(String id) async {
     final db = _database;
     await db.delete('favorite_movements', where: 'id = ?', whereArgs: [id]);

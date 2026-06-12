@@ -241,6 +241,20 @@ class AppDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateFavoriteMovement(FavoriteMovement updated) async {
+    final index = _favoriteMovements.indexWhere((f) => f.id == updated.id);
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateFavoriteMovement(updated);
+      } catch (_) {
+        return;
+      }
+    }
+    _favoriteMovements[index] = updated;
+    notifyListeners();
+  }
+
   Future<void> deleteFavoriteMovement(String id) async {
     if (_sqlite != null) {
       try {
@@ -688,6 +702,171 @@ class AppDatabase extends ChangeNotifier {
     _accounts.clear();
   }
 
+  CategoryConversionReport? convertFlatCategoryToSubcategory(String categoryId) {
+    final oldIndex = _categories.indexWhere((c) => c.id == categoryId);
+    if (oldIndex < 0) return null;
+    final oldCat = _categories[oldIndex];
+    if (oldCat.archived) return null;
+
+    final parsed = _parseCategoryName(oldCat.name);
+    if (parsed == null) return null;
+    final (parentName, subcategoryName) = parsed;
+
+    // Find or create parent category
+    Category? existingParent;
+    try {
+      existingParent = _categories.firstWhere(
+        (c) => c.name == parentName && c.type == oldCat.type && !c.archived,
+      );
+    } catch (_) {}
+    bool parentCreated = false;
+    Category parent;
+    if (existingParent != null) {
+      parent = existingParent;
+    } else {
+      parent = Category(
+        id: 'cat_${DateTime.now().microsecondsSinceEpoch.toString()}',
+        name: parentName,
+        type: oldCat.type,
+        color: oldCat.color,
+        iconKey: oldCat.iconKey,
+      );
+      _categories.add(parent);
+      parentCreated = true;
+      if (_sqlite != null) {
+        _sqlite.insertCategory(parent);
+      }
+    }
+
+    // Find or create subcategory
+    bool subcategoryCreated = false;
+    Subcategory sub;
+    Subcategory? existingSub;
+    try {
+      existingSub = _subcategories.firstWhere(
+        (s) => s.categoryId == parent.id && s.name == subcategoryName,
+      );
+    } catch (_) {}
+    if (existingSub != null) {
+      sub = existingSub;
+    } else {
+      sub = Subcategory(
+        id: 'sub_${DateTime.now().microsecondsSinceEpoch.toString()}',
+        categoryId: parent.id,
+        name: subcategoryName,
+        createdAt: DateTime.now(),
+      );
+      _subcategories.add(sub);
+      subcategoryCreated = true;
+      if (_sqlite != null) {
+        _sqlite.insertSubcategory(sub);
+      }
+    }
+
+    // Reassign movements
+    int movementsUpdated = 0;
+    for (var i = 0; i < _movements.length; i++) {
+      final m = _movements[i];
+      if (m.categoryId == oldCat.id) {
+        final updated = m.copyWith(categoryId: parent.id, subcategoryId: sub.id);
+        _movements[i] = updated;
+        if (_sqlite != null) {
+          _sqlite.updateMovement(updated);
+        }
+        movementsUpdated++;
+      }
+    }
+
+    // Reassign quick movements
+    int quickMovementsUpdated = 0;
+    for (var i = 0; i < _quickMovements.length; i++) {
+      final qm = _quickMovements[i];
+      if (qm.categoryId == oldCat.id) {
+        final updated = QuickMovement(
+          id: qm.id,
+          title: qm.title,
+          amount: qm.amount,
+          type: qm.type,
+          categoryId: parent.id,
+          subcategoryId: sub.id,
+          accountId: qm.accountId,
+          note: qm.note,
+        );
+        _quickMovements[i] = updated;
+        if (_sqlite != null) {
+          _sqlite.updateQuickMovement(qm.id, updated);
+        }
+        quickMovementsUpdated++;
+      }
+    }
+
+    // Reassign favorite movements
+    int favoriteMovementsUpdated = 0;
+    for (var i = 0; i < _favoriteMovements.length; i++) {
+      final fm = _favoriteMovements[i];
+      if (fm.categoryId == oldCat.id) {
+        final updated = FavoriteMovement(
+          id: fm.id,
+          title: fm.title,
+          amount: fm.amount,
+          type: fm.type,
+          categoryId: parent.id,
+          subcategoryId: sub.id,
+          accountId: fm.accountId,
+          note: fm.note,
+        );
+        _favoriteMovements[i] = updated;
+        if (_sqlite != null) {
+          _sqlite.updateFavoriteMovement(updated);
+        }
+        favoriteMovementsUpdated++;
+      }
+    }
+
+    // Archive old category
+    final archived = _categories[oldIndex];
+    final oldArchived = Category(
+      id: archived.id,
+      name: archived.name,
+      type: archived.type,
+      color: archived.color,
+      iconKey: archived.iconKey,
+      archived: true,
+    );
+    _categories[oldIndex] = oldArchived;
+    if (_sqlite != null) {
+      _sqlite.updateCategory(oldArchived);
+    }
+
+    notifyListeners();
+
+    return CategoryConversionReport(
+      oldCategoryName: oldCat.name,
+      parentCategoryName: parentName,
+      subcategoryName: subcategoryName,
+      parentCategoryCreated: parentCreated,
+      subcategoryCreated: subcategoryCreated,
+      movementsUpdated: movementsUpdated,
+      quickMovementsUpdated: quickMovementsUpdated,
+      favoriteMovementsUpdated: favoriteMovementsUpdated,
+      oldCategoryArchived: true,
+    );
+  }
+
+  (String, String)? _parseCategoryName(String name) {
+    var trimmed = name.trim();
+    final parenOpen = trimmed.lastIndexOf('(');
+    if (parenOpen < 1) return null;
+    final parenClose = trimmed.indexOf(')', parenOpen);
+    if (parenClose < 0 || parenClose != trimmed.length - 1) return null;
+    var parentName = trimmed.substring(0, parenOpen).trim();
+    var subName = trimmed.substring(parenOpen + 1, parenClose).trim();
+    parentName = parentName.replaceAll(RegExp(r'\s{2,}'), ' ');
+    subName = subName.replaceAll(RegExp(r'\s{2,}'), ' ');
+    if (parentName.isEmpty || subName.isEmpty) return null;
+    return (parentName, subName);
+  }
+
   void replaceState({
     required List<Movement> movements,
     required List<Category> categories,
@@ -796,4 +975,28 @@ class AppDatabase extends ChangeNotifier {
     }
     _favoriteMovements.add(fm);
   }
+}
+
+class CategoryConversionReport {
+  final String oldCategoryName;
+  final String parentCategoryName;
+  final String subcategoryName;
+  final bool parentCategoryCreated;
+  final bool subcategoryCreated;
+  final int movementsUpdated;
+  final int quickMovementsUpdated;
+  final int favoriteMovementsUpdated;
+  final bool oldCategoryArchived;
+
+  const CategoryConversionReport({
+    required this.oldCategoryName,
+    required this.parentCategoryName,
+    required this.subcategoryName,
+    required this.parentCategoryCreated,
+    required this.subcategoryCreated,
+    required this.movementsUpdated,
+    required this.quickMovementsUpdated,
+    required this.favoriteMovementsUpdated,
+    required this.oldCategoryArchived,
+  });
 }

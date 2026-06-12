@@ -14,6 +14,138 @@ import '../widgets/icon_picker.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 
+bool _isConvertibleCategory(String name) {
+  final trimmed = name.trim();
+  final parenOpen = trimmed.lastIndexOf('(');
+  if (parenOpen < 1) return false;
+  final parenClose = trimmed.indexOf(')', parenOpen);
+  if (parenClose < 0 || parenClose != trimmed.length - 1) return false;
+  final parentName = trimmed.substring(0, parenOpen).trim();
+  final subName = trimmed.substring(parenOpen + 1, parenClose).trim();
+  return parentName.isNotEmpty && subName.isNotEmpty;
+}
+
+void _showConvertDialog(
+  BuildContext context,
+  AppDatabase db,
+  Category category,
+  VoidCallback onChanged,
+) {
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      final trimmed = category.name.trim();
+      final parenOpen = trimmed.lastIndexOf('(');
+      if (parenOpen < 1) return const SizedBox.shrink();
+      final parenClose = trimmed.indexOf(')', parenOpen);
+      if (parenClose < 0) return const SizedBox.shrink();
+      final parentName = trimmed.substring(0, parenOpen).trim();
+      final subName = trimmed.substring(parenOpen + 1, parenClose).trim();
+      return AlertDialog(
+        title: const Text('Converti in sottocategoria?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'La categoria "${category.name}" verrà archiviata. '
+              'I movimenti collegati saranno spostati in "$parentName" '
+              'con sottocategoria "$subName".',
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Questa operazione non può essere annullata.',
+              style: TextStyle(fontSize: 12, color: StreamColors.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('category_convert_to_subcategory_cancel'),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            key: const Key('category_convert_to_subcategory_confirm'),
+            onPressed: () {
+              final report = db.convertFlatCategoryToSubcategory(category.id);
+              Navigator.pop(ctx);
+
+              if (report != null && context.mounted) {
+                _showConvertReport(context, report);
+              }
+              onChanged();
+            },
+            child: const Text('Converti'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void _showConvertReport(BuildContext context, CategoryConversionReport report) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Conversione completata'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _reportRow('Categoria madre', report.parentCategoryName),
+          _reportRow('Sottocategoria', report.subcategoryName),
+          _reportRow(
+            'Categoria madre',
+            report.parentCategoryCreated ? 'Creata' : 'Riutilizzata',
+          ),
+          _reportRow(
+            'Sottocategoria',
+            report.subcategoryCreated ? 'Creata' : 'Riutilizzata',
+          ),
+          const Divider(height: 16),
+          _reportRow('Movimenti aggiornati', '${report.movementsUpdated}'),
+          _reportRow(
+            'Movimenti rapidi aggiornati',
+            '${report.quickMovementsUpdated}',
+          ),
+          _reportRow(
+            'Preferiti aggiornati',
+            '${report.favoriteMovementsUpdated}',
+          ),
+          _reportRow(
+            'Categoria vecchia',
+            report.oldCategoryArchived ? 'Archiviata' : 'Errore',
+          ),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _reportRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 13)),
+        Text(value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            )),
+      ],
+    ),
+  );
+}
+
 class CategoriesScreen extends StatefulWidget {
   final AppDatabase db;
 
@@ -677,6 +809,9 @@ class _CleanListTile extends StatelessWidget {
                       case 'edit':
                         onEdit();
                         break;
+                      case 'convert':
+                        _showConvertDialog(context, db, category, onChanged);
+                        break;
                       case 'archive':
                         db.archiveCategory(category.id);
                         onChanged();
@@ -697,6 +832,12 @@ class _CleanListTile extends StatelessWidget {
                   ),
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'edit', child: Text('Modifica')),
+                    if (!category.archived && _isConvertibleCategory(category.name))
+                      const PopupMenuItem(
+                        key: Key('category_convert_to_subcategory_action'),
+                        value: 'convert',
+                        child: Text('Converti in sottocategoria'),
+                      ),
                     if (!category.archived)
                       const PopupMenuItem(
                         value: 'archive',
@@ -825,6 +966,9 @@ class _GroupedListTile extends StatelessWidget {
                   case 'edit':
                     onEdit();
                     break;
+                  case 'convert':
+                    _showConvertDialog(context, db, category, onChanged);
+                    break;
                   case 'archive':
                     db.archiveCategory(category.id);
                     onChanged();
@@ -845,6 +989,12 @@ class _GroupedListTile extends StatelessWidget {
               ),
               itemBuilder: (_) => [
                 const PopupMenuItem(value: 'edit', child: Text('Modifica')),
+                if (!category.archived && _isConvertibleCategory(category.name))
+                  const PopupMenuItem(
+                    key: Key('category_convert_to_subcategory_action'),
+                    value: 'convert',
+                    child: Text('Converti in sottocategoria'),
+                  ),
                 if (!category.archived)
                   const PopupMenuItem(
                     value: 'archive',
@@ -978,6 +1128,9 @@ class _StreamCardGridTile extends StatelessWidget {
                         case 'edit':
                           onEdit();
                           break;
+                        case 'convert':
+                          _showConvertDialog(context, db, category, onChanged);
+                          break;
                         case 'archive':
                           db.archiveCategory(category.id);
                           onChanged();
@@ -1001,6 +1154,12 @@ class _StreamCardGridTile extends StatelessWidget {
                         value: 'edit',
                         child: Text('Modifica'),
                       ),
+                      if (!category.archived && _isConvertibleCategory(category.name))
+                        const PopupMenuItem(
+                          key: Key('category_convert_to_subcategory_action'),
+                          value: 'convert',
+                          child: Text('Converti in sottocategoria'),
+                        ),
                       if (!category.archived)
                         const PopupMenuItem(
                           value: 'archive',
