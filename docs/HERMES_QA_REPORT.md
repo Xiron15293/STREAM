@@ -1856,3 +1856,24 @@ flutter test --no-pub    → 627/627 All tests passed
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
 - Nessun commit/push eseguito
+
+---
+
+## V0.8.9 — Category Conversion & Suggested UX Polish ✅
+
+| Area | Esito | Note |
+|------|-------|------|
+| Crash menu categorie | ✅ Fix | `_isConvertibleCategory` crash su nomi senza parentesi |
+| Categorie con movimenti modificabili | ✅ OK | nome/colore/icona editabili, tipo bloccato + messaggio chiaro |
+| Conversione manuale → sottocategoria | ✅ OK | madre creata/riusata, sottocategoria creata/riusata, movimenti/quick/favorite riassegnati, flat archiviata, report conteggi |
+| UX conversione (3 layout + sheet + dialog) | ✅ OK | menu popup, sheet movimenti, dialog modifica |
+| Suggeriti espandibili/ricercabili/raggruppati | ✅ OK | per categoria, con expand/collapse |
+| Heatmap palette comune | ✅ OK | usa `StreamColorPalette.colors` |
+| Test count | 711 / 711 | |
+
+### Verifica locale
+
+- `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings
+- `flutter test --no-pub`: **711/711 All tests passed**
+- Nessuno skip aggiunto
+- Nessun commit/push

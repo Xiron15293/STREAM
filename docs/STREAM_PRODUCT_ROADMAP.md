@@ -31,8 +31,9 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 6.6 | Hermes V0.6.7 — Import CSV 1Money | 📋 APPROVATA | TBD | Import dopo supporto transfer, molti record "Trasferimento" |
 | 6.7 | Hermes V0.8.7 — Heatmap Settings | ✅ COMPLETATO | TBD | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences only |
 | 6.8 | Hermes V0.8.8 — Subcategories Foundation | ✅ COMPLETATO | TBD | Subcategory entity, DB v9, subcategory_id nullable, backup/restore, UI gestione, fix UX |
-| 6.9 | Hermes V0.8.9 — 1Money Subcategory Import | 📋 APPROVATA | TBD | Parsing Categoria (Sottocategoria) nel CSV 1Money |
-| 6.10 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
+| 6.9 | Hermes V0.8.9 — Category Conversion & Suggested UX Polish | ✅ COMPLETATO | TBD | Fix crash categorie, categorie modificali, conversione manuale, suggeriti espandibili |
+| 6.10 | Hermes V0.9.0 — Notes & Tags | 📋 PRIORITARIA | TBD | Campo notes, tag multi-selezione, filtro per tag |
+| 6.11 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
 | 8 | Hermes V0.8 — Import CSV | ✅ COMPLETATO (parziale) | TBD | Import CSV 1Money completato in V0.7.0 |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |
 | 10 | Hermes V1.0 — Prima Beta STREAM | ⏳ POST-MVP | TBD | Distribuzione pubblica beta |

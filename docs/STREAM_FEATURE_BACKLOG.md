@@ -49,15 +49,16 @@
 | F38 | V0.6.2 GroupedMovementsList riusabile | V0.6.2 | 2026-06-08 |
 | F39 | V0.8.7 Heatmap Settings — soglie/colori configurabili | V0.8.7 | 2026-06-11 |
 | F40 | V0.8.8 Subcategories Foundation — subcategory entity, DB v9, UI | V0.8.8 | 2026-06-12 |
+| F42 | V0.8.9 Category Conversion & Suggested UX Polish — fix crash categorie, conversione manuale, suggeriti espandibili | V0.8.9 | 2026-06-14 |
 
 ---
 
 ## Priorità prossime
 
-1. V0.8.9 — 1Money Subcategory Import
-2. V0.9.1 — Converti categorie flat con parentesi in sottocategorie
-3. V0.9.2 — Subcategories Analytics (Budget/Actual/Scenari)
-4. FASE 4 — Lista Movimenti Premium con heatmap annuale
+1. V0.9.0 — Notes & Tags
+2. V0.9.1 — Dashboard recalcolo + tabella editor
+3. V0.9.2 — Export/Backup
+4. Subcategories Analytics (Budget/Actual/Scenari)
 
 ---
 
@@ -144,51 +145,39 @@
 
 ### F39 — V0.8.7 Heatmap Settings ✅ COMPLETATA
 
-### F41 — V0.8.9 1Money Subcategory Import 📋 APPROVATA
+### F42 — V0.8.9 Category Conversion & Suggested UX Polish ✅ COMPLETATA
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Parsing `Categoria (Sottocategoria)` nel CSV 1Money, dedup categoria/sottocategoria, report import, nessuna conversione automatica vecchie categorie |
-| **Motivazione** | Completare l'import CSV 1Money con supporto sottocategorie esportate da 1Money |
+| **Descrizione** | Fix crash menu categorie, categorie con movimenti modificabili, conversione manuale flat→sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune |
+| **Motivazione** | UX categorie bloccata da crash e impossibilità di modificare categorie con movimenti; conversione manuale necessaria per utenti 1Money |
 | **Priorità** | Alta |
-| **Dipendenze** | V0.8.8 Subcategories Foundation ✅, V0.7.0 Import CSV 1Money ✅ |
+| **Dipendenze** | V0.8.8 Subcategories Foundation ✅ |
 | **Versione candidata** | V0.8.9 |
-| **Stato** | 📋 APPROVATA |
+| **Stato** | ✅ COMPLETATA |
 
 **Sotto-feature:**
-1. **Parser** — riconoscere `Categoria (Sottocategoria)` nel campo `AL CONTO / ALLA CATEGORIA`
-2. **Dedup** — crea categoria e sottocategoria se non esistono
-3. **Trasferimenti** — esclusi (non hanno categoria)
-4. **Movimenti con/senza sottocategoria** — import corretti
-5. **Report** — conteggio sottocategorie importate
+1. **Fix crash** — `_isConvertibleCategory` non crasha più su nomi senza parentesi
+2. **Categorie con movimenti modificabili** — nome/colore/icona editabili, tipo bloccato
+3. **Conversione manuale** — `Spesa (Alimentari)` → `Spesa` + `Alimentari`
+4. **UX conversione** — visibile in 3 layout popup, sheet movimenti, dialog modifica
+5. **Suggeriti espandibili/ricercabili/raggruppati** — per categoria
+6. **Heatmap palette comune** — `StreamColorPalette.colors`
 
-**Test richiesti:** ~8-10 test
+**Test:** +7 test (711 totali), 0 warning
 
-**Rischio tecnico:** BASSO — logica import già matura, modello subcategory già disponibile
+**Rischio tecnico:** BASSO
 
 ---
 
-### F42 — V0.9.1 Converti categorie flat con parentesi 📋 APPROVATA
+### F41 — V0.9.1 Dashboard recalcolo + tabella editor 🔄 IN VALUTAZIONE
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Azione manuale controllata per convertire categorie flat come `Spesa (Alimentari)` in `Spesa` + sottocategoria `Alimentari` |
-| **Motivazione** | Utenti 1Money hanno categorie flat con parentesi che meritano conversione in sottocategorie native Stream |
+| **Descrizione** | Recalcolo KPI dashboard, tabella editor per modifiche rapide |
 | **Priorità** | Media |
-| **Dipendenze** | V0.8.8 Subcategories Foundation ✅ |
 | **Versione candidata** | V0.9.1 |
-| **Stato** | 📋 APPROVATA |
-
-**Sotto-feature:**
-1. **UI** — pulsante "Converti in sottocategoria" nel dialog categoria
-2. **Parser parentesi** — estrae nome categoria e nome sottocategoria
-3. **Conferma** — dialog prima della conversione
-4. **Riassegnazione** — tutti i movimenti/quick/favorite della vecchia categoria flat riassegnati
-5. **Archiviazione** — categoria flat archiviata dopo conversione
-
-**Test richiesti:** ~10-12 test
-
-**Rischio tecnico:** MEDIO — modifica movimenti esistenti, attenzione alla retrocompatibilità backup
+| **Stato** | 🔄 IN VALUTAZIONE |
 
 ---
 
@@ -397,9 +386,9 @@
 | Metrica | Valore |
 |---------|--------|
 | **Totale feature censite** | 36 |
-| **Feature completate** | 24+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40; + MovementCard, Backup, Build fix, Share) |
-| **Feature approvate** | 3 (F41, F42, F30, F35–F36) |
-| **Feature in valutazione** | 3 (F17–F18, F32) |
+| **Feature completate** | 25+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40, F42; + MovementCard, Backup, Build fix, Share) |
+| **Feature approvate** | 3 (F30, F35–F36; + F41 V0.9.1 in valutazione) |
+| **Feature in valutazione** | 4 (F17–F18, F32, F41) |
 | **Feature future** | 4 (F43, F19–F22, F24, F31) |
 | **Feature post-MVP** | 3 (F25, F27–F29) |
 | **Feature escluse** | 9 (E01–E09) |

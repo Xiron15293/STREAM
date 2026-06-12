@@ -30,8 +30,9 @@
 | Hermes V0.8.6 — Category Treemap Analytics | Treemap stile market map in Categorie con filtri periodo e ordinamenti | ✅ COMPLETATO |
 | Hermes V0.8.7 — Heatmap Settings | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences | ✅ COMPLETATO |
 | Hermes V0.8.8 — Subcategories Foundation | Nuova entità Subcategory, DB v8→v9, subcategory_id nullable, backup/restore, UI categorie e form, fix UX nota rapida e soglie heatmap | ✅ COMPLETATO |
+| Hermes V0.8.9 — Category Conversion & Suggested UX Polish | Fix crash menu categorie, categorie con movimenti modificabili, conversione manuale flat→sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune, test 711 | ✅ COMPLETATO |
 | Flutter analyze | — | ✅ PASS — 0 errors, 0 warnings |
-| `flutter test --no-pub` | — | ✅ 689/689 All tests passed |
+| `flutter test --no-pub` | — | ✅ 711/711 All tests passed |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -39,30 +40,23 @@
 
 ## 2. Ultima Milestone Completata
 
-**Hermes V0.8.8 — Subcategories Foundation**
+**Hermes V0.8.9 — Category Conversion & Suggested UX Polish**
 
 ### Cosa è stato completato
-- Nuova entità `Subcategory` (`lib/models/subcategory.dart`):
-  - `id`, `categoryId`, `name`, `archived`, `createdAt`, `updatedAt`
-  - nessun `color`/`iconKey` — ereditati dalla categoria madre
-- DB version v8 → v9:
-  - nuova tabella `subcategories` con `UNIQUE(category_id, name)`
-  - colonna nullable `subcategory_id` su `movements`, `quick_movements`, `favorite_movements`
-  - CRUD sottocategorie, mappers, migration
-- Movement/QuickMovement/FavoriteMovement: `subcategoryId` opzionale
-- Backup/Restore: include `subcategories`, orfani normalizzati a `null`
-- UI Categorie: sezione sottocategorie nel dialog (aggiungi/rinomina/archivia/ripristina)
-- Form movimento: dropdown sottocategoria opzionale
-- QuickMovement: campo Nota nel form rapido
-- Heatmap Settings: soglie con Done/Fatto (onSubmitted unfocus)
-- CSV Import 1Money: NON implementato parsing sottocategorie
+- Fix crash menu categorie su nomi senza parentesi (`_isConvertibleCategory`)
+- Categorie con movimenti modificabili (nome/colore/icona) — tipo bloccato
+- Conversione manuale `Spesa (Alimentari)` → `Spesa` + `Alimentari`
+  - Madre creata/riusata, sottocategoria creata/riusata
+  - Movimenti/Quick/Favorite riassegnati
+  - Categoria flat archiviata (non eliminata)
+  - Report conversione con conteggi
+- Azione "Converti in sottocategoria" in tutti e 3 i layout, sheet movimenti, dialog modifica
+- Suggeriti espandibili, ricercabili, raggruppati per categoria
+- Heatmap palette comune (`StreamColorPalette.colors`)
 
 ### QA finali
 - `flutter analyze --no-pub`: PASS — 0 errors, 0 warnings
-- `flutter test --no-pub`: **689/689 All tests passed** (+17 nuovi test sottocategorie)
-- `test/subcategories_test.dart`: 17 tests (creazione, dedup, archivia, persistenza, backup/restore old/new, orphan normalization, resetAllData, analytics compatibilità)
-- DB v9 confermato
-- 3 info deprecations pre-existing (`value` → `initialValue`) — non introdotte
+- `flutter test --no-pub`: **711/711 All tests passed** (+7 nuovi da V0.8.8)
 - Nessuno skip aggiunto
 - Nessun commit/push
 
@@ -70,28 +64,16 @@
 
 ## 3. Priorità Immediata (Prossima Sessione)
 
-1. **V0.8.9 — 1Money Subcategory Import**
-   - parser `Categoria (Sottocategoria)` nel CSV import
-   - dedup categoria/sottocategoria, transfer esclusi
-   - report import con dettaglio sottocategorie
-   - nessuna conversione automatica vecchie categorie
+1. **V0.9.0 — Notes & Tags**
+   - Campo notes su movimento
+   - Tag multi-selezione su movimento
+   - Filtro per tag in dashboard
 
-2. **V0.9.1 — Converti categorie flat con parentesi**
-   - azione manuale controllata
-   - esempio: `Spesa (Alimentari)` → `Spesa` → `Alimentari`
-   - conferma prima della conversione
-   - riassegna movimenti/quick/favorite
-   - archivia categoria flat vecchia
+2. **V0.9.1 — Dashboard recalcolo + tabella editor**
+   - recalcolo KPI, tabella modificabile
 
-3. **V0.9.2 — Subcategories Analytics**
-   - treemap toggle categorie/sottocategorie
-   - filtri sottocategoria
-   - breakdown Budget/Actual/Scenari
-
-4. **FASE 4 — Lista Movimenti Premium**
-   - heatmap annuale tipo reference utente
-   - card giornaliere aggregate
-   - layout premium
+3. **V0.9.2 — Export/Backup**
+4. **Subcategories Analytics — Budget/Actual/Scenari**
 
 ---
 
@@ -99,9 +81,8 @@
 
 - DB version corrente: **v9** (da V0.8.8)
 - Subcategories: nessuna FK SQLite, validazione applicativa (coerente con lo schema attuale)
-- Color/icon su Subcategory: assenti per scelta architetturale (ereditati dalla categoria madre); futura aggiunta come nullable columns backward compatible
+- Color/icon su Subcategory: assenti per scelta architetturale (ereditati dalla categoria madre)
 - Backup v2 invariato — `subcategories` è una lista opzionale in `BackupData`
-- Csv import sottocategorie: non implementato in V0.8.8 (previsto V0.8.9)
 - Budget/Actual/Scenari potranno usare `categoryId` + `subcategoryId` opzionale
 - Rumore in migrazione V6: `duplicate column name: date` nei test, ma non blocca l'esecuzione
 - Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
@@ -129,7 +110,7 @@
 
 Quando si riparte:
 - verificare stato git
-- proseguire con **V0.8.9 — 1Money Subcategory Import**
+- proseguire con **V0.9.0 — Notes & Tags**
 - DB è ora v9, `subcategories` tabella e `subcategory_id` colonne disponibili
 - mantenere SharedPreferences-only per le impostazioni visuali
 - non modificare DB/schema oltre v9 senza progettazione

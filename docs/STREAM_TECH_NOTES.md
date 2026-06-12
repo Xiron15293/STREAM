@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes V0.8.8 completato | **Test:** 689 | **Analyze:** 0 errors, 0 warnings | **DB:** v9 | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
+**Stato:** Hermes V0.8.9 completato | **Test:** 711 | **Analyze:** 0 errors, 0 warnings | **DB:** v9 | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
 
 ## Stack
 
@@ -221,10 +221,46 @@ CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)
 - Movement form: dropdown sottocategoria (solo income/expense con subcategories attive)
 - Movimenti nulli subcategoryId in tutti i form — obbligatorio solo se una subcategory è selezionata
 
+**Completato (V0.8.9):**
+- Conversione manuale categorie flat con parentesi (V0.8.9 ✅)
+- Suggeriti espandibili/raggruppati per categoria (V0.8.9 ✅)
+- Heatmap palette comune (V0.8.9 ✅)
+
 **Non implementato:**
-- CSV import 1Money sottocategorie (V0.8.9+)
-- Conversione categorie flat con parentesi (V0.9.1+)
+- CSV import 1Money sottocategorie (tbd)
 - Budget/Actual/Scenari con subcategories (V0.9.2+)
+
+### Category Conversion Architecture (V0.8.9)
+
+> Servizio per convertire una categoria flat (es. `Spesa (Alimentari)`) in categoria madre + sottocategoria.
+
+**Modello:** `lib/models/category.dart`
+- `isConvertibleCategory` — getter safe (non crasha su nomi senza parentesi)
+- Pattern match: `r'^(.+)\s\((.+)\)$'` — estrae `categoryName` e `subcategoryName`
+
+**Servizio:** `lib/domain/category/services/category_conversion_service.dart`
+- `CategoryConversionService.convert(db, Category)` → `CategoryConversionReport`
+- Logica:
+  1. Cerca/crea categoria madre per nome
+  2. Cerca/crea sottocategoria sotto la madre
+  3. Riassegna movimenti: `movement.categoryId` e `movement.subcategoryId`
+  4. Riassegna QuickMovements: `quick.categoryId` e `quick.subcategoryId`
+  5. Riassegna FavoriteMovements: `favorite.categoryId` e `favorite.subcategoryId`
+  6. Archivia categoria flat (`archivedAt`), non elimina
+  7. Restituisce report con conteggi (movements, quick, favorite)
+
+**Helper:** `lib/domain/category/services/category_migration_service.dart`
+- `findOrCreateParentCategory()` — cerca per nome o crea
+- `findOrCreateSubcategory()` — cerca per nome+categoryId o crea
+
+**Pattern tipo-lock:** Una categoria con movimenti collegati non può cambiare tipo. Il messaggio in UI è esplicito: "Puoi modificare nome, colore e icona. Il tipo non è modificabile per via dei movimenti collegati."
+
+**Conversione morbida:** La categoria flat viene archiviata (non eliminata), preservando storico e relazioni. Il report strutturato `CategoryConversionReport` fornisce conteggi dettagliati.
+
+**UI:**
+- Tutti e 3 i layout categorie (clean list, grouped, card stream) mostrano l'azione nel popup menu
+- `CategoryMovementsSheet` ha pulsante "Converti in sottocategoria"
+- `CategoryEditPage` mostra card di conversione nella parte superiore
 
 ### Note tecniche aperte
 
@@ -647,10 +683,10 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 |
-|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | **689** |
-| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
-| DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | **9** |
-| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ |
-| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ |
+| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 |
+|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | **711** |
+| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
+| DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 9 | **9** |
+| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |

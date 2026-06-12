@@ -47,13 +47,14 @@
 | V0.8.6 | Category Treemap Analytics | ✅ COMPLETATO | 2026-06-11 |
 | V0.8.7 | Heatmap Settings (soglie/colori configurabili) | ✅ COMPLETATO | 2026-06-11 |
 | V0.8.8 | Subcategories Foundation | ✅ COMPLETATO | 2026-06-12 |
+| V0.8.9 | Category Conversion & Suggested UX Polish | ✅ COMPLETATO | 2026-06-14 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.8.9 | 1Money Subcategory Import | 📋 PRIORITARIA |
-| V0.9.0 | Converti categorie flat con parentesi in sottocategorie | 📋 APPROVATA |
+| V0.9.0 | Notes & Tags | 📋 PRIORITARIA |
+| V0.9.1 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
 | V0.9.1 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
 | V0.9.2 | Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
 | V0.9.x | QA hardening hit-test warning nei test | 💡 IDEA |
@@ -67,10 +68,10 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 | Versione | Focus |
 |----------|-------|
-| V0.8.9 | 1Money Subcategory Import (📋) — parser `Categoria (Sottocategoria)`, dedup, report |
-| V0.9.0 | Converti categorie flat con parentesi in sottocategorie (📋) — azione manuale controllata con conferma, riassegna movimenti, archivia categoria flat |
-| V0.9.1 | Subcategories Analytics (💡) — treemap toggle categorie/sottocategorie, filtri, breakdown Budget/Actual/Scenari |
-| V0.9.2 | Lista Movimenti Premium con heatmap annuale (💡) — reference screenshot utente, heatmap annuale sopra lista, card giornaliere aggregate, layout premium |
+| V0.8.9 | Category Conversion & Suggested UX Polish (✅) — fix crash menu, categorie con movimenti modificabili, conversione manuale in sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune |
+| V0.9.0 | Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard |
+| V0.9.1 | Dashboard recalcolo + tabella editor (📋) — recalcolo KPI, tabella modificabile |
+| V0.9.2 | Export/Backup (💡) |
 | V0.9.x | QA hardening opzionale (💡) — risolvere warning hit-test nei test prima di renderli fatali |
 | V0.9.x | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
 | V0.9.x | Beneficiario + Etichette (💡) — tagging avanzato movimenti |
@@ -127,8 +128,6 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
    - Campi soglia con `textInputAction.done` + `onSubmitted` unfocus
 
 **Non completato / futuro:**
-- V0.8.9 — 1Money Subcategory Import (parser `Categoria (Sottocategoria)`)
-- V0.9.x — Converti categorie flat con parentesi in sottocategorie
 - V0.9.x — Subcategories Analytics / Budget / Actual / Scenari
 - FASE 4 — Lista Movimenti Premium
 
