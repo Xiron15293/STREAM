@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_icon_library.dart';
 import '../services/backup_service.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
@@ -583,21 +584,6 @@ class _HeatmapSettingsSection extends StatefulWidget {
 }
 
 class _HeatmapSettingsSectionState extends State<_HeatmapSettingsSection> {
-  static const _palette = [
-    0xFFC8E6C9,
-    0xFFA5D6A7,
-    0xFF81C784,
-    0xFF4CAF50,
-    0xFFFFF59D,
-    0xFFFFD54F,
-    0xFFFFB74D,
-    0xFFEF9A9A,
-    0xFFE57373,
-    0xFFEF5350,
-    0xFFC62828,
-    0xFF8E8E93,
-  ];
-
   late HeatmapSettings _settings;
   late List<TextEditingController> _controllers;
   String? _error;
@@ -675,7 +661,7 @@ class _HeatmapSettingsSectionState extends State<_HeatmapSettingsSection> {
           spacing: StreamSpacing.sm,
           runSpacing: StreamSpacing.sm,
           children: [
-            for (final colorValue in _palette)
+            for (final colorValue in StreamColorPalette.colors)
               InkWell(
                 key: Key('heatmap_palette_color_$colorValue'),
                 onTap: () => Navigator.of(context).pop(colorValue),
