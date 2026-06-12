@@ -6,6 +6,7 @@ import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
+import '../models/subcategory.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../widgets/categories_treemap.dart';
@@ -141,6 +142,561 @@ Widget _reportRow(String label, String value) {
               fontSize: 13,
               fontWeight: FontWeight.w600,
             )),
+      ],
+    ),
+  );
+}
+
+int _countMovementsForCategory(AppDatabase db, String categoryId) {
+  return db.movements.where((m) => m.categoryId == categoryId).length;
+}
+
+int _countMovementsForSubcategory(AppDatabase db, String subcategoryId) {
+  return db.movements.where((m) => m.subcategoryId == subcategoryId).length;
+}
+
+int _countQuickForCategory(AppDatabase db, String categoryId) {
+  return db.quickMovements.where((q) => q.categoryId == categoryId).length;
+}
+
+int _countQuickForSubcategory(AppDatabase db, String subcategoryId) {
+  return db.quickMovements.where((q) => q.subcategoryId == subcategoryId).length;
+}
+
+int _countFavForCategory(AppDatabase db, String categoryId) {
+  return db.favoriteMovements.where((f) => f.categoryId == categoryId).length;
+}
+
+int _countFavForSubcategory(AppDatabase db, String subcategoryId) {
+  return db.favoriteMovements.where((f) => f.subcategoryId == subcategoryId).length;
+}
+
+void _showCategoryMergeDialog(
+  BuildContext context,
+  AppDatabase db,
+  Category sourceCategory,
+  VoidCallback onChanged,
+) {
+  String? selectedTargetCategoryId;
+  String? selectedTargetSubcategoryId;
+  bool createNewSubcategory = false;
+  final newSubNameCtrl = TextEditingController();
+
+  final movCount = _countMovementsForCategory(db, sourceCategory.id);
+  final quickCount = _countQuickForCategory(db, sourceCategory.id);
+  final favCount = _countFavForCategory(db, sourceCategory.id);
+
+  showDialog(
+    context: context,
+    useSafeArea: true,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          final sameTypeCats = db.categories.where((c) =>
+            c.type == sourceCategory.type && !c.archived && c.id != sourceCategory.id
+          ).toList()..sort((a, b) => a.name.compareTo(b.name));
+
+          List<Subcategory> availableSubs = [];
+          if (selectedTargetCategoryId != null) {
+            availableSubs = db.getActiveSubcategoriesForCategory(selectedTargetCategoryId!);
+          }
+
+          String previewText = '';
+          if (selectedTargetCategoryId != null) {
+            final targetCatName = _catNameFromDb(db, selectedTargetCategoryId!);
+            if (createNewSubcategory && newSubNameCtrl.text.trim().isNotEmpty) {
+              previewText = 'Verranno spostati $movCount movimenti, '
+                  '$quickCount rapidi e $favCount preferiti verso '
+                  '"$targetCatName / ${newSubNameCtrl.text.trim()}".';
+            } else if (selectedTargetSubcategoryId != null) {
+              final targetSubName = _subcatNameFromDb(db, selectedTargetSubcategoryId!);
+              previewText = 'Verranno spostati $movCount movimenti, '
+                  '$quickCount rapidi e $favCount preferiti verso '
+                  '"$targetCatName / $targetSubName".';
+            } else {
+              previewText = 'Verranno spostati $movCount movimenti, '
+                  '$quickCount rapidi e $favCount preferiti verso '
+                  '"$targetCatName".';
+            }
+          }
+
+          final canConfirm = selectedTargetCategoryId != null &&
+              (createNewSubcategory
+                  ? newSubNameCtrl.text.trim().isNotEmpty
+                  : true);
+
+          return AlertDialog(
+            key: const Key('category_merge_dialog'),
+            title: const Text('Unisci categoria'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Scegli dove spostare tutti i movimenti collegati a '
+                    '"${sourceCategory.name}".',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'La categoria sorgente verrà archiviata, non eliminata.',
+                    style: TextStyle(fontSize: 12, color: StreamColors.textSecondary),
+                  ),
+                  if (movCount > 0 || quickCount > 0 || favCount > 0) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Coinvolti: $movCount movimenti, $quickCount rapidi, $favCount preferiti',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Categoria destinazione',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    key: const Key('category_merge_target_category_picker'),
+                    value: selectedTargetCategoryId,
+                    decoration: const InputDecoration(
+                      hintText: 'Seleziona categoria...',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                    items: sameTypeCats.map((c) => DropdownMenuItem(
+                      value: c.id,
+                      child: Text(c.name),
+                    )).toList(),
+                    onChanged: (val) {
+                      setDialogState(() {
+                        selectedTargetCategoryId = val;
+                        selectedTargetSubcategoryId = null;
+                        createNewSubcategory = false;
+                        newSubNameCtrl.clear();
+                      });
+                    },
+                  ),
+                  if (selectedTargetCategoryId != null) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Sottocategoria destinazione (opzionale)',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String?>(
+                      key: const Key('category_merge_target_subcategory_picker'),
+                      value: createNewSubcategory ? null : selectedTargetSubcategoryId,
+                      decoration: const InputDecoration(
+                        hintText: 'Nessuna sottocategoria',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Nessuna sottocategoria'),
+                        ),
+                        ...availableSubs.map((s) => DropdownMenuItem<String?>(
+                          value: s.id,
+                          child: Text(s.name),
+                        )),
+                        const DropdownMenuItem<String?>(
+                          value: '__create__',
+                          key: Key('category_merge_create_subcategory_option'),
+                          child: Text('Crea nuova sottocategoria...'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        setDialogState(() {
+                          if (val == '__create__') {
+                            createNewSubcategory = true;
+                            selectedTargetSubcategoryId = null;
+                          } else {
+                            createNewSubcategory = false;
+                            selectedTargetSubcategoryId = val;
+                          }
+                        });
+                      },
+                    ),
+                    if (createNewSubcategory) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        key: const Key('category_merge_new_subcategory_input'),
+                        controller: newSubNameCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Nome nuova sottocategoria',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        onChanged: (_) => setDialogState(() {}),
+                      ),
+                    ],
+                  ],
+                  if (previewText.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      key: const Key('category_merge_preview'),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: StreamColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        previewText,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                key: const Key('category_merge_cancel'),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                key: const Key('category_merge_confirm'),
+                onPressed: canConfirm
+                    ? () {
+                        final request = CategoryMergeRequest(
+                          sourceCategoryId: sourceCategory.id,
+                          targetCategoryId: selectedTargetCategoryId!,
+                          targetSubcategoryId: createNewSubcategory
+                              ? null
+                              : selectedTargetSubcategoryId,
+                          createTargetSubcategoryName: createNewSubcategory
+                              ? newSubNameCtrl.text.trim()
+                              : null,
+                          archiveSource: true,
+                          archiveEmptySourceCategory: false,
+                        );
+                        final report = db.mergeCategoryOrSubcategory(request);
+                        Navigator.pop(ctx);
+                        if (context.mounted) {
+                          _showMergeReport(context, report);
+                        }
+                        onChanged();
+                      }
+                    : null,
+                child: const Text('Conferma unione'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+String _catNameFromDb(AppDatabase db, String id) {
+  try {
+    return db.categories.firstWhere((c) => c.id == id).name;
+  } catch (_) {
+    return id;
+  }
+}
+
+String _subcatNameFromDb(AppDatabase db, String? id) {
+  if (id == null) return '';
+  try {
+    return db.subcategories.firstWhere((s) => s.id == id).name;
+  } catch (_) {
+    return id;
+  }
+}
+
+void _showSubcategoryMergeDialog(
+  BuildContext context,
+  AppDatabase db,
+  Subcategory sourceSubcategory,
+  VoidCallback onChanged,
+) {
+  String? selectedTargetCategoryId;
+  String? selectedTargetSubcategoryId;
+  bool createNewSubcategory = false;
+  final newSubNameCtrl = TextEditingController();
+
+  final sourceCategory = db.categories.where((c) => c.id == sourceSubcategory.categoryId).firstOrNull;
+  final sourceCatName = sourceCategory?.name ?? sourceSubcategory.categoryId;
+
+  final movCount = _countMovementsForSubcategory(db, sourceSubcategory.id);
+  final quickCount = _countQuickForSubcategory(db, sourceSubcategory.id);
+  final favCount = _countFavForSubcategory(db, sourceSubcategory.id);
+
+  if (!context.mounted) return;
+
+  showDialog(
+    context: context,
+    useSafeArea: true,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          final sameTypeCats = db.categories.where((c) =>
+            c.type == (sourceCategory?.type ?? MovementType.expense) &&
+            !c.archived
+          ).toList()..sort((a, b) => a.name.compareTo(b.name));
+
+          List<Subcategory> availableSubs = [];
+          if (selectedTargetCategoryId != null) {
+            availableSubs = db.getActiveSubcategoriesForCategory(selectedTargetCategoryId!);
+          }
+
+          String previewText = '';
+          if (selectedTargetCategoryId != null) {
+            final targetCatName = _catNameFromDb(db, selectedTargetCategoryId!);
+            if (createNewSubcategory && newSubNameCtrl.text.trim().isNotEmpty) {
+              previewText = 'Verranno spostati $movCount movimenti, '
+                  '$quickCount rapidi e $favCount preferiti verso '
+                  '"$targetCatName / ${newSubNameCtrl.text.trim()}".';
+            } else if (selectedTargetSubcategoryId != null) {
+              final targetSubName = _subcatNameFromDb(db, selectedTargetSubcategoryId!);
+              previewText = 'Verranno spostati $movCount movimenti, '
+                  '$quickCount rapidi e $favCount preferiti verso '
+                  '"$targetCatName / $targetSubName".';
+            } else {
+              previewText = 'Verranno spostati $movCount movimenti, '
+                  '$quickCount rapidi e $favCount preferiti verso '
+                  '"$targetCatName".';
+            }
+          }
+
+          final canConfirm = selectedTargetCategoryId != null &&
+              (createNewSubcategory
+                  ? newSubNameCtrl.text.trim().isNotEmpty
+                  : true);
+
+          return AlertDialog(
+            key: const Key('subcategory_merge_dialog'),
+            title: const Text('Unisci sottocategoria'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Scegli dove spostare i movimenti collegati a '
+                    '"$sourceCatName / ${sourceSubcategory.name}".',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'La sottocategoria sorgente verrà archiviata, non eliminata.',
+                    style: TextStyle(fontSize: 12, color: StreamColors.textSecondary),
+                  ),
+                  if (movCount > 0 || quickCount > 0 || favCount > 0) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Coinvolti: $movCount movimenti, $quickCount rapidi, $favCount preferiti',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Categoria destinazione',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    key: const Key('subcategory_merge_target_category_picker'),
+                    value: selectedTargetCategoryId,
+                    decoration: const InputDecoration(
+                      hintText: 'Seleziona categoria...',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                    items: sameTypeCats.map((c) => DropdownMenuItem(
+                      value: c.id,
+                      child: Text(c.name),
+                    )).toList(),
+                    onChanged: (val) {
+                      setDialogState(() {
+                        selectedTargetCategoryId = val;
+                        selectedTargetSubcategoryId = null;
+                        createNewSubcategory = false;
+                        newSubNameCtrl.clear();
+                      });
+                    },
+                  ),
+                  if (selectedTargetCategoryId != null) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Sottocategoria destinazione (opzionale)',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String?>(
+                      key: const Key('subcategory_merge_target_subcategory_picker'),
+                      value: createNewSubcategory ? null : selectedTargetSubcategoryId,
+                      decoration: const InputDecoration(
+                        hintText: 'Nessuna',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Nessuna'),
+                        ),
+                        ...availableSubs.map((s) => DropdownMenuItem<String?>(
+                          value: s.id,
+                          child: Text(s.name),
+                        )),
+                        const DropdownMenuItem<String?>(
+                          value: '__create__',
+                          key: Key('subcategory_merge_create_subcategory_option'),
+                          child: Text('Crea nuova sottocategoria...'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        setDialogState(() {
+                          if (val == '__create__') {
+                            createNewSubcategory = true;
+                            selectedTargetSubcategoryId = null;
+                          } else {
+                            createNewSubcategory = false;
+                            selectedTargetSubcategoryId = val;
+                          }
+                        });
+                      },
+                    ),
+                    if (createNewSubcategory) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        key: const Key('subcategory_merge_new_subcategory_input'),
+                        controller: newSubNameCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Nome nuova sottocategoria',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        onChanged: (_) => setDialogState(() {}),
+                      ),
+                    ],
+                  ],
+                  if (previewText.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      key: const Key('subcategory_merge_preview'),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: StreamColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        previewText,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                key: const Key('subcategory_merge_cancel'),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                key: const Key('subcategory_merge_confirm'),
+                onPressed: canConfirm
+                    ? () {
+                        final request = CategoryMergeRequest(
+                          sourceCategoryId: sourceSubcategory.categoryId,
+                          sourceSubcategoryId: sourceSubcategory.id,
+                          targetCategoryId: selectedTargetCategoryId!,
+                          targetSubcategoryId: createNewSubcategory
+                              ? null
+                              : selectedTargetSubcategoryId,
+                          createTargetSubcategoryName: createNewSubcategory
+                              ? newSubNameCtrl.text.trim()
+                              : null,
+                          archiveSource: true,
+                          archiveEmptySourceCategory: false,
+                        );
+                        final report = db.mergeCategoryOrSubcategory(request);
+                        Navigator.pop(ctx);
+                        if (context.mounted) {
+                          _showMergeReport(context, report);
+                        }
+                        onChanged();
+                      }
+                    : null,
+                child: const Text('Conferma unione'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+void _showMergeReport(BuildContext context, CategoryMergeReport report) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      key: const Key('category_merge_report'),
+      title: Text(
+        report.sourceType == 'subcategory'
+            ? 'Unione sottocategoria completata'
+            : 'Unione categoria completata',
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (report.warnings.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: StreamColors.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: report.warnings.map((w) => Text(
+                  w,
+                  style: TextStyle(fontSize: 12, color: StreamColors.warning),
+                )).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (report.sourceType == 'subcategory') ...[
+            _reportRow('Categoria sorgente', report.sourceCategoryName),
+            _reportRow('Sottocategoria sorgente', report.sourceSubcategoryName ?? ''),
+          ] else ...[
+            _reportRow('Categoria sorgente', report.sourceCategoryName),
+          ],
+          _reportRow('Categoria destinazione', report.targetCategoryName),
+          if (report.targetSubcategoryName != null && report.targetSubcategoryName!.isNotEmpty)
+            _reportRow('Sottocategoria destinaz.', report.targetSubcategoryName!),
+          if (report.targetSubcategoryCreated)
+            _reportRow('Nuova sottocat.', 'Creata'),
+          const Divider(height: 16),
+          _reportRow('Movimenti aggiornati', '${report.movementsUpdated}'),
+          _reportRow('Movimenti rapidi agg.', '${report.quickMovementsUpdated}'),
+          _reportRow('Preferiti aggiornati', '${report.favoriteMovementsUpdated}'),
+          const Divider(height: 16),
+          if (report.sourceType == 'subcategory') ...[
+            _reportRow('Sottocat. sorgente', report.sourceSubcategoryArchived ? 'Archiviata' : '-'),
+            if (report.emptySourceCategoryArchived)
+              _reportRow('Categoria vuota', 'Archiviata'),
+          ] else ...[
+            _reportRow('Categoria sorgente', report.sourceCategoryArchived ? 'Archiviata' : '-'),
+          ],
+        ],
+      ),
+      actions: [
+        FilledButton(
+          key: const Key('category_merge_report_ok'),
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('OK'),
+        ),
       ],
     ),
   );
@@ -812,6 +1368,10 @@ class _CleanListTile extends StatelessWidget {
                       case 'convert':
                         _showConvertDialog(context, db, category, onChanged);
                         break;
+                      case 'merge':
+                        _showCategoryMergeDialog(
+                            context, db, category, onChanged);
+                        break;
                       case 'archive':
                         db.archiveCategory(category.id);
                         onChanged();
@@ -837,6 +1397,12 @@ class _CleanListTile extends StatelessWidget {
                         key: Key('category_convert_to_subcategory_action'),
                         value: 'convert',
                         child: Text('Converti in sottocategoria'),
+                      ),
+                    if (!category.archived)
+                      const PopupMenuItem(
+                        key: Key('category_merge_action'),
+                        value: 'merge',
+                        child: Text('Unisci...'),
                       ),
                     if (!category.archived)
                       const PopupMenuItem(
@@ -969,6 +1535,10 @@ class _GroupedListTile extends StatelessWidget {
                   case 'convert':
                     _showConvertDialog(context, db, category, onChanged);
                     break;
+                  case 'merge':
+                    _showCategoryMergeDialog(
+                        context, db, category, onChanged);
+                    break;
                   case 'archive':
                     db.archiveCategory(category.id);
                     onChanged();
@@ -994,6 +1564,12 @@ class _GroupedListTile extends StatelessWidget {
                     key: Key('category_convert_to_subcategory_action'),
                     value: 'convert',
                     child: Text('Converti in sottocategoria'),
+                  ),
+                if (!category.archived)
+                  const PopupMenuItem(
+                    key: Key('category_merge_action'),
+                    value: 'merge',
+                    child: Text('Unisci...'),
                   ),
                 if (!category.archived)
                   const PopupMenuItem(
@@ -1131,6 +1707,10 @@ class _StreamCardGridTile extends StatelessWidget {
                         case 'convert':
                           _showConvertDialog(context, db, category, onChanged);
                           break;
+                        case 'merge':
+                          _showCategoryMergeDialog(
+                              context, db, category, onChanged);
+                          break;
                         case 'archive':
                           db.archiveCategory(category.id);
                           onChanged();
@@ -1159,6 +1739,12 @@ class _StreamCardGridTile extends StatelessWidget {
                           key: Key('category_convert_to_subcategory_action'),
                           value: 'convert',
                           child: Text('Converti in sottocategoria'),
+                        ),
+                      if (!category.archived)
+                        const PopupMenuItem(
+                          key: Key('category_merge_action'),
+                          value: 'merge',
+                          child: Text('Unisci...'),
                         ),
                       if (!category.archived)
                         const PopupMenuItem(
@@ -1497,16 +2083,27 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                             fontSize: 12, color: StreamColors.textSecondary),
                       ),
                     ),
-                    TextButton(
-                      key: const Key('category_convert_to_subcategory_action'),
-                      onPressed: () {
-                        final cat = widget.existing!;
-                        Navigator.pop(context);
-                        _showConvertDialog(
-                            context, widget.db, cat, widget.onChanged);
-                      },
-                      child: const Text('Converti'),
-                    ),
+              TextButton(
+                key: const Key('category_convert_to_subcategory_action'),
+                onPressed: () {
+                  final cat = widget.existing!;
+                  Navigator.pop(context);
+                  _showConvertDialog(
+                      context, widget.db, cat, widget.onChanged);
+                },
+                child: const Text('Converti'),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                key: const Key('category_form_merge_action'),
+                onPressed: () {
+                  final cat = widget.existing!;
+                  Navigator.pop(context);
+                  _showCategoryMergeDialog(
+                      context, widget.db, cat, widget.onChanged);
+                },
+                child: const Text('Unisci...'),
+              ),
                   ],
                 ),
               ),
@@ -1702,6 +2299,16 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                           size: 18, color: StreamColors.textMuted),
                       onPressed: () => widget.db.restoreSubcategory(sub.id),
                       tooltip: 'Ripristina',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (!sub.archived)
+                    IconButton(
+                      key: const Key('subcategory_merge_action'),
+                      icon: Icon(Icons.merge,
+                          size: 18, color: StreamColors.textMuted),
+                      onPressed: () => _showSubcategoryMergeDialog(
+                          context, widget.db, sub, () => setState(() {})),
+                      tooltip: 'Unisci...',
                       visualDensity: VisualDensity.compact,
                     ),
                   IconButton(
@@ -1941,6 +2548,14 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                       icon: Icons.merge_type,
                       label: 'Converti',
                       onPressed: () => _showConvertDialog(
+                          context, widget.db, category, () => setState(() {})),
+                    ),
+                  if (!category.archived)
+                    _SheetActionButton(
+                      key: const Key('category_sheet_merge_action'),
+                      icon: Icons.merge,
+                      label: 'Unisci...',
+                      onPressed: () => _showCategoryMergeDialog(
                           context, widget.db, category, () => setState(() {})),
                     ),
                 ],

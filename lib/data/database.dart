@@ -1000,3 +1000,343 @@ class CategoryConversionReport {
     required this.oldCategoryArchived,
   });
 }
+
+class CategoryMergeRequest {
+  final String sourceCategoryId;
+  final String? sourceSubcategoryId;
+  final String targetCategoryId;
+  final String? targetSubcategoryId;
+  final String? createTargetSubcategoryName;
+  final bool archiveSource;
+  final bool archiveEmptySourceCategory;
+
+  const CategoryMergeRequest({
+    required this.sourceCategoryId,
+    this.sourceSubcategoryId,
+    required this.targetCategoryId,
+    this.targetSubcategoryId,
+    this.createTargetSubcategoryName,
+    this.archiveSource = true,
+    this.archiveEmptySourceCategory = false,
+  });
+}
+
+class CategoryMergeReport {
+  final String sourceType; // 'category' | 'subcategory'
+  final String sourceCategoryName;
+  final String? sourceSubcategoryName;
+  final String targetCategoryName;
+  final String? targetSubcategoryName;
+  final bool targetSubcategoryCreated;
+  final int movementsUpdated;
+  final int quickMovementsUpdated;
+  final int favoriteMovementsUpdated;
+  final bool sourceCategoryArchived;
+  final bool sourceSubcategoryArchived;
+  final bool emptySourceCategoryArchived;
+  final List<String> warnings;
+
+  const CategoryMergeReport({
+    required this.sourceType,
+    required this.sourceCategoryName,
+    this.sourceSubcategoryName,
+    required this.targetCategoryName,
+    this.targetSubcategoryName,
+    this.targetSubcategoryCreated = false,
+    this.movementsUpdated = 0,
+    this.quickMovementsUpdated = 0,
+    this.favoriteMovementsUpdated = 0,
+    this.sourceCategoryArchived = false,
+    this.sourceSubcategoryArchived = false,
+    this.emptySourceCategoryArchived = false,
+    this.warnings = const [],
+  });
+}
+
+extension AppDatabaseMerge on AppDatabase {
+  CategoryMergeReport mergeCategoryOrSubcategory(CategoryMergeRequest req) {
+    final warnings = <String>[];
+
+    // Validate source and target are different
+    if (req.sourceCategoryId == req.targetCategoryId &&
+        req.sourceSubcategoryId == req.targetSubcategoryId) {
+      return CategoryMergeReport(
+        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceCategoryName: _catName(req.sourceCategoryId),
+        sourceSubcategoryName: _subcatName(req.sourceSubcategoryId),
+        targetCategoryName: _catName(req.targetCategoryId),
+        targetSubcategoryName: _subcatName(req.targetSubcategoryId),
+        warnings: ['Source and target are the same'],
+      );
+    }
+
+    // Find source category
+    final sourceCatIdx = _categories.indexWhere((c) => c.id == req.sourceCategoryId);
+    if (sourceCatIdx < 0) {
+      return CategoryMergeReport(
+        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceCategoryName: req.sourceCategoryId,
+        targetCategoryName: _catName(req.targetCategoryId),
+        warnings: ['Source category not found'],
+      );
+    }
+    final sourceCat = _categories[sourceCatIdx];
+
+    // Find target category
+    final targetCatIdx = _categories.indexWhere((c) => c.id == req.targetCategoryId);
+    if (targetCatIdx < 0) {
+      return CategoryMergeReport(
+        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceCategoryName: sourceCat.name,
+        targetCategoryName: req.targetCategoryId,
+        warnings: ['Target category not found'],
+      );
+    }
+    final targetCat = _categories[targetCatIdx];
+
+    if (targetCat.archived) {
+      return CategoryMergeReport(
+        sourceType: req.sourceSubcategoryId != null ? 'subcategory' : 'category',
+        sourceCategoryName: sourceCat.name,
+        sourceSubcategoryName: _subcatName(req.sourceSubcategoryId),
+        targetCategoryName: targetCat.name,
+        targetSubcategoryName: _subcatName(req.targetSubcategoryId),
+        warnings: ['Target category is archived'],
+      );
+    }
+
+    // Resolve target subcategory
+    String? resolvedTargetSubcategoryId = req.targetSubcategoryId;
+    bool targetSubcatCreated = false;
+
+    if (req.createTargetSubcategoryName != null && req.createTargetSubcategoryName!.trim().isNotEmpty) {
+      final subName = req.createTargetSubcategoryName!.trim();
+      Subcategory? existing;
+      try {
+        existing = _subcategories.firstWhere(
+          (s) => s.categoryId == req.targetCategoryId && s.name == subName && !s.archived,
+        );
+      } catch (_) {}
+      if (existing != null) {
+        resolvedTargetSubcategoryId = existing.id;
+      } else {
+        final newSub = Subcategory(
+          id: 'sub_${DateTime.now().microsecondsSinceEpoch.toString()}',
+          categoryId: req.targetCategoryId,
+          name: subName,
+          createdAt: DateTime.now(),
+        );
+        _subcategories.add(newSub);
+        if (_sqlite != null) {
+          _sqlite.insertSubcategory(newSub);
+        }
+        resolvedTargetSubcategoryId = newSub.id;
+        targetSubcatCreated = true;
+      }
+    } else if (resolvedTargetSubcategoryId != null) {
+      // Validate target subcategory is active
+      try {
+        final ts = _subcategories.firstWhere((s) => s.id == resolvedTargetSubcategoryId);
+        if (ts.archived) {
+          warnings.add('Target subcategory is archived');
+        }
+      } catch (_) {
+        warnings.add('Target subcategory not found');
+        resolvedTargetSubcategoryId = null;
+      }
+    }
+
+    final isSubcategoryMerge = req.sourceSubcategoryId != null;
+
+    // Determine which movements/quick/favorite to update
+    int movementsUpdated = 0;
+    int quickMovementsUpdated = 0;
+    int favoriteMovementsUpdated = 0;
+
+    for (var i = 0; i < _movements.length; i++) {
+      final m = _movements[i];
+      bool match;
+      if (isSubcategoryMerge) {
+        match = m.subcategoryId == req.sourceSubcategoryId;
+      } else {
+        match = m.categoryId == req.sourceCategoryId;
+      }
+      if (match) {
+        final updated = Movement(
+          id: m.id,
+          title: m.title,
+          amount: m.amount,
+          type: m.type,
+          date: m.date,
+          categoryId: req.targetCategoryId,
+          subcategoryId: resolvedTargetSubcategoryId,
+          accountId: m.accountId,
+          destinationAccountId: m.destinationAccountId,
+          note: m.note,
+          createdAt: m.createdAt,
+          updatedAt: m.updatedAt,
+        );
+        _movements[i] = updated;
+        if (_sqlite != null) {
+          _sqlite.updateMovement(updated);
+        }
+        movementsUpdated++;
+      }
+    }
+
+    for (var i = 0; i < _quickMovements.length; i++) {
+      final qm = _quickMovements[i];
+      bool match;
+      if (isSubcategoryMerge) {
+        match = qm.subcategoryId == req.sourceSubcategoryId;
+      } else {
+        match = qm.categoryId == req.sourceCategoryId;
+      }
+      if (match) {
+        final updated = QuickMovement(
+          id: qm.id,
+          title: qm.title,
+          amount: qm.amount,
+          type: qm.type,
+          categoryId: req.targetCategoryId,
+          subcategoryId: resolvedTargetSubcategoryId,
+          accountId: qm.accountId,
+          note: qm.note,
+        );
+        _quickMovements[i] = updated;
+        if (_sqlite != null) {
+          _sqlite.updateQuickMovement(qm.id, updated);
+        }
+        quickMovementsUpdated++;
+      }
+    }
+
+    for (var i = 0; i < _favoriteMovements.length; i++) {
+      final fm = _favoriteMovements[i];
+      bool match;
+      if (isSubcategoryMerge) {
+        match = fm.subcategoryId == req.sourceSubcategoryId;
+      } else {
+        match = fm.categoryId == req.sourceCategoryId;
+      }
+      if (match) {
+        final updated = FavoriteMovement(
+          id: fm.id,
+          title: fm.title,
+          amount: fm.amount,
+          type: fm.type,
+          categoryId: req.targetCategoryId,
+          subcategoryId: resolvedTargetSubcategoryId,
+          accountId: fm.accountId,
+          note: fm.note,
+        );
+        _favoriteMovements[i] = updated;
+        if (_sqlite != null) {
+          _sqlite.updateFavoriteMovement(updated);
+        }
+        favoriteMovementsUpdated++;
+      }
+    }
+
+    // Archive source
+    bool sourceCatArchived = false;
+    bool sourceSubcatArchived = false;
+    bool emptySourceCatArchived = false;
+
+    if (req.archiveSource) {
+      if (isSubcategoryMerge) {
+        final subIdx = _subcategories.indexWhere((s) => s.id == req.sourceSubcategoryId);
+        if (subIdx >= 0) {
+          final old = _subcategories[subIdx];
+          _subcategories[subIdx] = Subcategory(
+            id: old.id,
+            categoryId: old.categoryId,
+            name: old.name,
+            archived: true,
+            createdAt: old.createdAt,
+            updatedAt: DateTime.now(),
+          );
+          if (_sqlite != null) {
+            _sqlite.archiveSubcategory(old.id);
+          }
+          sourceSubcatArchived = true;
+
+          // Optionally archive empty source category
+          if (req.archiveEmptySourceCategory && !sourceCat.archived) {
+            final remainingSubs = _subcategories.any(
+              (s) => s.categoryId == req.sourceCategoryId && !s.archived,
+            );
+            final remainingMovements = _movements.any(
+              (m) => m.categoryId == req.sourceCategoryId,
+            );
+            if (!remainingSubs && !remainingMovements) {
+              _categories[sourceCatIdx] = Category(
+                id: sourceCat.id,
+                name: sourceCat.name,
+                type: sourceCat.type,
+                color: sourceCat.color,
+                iconKey: sourceCat.iconKey,
+                archived: true,
+              );
+              if (_sqlite != null) {
+                _sqlite.updateCategory(_categories[sourceCatIdx]);
+              }
+              emptySourceCatArchived = true;
+            }
+          }
+        }
+      } else {
+        if (!sourceCat.archived) {
+          _categories[sourceCatIdx] = Category(
+            id: sourceCat.id,
+            name: sourceCat.name,
+            type: sourceCat.type,
+            color: sourceCat.color,
+            iconKey: sourceCat.iconKey,
+            archived: true,
+          );
+          if (_sqlite != null) {
+            _sqlite.updateCategory(_categories[sourceCatIdx]);
+          }
+          sourceCatArchived = true;
+        }
+      }
+    }
+
+    notifyListeners();
+
+    return CategoryMergeReport(
+      sourceType: isSubcategoryMerge ? 'subcategory' : 'category',
+      sourceCategoryName: sourceCat.name,
+      sourceSubcategoryName: isSubcategoryMerge ? _subcatName(req.sourceSubcategoryId) : null,
+      targetCategoryName: targetCat.name,
+      targetSubcategoryName: _subcatName(resolvedTargetSubcategoryId),
+      targetSubcategoryCreated: targetSubcatCreated,
+      movementsUpdated: movementsUpdated,
+      quickMovementsUpdated: quickMovementsUpdated,
+      favoriteMovementsUpdated: favoriteMovementsUpdated,
+      sourceCategoryArchived: sourceCatArchived,
+      sourceSubcategoryArchived: sourceSubcatArchived,
+      emptySourceCategoryArchived: emptySourceCatArchived,
+      warnings: warnings,
+    );
+  }
+
+  String _catName(String? id) {
+    if (id == null) return '';
+    try {
+      return _categories.firstWhere((c) => c.id == id).name;
+    } catch (_) {
+      return id;
+    }
+  }
+
+  String _subcatName(String? id) {
+    if (id == null) return '';
+    try {
+      return _subcategories.firstWhere((s) => s.id == id).name;
+    } catch (_) {
+      return id;
+    }
+  }
+}
