@@ -79,7 +79,12 @@ void main() {
     expect(find.byKey(const Key('heatmap_settings_section')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_settings_preview')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_thresholds_editor')), findsOneWidget);
-    expect(find.byKey(const Key('heatmap_threshold_field')), findsNWidgets(6));
+    expect(find.byKey(const Key('heatmap_threshold_field_0')), findsOneWidget);
+    expect(find.byKey(const Key('heatmap_threshold_field_1')), findsOneWidget);
+    expect(find.byKey(const Key('heatmap_threshold_field_2')), findsOneWidget);
+    expect(find.byKey(const Key('heatmap_threshold_field_3')), findsOneWidget);
+    expect(find.byKey(const Key('heatmap_threshold_field_4')), findsOneWidget);
+    expect(find.byKey(const Key('heatmap_threshold_field_5')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_color_editor')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_color_item')), findsNWidgets(7));
     expect(
@@ -98,7 +103,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.byKey(const Key('heatmap_threshold_field')).first,
+      find.byKey(const Key('heatmap_threshold_field_0')),
       '2',
     );
     await tester.pumpAndSettle();
@@ -129,7 +134,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.byKey(const Key('heatmap_threshold_field')).at(1),
+      find.byKey(const Key('heatmap_threshold_field_1')),
       '1',
     );
     await tester.pumpAndSettle();
@@ -144,7 +149,7 @@ void main() {
     );
 
     await tester.enterText(
-      find.byKey(const Key('heatmap_threshold_field')).first,
+      find.byKey(const Key('heatmap_threshold_field_0')),
       '-1',
     );
     await tester.pumpAndSettle();

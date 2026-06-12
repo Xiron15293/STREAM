@@ -1143,29 +1143,12 @@ class _FavoritesPanel extends StatelessWidget {
                   onUsed: onUsed,
                 ),
               ),
-            if (suggestions.isNotEmpty) ...[
-              const SizedBox(height: StreamSpacing.md),
-              Row(
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 14,
-                    color: StreamColors.textMuted,
-                  ),
-                  const SizedBox(width: StreamSpacing.sm),
-                  const Text('Suggeriti', style: StreamTypography.h3),
-                ],
+            if (suggestions.isNotEmpty)
+              _SuggestedSection(
+                suggestions: suggestions,
+                db: db,
+                onUsed: onUsed,
               ),
-              const SizedBox(height: StreamSpacing.sm),
-              ...suggestions.map(
-                (fm) => _FavoriteTile(
-                  fm: fm,
-                  isSuggestion: true,
-                  db: db,
-                  onUsed: onUsed,
-                ),
-              ),
-            ],
           ],
         );
       },
@@ -1192,6 +1175,7 @@ class _FavoriteTile extends StatelessWidget {
   final VoidCallback onUsed;
 
   const _FavoriteTile({
+    super.key,
     required this.fm,
     required this.isSuggestion,
     required this.db,
@@ -1611,6 +1595,198 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
               ),
               child: const Text('Elimina'),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Suggeriti — sezione espandibile, ricercabile, per categoria
+// ============================================================
+
+class _SuggestedSection extends StatefulWidget {
+  final List<FavoriteMovement> suggestions;
+  final AppDatabase db;
+  final VoidCallback onUsed;
+
+  const _SuggestedSection({
+    required this.suggestions,
+    required this.db,
+    required this.onUsed,
+  });
+
+  @override
+  State<_SuggestedSection> createState() => _SuggestedSectionState();
+}
+
+class _SuggestedSectionState extends State<_SuggestedSection> {
+  bool _expanded = true;
+  String _searchQuery = '';
+  final Set<String> _expandedCategories = {};
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<FavoriteMovement> get _filtered {
+    if (_searchQuery.isEmpty) return widget.suggestions;
+    final q = _searchQuery.toLowerCase();
+    return widget.suggestions.where((fm) {
+      final cat = widget.db.categories
+          .where((c) => c.id == fm.categoryId)
+          .firstOrNull;
+      final catName = cat?.name ?? '';
+      String? subcatName;
+      if (fm.subcategoryId != null) {
+        subcatName = widget.db.subcategories
+            .where((s) => s.id == fm.subcategoryId)
+            .firstOrNull
+            ?.name;
+      }
+      return fm.title.toLowerCase().contains(q) ||
+          catName.toLowerCase().contains(q) ||
+          (subcatName?.toLowerCase().contains(q) ?? false) ||
+          (fm.note?.toLowerCase().contains(q) ?? false);
+    }).toList();
+  }
+
+  Map<String, List<FavoriteMovement>> get _grouped {
+    final map = <String, List<FavoriteMovement>>{};
+    for (final fm in _filtered) {
+      final cat = widget.db.categories
+          .where((c) => c.id == fm.categoryId)
+          .firstOrNull;
+      final catName = cat?.name ?? 'Senza categoria';
+      map.putIfAbsent(catName, () => []).add(fm);
+    }
+    return map;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = _grouped;
+    return KeyedSubtree(
+      key: const Key('suggested_section'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: StreamSpacing.md),
+          InkWell(
+            key: const Key('suggested_section_header'),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Row(
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: StreamColors.textMuted,
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.lightbulb_outline,
+                  size: 14,
+                  color: StreamColors.textMuted,
+                ),
+                const SizedBox(width: StreamSpacing.sm),
+                Text(
+                  'Suggeriti (${widget.suggestions.length})',
+                  style: StreamTypography.h3,
+                ),
+              ],
+            ),
+          ),
+          if (_expanded) ...[
+            const SizedBox(height: StreamSpacing.sm),
+            TextField(
+              key: const Key('suggested_search_field'),
+              controller: _searchCtrl,
+              decoration: const InputDecoration(
+                hintText: 'Cerca…',
+                prefixIcon: Icon(Icons.search, size: 18),
+                isDense: true,
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            ),
+            const SizedBox(height: StreamSpacing.sm),
+            if (grouped.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  key: Key('suggested_empty_state'),
+                  child: Text('Nessun suggerito trovato.'),
+                ),
+              )
+            else
+              ...grouped.entries.map((entry) {
+                final categoryName = entry.key;
+                final items = entry.value;
+                final isCatExpanded =
+                    _searchQuery.isNotEmpty ||
+                    _expandedCategories.contains(categoryName);
+                return KeyedSubtree(
+                  key: Key(
+                    'suggested_category_group_$categoryName',
+                  ),
+                  child: Column(
+                    children: [
+                      InkWell(
+                        key: const Key('suggested_category_header'),
+                        onTap: _searchQuery.isEmpty
+                            ? () {
+                                setState(() {
+                                  if (_expandedCategories
+                                      .contains(categoryName)) {
+                                    _expandedCategories.remove(categoryName);
+                                  } else {
+                                    _expandedCategories.add(categoryName);
+                                  }
+                                });
+                              }
+                            : null,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isCatExpanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                size: 18,
+                                color: StreamColors.textMuted,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '$categoryName (${items.length})',
+                                  style: StreamTypography.captionBold
+                                      .copyWith(
+                                    color: StreamColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (isCatExpanded)
+                        ...items.map(
+                          (fm) => _FavoriteTile(
+                            key: Key('suggested_item_${fm.id}'),
+                            fm: fm,
+                            isSuggestion: true,
+                            db: widget.db,
+                            onUsed: widget.onUsed,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }),
           ],
         ],
       ),

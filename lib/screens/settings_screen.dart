@@ -742,7 +742,7 @@ class _HeatmapSettingsSectionState extends State<_HeatmapSettingsSection> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
                   child: TextField(
-                    key: const Key('heatmap_threshold_field'),
+                    key: Key('heatmap_threshold_field_$i'),
                     controller: _controllers[i],
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -752,6 +752,12 @@ class _HeatmapSettingsSectionState extends State<_HeatmapSettingsSection> {
                     decoration: InputDecoration(
                       labelText: 'Soglia ${i + 1}',
                       suffixText: '€',
+                      suffixIcon: IconButton(
+                        key: const Key('heatmap_threshold_done_button'),
+                        icon: const Icon(Icons.check, size: 18),
+                        onPressed: () => FocusScope.of(context).unfocus(),
+                        tooltip: 'Chiudi tastiera',
+                      ),
                     ),
                     onChanged: (_) => _saveThresholds(),
                   ),
