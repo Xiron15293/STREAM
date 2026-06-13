@@ -10,6 +10,10 @@ class DayHeader extends StatelessWidget {
   const DayHeader({super.key, required this.group, this.filterType});
 
   static const _weekdays = ['LUNEDÌ', 'MARTEDÌ', 'MERCOLEDÌ', 'GIOVEDÌ', 'VENERDÌ', 'SABATO', 'DOMENICA'];
+  static const _monthNames = [
+    'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+  ];
 
   String get _weekdayLabel => _weekdays[group.date.weekday - 1];
   String get _dayNumber => group.date.day.toString().padLeft(2, '0');
@@ -89,14 +93,28 @@ class DayHeader extends StatelessWidget {
                 height: 1.0,
               )),
               const SizedBox(width: StreamSpacing.sm),
-              Padding(
+               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
-                child: Text(_weekdayLabel, style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: StreamColors.textSecondary,
-                  letterSpacing: 1.5,
-                )),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_weekdayLabel, style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: StreamColors.textSecondary,
+                      letterSpacing: 1.5,
+                    )),
+                    const SizedBox(height: 1),
+                    Text(
+                      '${_monthNames[group.date.month - 1]} ${group.date.year}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: StreamColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (label != null)
                 Padding(
