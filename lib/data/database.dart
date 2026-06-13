@@ -443,6 +443,32 @@ class AppDatabase extends ChangeNotifier {
       }
     }
     _categories[index] = updated;
+
+    final newIconKey = iconKey ?? old.iconKey;
+    for (int i = 0; i < _subcategories.length; i++) {
+      if (_subcategories[i].categoryId != id) continue;
+      final sc = _subcategories[i];
+      final updateColor = sc.color == null || sc.color == old.color;
+      final updateIcon = sc.iconKey == null || sc.iconKey == old.iconKey;
+      if (!updateColor && !updateIcon) continue;
+      final updatedSub = Subcategory(
+        id: sc.id,
+        categoryId: sc.categoryId,
+        name: sc.name,
+        iconKey: updateIcon ? newIconKey : sc.iconKey,
+        color: updateColor ? color : sc.color,
+        archived: sc.archived,
+        createdAt: sc.createdAt,
+        updatedAt: DateTime.now(),
+      );
+      if (_sqlite != null) {
+        try {
+          await _sqlite.updateSubcategory(updatedSub);
+        } catch (_) {}
+      }
+      _subcategories[i] = updatedSub;
+    }
+
     notifyListeners();
   }
 
@@ -609,6 +635,14 @@ class AppDatabase extends ChangeNotifier {
     return _movements.where((m) => m.subcategoryId == subcategoryId).length;
   }
 
+  int subcategoryQuickCount(String subcategoryId) {
+    return _quickMovements.where((q) => q.subcategoryId == subcategoryId).length;
+  }
+
+  int subcategoryFavoriteCount(String subcategoryId) {
+    return _favoriteMovements.where((f) => f.subcategoryId == subcategoryId).length;
+  }
+
   Future<void> deleteSubcategoryCascade(String id) async {
     if (_sqlite != null) {
       try {
@@ -621,19 +655,37 @@ class AppDatabase extends ChangeNotifier {
     _subcategories.removeWhere((s) => s.id == id);
     for (int i = 0; i < _movements.length; i++) {
       if (_movements[i].subcategoryId == id) {
-        _movements[i] = Movement(
-          id: _movements[i].id,
-          title: _movements[i].title,
-          amount: _movements[i].amount,
-          type: _movements[i].type,
-          date: _movements[i].date,
-          categoryId: _movements[i].categoryId,
+        _movements[i] = _movements[i].copyWith(
           subcategoryId: null,
-          accountId: _movements[i].accountId,
-          destinationAccountId: _movements[i].destinationAccountId,
-          note: _movements[i].note,
-          createdAt: _movements[i].createdAt,
           updatedAt: DateTime.now(),
+        );
+      }
+    }
+    for (int i = 0; i < _quickMovements.length; i++) {
+      if (_quickMovements[i].subcategoryId == id) {
+        _quickMovements[i] = QuickMovement(
+          id: _quickMovements[i].id,
+          title: _quickMovements[i].title,
+          amount: _quickMovements[i].amount,
+          type: _quickMovements[i].type,
+          categoryId: _quickMovements[i].categoryId,
+          subcategoryId: null,
+          accountId: _quickMovements[i].accountId,
+          note: _quickMovements[i].note,
+        );
+      }
+    }
+    for (int i = 0; i < _favoriteMovements.length; i++) {
+      if (_favoriteMovements[i].subcategoryId == id) {
+        _favoriteMovements[i] = FavoriteMovement(
+          id: _favoriteMovements[i].id,
+          title: _favoriteMovements[i].title,
+          amount: _favoriteMovements[i].amount,
+          type: _favoriteMovements[i].type,
+          categoryId: _favoriteMovements[i].categoryId,
+          subcategoryId: null,
+          accountId: _favoriteMovements[i].accountId,
+          note: _favoriteMovements[i].note,
         );
       }
     }

@@ -2385,6 +2385,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
     if (name.isEmpty) return;
     await widget.db.createSubcategory(widget.categoryId, name, iconKey: iconKey, color: color);
     Navigator.of(context).pop();
+    if (mounted) setState(() {});
   }
 
   void _showSubcategoryFormDialog(Subcategory sub) {
@@ -2400,16 +2401,18 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
 
   @override
   Widget build(BuildContext context) {
-    final subcategories = widget.db.getSubcategoriesForCategory(widget.categoryId);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return ListenableBuilder(
+      listenable: widget.db,
+      builder: (context, _) {
+        final fresh = widget.db.getSubcategoriesForCategory(widget.categoryId);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Sottocategorie (${subcategories.length})',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Sottocategorie (${fresh.length})',
               style: StreamTypography.caption.copyWith(
                 color: StreamColors.textSecondary,
               ),
@@ -2422,7 +2425,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
             ),
           ],
         ),
-        if (subcategories.isEmpty)
+        if (fresh.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
@@ -2433,7 +2436,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
             ),
           )
         else
-          ...subcategories.map(
+          ...fresh.map(
             (sub) {
               final parentCat = widget.db.categories.firstWhere(
                 (c) => c.id == widget.categoryId,
@@ -2484,7 +2487,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                       key: const Key('subcategory_restore_button'),
                       icon: Icon(Icons.unarchive_outlined,
                           size: 18, color: StreamColors.textMuted),
-                      onPressed: () => widget.db.restoreSubcategory(sub.id),
+                      onPressed: () => _restoreSubcategory(sub.id),
                       tooltip: 'Ripristina',
                       visualDensity: VisualDensity.compact,
                     ),
@@ -2505,6 +2508,14 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                     tooltip: 'Modifica',
                     visualDensity: VisualDensity.compact,
                   ),
+                  IconButton(
+                    key: const Key('subcategory_delete_button'),
+                    icon: Icon(Icons.delete_outline,
+                        size: 18, color: StreamColors.expense),
+                    onPressed: () => _confirmDeleteSubcategory(sub),
+                    tooltip: 'Elimina',
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ],
               ),
             );
@@ -2512,10 +2523,61 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
           ),
       ],
     );
+    },
+  );
   }
 
-  void _archiveSubcategory(String id) {
-    widget.db.archiveSubcategory(id);
+  Future<void> _archiveSubcategory(String id) async {
+    await widget.db.archiveSubcategory(id);
+    setState(() {});
+  }
+
+  Future<void> _restoreSubcategory(String id) async {
+    await widget.db.restoreSubcategory(id);
+    setState(() {});
+  }
+
+  Future<void> _confirmDeleteSubcategory(Subcategory sub) async {
+    final movCount = widget.db.subcategoryMovementCount(sub.id);
+    final quickCount = widget.db.subcategoryQuickCount(sub.id);
+    final favCount = widget.db.subcategoryFavoriteCount(sub.id);
+    final total = movCount + quickCount + favCount;
+    final parts = <String>[];
+    if (movCount > 0) parts.add('$movCount movimenti');
+    if (quickCount > 0) parts.add('$quickCount rapidi');
+    if (favCount > 0) parts.add('$favCount preferiti');
+    final summary = parts.isEmpty ? '' : ' (${parts.join(', ')})';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminare sottocategoria?'),
+        content: Text(
+          total > 0
+              ? 'I movimenti associati$summary verranno spostati nella categoria madre.'
+              : 'La sottocategoria "${sub.name}" sarà eliminata definitivamente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: StreamColors.expense,
+            ),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (total > 0) {
+      await widget.db.deleteSubcategoryCascade(sub.id);
+    } else {
+      await widget.db.deleteSubcategory(sub.id);
+    }
     setState(() {});
   }
 }
@@ -2542,6 +2604,17 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
 
   Subcategory get _sub => widget.subcategory;
   int get _movementCount => widget.db.subcategoryMovementCount(_sub.id);
+  int get _quickCount => widget.db.subcategoryQuickCount(_sub.id);
+  int get _favoriteCount => widget.db.subcategoryFavoriteCount(_sub.id);
+  int get _totalCount => _movementCount + _quickCount + _favoriteCount;
+
+  String _buildMovementSummary() {
+    final parts = <String>[];
+    if (_movementCount > 0) parts.add('$_movementCount movimenti');
+    if (_quickCount > 0) parts.add('$_quickCount rapidi');
+    if (_favoriteCount > 0) parts.add('$_favoriteCount preferiti');
+    return 'Associato a ${parts.join(', ')}.';
+  }
 
   @override
   void initState() {
@@ -2577,7 +2650,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
         title: const Text('Eliminare sottocategoria?'),
         content: Text(
           cascade
-              ? 'I movimenti associati perderanno questa sottocategoria.'
+              ? 'I movimenti associati verranno spostati nella categoria madre.'
               : 'La sottocategoria "${_sub.name}" sarà eliminata definitivamente.',
         ),
         actions: [
@@ -2607,8 +2680,6 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final hasMovements = _movementCount > 0;
-
     return AlertDialog(
       title: const Text('Modifica sottocategoria'),
       content: SingleChildScrollView(
@@ -2622,17 +2693,19 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
               decoration: const InputDecoration(labelText: 'Nome'),
               textInputAction: TextInputAction.done,
             ),
-            if (hasMovements) ...[
+            if (_totalCount > 0) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
                   Icon(Icons.info_outline,
                       size: 14, color: StreamColors.warning),
                   const SizedBox(width: 8),
-                  Text(
-                    'Movimenti associati: $_movementCount',
-                    style: TextStyle(
-                        fontSize: 12, color: StreamColors.warning),
+                  Expanded(
+                    child: Text(
+                      _buildMovementSummary(),
+                      style: TextStyle(
+                          fontSize: 12, color: StreamColors.warning),
+                    ),
                   ),
                 ],
               ),
@@ -2649,10 +2722,10 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
               FilledButton.tonalIcon(
                 key: const Key('subcategory_restore_button'),
                 icon: const Icon(Icons.unarchive_outlined, size: 18),
-                onPressed: () {
-                  widget.db.restoreSubcategory(_sub.id);
+                onPressed: () async {
+                  await widget.db.restoreSubcategory(_sub.id);
                   widget.onChanged();
-                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context);
                 },
                 label: const Text('Ripristina'),
               ),
@@ -2660,46 +2733,35 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
               TextButton.icon(
                 key: const Key('subcategory_delete_button'),
                 icon: const Icon(Icons.delete_outline, size: 18),
-                onPressed: () => _confirmDelete(cascade: false),
+                onPressed: () => _confirmDelete(cascade: _totalCount > 0),
                 style: TextButton.styleFrom(
                   foregroundColor: StreamColors.expense,
                 ),
-                label: const Text('Elimina definitivamente'),
+                label: Text(
+                    _totalCount > 0 ? 'Elimina (movimenti spostati nella madre)' : 'Elimina'),
               ),
             ] else ...[
               FilledButton.tonalIcon(
                 key: const Key('subcategory_archive_button'),
                 icon: const Icon(Icons.archive_outlined, size: 18),
-                onPressed: () {
-                  widget.db.archiveSubcategory(_sub.id);
+                onPressed: () async {
+                  await widget.db.archiveSubcategory(_sub.id);
                   widget.onChanged();
-                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context);
                 },
                 label: const Text('Archivia'),
               ),
-              if (hasMovements) ...[
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  key: const Key('subcategory_delete_cascade_button'),
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  onPressed: () => _confirmDelete(cascade: true),
-                  style: TextButton.styleFrom(
-                    foregroundColor: StreamColors.expense,
-                  ),
-                  label: const Text('Elimina (movimenti perderanno sub)'),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('subcategory_delete_button'),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                onPressed: () => _confirmDelete(cascade: _totalCount > 0),
+                style: TextButton.styleFrom(
+                  foregroundColor: StreamColors.expense,
                 ),
-              ] else ...[
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  key: const Key('subcategory_delete_button'),
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  onPressed: () => _confirmDelete(cascade: false),
-                  style: TextButton.styleFrom(
-                    foregroundColor: StreamColors.expense,
-                  ),
-                  label: const Text('Elimina'),
-                ),
-              ],
+                label: Text(
+                    _totalCount > 0 ? 'Elimina (movimenti spostati nella madre)' : 'Elimina'),
+              ),
             ],
           ],
         ),
