@@ -88,7 +88,7 @@ class TimeFilter {
           );
 
     String shortFmt(DateTime d) =>
-        '${d.day} ${_shortMonthNames[d.month - 1]}';
+        '${d.day} ${_shortMonthNames[d.month - 1]} ${d.year}';
     return TimeFilter._(
       mode: TimeFilterMode.customRange,
       startDate: startUtc,

@@ -125,12 +125,12 @@ void main() {
       expect(f.contains(DateTime(2026, 6, 19)), false);
     });
 
-    test('label: "15 giu → 30 giu"', () {
+    test('label: "15 giu 2026 → 30 giu 2026"', () {
       final f = TimeFilter.customRange(
         DateTime(2026, 6, 15),
         DateTime(2026, 6, 30),
       );
-      expect(f.label, '15 giu → 30 giu');
+      expect(f.label, '15 giu 2026 → 30 giu 2026');
     });
   });
 
