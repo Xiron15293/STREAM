@@ -53,6 +53,8 @@
 | F43 | V0.8.10 Period Views Premium — filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità, solo Day cambia), expense breakdown, range premium (blocchi semestrali), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, formatEuro, raggruppamento giorno panel mode, DayHeader Oggi/Ieri/count | V0.8.10 | 2026-06-14 |
 | F44 | V0.8.10 Subcategory Hardening — delete sicuro, propagazione colore/icona (condizione `== null || == old`), fix archive/restore async, ListenableBuilder refresh dialog, refresh immediato UI madre→sottocategorie | V0.8.10 | 2026-06-14 |
 | F45 | V0.8.10b Universal Movement Actions — ogni `MovementCard` ha popup completo (Modifica/Duplica/Rapido/Preferito/Elimina) in tutte le viste; dashboard sheet reattivo con `ListenableBuilder`; duplica con scelta data utility `showDuplicateDateSheet` | V0.8.10b | 2026-06-13 |
+| F46 | Date più chiare — `TimeFilter.customRange.label` con anno, `DayHeader` mese+anno sotto weekday | delta | 2026-06-13 |
+| F47 | Dialog propagazione stile categoria — `_CategoryPropagateStyleDialog` con checkbox sottocategorie, `updateCategory` con `propagateToSubcategoryIds` | delta | 2026-06-13 |
 
 ---
 
@@ -388,8 +390,8 @@
 
 | Metrica | Valore |
 |---------|--------|
-| **Totale feature censite** | 36 |
-| **Feature completate** | 27+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40, F42–F44; + MovementCard, Backup, Build fix, Share — **aggiornato F43/F44 al 2026-06-14**) |
+| **Totale feature censite** | 38 |
+| **Feature completate** | 29+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40, F42–F47; + MovementCard, Backup, Build fix, Share — **aggiornato F46/F47 al 2026-06-13**) |
 | **Feature approvate** | 3 (F30, F35–F36; + F41 V0.9.1 in valutazione) |
 | **Feature in valutazione** | 4 (F17–F18, F32, F41) |
 | **Feature future** | 4 (F43, F19–F22, F24, F31) |

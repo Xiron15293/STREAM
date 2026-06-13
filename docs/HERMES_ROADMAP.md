@@ -51,6 +51,7 @@
 | V0.8.10 | Period Views Premium + Subcategory Hardening | ✅ COMPLETATO | 2026-06-14 |
 | V0.8.10b | Universal Movement Actions + Duplicate Date Choice | ✅ COMPLETATO | 2026-06-13 |
 | — | Refresh immediato colore/icona categoria madre → sottocategorie | ✅ COMPLETATO | 2026-06-13 |
+| — | Date più chiare + Dialog propagazione stile categoria | ✅ COMPLETATO | 2026-06-13 |
 
 ## Approvate / Future (V0.9+)
 

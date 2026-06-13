@@ -35,6 +35,7 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 6.10 | Hermes V0.9.0 — Notes & Tags | 📋 PRIORITARIA | TBD | Campo notes, tag multi-selezione, filtro per tag |
 | 6.12 | Hermes V0.8.10 — Period Views Premium (perfezionamento) | ✅ COMPLETATO | 2026-06-14 | Tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, blocchi semestrali range, GroupedMovementsList panel mode, DayHeader Oggi/Ieri, ListenableBuilder categorie, fix propagazione colore/icona (condizione null), refresh immediato UI madre→sottocategorie |
 | 6.13 | Hermes V0.8.10b — Universal Movement Actions + Duplicate Date Choice | ✅ COMPLETATO | 2026-06-13 | Azioni movimento universali in ogni vista, dashboard sheet reattivo, duplica con scelta data (Oggi/Domani/Ieri/Scegli data/Annulla) |
+| 6.14 | Delta — Date più chiare + Dialog propagazione stile categoria | ✅ COMPLETATO | 2026-06-13 | `TimeFilter.customRange` label con anno, `DayHeader` mese+anno, dialog propagazione con checkbox sottocategorie selezionabili |
 | 6.11 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
 | 8 | Hermes V0.8 — Import CSV | ✅ COMPLETATO (parziale) | TBD | Import CSV 1Money completato in V0.7.0 |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |

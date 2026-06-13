@@ -34,6 +34,7 @@
 | Post V0.8.9 — Selector unico Categoria / Sottocategoria | Form manuale, rapidi, preferiti e rendering card riallineati; bug salvataggio sottocategoria coperto da test espliciti | ✅ COMPLETATO |
 | **V0.8.10 — Period Views Premium + Subcategory Hardening** | **Filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, expense breakdown, range premium, formatEuro, delete subcategory sicuro, propagazione colore/icona (condizione null), fix archive/restore** | ✅ **COMPLETATO** |
 | Delta finale V0.8.10 — Refresh immediato madre → sottocategorie | `updateCategory` esplicito con old color/icon, UI riallineata via `ListenableBuilder`/`setState`, refresh immediato in categories screen, sheet/dialog, movement form/picker | ✅ COMPLETATO |
+| **Delta date formatting + propagation dialog** | **Date più chiare (customRange con anno, DayHeader mese+anno) + dialog propagazione stile categoria con checkbox sottocategorie selezionabili** | ✅ **COMPLETATO** |
 | Flutter analyze | — | ✅ 0 errori, 0 warning, solo info pre-esistenti |
 | `flutter test --no-pub` | — | ✅ **759/759 test passati** |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
@@ -41,51 +42,58 @@
 
 ---
 
-## 2. Ultima Milestone Completata
+## 2. Ultime Milestone Completate
 
-**V0.8.10b — Universal Movement Actions + Duplicate Date Choice**
+### Delta — Date più chiare + Dialog propagazione stile categoria
 
-### Cosa è stato completato
-- **Azioni movimento universali**: ogni `MovementCard` mostra popup menu completo (Modifica, Duplica, Aggiungi a rapido, Aggiungi a preferito, Elimina) in tutte le viste
-- Viste coperte: Movimenti, categorie/sottocategorie, conti/account sheet, dashboard category detail sheet, ripartizione spese giorno (`_DayExpenseDetailSheet`)
-- **Dashboard sheet reattivo**: `_CategoryDetailSheet` usa `ListenableBuilder(listenable: db)` — delete/duplicate/modifica aggiornano UI senza chiudere/riaprire
-- **Duplica con scelta data**: utility `showDuplicateDateSheet` (Oggi/Domani/Ieri/Scegli data/Annulla); annulla non crea duplicato; nuovo id; nessuna copia fingerprint/import metadata
-- Catena callback completa: `MovementCard` → `GroupedMovementsList` → ogni screen
+#### Date più chiare
+- `TimeFilter.customRange.label` ora include l'anno: `"15 giu 2026 → 30 giu 2026"` (era `"15 giu → 30 giu"`)
+- `DayHeader` mostra mese+anno (es. `giugno 2026`) sotto il weekday
+- Obiettivo: evitare ambiguità navigando giorno/settimana/mese/anno/intervallo
 
-### QA finali
-- `flutter analyze --no-pub`: 0 errori, 0 warning, 25 info (pre-esistenti)
-- `flutter test --no-pub`: **749/749 All tests passed**
-- 2 nuovi test: annulla non crea duplicato (53b), Domani funziona (53c); test 53 aggiornato con scelta Oggi
+#### Dialog propagazione stile categoria
+- `_CategoryPropagateStyleDialog` in `lib/screens/categories_screen.dart`
+- Appare quando si modifica categoria esistente con sottocategorie e colore/icona cambiati
+- Checkbox per ogni sottocategoria, preselezione smart (ereditarie ✅, custom ❌)
+- Azioni rapide: Seleziona tutte, Deseleziona tutte, Solo ereditarie
+- Azioni finali: Annulla, Solo categoria, Applica alle selezionate
+- `updateCategory()` accetta `propagateToSubcategoryIds: Set<String>?`
+  - Se valorizzato: aggiorna solo le selezionate (override inherit-based)
+  - Se null: mantiene logica automatica preesistente
+
+#### QA
+- `flutter analyze --no-pub`: 0 errori, 0 warning, 25 info pre-esistenti
+- `flutter test --no-pub`: **759/759 All tests passed**
+- `test/time_filter_test.dart`: label customRange aggiornata
+- `test/subcategories_test.dart`: test 37 aggiornato per dialog "Applica alle selezionate"
 - Nessun DB/schema/migrazione modificato
-- Backup/restore/import/reset non modificati
-- Nessuno skip aggiunto
 - Nessun commit/push
 
-### Delta completato dopo la milestone
+### V0.8.10b — Universal Movement Actions + Duplicate Date Choice
+
+**Cosa è stato completato:**
+- Azioni movimento universali in tutte le viste
+- Dashboard sheet reattivo con `ListenableBuilder`
+- Duplica con scelta data utility `showDuplicateDateSheet`
+- Catena callback completa MovementCard → GroupedMovementsList → screen
+
+### Delta completato dopo V0.8.10b
 - `updateCategory` ora conserva in modo esplicito `oldCategoryColor` e `oldCategoryIconKey`
-- La propagazione verso le sottocategorie ereditarie usa:
-  - `sub.color == null || sub.color == oldCategoryColor`
-  - `sub.iconKey == null || sub.iconKey == oldCategoryIconKey`
-- Colori e icone custom diversi restano preservati
-- Il fix è anche UI:
-  - `categories_screen` rilegge dal DB notificato
-  - category sheet/dialog usa `ListenableBuilder` e `setState` dove necessario
-  - `movement_form` e `movement_picker` ascoltano il DB mentre mostrano categoria/sottocategoria
+- Propagazione verso sottocategorie ereditarie: `sub.color == null || sub.color == oldCategoryColor`
+- Refresh UI immediato in categories screen, sheet/dialog, movement form/picker
 - Non serve più uscire/rientrare per vedere colore/icona aggiornati
-- Verifica finale aggiornata:
-  - `flutter analyze --no-pub`: nessun errore o warning bloccante; restano solo info pre-esistenti
-  - `flutter test --no-pub`: **759/759 All tests passed**
-  - test estesi in `test/subcategories_test.dart` e `test/movement_card_test.dart`
 
 ---
 
 ## 3. Priorità Immediata (Prossima Sessione)
 
 ### Stato attuale
-- Azioni movimento universali completate in ogni vista
-- Dashboard sheet reattivo
-- Duplica con scelta data (Oggi/Domani/Ieri/Scegli data/Annulla)
-- Test: 749/749
+- Date più chiare (customRange con anno, DayHeader mese+anno) ✅
+- Dialog propagazione stile categoria verso sottocategorie selezionate ✅
+- Azioni movimento universali completate in ogni vista ✅
+- Dashboard sheet reattivo ✅
+- Duplica con scelta data (Oggi/Domani/Ieri/Scegli data/Annulla) ✅
+- Test: 759/759 ✅
 
 ### Prossimi step consigliati
 1. **V0.9.0 — Notes & Tags**

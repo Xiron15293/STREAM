@@ -1,6 +1,40 @@
 # HERMES QA REPORT
 
-> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics, V0.8.6 Category Treemap Analytics, V0.8.10 Period Views Premium + Subcategory Hardening, e V0.8.10b Universal Movement Actions + Duplicate Date Choice.
+> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics, V0.8.6 Category Treemap Analytics, V0.8.10 Period Views Premium + Subcategory Hardening, V0.8.10b Universal Movement Actions + Duplicate Date Choice, e delta date formatting + propagation dialog.
+
+---
+
+## Delta — Date più chiare + Dialog propagazione stile categoria ✅
+
+### Cosa è cambiato
+
+1. **Date più chiare**
+   - `TimeFilter.customRange.label` ora include l'anno: `"15 giu 2026 → 30 giu 2026"` (era `"15 giu → 30 giu"`)
+   - `DayHeader` mostra mese+anno (es. `giugno 2026`) sotto il weekday
+   - Nessuna ambiguità navigando giorno/settimana/mese/anno/intervallo
+
+2. **Dialog propagazione stile categoria (`_CategoryPropagateStyleDialog`)**
+   - Appare quando si modifica una categoria esistente con sottocategorie e colore/icona cambiano
+   - Checkbox per ogni sottocategoria con preselezione smart:
+     - Sottocategorie ereditarie selezionate di default
+     - Sottocategorie custom non selezionate di default
+   - Azioni rapide: Seleziona tutte, Deseleziona tutte, Solo ereditarie
+   - Azioni finali: Annulla (non salva), Solo categoria (salva solo madre), Applica alle selezionate (salva madre + sottocategorie scelte)
+
+3. **`updateCategory()` esteso**
+   - Nuovo parametro opzionale `propagateToSubcategoryIds: Set<String>?`
+   - Se valorizzato: override della logica automatica inherit-based
+   - Se null: comportamento storico preservato
+
+### Verifica locale finale
+- `flutter analyze --no-pub`: 0 errori, 0 warning, 25 info pre-esistenti
+- `flutter test --no-pub`: **759/759 All tests passed** (invariato)
+- `test/time_filter_test.dart`: aggiornato customRange test per label con anno
+- `test/subcategories_test.dart`: test 37 aggiornato (tap "Applica alle selezionate" dopo propagazione)
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
 
 ---
 

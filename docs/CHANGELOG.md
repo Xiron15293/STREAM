@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Date più chiare nei periodi/giorni**
+  - `TimeFilter.customRange.label` ora include l'anno: `"15 giu 2026 → 30 giu 2026"` (invece di `"15 giu → 30 giu"`)
+  - `DayHeader` mostra mese+anno (es. `giugno 2026`) sotto il weekday
+  - Obiettivo UX: evitare ambiguità quando si navigano giorno/settimana/mese/anno/intervallo
+
+- **Dialog propagazione stile categoria verso sottocategorie selezionate**
+  - Quando si modifica una categoria esistente con sottocategorie e cambia colore/icona, appare `_CategoryPropagateStyleDialog`
+  - Checkbox per ogni sottocategoria, preselezione smart (ereditarie selezionate, custom no)
+  - Azioni rapide: Seleziona tutte, Deseleziona tutte, Solo ereditarie
+  - Azioni finali: Annulla (non salva), Solo categoria (salva solo madre), Applica alle selezionate (salva madre + selezionate)
+  - `updateCategory()` accetta nuovo parametro opzionale `propagateToSubcategoryIds: Set<String>?`
+  - Se valorizzato: aggiorna solo le sottocategorie scelte (override della logica automatica inherit-based)
+  - Se non valorizzato (null): mantiene la logica automatica preesistente (ereditarietà)
+  - Dialog posizionato in `lib/screens/categories_screen.dart`
+
 - **Delta docs — refresh immediato colore/icona categoria madre → sottocategorie**
   - `updateCategory` ora conserva esplicitamente `oldCategoryColor` e `oldCategoryIconKey`
   - Propaga verso le sottocategorie ereditate con:
@@ -122,7 +137,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tap giorno in Intervallo non cambia più filtro a Giorno (preserva `customRange`)
 - `updateCategory` ora propaga colore/icona anche a sottocategorie con `null` (ereditarietà pura: `== null || == old`)
 
-### QA
+### QA (delta date + propagation dialog)
+- `flutter analyze --no-pub`: 0 errori, 0 warning, 25 info pre-esistenti
+- `flutter test --no-pub`: **759/759 All tests passed** (invariato)
+- `test/time_filter_test.dart`: customRange label aggiornato con anno (`"15 giu 2026 → 30 giu 2026"`)
+- `test/subcategories_test.dart`: test 37 aggiornato — click "Applica alle selezionate" nel nuovo dialog propagazione
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
 - `flutter analyze --no-pub`: nessun errore o warning bloccante; restano solo info lint/deprecazioni pre-esistenti
 - `flutter test --no-pub`: **759/759 All tests passed**
 - Nessun DB/schema/migrazione modificato

@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** V0.8.10b + refresh immediato madre→sottocategorie | **DB:** v10 | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`) | **Test:** 759/759
+**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog | **DB:** v10 | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`) | **Test:** 759/759
 
 ## Stack
 
@@ -459,14 +459,50 @@ String formatEuro(double amount) {
 
 ### DayHeader migliorato (V0.8.10)
 
-> Label Oggi/Ieri e conteggio movimenti.
+> Label Oggi/Ieri, conteggio movimenti, mese+anno.
 
 **File:** `lib/widgets/day_header.dart`
 
 **Modifiche:**
 - Label "Oggi" se `day == today`, "Ieri" se `day == today - 1`, altrimenti giorno della settimana
 - Conteggio movimenti mostrato nell'header (es. "3 movimenti")
-- Rimosso anno-mese non più usato
+- Rimosso anno-mese non più usato (V0.8.10)
+- **Aggiunto mese+anno sotto il weekday (delta date chiare)**: es. `giugno 2026` sotto `MERCOLEDÌ`
+
+### Date più chiare nei periodi/giorni (delta)
+
+> `TimeFilter.customRange.label` ora include l'anno; `DayHeader` mostra mese+anno.
+
+**File:** `lib/models/time_filter.dart` (linea 91), `lib/widgets/day_header.dart`
+
+**Modifiche:**
+- `TimeFilter.customRange.label`: `shortFmt` ora produce `"15 giu 2026 → 30 giu 2026"` invece di `"15 giu → 30 giu"`
+- `DayHeader`: aggiunto `_monthNames` statico, mese+anno renderizzato sotto il weekday con `Text('${_monthNames[group.date.month - 1]} ${group.date.year}')`
+- Obiettivo UX: evitare ambiguità temporali quando si navigano Giorno/Settimana/Mese/Anno/Intervallo
+
+### Dialog propagazione stile categoria (delta)
+
+> Dialog con checkbox per selezionare le sottocategorie a cui applicare il nuovo colore/icona.
+
+**File:** `lib/screens/categories_screen.dart` — classi `_CategoryPropagateStyleDialog`, `_CategoryPropagateStyleDialogState`
+
+**Trigger:** Si attiva in `_CategoryFormDialogState._save()` quando:
+- Si sta modificando una categoria esistente (`widget.existing != null`)
+- La categoria ha sottocategorie (`subcategories.isNotEmpty`)
+- Colore O icona sono cambiati rispetto al valore originale
+
+**UI:**
+- `StatefulBuilder` con checkbox per ogni sottocategoria
+- Preselezione smart: sottocategorie ereditarie (`color == null || color == oldColor && iconKey == null || iconKey == oldIconKey`) selezionate di default
+- Azioni rapide: Seleziona tutte, Deseleziona tutte, Solo ereditarie
+- Azioni finali: Annulla (restituisce `null` → non salva), Solo categoria (restituisce `{}` → solo madre), Applica alle selezionate (restituisce `Set<String>` dei subcategoryId selezionati)
+- Subtitle per ogni checkbox descrive lo stato attuale (es. "colore ereditato", "icona personalizzata")
+
+**`updateCategory` modificato:**
+- Nuovo parametro opzionale: `Set<String>? propagateToSubcategoryIds`
+- Se valorizzato (anche vuoto): la logica automatica inherit-based viene saltata; vengono aggiornate SOLO le sottocategorie i cui `id` sono presenti nel set
+- Se null (comportamento storico): la logica inherit-based preesistente rimane attiva
+- Nessuna migration DB
 
 ### ListenableBuilder in SubcategorySection (V0.8.10)
 
@@ -965,9 +1001,9 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 | V0.8.10 |
-|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | 711 | 742 | 747 |
+| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 | V0.8.10 | Delta |
+|---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | 711 | 742 | 759 |
 | Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** | **0** | **0** |
 | DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 9 | **9** | **10** | **10** |
 | Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
