@@ -10,15 +10,9 @@ class DayHeader extends StatelessWidget {
   const DayHeader({super.key, required this.group, this.filterType});
 
   static const _weekdays = ['LUNEDÌ', 'MARTEDÌ', 'MERCOLEDÌ', 'GIOVEDÌ', 'VENERDÌ', 'SABATO', 'DOMENICA'];
-  static const _months = [
-    'GENNAIO', 'FEBBRAIO', 'MARZO', 'APRILE', 'MAGGIO', 'GIUGNO',
-    'LUGLIO', 'AGOSTO', 'SETTEMBRE', 'OTTOBRE', 'NOVEMBRE', 'DICEMBRE'
-  ];
 
   String get _weekdayLabel => _weekdays[group.date.weekday - 1];
-  String get _monthLabel => _months[group.date.month - 1];
   String get _dayNumber => group.date.day.toString().padLeft(2, '0');
-  String get _yearMonth => '$_monthLabel ${group.date.year}';
 
   Color _balanceColor() {
     if (group.balance > 0) return StreamColors.income;
@@ -67,8 +61,19 @@ class DayHeader extends StatelessWidget {
     );
   }
 
+  String? _dayLabel() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(group.date.year, group.date.month, group.date.day);
+    if (date == today) return 'OGGI';
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (date == yesterday) return 'IERI';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final label = _dayLabel();
     return Padding(
       padding: const EdgeInsets.only(top: StreamSpacing.md, bottom: StreamSpacing.sm),
       child: Column(
@@ -93,14 +98,34 @@ class DayHeader extends StatelessWidget {
                   letterSpacing: 1.5,
                 )),
               ),
+              if (label != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 3, left: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: StreamColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(label, style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: StreamColors.primary,
+                      letterSpacing: 1,
+                    )),
+                  ),
+                ),
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
-                child: Text(_yearMonth, style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: StreamColors.textMuted,
-                )),
+                child: Text(
+                  '${group.movements.length} ${group.movements.length == 1 ? 'movimento' : 'movimenti'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: StreamColors.textMuted,
+                  ),
+                ),
               ),
             ],
           ),

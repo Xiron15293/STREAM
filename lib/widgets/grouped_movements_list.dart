@@ -16,6 +16,8 @@ class GroupedMovementsList extends StatelessWidget {
   final MovementType? filterType;
   final Widget? topWidget;
   final bool useSliver;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
   final void Function(Movement)? onEdit;
   final void Function(Movement)? onDuplicate;
   final void Function(Movement)? onSaveAsFavorite;
@@ -30,6 +32,8 @@ class GroupedMovementsList extends StatelessWidget {
     this.filterType,
     this.topWidget,
     this.useSliver = false,
+    this.shrinkWrap = false,
+    this.physics,
     this.onEdit,
     this.onDuplicate,
     this.onSaveAsFavorite,
@@ -64,6 +68,8 @@ class GroupedMovementsList extends StatelessWidget {
     if (topWidget != null) {
       return CustomScrollView(
         controller: scrollController,
+        shrinkWrap: shrinkWrap,
+        physics: physics,
         slivers: [
           SliverToBoxAdapter(child: topWidget),
           SliverPadding(
@@ -80,13 +86,15 @@ class GroupedMovementsList extends StatelessWidget {
               ),
             ),
           ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+          if (!shrinkWrap) const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
         ],
       );
     }
 
     return ListView.builder(
       controller: scrollController,
+      shrinkWrap: shrinkWrap,
+      physics: physics,
       padding: const EdgeInsets.fromLTRB(
         StreamSpacing.lg,
         0,
