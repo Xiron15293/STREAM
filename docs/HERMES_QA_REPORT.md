@@ -1,6 +1,47 @@
 # HERMES QA REPORT
 
-> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics e V0.8.6 Category Treemap Analytics.
+> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics, V0.8.6 Category Treemap Analytics e V0.8.10 Period Views Premium + Subcategory Hardening.
+
+---
+
+## Hermes V0.8.10 — Period Views Premium + Subcategory Hardening ✅ COMPLETATO
+
+### Delta sessione 2 — Tap giorno generalizzato + reset contestuale + fix propagazione
+
+**Cosa è cambiato:**
+
+1. **Generalizzato `_selectedRangeDay` → `_selectedPeriodDay`**
+   - Ora vale per tutti i mode periodo (Week/Month/Year/Range), non solo customRange
+   - `_onHeatmapDayTap()` usa switch esaustivo su `timeFilter.mode`:
+     - `day` → cambia filtro a Giorno (comportamento storico)
+     - `week/month/year/customRange` → imposta `_selectedPeriodDay`, resta nel periodo
+
+2. **Chip giorno selezionato unificato**
+   - `_buildSelectedPeriodDayChip()` con data key `period_selected_day_yyyy_m_d`
+   - Chip key: `period_selected_day_chip` (week/month/year), `range_selected_day_chip` (customRange)
+
+3. **Clear button per ogni mode periodo**
+   - "Tutta settimana" → `week_clear_selected_day`
+   - "Tutto mese" → `month_clear_selected_day`
+   - "Tutto anno" → `year_clear_selected_day`
+   - "Tutto intervallo" → `range_clear_selected_day`
+
+4. **Fix propagazione colore/icona sottocategorie**
+   - Condizione `updateCategory` cambiata da `sc.color != null && sc.color == old.color` a `sc.color == null || sc.color == old.color`
+   - Ora aggiorna anche sottocategorie con `null` (ereditarietà pura)
+   - Stessa logica per `iconKey`
+
+### Test aggiornati
+- `test/period_summary_card_test.dart`: riferimenti `selectedRangeDay`/`onClearRangeDay` → `selectedPeriodDay`/`onClearSelectedDay`; key data `range_selected_day_*` → `period_selected_day_*`
+- Nessun test aggiunto/rimosso — solo rename riferimenti
+
+### Verifica locale finale
+- `flutter analyze --no-pub`: **PASS** — 0 errori, 0 warning, 27 info pre-esistenti
+- `flutter test --no-pub`: **747/747 All tests passed** (invariato)
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
 
 ---
 
@@ -1875,5 +1916,62 @@ flutter test --no-pub    → 627/627 All tests passed
 
 - `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings
 - `flutter test --no-pub`: **711/711 All tests passed**
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+---
+
+## V0.8.10 — Period Views Premium + Subcategory Hardening ✅
+
+### Aggiunte alla release (sessione 1)
+
+**Blocchi semestrali per range lungo:**
+- Soglia >183 giorni attiva `_buildSemesterRangeGrid()`
+- Divisione in blocchi Gen–Giu / Lug–Dic
+- `_RangeSemesterGrid` modellata su `_SemesterGrid` di `AnnualHeatmapCard`
+- Supporto cross-year e semestri parziali
+
+**Raggruppamento giorno in panel mode:**
+- `_MovementPanel` ora usa `GroupedMovementsList(shrinkWrap: true)`
+- `GroupedMovementsList` supporta `shrinkWrap` e `physics` custom
+
+**DayHeader migliorato:**
+- Label Oggi/Ieri con logica relativa
+- Conteggio movimenti nel giorno
+
+**Refresh dialog categorie:**
+- `_SubcategorySection` avvolto in `ListenableBuilder(listenable: widget.db)`
+
+### Aggiunte alla release (sessione 2 — finalizzazione)
+
+**Generalizzato `_selectedRangeDay` → `_selectedPeriodDay`:**
+- `_selectedPeriodDay` (DateTime?) unificato in `_MovementsScreenState` per tutti i mode periodo (Week/Month/Year/Range)
+- `_onHeatmapDayTap()` usa switch esaustivo: solo `day` cambia filtro, tutti gli altri mode impostano `_selectedPeriodDay`
+- Chip giorno unificato `_buildSelectedPeriodDayChip()` con data key `period_selected_day_yyyy_m_d`
+- Chip key: `period_selected_day_chip` (week/month/year), `range_selected_day_chip` (customRange)
+
+**Clear button contestuale per ogni mode:**
+- "Tutta settimana" → `week_clear_selected_day`
+- "Tutto mese" → `month_clear_selected_day`
+- "Tutto anno" → `year_clear_selected_day`
+- "Tutto intervallo" → `range_clear_selected_day`
+
+**Fix propagazione colore/icona sottocategorie:**
+- Condizione `updateCategory` cambiata da `sc.color != null && sc.color == old.color` a `sc.color == null || sc.color == old.color`
+- Stessa logica per `iconKey`
+- Ora aggiorna anche sottocategorie con `null` che ereditano dalla madre
+
+### Test aggiornati
+
+- `test/period_summary_card_test.dart`: riferimenti `selectedRangeDay`/`onClearRangeDay` → `selectedPeriodDay`/`onClearSelectedDay`; key data `range_selected_day_*` → `period_selected_day_*`
+- 5 test invariati in numero (chip giorno, clear callback, semester grid, cross-year, partial semester)
+- Nessun test aggiunto/rimosso
+
+### Verifica locale finale
+
+- `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings, 27 info pre-esistenti
+- `flutter test --no-pub`: **747/747 All tests passed**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
 - Nessun commit/push

@@ -48,11 +48,13 @@
 | V0.8.7 | Heatmap Settings (soglie/colori configurabili) | ✅ COMPLETATO | 2026-06-11 |
 | V0.8.8 | Subcategories Foundation | ✅ COMPLETATO | 2026-06-12 |
 | V0.8.9 | Category Conversion & Suggested UX Polish | ✅ COMPLETATO | 2026-06-14 |
+| V0.8.10 | Period Views Premium + Subcategory Hardening | ✅ COMPLETATO | 2026-06-14 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
+| Audit UX | Verifica manuale UX Movimenti/Sottocategorie | 📋 PRIORITARIA |
 | V0.9.0 | Notes & Tags | 📋 PRIORITARIA |
 | V0.9.1 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
 | V0.9.1 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
@@ -69,6 +71,8 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | Versione | Focus |
 |----------|-------|
 | V0.8.9 | Category Conversion & Suggested UX Polish (✅) — fix crash menu, categorie con movimenti modificabili, conversione manuale in sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune |
+| **V0.8.10** | **Period Views Premium + Subcategory Hardening (✅) — filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità, solo Day cambia), expense breakdown, range premium (blocchi semestrali per >183gg), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, formatEuro, raggruppamento giorno in panel mode, DayHeader Oggi/Ieri/count, ListenableBuilder dialog categorie, delete sottocategorie sicuro, propagazione colore/icona (fix condizione null), fix archive/restore** |
+| **Audit UX** | **Verifica manuale UX Movimenti/Sottocategorie** |
 | V0.9.0 | Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard |
 | V0.9.1 | Dashboard recalcolo + tabella editor (📋) — recalcolo KPI, tabella modificabile |
 | V0.9.2 | Export/Backup (💡) |

@@ -50,15 +50,19 @@
 | F39 | V0.8.7 Heatmap Settings — soglie/colori configurabili | V0.8.7 | 2026-06-11 |
 | F40 | V0.8.8 Subcategories Foundation — subcategory entity, DB v9, UI | V0.8.8 | 2026-06-12 |
 | F42 | V0.8.9 Category Conversion & Suggested UX Polish — fix crash categorie, conversione manuale, suggeriti espandibili | V0.8.9 | 2026-06-14 |
+| F43 | V0.8.10 Period Views Premium — filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità, solo Day cambia), expense breakdown, range premium (blocchi semestrali), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, formatEuro, raggruppamento giorno panel mode, DayHeader Oggi/Ieri/count | V0.8.10 | 2026-06-14 |
+| F44 | V0.8.10 Subcategory Hardening — delete sicuro, propagazione colore/icona (condizione `== null || == old`), fix archive/restore async, ListenableBuilder refresh dialog | V0.8.10 | 2026-06-14 |
 
 ---
 
 ## Priorità prossime
 
-1. V0.9.0 — Notes & Tags
-2. V0.9.1 — Dashboard recalcolo + tabella editor
-3. V0.9.2 — Export/Backup
-4. Subcategories Analytics (Budget/Actual/Scenari)
+1. Audit UX completo Movimenti dopo nuova Settimana
+2. Verifica manuale sottocategorie (archive/restore/delete/propagazione)
+3. V0.9.0 — Notes & Tags
+4. V0.9.1 — Dashboard recalcolo + tabella editor
+5. V0.9.2 — Export/Backup
+6. Subcategories Analytics (Budget/Actual/Scenari)
 
 ---
 
@@ -386,7 +390,7 @@
 | Metrica | Valore |
 |---------|--------|
 | **Totale feature censite** | 36 |
-| **Feature completate** | 25+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40, F42; + MovementCard, Backup, Build fix, Share) |
+| **Feature completate** | 27+ (F01–F11, F12, F14–F16, F23, F33–F34, F37–F40, F42–F44; + MovementCard, Backup, Build fix, Share — **aggiornato F43/F44 al 2026-06-14**) |
 | **Feature approvate** | 3 (F30, F35–F36; + F41 V0.9.1 in valutazione) |
 | **Feature in valutazione** | 4 (F17–F18, F32, F41) |
 | **Feature future** | 4 (F43, F19–F22, F24, F31) |

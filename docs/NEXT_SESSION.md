@@ -1,6 +1,6 @@
 # NEXT SESSION — Stato Progetto e Priorità
 
-> Aggiornato: 2026-06-12
+> Aggiornato: 2026-06-13
 
 ---
 
@@ -32,8 +32,9 @@
 | Hermes V0.8.8 — Subcategories Foundation | Nuova entità Subcategory, DB v8→v9, subcategory_id nullable, backup/restore, UI categorie e form, fix UX nota rapida e soglie heatmap | ✅ COMPLETATO |
 | Hermes V0.8.9 — Category Conversion & Suggested UX Polish | Fix crash menu categorie, categorie con movimenti modificabili, conversione manuale flat→sottocategoria, suggeriti espandibili/raggruppati, heatmap palette comune | ✅ COMPLETATO |
 | Post V0.8.9 — Selector unico Categoria / Sottocategoria | Form manuale, rapidi, preferiti e rendering card riallineati; bug salvataggio sottocategoria coperto da test espliciti | ✅ COMPLETATO |
-| Flutter analyze | — | ⚠️ da tenere distinto: presenti issue legacy non legate a questa lavorazione |
-| `flutter test --no-pub` | — | ✅ rilanciato in questa sessione |
+| **V0.8.10 — Period Views Premium + Subcategory Hardening** | **Filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, expense breakdown, range premium, formatEuro, delete subcategory sicuro, propagazione colore/icona (condizione null), fix archive/restore** | ✅ **COMPLETATO** |
+| Flutter analyze | — | ✅ 0 errori, 0 warning, solo info pre-esistenti |
+| `flutter test --no-pub` | — | ✅ **747/747 test passati** |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -41,28 +42,31 @@
 
 ## 2. Ultima Milestone Completata
 
-**Post V0.8.9 — Selector unico Categoria / Sottocategoria + subcategory save verification**
+**V0.8.10 — Period Views Premium + Subcategory Hardening**
 
 ### Cosa è stato completato
-- Verificato il salvataggio sottocategoria su nome + icona + colore:
-  - update immediato in memoria
-  - persistenza SQLite confermata dopo reload
-  - dialog UI coperto con test del primo tap
-- Introdotto il selector unico `Categoria / Sottocategoria`
-  - field key `movement_category_subcategory_field`
-  - bottom sheet key `category_subcategory_picker`
-  - search key `category_subcategory_search_field`
-  - selezione categoria madre o `Categoria / Sottocategoria`
-  - solo elementi attivi
-- Flussi aggiornati:
-  - movimento manuale
-  - rapidi
-  - preferiti
-  - rendering `MovementCard`
+- **Filtro Settimana**: `TimeFilterMode.week`, `TimeFilter.week()` lunedì→domenica, `TimeFilterBar` con segmento "Sett.", label `1–7 giugno 2026`
+- **Card settimana premium**: KPI + heatmap 7gg + lista filtrata
+- **Tap giorno seleziona dentro periodo**: `_onHeatmapDayTap()` generalizzata; **Day** cambia filtro a Giorno; **Week/Month/Year/Range** restano nel periodo e impostano `_selectedPeriodDay` — lista filtrata al giorno, KPI periodo preservati
+- **Card giorno premium**: header, chip metrici, KPI, nessuna mini-lista
+- **Ripartizione spese Giorno**: barre proporzionali per categoria, tasto "Vedi dettaglio" → sheet scrollabile
+- **Card intervallo premium**: KPI + heatmap (griglia giorni ≤31, settimanale 32–183, **blocchi semestrali >183**)
+- **Chip giorno selezionato + reset contestuale**: `_selectedPeriodDay` generalizzato da `_selectedRangeDay`; chip unificato `period_selected_day_yyyy_m_d` per tutti i mode; clear button per mode: "Tutta settimana" / "Tutto mese" / "Tutto anno" / "Tutto intervallo"
+- **Blocchi semestrali**: Gen–Giu / Lug–Dic per range >183gg, cross-year, partial semester
+- **Raggruppamento giorno in panel mode**: `GroupedMovementsList` con `shrinkWrap`/`physics` in Calendar/Heatmap
+- **DayHeader migliorato**: label Oggi/Ieri + conteggio movimenti
+- **Refresh dialog categorie**: `ListenableBuilder` su `widget.db`
+- **`formatEuro()`**: importi al centesimo, non più formato "k"
+- **Delete sottocategorie sicuro**: dialog "spostati nella categoria madre", conteggio movimenti/rapidi/preferiti, cascade azzera tutte e 3 le tabelle
+- **Propagazione colore/icona**: `updateCategory` aggiorna sottocategorie che ereditano (condizione: `sc.color == null || sc.color == old.color`)
+- **Fix archive/restore**: `async`+`await`+`setState` in row inline, form dialog archive e restore
 
 ### QA finali
-- `test/subcategories_test.dart`: copertura esplicita del bug salvataggio sottocategoria e del selector unificato
-- `test/movement_card_test.dart`: copertura rendering combinato `Categoria / Sottocategoria`
+- `flutter analyze --no-pub`: 0 errori, 0 warning, 27 info (pre-esistenti)
+- `flutter test --no-pub`: **747/747 All tests passed**
+- 5 nuovi test: chip giorno, clear callback, semester grid, cross-year, partial semester
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
 - Nessun commit/push
 
@@ -70,54 +74,100 @@
 
 ## 3. Priorità Immediata (Prossima Sessione)
 
-1. **V0.9.0 — Notes & Tags**
+### Stato attuale
+- Period views: Giorno/Settimana/Mese/Anno/Intervallo implementate
+- Heatmap navigabile verso Giorno
+- Sottocategorie più complete: archive/restore/delete/propagazione colore
+- Test verdi
+
+### Prossimi step consigliati
+1. **Audit UX completo su Movimenti** dopo nuova Settimana
+2. **Verifica manuale sottocategorie**:
+   - archivio
+   - restore
+   - delete con movimenti
+   - cambio colore madre
+3. **Eventuale polish card Giorno / Ripartizione**
+4. **Poi solo dopo**: nuove feature non urgenti
+5. **V0.9.0 — Notes & Tags** (se prioritario)
    - Campo notes su movimento
    - Tag multi-selezione su movimento
    - Filtro per tag in dashboard
-
-2. **V0.9.1 — Dashboard recalcolo + tabella editor**
+6. **V0.9.1 — Dashboard recalcolo + tabella editor**
    - recalcolo KPI, tabella modificabile
-
-3. **V0.9.2 — Export/Backup**
-4. **Subcategories Analytics — Budget/Actual/Scenari**
+7. **V0.9.2 — Export/Backup**
+8. **Subcategories Analytics — Budget/Actual/Scenari**
 
 ---
 
 ## 4. Note Tecniche Aperte
 
-- DB version corrente: **v9** (da V0.8.8)
-- Subcategories: nessuna FK SQLite, validazione applicativa (coerente con lo schema attuale)
-- Color/icon su Subcategory: supportati come campi opzionali; se null resta il fallback alla categoria madre
-- Backup v2 invariato — `subcategories` è una lista opzionale in `BackupData`
+### TimeFilterMode.week
+- `TimeFilterMode.week` aggiunto in `lib/models/time_filter.dart`
+- `TimeFilter.week()` calcola: lunedì = `date.subtract(Duration(days: date.weekday - 1))`, domenica = lunedì + 6
+- `label()` restituisce `"1–7 giugno 2026"` con giorno+mese del range
+- `next()` somma 7, `previous()` sottrae 7 giorni
+
+### _onHeatmapDayTap()
+- Metodo in `MovementsScreen` per navigare tap giorno → vista Giorno
+- Flusso: `selectedDay = day`, `timeFilter = TimeFilter.day(day)`, aggiorna `visibleCalendarMonth`
+- Collegato a `PeriodHeatmapCard.onDaySelected`
+
+### formatEuro()
+- Funzione in `lib/utils/heatmap_utils.dart`
+- Formatta importi al centesimo: `11.842,35 €`
+- KPI principali usano sempre questo formato
+- Micro-label heatmap restano compatte dove spazio è limitato (scelta esistente preservata)
+
+### PeriodHeatmapCard behavior per mode
+- **Day**: card dashboard premium con header, chip metrici, KPI, expense breakdown
+- **Week**: KPI + heatmap 7 giorni + expense breakdown
+- **Month**: KPI + heatmap mensile (riusa `ExpenseHeatmap`) + category treemap
+- **Year**: KPI annuali + annual heatmap (`AnnualHeatmapCard`) + category treemap
+- **Range**: ≤31gg = griglia giorni, 32–183gg = griglia settimanale compatta, **>183gg = blocchi semestrali** (Gen–Giu / Lug–Dic); KPI + heatmap
+
+### Period day selection behavior (generalizzato)
+- **Tap giorno**: solo in mode **Day** cambia `_activeFilter` a `TimeFilter.day`; in **Week/Month/Year/Range** resta nel periodo corrente
+- `_selectedPeriodDay` (DateTime?) unificato in `MovementsScreenState` (ex `_selectedRangeDay`)
+- `_onHeatmapDayTap()` usa switch su `timeFilter.mode`: solo `day` cambia filtro, tutti gli altri impostano `_selectedPeriodDay`
+- Chip giorno selezionato unificato: key `period_selected_day_yyyy_m_d`; chip key: `period_selected_day_chip` (week/month/year), `range_selected_day_chip` (customRange)
+- Clear button per mode: `week_clear_selected_day` ("Tutta settimana"), `month_clear_selected_day` ("Tutto mese"), `year_clear_selected_day` ("Tutto anno"), `range_clear_selected_day` ("Tutto intervallo")
+- `_setActiveFilter()` azzera `_selectedPeriodDay` al cambio filtro
+- `_MovementPanel` filtra movimenti quando `selectedPeriodDay != null`
+- `effectiveSelectedDay = selectedPeriodDay ?? selectedDay` per highlighting heatmap
+
+### Semester blocks architecture
+- Soglia: >183 giorni (6 mesi) attiva `_buildSemesterRangeGrid()`
+- Blocchi fissi: Gen–Giu, Lug–Dic
+- `_RangeSemesterGrid` modellata su `_SemesterGrid` di `AnnualHeatmapCard`
+- Ogni semestre mostra solo giorni entro il range effettivo
+- Supporto cross-year (es. Nov 2025–Apr 2026 mostra 2 semestri)
+- Supporto semestri parziali (range inizia/finisce a metà semestre)
+
+### deleteSubcategoryCascade
+- **File**: `lib/data/database.dart`
+- Ora azzera `subcategoryId` in 3 tabelle:
+  - `_movements`: usa `Movement.copyWith(subcategoryId: null)`
+  - `_quickMovements`: crea `QuickMovement` con `subcategoryId: null`
+  - `_favoriteMovements`: crea `FavoriteMovement` con `subcategoryId: null`
+- Mantiene `categoryId` invariato — il movimento resta sotto la categoria madre
+- Helper aggiunti: `subcategoryQuickCount()`, `subcategoryFavoriteCount()`
+
+### updateCategory color/icon propagation
+- **File**: `lib/data/database.dart`
+- Dopo aver aggiornato la categoria, scorre tutte le sottocategorie
+- Se sottocategoria ha `color == null || color == old.color` → aggiorna al nuovo colore (ereditarietà pura + vecchio colore madre)
+- Se sottocategoria ha `iconKey == null || iconKey == old.iconKey` → aggiorna al nuovo iconKey
+- Se sottocategoria ha personalizzazione diversa → preservata (condizione: `sc.color != null && sc.color != old.color`)
+- Aggiornamento SQLite per ogni sottocategoria modificata, poi singolo `notifyListeners()`
+
+### DB version corrente
+- **v10** (da V0.8.8, invariato in V0.8.10 — nessuna migrazione)
+
+### Subcategories
+- Nessuna FK SQLite, validazione applicativa (coerente con schema attuale)
+- Color/icon: se null la sottocategoria eredita dalla categoria madre
+- Backup v2 invariato — `subcategories` è lista opzionale in `BackupData`
 - Budget/Actual/Scenari potranno usare `categoryId` + `subcategoryId` opzionale
-- Rumore in migrazione V6: `duplicate column name: date` nei test, ma non blocca l'esecuzione
+- Rumore in migrazione V6: `duplicate column name: date` nei test, non blocca
 - Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
-- Reset dati app: verificato manualmente su Pixel 6; i failure QA residui erano dovuti a helper/test fragili e non a un bug confermato del prodotto
-- Import CSV 1Money: validato su dataset reale, con 6369 movimenti unici coincidenti tra Stream e 1Money
-- Import CSV 1Money: la sezione finale dei conti/fondi esportata da 1Money viene ignorata dalla riga `NOME`
-- Se serve riallineare i saldi conto per una verifica manuale, usare i valori del backup Stream validato come riferimento operativo
-- Saldo iniziale conti: il saldo attuale è ora sempre derivato da saldo iniziale + movimenti, e la modifica conto espone solo il saldo iniziale come campo editabile
-- Archivio > Conti: la vista `Movimenti del conto` è stata aggiunta e usa `TimeFilter` + `GroupedMovementsList`
-- Archivio > Categorie: la vista `Movimenti categoria` è stata aggiunta e usa `TimeFilter` + `GroupedMovementsList`
-- Conti e categorie archiviate sono consultabili e cliccabili in sezioni separate (`Archiviati`)
-- Reset widget flow: `reset_data_test.dart` e `qa_extensive_test.dart` sono verdi; `C2`, `F2`, `F3`, `L1` stabilizzati tramite flusso UI reale con backup pre-reset stub nel test harness dove necessario
-- Categories Layout Modes: preferenza `category_layout`, default `cleanList`, reset incluso in `PreferencesService.clearForReset()`
-- Financial KPI Corrections: Dashboard, database totals e riepiloghi giornalieri usano helper income/expense espliciti; i transfer restano neutrali sui KPI globali e attivi sui saldi conto
-- Date Filter Categories/Accounts: Categorie e Conti hanno `TimeFilterBar` nella schermata principale; nei Conti il saldo visibile è storico/as-of al termine del periodo selezionato
-- Interactive Category/Account Menus: restore conto non implementato perché non esiste una API esistente da riusare; archiviazione conto attivo disponibile
-- Movimenti Analytics: Lista/Calendario/Heatmap completati; search, filtro periodo e picker data/anno coerenti
-- Category Treemap Analytics: treemap definitiva in Categorie, non in Movimenti; usa `category.color`, filtri periodo e ordinamenti dedicati
-- **Heatmap Settings (V0.8.7)**: soglie/colori configurabili in `Settings > Heatmap`; aggiornamento live della heatmap via `heatmapSettingsNotifier`; fallback a default se prefs corrotte; `clearForReset()` non tocca le preferenze heatmap (scelta deliberata — le impostazioni visive sopravvivono al reset dati)
-- QA hardening: resta del rumore legacy in analyze e un warning hit-test noto sul bottone Salva in parte della suite; non appartiene al fix sottocategorie
-
----
-
-## 5. Handoff Rapido
-
-Quando si riparte:
-- verificare stato git
-- proseguire con **V0.9.0 — Notes & Tags**
-- DB è ora v9, `subcategories` tabella e `subcategory_id` colonne disponibili
-- mantenere SharedPreferences-only per le impostazioni visuali
-- non modificare DB/schema oltre v9 senza progettazione
-- considerare QA hardening hit-test prima di rendere warning fatali

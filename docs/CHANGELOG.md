@@ -7,6 +7,105 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.8.10 — Period Views Premium + Subcategory Hardening**
+  - **Filtro Settimana per Movimenti**
+    - `TimeFilterMode.week` in `lib/models/time_filter.dart`
+    - `TimeFilter.week()` calcola settimana lunedì→domenica
+    - `next()`/`previous()` spostano ±7 giorni
+    - `TimeFilterBar` mostra segmento "Sett." tra Giorno e Mese
+    - Label settimana formato `1–7 giugno 2026`
+  - **Card settimana premium** (`period_heatmap_card.dart`):
+    - KPI Entrate/Uscite/Saldo/Movimenti
+    - heatmap 7 giorni con importo uscite piccolo per giorno
+    - colori da `HeatmapSettings`, transfer esclusi
+    - lista movimenti filtrata per settimana sotto
+  - **Tap giorno da heatmap — seleziona giorno dentro periodo**
+    - `_onHeatmapDayTap()` in `MovementsScreen`
+    - **Day**: `selectedDay = day`, `TimeFilter.day(day)` — cambia filtro a Giorno
+    - **Week/Month/Year/Range**: imposta `_selectedPeriodDay` — resta nel periodo
+    - lista movimenti filtrata al giorno selezionato dentro il periodo
+    - KPI periodo restano visibili come contesto
+  - **Card giorno premium** (`_buildDaySurface` in `period_heatmap_card.dart`):
+    - header OGGI/GIORNO + data italiana + pill Giorno
+    - chips: prima uscita, ultima uscita, categoria top, conteggio movimenti
+    - KPI Entrate/Uscite/Saldo al centesimo
+    - nessuna mini-lista movimenti interna
+  - **Ripartizione spese Giorno** (`_DayExpenseBreakdown`):
+    - barre proporzionali per categoria con colori e icone reali
+    - tasto "Vedi dettaglio" → `_DayExpenseDetailSheet` scrollabile
+    - sheet con lista movimenti filtrata + mini-barre percentuali
+    - esclude entrate e transfer
+  - **Card intervallo premium** (`_buildRangeSurface` in `period_heatmap_card.dart`):
+    - KPI Entrate/Uscite/Saldo/Movimenti
+    - ≤31 giorni: griglia giorni con heatmap
+    - 32–183 giorni: griglia settimanale compatta
+    - **>183 giorni: heatmap a blocchi semestrali** (Gen–Giu / Lug–Dic)
+    - supporto cross-year e semestri parziali
+    - usa `HeatmapSettings`, importi al centesimo
+  - **Chip giorno selezionato + reset contestuale per periodo**
+    - `_selectedPeriodDay` generalizzato da `_selectedRangeDay` — vale per Week/Month/Year/Range
+    - chip unificato `_buildSelectedPeriodDayChip()` con data italiana (key `period_selected_day_yyyy_m_d`)
+    - key chip: `period_selected_day_chip` (week/month/year), `range_selected_day_chip` (customRange)
+    - clear button per mode: "Tutta settimana" / "Tutto mese" / "Tutto anno" / "Tutto intervallo"
+    - `_setActiveFilter()` azzera `_selectedPeriodDay` al cambio filtro/periodo
+    - `_MovementPanel` filtra movimenti per `selectedPeriodDay`
+  - **`formatEuro()`** in `heatmap_utils.dart`:
+    - KPI principali non usano più formato compatto "k"
+    - esempio: `11.842,35 €` invece di `11,8k €`
+    - micro-label heatmap restano compatte solo dove spazio è limitato
+  - **Raggruppamento giorno in panel mode**:
+    - `_MovementPanel._buildMovementsList()` sostituita: flat `ListView.separated` → `GroupedMovementsList(shrinkWrap: true)`
+    - `GroupedMovementsList`: nuovi parametri `shrinkWrap` + `physics` per riuso dentro altri scrollable
+  - **DayHeader migliorato**:
+    - label "Oggi"/"Ieri" con logica relativa
+    - conteggio movimenti nel giorno
+    - rimosso anno-mese non più usato
+  - **Refresh dialog categorie**:
+    - `_SubcategorySection.build()` avvolto in `ListenableBuilder(listenable: widget.db)`
+    - `notifyListeners()` ricostruisce la UI senza setState manuale
+
+- **Delete sottocategorie sicuro**
+  - dialog delete con avviso "spostati nella categoria madre"
+  - mostra conteggio movimenti + rapidi + preferiti
+  - `deleteSubcategoryCascade`: azzera `subcategoryId` in movements, quickMovements, favoriteMovements
+  - nessun movimento eliminato — mantiene `categoryId` sulla categoria madre
+
+- **Fix ereditarietà colore/icona sottocategorie**
+  - `updateCategory` propaga colore/icona a sottocategorie con `null` o vecchio colore/icona madre
+  - condizione: `sc.color == null || sc.color == old.color` (anche ereditarietà pura)
+  - stessa logica per `iconKey`
+  - personalizzazioni diverse preservate
+  - UI aggiornata senza uscire/rientrare
+
+### Changed
+- Vista Giorno convertita in card dashboard premium
+- Vista Intervallo migliorata con card/range heatmap premium e blocchi semestrali
+- KPI principali ora mostrano importi euro al centesimo
+- Sottocategorie ereditate aggiornano colore/icona quando cambia la categoria madre
+- Lista movimenti raggruppata per giorno anche in panel mode (Calendar/Heatmap)
+- `GroupedMovementsList` ora supporta `shrinkWrap` e `physics` custom
+- `DayHeader` mostra Oggi/Ieri e conteggio movimenti
+- `_selectedRangeDay` generalizzato in `_selectedPeriodDay` per tutti i mode periodo (Week/Month/Year/Range)
+- Clear button contestuale per ogni mode: "Tutta settimana" / "Tutto mese" / "Tutto anno" / "Tutto intervallo"
+
+### Fixed
+- Archive/restore sottocategorie aggiorna subito la UI (`async`+`await`+`setState` nei 3 punti: row inline, form dialog archive, form dialog restore)
+- `deleteSubcategoryCascade` gestisce anche movimenti rapidi e preferiti
+- Bottone delete sottocategoria aggiunto nella row principale
+- `updateCategory` non notificava prima di aggiornare le sottocategorie figlie
+- Tap giorno in Intervallo non cambia più filtro a Giorno (preserva `customRange`)
+- `updateCategory` ora propaga colore/icona anche a sottocategorie con `null` (ereditarietà pura: `== null || == old`)
+
+### QA
+- `flutter analyze --no-pub`: 0 errori, 0 warning, 27 info (26 pre-esistenti + 1 nuovo `unnecessary_underscores` in `period_heatmap_card.dart`)
+- `flutter test --no-pub`: **747/747 All tests passed**
+- 5 nuovi test in `period_summary_card_test.dart`: chip giorno selezionato, clear callback, semester grid rendering, cross-year semester, partial semester
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+### Added
 - **V0.9.0 — Category / Subcategory UX alignment**
   - nuovo selector unificato `Categoria / Sottocategoria` riusabile in `lib/widgets/category_subcategory_selector.dart`
   - key test/UI introdotte:

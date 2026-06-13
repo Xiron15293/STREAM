@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes V0.8.9 + UX selector unificato completato | **DB:** v10 | **Build:** ✅ Android release | **iOS:** da rilanciare localmente
+**Stato:** V0.8.10 — Period Views Premium + Subcategory Hardening | **DB:** v10 | **Build:** ✅ flutter analyze 0 errors/0 warnings | **Test:** 747/747
 
 ## Stack
 
@@ -299,9 +299,218 @@ CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)
 
 ### Note tecniche aperte
 
-- DB version corrente: **v9**
+- DB version corrente: **v10** (da V0.8.8; nessuna migrazione in V0.8.10)
 - Migration V6: rumore `duplicate column name: date` nei test, ma non blocca
 - Warning futuro Kotlin Gradle Plugin su `file_picker` / `package_info_plus` / `share_plus`
+
+### TimeFilterMode.week (V0.8.10)
+
+> Introdotto filtro periodo settimana per Movimenti.
+
+**File:** `lib/models/time_filter.dart`
+
+- `TimeFilterMode.week` — nuovo enum value tra `day` e `month`
+- `TimeFilter.week(DateTime date)` — calcola:
+  - `startDate = lunedì = date.subtract(Duration(days: date.weekday - 1))`
+  - `endDate = domenica = startDate + 6 giorni`
+- `label()` restituisce `"1–7 giugno 2026"` (giorno + mese del range)
+- `next()` somma 7 giorni, `previous()` sottrae 7 giorni
+
+**TimeFilterBar:**
+- Nuovo segmento `Sett.` tra `Giorno` e `Mese`
+- Navigazione frecce opera su blocchi di 7 giorni
+
+### formatEuro() (V0.8.10)
+
+> Funzione di formattazione euro al centesimo per tutti i KPI principali.
+
+**File:** `lib/utils/heatmap_utils.dart`
+
+```dart
+String formatEuro(double amount) {
+  final fixed = amount.toStringAsFixed(2);
+  final parts = fixed.split('.');
+  final intPart = parts[0].replaceAllMapped(
+    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]}.',
+  );
+  return '$intPart,${parts[1]} €';
+}
+```
+
+- Formatta: `11842.35` → `11.842,35 €`
+- KPI principali (Entrate/Uscite/Saldo) usano questo formato
+- Micro-label heatmap possono restare compatte dove lo spazio è limitato (scelta pre-V0.8.10 preservata)
+
+### PeriodHeatmapCard behavior per mode (V0.8.10)
+
+> Widget principale per tutte le viste periodo premium.
+
+**File:** `lib/widgets/period_heatmap_card.dart`
+
+**Props aggiunte:** `subcategories` (List<Subcategory>?), `selectedPeriodDay` (DateTime?), `onClearSelectedDay` (VoidCallback?)
+
+**Mode behavior:**
+- **Day** (`_buildDaySurface`): header OGGI/GIORNO + data italiana + pill Giorno + chip metrici (prima uscita, ultima uscita, categoria top, conteggio movimenti) + KPI Entrate/Uscite/Saldo + sezione `_DayExpenseBreakdown` (barre proporzionali per categoria + tasto "Vedi dettaglio" → `_DayExpenseDetailSheet`)
+- **Week** (`_buildWeekSurface`): KPI + heatmap 7 giorni con importo per cella + expense breakdown; se `selectedPeriodDay != null`: chip giorno selezionato + "Tutta settimana"
+- **Month** (`_buildMonthSurface`): KPI + `ExpenseHeatmap` a calendario + `PeriodCategoryTreemap`; se `selectedPeriodDay != null`: chip giorno selezionato + "Tutto mese"
+- **Year** (`_buildYearSurface`): KPI annuali + `AnnualHeatmapCard` + category treemap; se `selectedPeriodDay != null`: chip giorno selezionato + "Tutto anno"
+- **Range** (`_buildRangeSurface`): KPI + heatmap a 3 livelli:
+  - ≤31 giorni = griglia giorni
+  - 32–183 giorni = griglia settimanale compatta
+  - **>183 giorni = blocchi semestrali** (Gen–Giu / Lug–Dic, con _RangeSemesterGrid)
+  - Se `selectedPeriodDay != null`: chip giorno selezionato + "Tutto intervallo"
+
+**Day tap navigation:**
+- `onDaySelected` callback collegata in tutti i mode a `_onHeatmapDayTap()` in `MovementsScreen`
+- **Per Day**: flusso → `selectedDay = day` → `timeFilter = TimeFilter.day(day)` → aggiorna `visibleCalendarMonth`
+- **Per Week/Month/Year/Range**: flusso unificato → imposta `_selectedPeriodDay` → **NON** cambia `_activeFilter`
+
+### Semester blocks architecture (V0.8.10)
+
+> Heatmap a blocchi semestrali per range intervallo >183 giorni.
+
+**File:** `lib/widgets/period_heatmap_card.dart`
+
+**Soglia:** `> 183 giorni` (6 mesi, verificata come `end.difference(start).inDays > 183`)
+
+**Funzione:** `_buildSemesterRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay)`
+
+**Classe:** `_RangeSemesterGrid` — modellata su `_SemesterGrid` di `AnnualHeatmapCard`
+
+**Regole:**
+- Divide il range in blocchi semestrali fissi: Gen–Giu, Lug–Dic
+- Per ogni semestre tra `start` e `end` crea una `_RangeSemesterGrid`
+- Ogni `_RangeSemesterGrid` gestisce internamente giorni fuori range come `null`
+- Supporto cross-year: range Nov 2025–Apr 2026 mostra 2 semestri (Lug–Dic 2025, Gen–Giu 2026)
+- Supporto semestri parziali: range che inizia/finisce a metà semestre mostra solo giorni entro il range
+- `effectiveSelectedDay` passato per highlighting giorno selezionato
+
+**Parametri `_RangeSemesterGrid`:**
+| Prop | Tipo | Descrizione |
+|------|------|-------------|
+| start | DateTime | Inizio semestre (fisso a 1° gen/1° lug) |
+| end | DateTime | Fine semestre (fisso a 30 giu/31 dic) |
+| rangeStart | DateTime | Inizio effettivo del range utente |
+| rangeEnd | DateTime | Fine effettiva del range utente |
+| movements | List<Movement> | Movimenti filtrati per l'intervallo |
+| categories | List<Category> | Categorie per risoluzione colori |
+| db | AppDatabase | Per metadati aggiuntivi |
+| selectedDay | DateTime? | Giorno evidenziato (effectiveSelectedDay) |
+| onDaySelected | Function(DateTime) | Callback tap giorno |
+
+### Period day selection behavior (V0.8.10)
+
+> Tap giorno nella heatmap Week/Month/Year/Range non cambia filtro (solo Day cambia).
+
+**File:** `lib/screens/movements_screen.dart`
+
+**Stato:** `DateTime? _selectedPeriodDay` in `_MovementsScreenState` (generalizzato da `_selectedRangeDay`)
+
+**Flusso:**
+- `_onHeatmapDayTap(day)`: switch su `_activeFilter.mode`
+  - `TimeFilterMode.day` → flusso classico: `selectedDay = day`, `TimeFilter.day(day)`, aggiorna `visibleCalendarMonth`
+  - `TimeFilterMode.week/month/year/customRange` → imposta `_selectedPeriodDay`, **NON** tocca `_activeFilter`
+- `_setActiveFilter(filter)`: azzera `_selectedPeriodDay`
+- `_clearSelectedPeriodDay()`: azzera `_selectedPeriodDay` e ricarica la lista
+
+**Passaggio a MovementViewRenderer:**
+- `selectedPeriodDay` passato come prop a `MovementViewRenderer` → `PeriodHeatmapCard` → `_MovementPanel`
+- `_MovementPanel.build()` calcola `effectiveMovements`: se `selectedPeriodDay != null` filtra per quel giorno, altrimenti movimenti del periodo
+
+**EffectiveSelectedDay:**
+- Calcolato in ogni surface builder come `selectedPeriodDay ?? selectedDay`
+- Passato a tutte le griglie heatmap per highlighting
+- Evita duplicazione logica tra range e non-range
+
+### GroupedMovementsList in panel mode (V0.8.10)
+
+> Lista movimenti raggruppata per giorno anche in Calendar/Heatmap (panel mode).
+
+**File:** `lib/widgets/grouped_movements_list.dart`
+
+**Nuovi parametri:**
+| Prop | Tipo | Default | Descrizione |
+|------|------|---------|-------------|
+| shrinkWrap | bool | false | Per uso dentro altro scrollable (Calendar/Heatmap column) |
+| physics | ScrollPhysics? | null | ScrollPhysics custom per contenimento |
+
+**Utilizzo in panel mode:**
+- `_MovementPanel._buildMovementsList()` ora usa `GroupedMovementsList(shrinkWrap: true)` invece di flat `ListView.separated`
+- Entrambi i rami (con/senza topWidget) supportano `shrinkWrap` e `physics`
+
+### DayHeader migliorato (V0.8.10)
+
+> Label Oggi/Ieri e conteggio movimenti.
+
+**File:** `lib/widgets/day_header.dart`
+
+**Modifiche:**
+- Label "Oggi" se `day == today`, "Ieri" se `day == today - 1`, altrimenti giorno della settimana
+- Conteggio movimenti mostrato nell'header (es. "3 movimenti")
+- Rimosso anno-mese non più usato
+
+### ListenableBuilder in SubcategorySection (V0.8.10)
+
+> Refresh immediato dialog sottocategorie senza uscire/rientrare.
+
+**File:** `lib/screens/categories_screen.dart`
+
+**Modifica:**
+- `_SubcategorySection.build()` avvolto in `ListenableBuilder(listenable: widget.db)`
+- Qualsiasi `notifyListeners()` sul database ricostruisce la UI automaticamente
+- Non richiede `setState` manuale su archive/restore/create/delete sottocategoria
+
+### deleteSubcategoryCascade (V0.8.10)
+
+> Eliminazione sicura sottocategoria con spostamento movimenti alla categoria madre.
+
+**File:** `lib/data/database.dart`
+
+**Comportamento aggiornato:**
+- Azzera `subcategoryId` in 3 tabelle in-memory:
+  - `_movements`: `movement.copyWith(subcategoryId: null, updatedAt: DateTime.now())`
+  - `_quickMovements`: crea `QuickMovement` con `subcategoryId: null`
+  - `_favoriteMovements`: crea `FavoriteMovement` con `subcategoryId: null`
+- Mantiene `categoryId` invariato — il movimento resta sotto la categoria madre
+
+**Helper aggiunti:**
+- `subcategoryQuickCount(String subcategoryId)` → conteggio movimenti rapidi associati
+- `subcategoryFavoriteCount(String subcategoryId)` → conteggio movimenti preferiti associati
+
+### updateCategory color/icon propagation (V0.8.10)
+
+> Propagazione colore/icona alle sottocategorie che li ereditano.
+> **Aggiornato:** condizione estesa per coprire anche ereditarietà pura (null).
+
+**File:** `lib/data/database.dart`
+
+**Logica:**
+1. Dopo `_categories[index] = updated`, scorre tutte le sottocategorie
+2. Per ogni sottocategoria della stessa `categoryId`:
+   - Se `sc.color == null || sc.color == old.color` → aggiorna al nuovo colore (ereditarietà pura + vecchio colore madre)
+   - Se `sc.iconKey == null || sc.iconKey == old.iconKey` → aggiorna al nuovo iconKey (ereditarietà pura + vecchia icona madre)
+   - Se personalizzazione diversa → preservata
+3. Per ogni sottocategoria modificata: chiama `_sqlite.updateSubcategory(updatedSub)`
+4. Singolo `notifyListeners()` alla fine
+
+**Vincolo rimosso:** la condizione originale `sc.color != null && sc.color == old.color` non copriva le sottocategorie con `null` (ereditarietà pura). Ora `sc.color == null || sc.color == old.color` aggiorna sia quelle con null sia quelle con colore esplicito uguale al vecchio colore madre.
+
+### _DayExpenseBreakdown / _DayExpenseDetailSheet (V0.8.10)
+
+> Widget per la ripartizione spese nella vista Giorno.
+
+**File:** `lib/widgets/period_heatmap_card.dart`
+
+- `_DayExpenseBreakdown`: widget inline nella card giorno
+  - Raggruppa le uscite del giorno per `categoryId`
+  - Mostra barra proporzionale (`LinearProgressIndicator`) per ogni categoria
+  - Colore e icona risolti da `categories` prop (fallback `Color(0xFF888888)` / `Icons.category`)
+  - Tasto "Vedi dettaglio" apre `_DayExpenseDetailSheet`
+- `_DayExpenseDetailSheet`: `DraggableScrollableSheet`
+  - Lista movimenti spesa del giorno ordinati per importo decrescente
+  - Ogni riga: icona categoria + titolo + sottocategoria (se presente) + importo + mini-barra percentuale
+  - Barra percentuale con colore categoria su sfondo trasparente
 
 ### API
 
@@ -718,10 +927,10 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 ## Metriche
 
-| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 |
+| Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 | V0.8.10 |
 |---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | **711** |
-| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
-| DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 9 | **9** |
-| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
-| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | 711 | 742 | 747 |
+| Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** | **0** | **0** |
+| DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 9 | **9** | **10** | **10** |
+| Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| Build iOS release | ⏳ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
