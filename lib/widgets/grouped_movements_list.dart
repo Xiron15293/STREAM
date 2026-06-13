@@ -21,6 +21,7 @@ class GroupedMovementsList extends StatelessWidget {
   final void Function(Movement)? onEdit;
   final void Function(Movement)? onDuplicate;
   final void Function(Movement)? onSaveAsFavorite;
+  final void Function(Movement)? onAddQuick;
   final void Function(Movement)? onDelete;
 
   const GroupedMovementsList({
@@ -37,6 +38,7 @@ class GroupedMovementsList extends StatelessWidget {
     this.onEdit,
     this.onDuplicate,
     this.onSaveAsFavorite,
+    this.onAddQuick,
     this.onDelete,
   });
 
@@ -145,6 +147,9 @@ class GroupedMovementsList extends StatelessWidget {
           onDuplicate: onDuplicate != null ? () => onDuplicate!(m) : null,
           onSaveAsFavorite: onSaveAsFavorite != null
               ? () => onSaveAsFavorite!(m)
+              : null,
+          onAddQuick: onAddQuick != null
+              ? () => onAddQuick!(m)
               : null,
           onDelete: onDelete != null ? () => onDelete!(m) : null,
         );
