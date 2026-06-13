@@ -2309,12 +2309,39 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     }
 
     if (widget.existing != null) {
+      final existingCat = widget.db.categories
+          .where((c) => c.id == widget.existing!.id)
+          .firstOrNull;
+      final subcategories =
+          widget.db.getSubcategoriesForCategory(widget.existing!.id);
+      final colorChanged = _color != existingCat?.color;
+      final iconChanged = _iconKey != existingCat?.iconKey;
+
+      Set<String>? propagateTo;
+      if (subcategories.isNotEmpty && (colorChanged || iconChanged) && existingCat != null) {
+        final result = await showDialog<Set<String>>(
+          context: context,
+          builder: (_) => _CategoryPropagateStyleDialog(
+            categoryId: widget.existing!.id,
+            subcategories: subcategories,
+            oldColor: existingCat.color,
+            newColor: _color,
+            oldIconKey: existingCat.iconKey,
+            newIconKey: _iconKey,
+            db: widget.db,
+          ),
+        );
+        if (result == null) return;
+        propagateTo = result;
+      }
+
       await widget.db.updateCategory(
         widget.existing!.id,
         name,
         _color,
         type: _typeLocked ? null : _type,
         iconKey: _iconKey,
+        propagateToSubcategoryIds: propagateTo,
       );
     } else {
       await widget.db.addCategory(name, _type, _color, iconKey: _iconKey);
@@ -3410,6 +3437,184 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
 
   String _formatMoney(double value) =>
       '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+}
+
+class _CategoryPropagateStyleDialog extends StatefulWidget {
+  final String categoryId;
+  final List<Subcategory> subcategories;
+  final int oldColor;
+  final int newColor;
+  final String oldIconKey;
+  final String newIconKey;
+  final AppDatabase db;
+
+  const _CategoryPropagateStyleDialog({
+    required this.categoryId,
+    required this.subcategories,
+    required this.oldColor,
+    required this.newColor,
+    required this.oldIconKey,
+    required this.newIconKey,
+    required this.db,
+  });
+
+  @override
+  State<_CategoryPropagateStyleDialog> createState() =>
+      _CategoryPropagateStyleDialogState();
+}
+
+class _CategoryPropagateStyleDialogState
+    extends State<_CategoryPropagateStyleDialog> {
+  late Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.subcategories
+        .where((s) =>
+            (s.color == null || s.color == widget.oldColor) &&
+            (s.iconKey == null || s.iconKey == widget.oldIconKey))
+        .map((s) => s.id)
+        .toSet();
+  }
+
+  void _toggleAll(bool value) {
+    setState(() {
+      if (value) {
+        _selected = widget.subcategories.map((s) => s.id).toSet();
+      } else {
+        _selected = {};
+      }
+    });
+  }
+
+  void _selectInheriting() {
+    setState(() {
+      _selected = widget.subcategories
+          .where((s) =>
+              (s.color == null || s.color == widget.oldColor) &&
+              (s.iconKey == null || s.iconKey == widget.oldIconKey))
+          .map((s) => s.id)
+          .toSet();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StatefulBuilder(
+      builder: (context, setDialogState) {
+        final allSelected = _selected.length == widget.subcategories.length;
+        final noneSelected = _selected.isEmpty;
+        return AlertDialog(
+          title: const Text('Propaga stile'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Scegli a quali sottocategorie applicare il nuovo colore e la nuova icona:',
+                  style: StreamTypography.caption.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed:
+                          allSelected ? null : () => _toggleAll(true),
+                      icon: const Icon(Icons.select_all, size: 16),
+                      label: const Text('Seleziona tutte'),
+                    ),
+                    const SizedBox(width: 4),
+                    TextButton.icon(
+                      onPressed: noneSelected ? null : () => _toggleAll(false),
+                      icon: const Icon(Icons.deselect, size: 16),
+                      label: const Text('Deseleziona tutte'),
+                    ),
+                  ],
+                ),
+                if (widget.subcategories.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: TextButton.icon(
+                      onPressed: _selectInheriting,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Solo ereditarie'),
+                    ),
+                  ),
+                const Divider(height: 1),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final sub in widget.subcategories)
+                          CheckboxListTile(
+                            key: Key('propagate_sub_${sub.id}'),
+                            dense: true,
+                            title: Text(sub.name),
+                            subtitle: Text(
+                              _subtitleFor(sub),
+                              style: StreamTypography.micro.copyWith(
+                                color: StreamColors.textMuted,
+                              ),
+                            ),
+                            value: _selected.contains(sub.id),
+                            onChanged: (v) {
+                              setDialogState(() {
+                                if (v == true) {
+                                  _selected.add(sub.id);
+                                } else {
+                                  _selected.remove(sub.id);
+                                }
+                              });
+                            },
+                            controlAffinity: ListTileControlAffinity.trailing,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, <String>{}),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, <String>{}),
+              child: const Text('Solo categoria'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, _selected),
+              child: const Text('Applica alle selezionate'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _subtitleFor(Subcategory sub) {
+    final parts = <String>[];
+    if (sub.color == null) {
+      parts.add('colore ereditato');
+    } else if (sub.color == widget.oldColor) {
+      parts.add('colore uguale al vecchio');
+    }
+    if (sub.iconKey == null) {
+      parts.add('icona ereditata');
+    } else if (sub.iconKey == widget.oldIconKey) {
+      parts.add('icona uguale alla vecchia');
+    }
+    return parts.isEmpty ? 'colore e icona personalizzati' : parts.join(', ');
+  }
 }
 
 class _SheetActionButton extends StatelessWidget {

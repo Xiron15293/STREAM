@@ -9,6 +9,7 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/services/backup_service.dart';
+import 'package:stream_app/widgets/category_subcategory_selector.dart';
 import 'package:stream_app/widgets/movement_picker.dart';
 
 import 'helpers/calculator_test_helpers.dart';
@@ -516,13 +517,13 @@ void main() {
           'Flat',
         );
         await enterAmountWithCalculator(tester, '14');
-      await _selectCategoryOrSubcategory(
-        tester,
-        optionKey: Key('category_option_${flat.id}'),
-        searchText: 'Spesa (',
-      );
-      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-      await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+        await _selectCategoryOrSubcategory(
+          tester,
+          optionKey: Key('category_option_${flat.id}'),
+          searchText: 'Spesa (',
+        );
+        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
         await tester.pumpAndSettle();
 
         final movement = db.movements.singleWhere((m) => m.title == 'Flat');
@@ -628,6 +629,280 @@ void main() {
       expect(favorite.categoryId, parent.id);
       expect(favorite.subcategoryId, sub.id);
     });
+  });
+
+  group('Subcategories — Parent style inheritance', () {
+    test(
+      '30. nuova sottocategoria eredita colore e icona categoria madre',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense && !c.archived,
+        );
+
+        await db.createSubcategory(parent.id, 'Ereditata');
+        final sub = db.getSubcategoriesForCategory(parent.id).single;
+        final resolved = resolveCategorySubcategorySelection(
+          categories: db.categories,
+          subcategories: db.subcategories,
+          type: parent.type,
+          categoryId: parent.id,
+          subcategoryId: sub.id,
+        );
+
+        expect(sub.color, isNull);
+        expect(sub.iconKey, isNull);
+        expect(resolved?.color, parent.color);
+        expect(resolved?.iconKey, parent.iconKey);
+      },
+    );
+
+    test(
+      '31. cambio colore madre aggiorna sottocategoria con color null',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere((c) => !c.archived);
+        await db.createSubcategory(parent.id, 'Null Color');
+        final subId = db.getSubcategoriesForCategory(parent.id).single.id;
+
+        await db.updateCategory(parent.id, parent.name, 0xFF009688);
+
+        final updated = db.subcategories.firstWhere((s) => s.id == subId);
+        expect(updated.color, 0xFF009688);
+      },
+    );
+
+    test(
+      '32. cambio colore madre aggiorna sottocategoria con color == oldCategoryColor',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere((c) => !c.archived);
+        await db.createSubcategory(
+          parent.id,
+          'Old Color',
+          color: parent.color,
+          iconKey: parent.iconKey,
+        );
+        final subId = db.getSubcategoriesForCategory(parent.id).single.id;
+
+        await db.updateCategory(parent.id, parent.name, 0xFF26A69A);
+
+        final updated = db.subcategories.firstWhere((s) => s.id == subId);
+        expect(updated.color, 0xFF26A69A);
+      },
+    );
+
+    test(
+      '33. cambio icona madre aggiorna sottocategoria con iconKey null',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere((c) => !c.archived);
+        await db.createSubcategory(parent.id, 'Null Icon');
+        final subId = db.getSubcategoriesForCategory(parent.id).single.id;
+
+        await db.updateCategory(
+          parent.id,
+          parent.name,
+          parent.color,
+          iconKey: 'car',
+        );
+
+        final updated = db.subcategories.firstWhere((s) => s.id == subId);
+        expect(updated.iconKey, 'car');
+      },
+    );
+
+    test(
+      '34. cambio icona madre aggiorna sottocategoria con iconKey == oldCategoryIconKey',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere((c) => !c.archived);
+        await db.createSubcategory(
+          parent.id,
+          'Old Icon',
+          color: parent.color,
+          iconKey: parent.iconKey,
+        );
+        final subId = db.getSubcategoriesForCategory(parent.id).single.id;
+
+        await db.updateCategory(
+          parent.id,
+          parent.name,
+          parent.color,
+          iconKey: 'coins',
+        );
+
+        final updated = db.subcategories.firstWhere((s) => s.id == subId);
+        expect(updated.iconKey, 'coins');
+      },
+    );
+
+    test(
+      '35. sottocategoria con colore custom diverso non viene sovrascritta',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere((c) => !c.archived);
+        await db.createSubcategory(
+          parent.id,
+          'Custom Color',
+          color: 0xFF6D4C41,
+          iconKey: parent.iconKey,
+        );
+        final subId = db.getSubcategoriesForCategory(parent.id).single.id;
+
+        await db.updateCategory(parent.id, parent.name, 0xFF42A5F5);
+
+        final updated = db.subcategories.firstWhere((s) => s.id == subId);
+        expect(updated.color, 0xFF6D4C41);
+      },
+    );
+
+    test(
+      '36. sottocategoria con icona custom diversa non viene sovrascritta',
+      () async {
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere((c) => !c.archived);
+        await db.createSubcategory(
+          parent.id,
+          'Custom Icon',
+          color: parent.color,
+          iconKey: 'car',
+        );
+        final subId = db.getSubcategoriesForCategory(parent.id).single.id;
+
+        await db.updateCategory(
+          parent.id,
+          parent.name,
+          parent.color,
+          iconKey: 'car',
+        );
+
+        final updated = db.subcategories.firstWhere((s) => s.id == subId);
+        expect(updated.iconKey, 'car');
+      },
+    );
+
+    testWidgets(
+      '37. updateCategory notifica e aggiorna subito la UI nel category sheet',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({
+          'category_layout': 'cleanList',
+        });
+        final db = AppDatabase();
+        final parent = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense && !c.archived,
+        );
+        await db.createSubcategory(
+          parent.id,
+          'Ristorante',
+          color: parent.color,
+          iconKey: parent.iconKey,
+        );
+
+        var notifications = 0;
+        db.addListener(() => notifications++);
+
+        await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(Key('category_card_${parent.id}')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('category_interactive_sheet')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byKey(const Key('category_sheet_edit_action')));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.text(StreamIconLibrary.getLabel(parent.iconKey)).last,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('icon_picker_option_car')));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const Key('color_picker_option_ff009688')).last,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Salva').last);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(FilledButton, 'Applica alle selezionate'));
+        await tester.pumpAndSettle();
+
+        expect(notifications, greaterThan(0));
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('category_sheet_header')),
+            matching: find.byIcon(StreamIconLibrary.getIcon('car')),
+          ),
+          findsOneWidget,
+        );
+
+        final updatedSub = db.subcategories.firstWhere(
+          (s) => s.name == 'Ristorante',
+        );
+        expect(updatedSub.color, 0xFF009688);
+        expect(updatedSub.iconKey, 'car');
+      },
+    );
+
+    testWidgets(
+      '38. movement picker mostra subito nuova icona madre per sottocategoria ereditata',
+      (tester) async {
+        final db = await _buildMovementSelectorDb();
+        final parent = db.categories.firstWhere(
+          (c) => c.name == 'Tempo libero',
+        );
+        final oldSub = db.subcategories.firstWhere(
+          (s) => s.name == 'Ristorante',
+        );
+        await db.updateSubcategory(
+          oldSub.id,
+          oldSub.name,
+          iconKey: parent.iconKey,
+          color: parent.color,
+        );
+
+        final movement = Movement(
+          id: 'm_picker_refresh',
+          title: 'Cena',
+          amount: 20,
+          type: parent.type,
+          date: DateTime.now(),
+          categoryId: parent.id,
+          subcategoryId: oldSub.id,
+          createdAt: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: MovementPicker(db: db, prefill: movement),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await db.updateCategory(
+          parent.id,
+          parent.name,
+          0xFF009688,
+          iconKey: 'car',
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('movement_category_subcategory_field')),
+            matching: find.byIcon(StreamIconLibrary.getIcon('car')),
+          ),
+          findsWidgets,
+        );
+      },
+    );
   });
 
   group('Subcategories — Backup/Restore', () {

@@ -172,201 +172,214 @@ class _MovementFormState extends State<MovementForm> {
 
   @override
   Widget build(BuildContext context) {
-    final accountLabel = _type == MovementType.transfer
-        ? 'Conto origine'
-        : 'Conto';
-    if (_type != MovementType.transfer &&
-        _selectedCategoryId == null &&
-        _availableCategories.isNotEmpty) {
-      _selectedCategoryId = _availableCategories.first.id;
-    }
-    if (_selectedAccountId == null) {
-      final active = widget.db.accounts.where((a) => !a.archived).toList();
-      if (active.isNotEmpty) {
-        _selectedAccountId = active.first.id;
-      }
-    }
-    if (_type == MovementType.transfer &&
-        _selectedDestinationAccountId == null) {
-      final active = widget.db.accounts.where((a) => !a.archived).toList();
-      if (active.isNotEmpty) {
-        _selectedDestinationAccountId = active.length > 1
-            ? active[1].id
-            : active.first.id;
-      }
-    }
+    return ListenableBuilder(
+      listenable: widget.db,
+      builder: (context, _) {
+        final accountLabel = _type == MovementType.transfer
+            ? 'Conto origine'
+            : 'Conto';
+        if (_type != MovementType.transfer &&
+            _selectedCategoryId == null &&
+            _availableCategories.isNotEmpty) {
+          _selectedCategoryId = _availableCategories.first.id;
+        }
+        if (_selectedAccountId == null) {
+          final active = widget.db.accounts.where((a) => !a.archived).toList();
+          if (active.isNotEmpty) {
+            _selectedAccountId = active.first.id;
+          }
+        }
+        if (_type == MovementType.transfer &&
+            _selectedDestinationAccountId == null) {
+          final active = widget.db.accounts.where((a) => !a.archived).toList();
+          if (active.isNotEmpty) {
+            _selectedDestinationAccountId = active.length > 1
+                ? active[1].id
+                : active.first.id;
+          }
+        }
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: StreamSpacing.lg,
-        right: StreamSpacing.lg,
-        top: StreamSpacing.lg,
-        bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Padding(
+          padding: EdgeInsets.only(
+            left: StreamSpacing.lg,
+            right: StreamSpacing.lg,
+            top: StreamSpacing.lg,
+            bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                widget.prefill != null
-                    ? 'Modifica movimento'
-                    : 'Nuovo movimento',
-                style: StreamTypography.h3,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.prefill != null
+                        ? 'Modifica movimento'
+                        : 'Nuovo movimento',
+                    style: StreamTypography.h3,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
+              const SizedBox(height: StreamSpacing.md),
+              SegmentedButton<MovementType>(
+                segments: const [
+                  ButtonSegment(
+                    value: MovementType.expense,
+                    label: Text('Uscita'),
+                  ),
+                  ButtonSegment(
+                    value: MovementType.income,
+                    label: Text('Entrata'),
+                  ),
+                  ButtonSegment(
+                    value: MovementType.transfer,
+                    label: Text('Trasferimento'),
+                  ),
+                ],
+                selected: {_type},
+                onSelectionChanged: (set) {
+                  setState(() {
+                    _type = set.first;
+                    _selectedCategoryId = null;
+                    _selectedSubcategoryId = null;
+                    if (_type != MovementType.transfer) {
+                      _selectedDestinationAccountId = null;
+                    }
+                  });
+                },
               ),
-            ],
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          SegmentedButton<MovementType>(
-            segments: const [
-              ButtonSegment(value: MovementType.expense, label: Text('Uscita')),
-              ButtonSegment(value: MovementType.income, label: Text('Entrata')),
-              ButtonSegment(
-                value: MovementType.transfer,
-                label: Text('Trasferimento'),
+              const SizedBox(height: StreamSpacing.md),
+              TextField(
+                controller: _titleCtrl,
+                decoration: const InputDecoration(labelText: 'Titolo'),
+                textInputAction: TextInputAction.done,
               ),
-            ],
-            selected: {_type},
-            onSelectionChanged: (set) {
-              setState(() {
-                _type = set.first;
-                _selectedCategoryId = null;
-                _selectedSubcategoryId = null;
-                if (_type != MovementType.transfer) {
-                  _selectedDestinationAccountId = null;
-                }
-              });
-            },
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          TextField(
-            controller: _titleCtrl,
-            decoration: const InputDecoration(labelText: 'Titolo'),
-            textInputAction: TextInputAction.done,
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          CalculatorAmountField(
-            controller: _amountCtrl,
-            decoration: const InputDecoration(labelText: 'Importo (€)'),
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          InkWell(
-            onTap: _pickDate,
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Data',
-                suffixIcon: Icon(Icons.calendar_today, size: 20),
+              const SizedBox(height: StreamSpacing.md),
+              CalculatorAmountField(
+                controller: _amountCtrl,
+                decoration: const InputDecoration(labelText: 'Importo (€)'),
               ),
-              child: Text(_formatDate(_date)),
-            ),
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          if (_type != MovementType.transfer) ...[
-            CategorySubcategorySelector(
-              categories: widget.db.categories,
-              subcategories: widget.db.subcategories,
-              type: _type,
-              selectedCategoryId: _selectedCategoryId,
-              selectedSubcategoryId: _selectedSubcategoryId,
-              onChanged: (categoryId, subcategoryId) => setState(() {
-                _selectedCategoryId = categoryId;
-                _selectedSubcategoryId = subcategoryId;
-              }),
-            ),
-            const SizedBox(height: StreamSpacing.md),
-          ],
-          DropdownButtonFormField<String>(
-            initialValue: _selectedAccountId,
-            decoration: InputDecoration(
-              labelText: accountLabel,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(
-                  Radius.circular(StreamRadius.md),
+              const SizedBox(height: StreamSpacing.md),
+              InkWell(
+                onTap: _pickDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Data',
+                    suffixIcon: Icon(Icons.calendar_today, size: 20),
+                  ),
+                  child: Text(_formatDate(_date)),
                 ),
-                borderSide: BorderSide.none,
               ),
-              filled: true,
-              fillColor: StreamColors.surfaceElevated,
-            ),
-            items: widget.db.accounts
-                .where((a) => !a.archived)
-                .map(
-                  (a) => DropdownMenuItem(
-                    value: a.id,
-                    child: Row(
-                      children: [
-                        Icon(
-                          StreamIconLibrary.getAccountIcon(a.iconKey),
-                          size: 18,
-                          color: Color(a.color),
+              const SizedBox(height: StreamSpacing.md),
+              if (_type != MovementType.transfer) ...[
+                CategorySubcategorySelector(
+                  categories: widget.db.categories,
+                  subcategories: widget.db.subcategories,
+                  type: _type,
+                  selectedCategoryId: _selectedCategoryId,
+                  selectedSubcategoryId: _selectedSubcategoryId,
+                  onChanged: (categoryId, subcategoryId) => setState(() {
+                    _selectedCategoryId = categoryId;
+                    _selectedSubcategoryId = subcategoryId;
+                  }),
+                ),
+                const SizedBox(height: StreamSpacing.md),
+              ],
+              DropdownButtonFormField<String>(
+                initialValue: _selectedAccountId,
+                decoration: InputDecoration(
+                  labelText: accountLabel,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(StreamRadius.md),
+                    ),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: StreamColors.surfaceElevated,
+                ),
+                items: widget.db.accounts
+                    .where((a) => !a.archived)
+                    .map(
+                      (a) => DropdownMenuItem(
+                        value: a.id,
+                        child: Row(
+                          children: [
+                            Icon(
+                              StreamIconLibrary.getAccountIcon(a.iconKey),
+                              size: 18,
+                              color: Color(a.color),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(a.name),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(a.name),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (v) => setState(() => _selectedAccountId = v),
-          ),
-          if (_type == MovementType.transfer) ...[
-            const SizedBox(height: StreamSpacing.md),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedDestinationAccountId,
-              decoration: const InputDecoration(
-                labelText: 'Conto destinazione',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(StreamRadius.md),
-                  ),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: StreamColors.surfaceElevated,
-              ),
-              items: widget.db.accounts
-                  .where((a) => !a.archived)
-                  .map(
-                    (a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Row(
-                        children: [
-                          Icon(
-                            StreamIconLibrary.getAccountIcon(a.iconKey),
-                            size: 18,
-                            color: Color(a.color),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(a.name),
-                        ],
                       ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedAccountId = v),
+              ),
+              if (_type == MovementType.transfer) ...[
+                const SizedBox(height: StreamSpacing.md),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedDestinationAccountId,
+                  decoration: const InputDecoration(
+                    labelText: 'Conto destinazione',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(StreamRadius.md),
+                      ),
+                      borderSide: BorderSide.none,
                     ),
-                  )
-                  .toList(),
-              onChanged: (v) =>
-                  setState(() => _selectedDestinationAccountId = v),
-            ),
-          ],
-          const SizedBox(height: StreamSpacing.md),
-          TextField(
-            controller: _noteCtrl,
-            decoration: const InputDecoration(labelText: 'Nota (opzionale)'),
-            textInputAction: TextInputAction.done,
-            maxLines: 2,
+                    filled: true,
+                    fillColor: StreamColors.surfaceElevated,
+                  ),
+                  items: widget.db.accounts
+                      .where((a) => !a.archived)
+                      .map(
+                        (a) => DropdownMenuItem(
+                          value: a.id,
+                          child: Row(
+                            children: [
+                              Icon(
+                                StreamIconLibrary.getAccountIcon(a.iconKey),
+                                size: 18,
+                                color: Color(a.color),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(a.name),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) =>
+                      setState(() => _selectedDestinationAccountId = v),
+                ),
+              ],
+              const SizedBox(height: StreamSpacing.md),
+              TextField(
+                controller: _noteCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Nota (opzionale)',
+                ),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+              const SizedBox(height: StreamSpacing.lg),
+              FilledButton(
+                onPressed: _submit,
+                child: Text(widget.prefill != null ? 'Aggiorna' : 'Salva'),
+              ),
+            ],
           ),
-          const SizedBox(height: StreamSpacing.lg),
-          FilledButton(
-            onPressed: _submit,
-            child: Text(widget.prefill != null ? 'Aggiorna' : 'Salva'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -282,18 +282,20 @@ class AppDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> duplicateMovement(Movement m) async {
+  Future<void> duplicateMovement(Movement m, {DateTime? date}) async {
+    final now = DateTime.now();
     final clone = Movement(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: now.microsecondsSinceEpoch.toString(),
       title: m.title,
       amount: m.amount,
       type: m.type,
-      date: DateTime.now(),
+      date: date ?? now,
       categoryId: m.categoryId,
       subcategoryId: m.subcategoryId,
       accountId: m.accountId,
+      destinationAccountId: m.destinationAccountId,
       note: m.note,
-      createdAt: DateTime.now(),
+      createdAt: now,
     );
     if (_sqlite != null) {
       try {
@@ -303,6 +305,28 @@ class AppDatabase extends ChangeNotifier {
       }
     }
     _movements.add(clone);
+    notifyListeners();
+  }
+
+  Future<void> saveMovementAsQuick(Movement m) async {
+    final qm = QuickMovement(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      title: m.title,
+      amount: m.amount,
+      type: m.type,
+      categoryId: m.categoryId,
+      subcategoryId: m.subcategoryId,
+      accountId: m.accountId,
+      note: m.note,
+    );
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertQuickMovement(qm);
+      } catch (_) {
+        return;
+      }
+    }
+    _quickMovements.add(qm);
     notifyListeners();
   }
 
@@ -423,16 +447,21 @@ class AppDatabase extends ChangeNotifier {
     bool? archived,
     MovementType? type,
     String? iconKey,
+    Set<String>? propagateToSubcategoryIds,
   }) async {
     final index = _categories.indexWhere((c) => c.id == id);
     if (index < 0) return;
     final old = _categories[index];
+    final oldCategoryColor = old.color;
+    final oldCategoryIconKey = old.iconKey;
+    final newCategoryColor = color;
+    final newCategoryIconKey = iconKey ?? old.iconKey;
     final updated = Category(
       id: id,
       name: name,
       type: type ?? old.type,
-      color: color,
-      iconKey: iconKey ?? old.iconKey,
+      color: newCategoryColor,
+      iconKey: newCategoryIconKey,
       archived: archived ?? old.archived,
     );
     if (_sqlite != null) {
@@ -444,29 +473,52 @@ class AppDatabase extends ChangeNotifier {
     }
     _categories[index] = updated;
 
-    final newIconKey = iconKey ?? old.iconKey;
-    for (int i = 0; i < _subcategories.length; i++) {
-      if (_subcategories[i].categoryId != id) continue;
-      final sc = _subcategories[i];
-      final updateColor = sc.color == null || sc.color == old.color;
-      final updateIcon = sc.iconKey == null || sc.iconKey == old.iconKey;
-      if (!updateColor && !updateIcon) continue;
-      final updatedSub = Subcategory(
-        id: sc.id,
-        categoryId: sc.categoryId,
-        name: sc.name,
-        iconKey: updateIcon ? newIconKey : sc.iconKey,
-        color: updateColor ? color : sc.color,
-        archived: sc.archived,
-        createdAt: sc.createdAt,
-        updatedAt: DateTime.now(),
-      );
-      if (_sqlite != null) {
-        try {
-          await _sqlite.updateSubcategory(updatedSub);
-        } catch (_) {}
+    if (propagateToSubcategoryIds != null) {
+      for (int i = 0; i < _subcategories.length; i++) {
+        if (_subcategories[i].categoryId != id) continue;
+        if (!propagateToSubcategoryIds.contains(_subcategories[i].id)) continue;
+        final sc = _subcategories[i];
+        final updatedSub = Subcategory(
+          id: sc.id,
+          categoryId: sc.categoryId,
+          name: sc.name,
+          iconKey: newCategoryIconKey,
+          color: newCategoryColor,
+          archived: sc.archived,
+          createdAt: sc.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        if (_sqlite != null) {
+          try {
+            await _sqlite.updateSubcategory(updatedSub);
+          } catch (_) {}
+        }
+        _subcategories[i] = updatedSub;
       }
-      _subcategories[i] = updatedSub;
+    } else {
+      for (int i = 0; i < _subcategories.length; i++) {
+        if (_subcategories[i].categoryId != id) continue;
+        final sc = _subcategories[i];
+        final updateColor = sc.color == null || sc.color == oldCategoryColor;
+        final updateIcon = sc.iconKey == null || sc.iconKey == oldCategoryIconKey;
+        if (!updateColor && !updateIcon) continue;
+        final updatedSub = Subcategory(
+          id: sc.id,
+          categoryId: sc.categoryId,
+          name: sc.name,
+          iconKey: updateIcon ? newCategoryIconKey : sc.iconKey,
+          color: updateColor ? newCategoryColor : sc.color,
+          archived: sc.archived,
+          createdAt: sc.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        if (_sqlite != null) {
+          try {
+            await _sqlite.updateSubcategory(updatedSub);
+          } catch (_) {}
+        }
+        _subcategories[i] = updatedSub;
+      }
     }
 
     notifyListeners();
@@ -636,11 +688,15 @@ class AppDatabase extends ChangeNotifier {
   }
 
   int subcategoryQuickCount(String subcategoryId) {
-    return _quickMovements.where((q) => q.subcategoryId == subcategoryId).length;
+    return _quickMovements
+        .where((q) => q.subcategoryId == subcategoryId)
+        .length;
   }
 
   int subcategoryFavoriteCount(String subcategoryId) {
-    return _favoriteMovements.where((f) => f.subcategoryId == subcategoryId).length;
+    return _favoriteMovements
+        .where((f) => f.subcategoryId == subcategoryId)
+        .length;
   }
 
   Future<void> deleteSubcategoryCascade(String id) async {
@@ -1131,7 +1187,6 @@ class AppDatabase extends ChangeNotifier {
     }
     _favoriteMovements.add(fm);
   }
-
 }
 
 class CategoryConversionReport {
