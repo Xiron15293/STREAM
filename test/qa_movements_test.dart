@@ -974,9 +974,48 @@ void main() {
     await tester.tap(find.text('Duplica'));
     await tester.pumpAndSettle();
 
+    // Date selection sheet appears — tap Oggi
+    await tester.tap(find.text('Oggi'));
+    await tester.pumpAndSettle();
+
     expect(db.movements.length, 2);
     expect(db.movements.last.title, 'Spesa');
     expect(db.movements.last.amount, 45.0);
+  });
+
+  testWidgets('53b. Duplica annulla non crea movimento', (tester) async {
+    final db = await pumpApp(tester);
+    await saveMovement(tester, title: 'Spesa', amount: '45');
+
+    expect(db.movements.length, 1);
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplica'));
+    await tester.pumpAndSettle();
+
+    // Tap Annulla
+    await tester.tap(find.text('Annulla'));
+    await tester.pumpAndSettle();
+
+    expect(db.movements.length, 1);
+  });
+
+  testWidgets('53c. Duplica Domani/Ieri/Scegli data funzionano', (tester) async {
+    final db = await pumpApp(tester);
+    await saveMovement(tester, title: 'Cena', amount: '30');
+    expect(db.movements.length, 1);
+
+    // Duplica con Domani
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplica'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Domani'));
+    await tester.pumpAndSettle();
+    expect(db.movements.length, 2);
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    expect(db.movements.last.date.day, tomorrow.day);
   });
 
   testWidgets('54. Movimento rapido crea movimento reale', (tester) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
 import '../models/category.dart';
@@ -11,6 +12,7 @@ import '../utils/heatmap_utils.dart';
 import '../utils/movement_period_metrics.dart';
 import 'annual_heatmap_card.dart';
 import 'expense_heatmap.dart';
+import 'movement_card.dart';
 
 class PeriodHeatmapCard extends StatelessWidget {
   final TimeFilter timeFilter;
@@ -24,6 +26,12 @@ class PeriodHeatmapCard extends StatelessWidget {
   final bool annualCompact;
   final List<Category>? categories;
   final List<Subcategory>? subcategories;
+  final AppDatabase? db;
+  final ValueChanged<Movement>? onEdit;
+  final ValueChanged<Movement>? onDuplicate;
+  final ValueChanged<Movement>? onSaveAsFavorite;
+  final ValueChanged<Movement>? onAddQuick;
+  final ValueChanged<Movement>? onDelete;
 
   const PeriodHeatmapCard({
     super.key,
@@ -38,6 +46,12 @@ class PeriodHeatmapCard extends StatelessWidget {
     this.annualCompact = false,
     this.categories,
     this.subcategories,
+    this.db,
+    this.onEdit,
+    this.onDuplicate,
+    this.onSaveAsFavorite,
+    this.onAddQuick,
+    this.onDelete,
   });
 
   @override
@@ -354,6 +368,12 @@ class PeriodHeatmapCard extends StatelessWidget {
             movements: dayMoves,
             categories: categories ?? [],
             subcategories: subcategories ?? [],
+            db: db,
+            onEdit: onEdit,
+            onDuplicate: onDuplicate,
+            onSaveAsFavorite: onSaveAsFavorite,
+            onAddQuick: onAddQuick,
+            onDelete: onDelete,
           ),
         ],
       ),
@@ -1598,12 +1618,24 @@ class _DayExpenseBreakdown extends StatelessWidget {
   final List<Movement> movements;
   final List<Category> categories;
   final List<Subcategory> subcategories;
+  final AppDatabase? db;
+  final ValueChanged<Movement>? onEdit;
+  final ValueChanged<Movement>? onDuplicate;
+  final ValueChanged<Movement>? onSaveAsFavorite;
+  final ValueChanged<Movement>? onAddQuick;
+  final ValueChanged<Movement>? onDelete;
 
   const _DayExpenseBreakdown({
     required this.dayDate,
     required this.movements,
     required this.categories,
     required this.subcategories,
+    this.db,
+    this.onEdit,
+    this.onDuplicate,
+    this.onSaveAsFavorite,
+    this.onAddQuick,
+    this.onDelete,
   });
 
   @override
@@ -1723,6 +1755,12 @@ class _DayExpenseBreakdown extends StatelessWidget {
             categories: categories,
             subcategories: subcategories,
             scrollController: scrollController,
+            db: db,
+            onEdit: onEdit,
+            onDuplicate: onDuplicate,
+            onSaveAsFavorite: onSaveAsFavorite,
+            onAddQuick: onAddQuick,
+            onDelete: onDelete,
           ),
         ),
       ),
@@ -1736,6 +1774,12 @@ class _DayExpenseDetailSheet extends StatelessWidget {
   final List<Category> categories;
   final List<Subcategory> subcategories;
   final ScrollController scrollController;
+  final AppDatabase? db;
+  final ValueChanged<Movement>? onEdit;
+  final ValueChanged<Movement>? onDuplicate;
+  final ValueChanged<Movement>? onSaveAsFavorite;
+  final ValueChanged<Movement>? onAddQuick;
+  final ValueChanged<Movement>? onDelete;
 
   const _DayExpenseDetailSheet({
     required this.dayDate,
@@ -1743,6 +1787,12 @@ class _DayExpenseDetailSheet extends StatelessWidget {
     required this.categories,
     required this.subcategories,
     required this.scrollController,
+    this.db,
+    this.onEdit,
+    this.onDuplicate,
+    this.onSaveAsFavorite,
+    this.onAddQuick,
+    this.onDelete,
   });
 
   @override
@@ -1756,6 +1806,11 @@ class _DayExpenseDetailSheet extends StatelessWidget {
 
     final catMap = {for (final c in categories) c.id: c};
     final subcatMap = {for (final s in subcategories) s.id: s};
+    final hasCallbacks = onEdit != null ||
+        onDuplicate != null ||
+        onSaveAsFavorite != null ||
+        onAddQuick != null ||
+        onDelete != null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -1787,82 +1842,38 @@ class _DayExpenseDetailSheet extends StatelessWidget {
             child: ListView.separated(
               controller: scrollController,
               itemCount: expenseMoves.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final m = expenseMoves[index];
                 final cat = catMap[m.categoryId];
                 final subcat = m.subcategoryId != null ? subcatMap[m.subcategoryId] : null;
-                final catColor = Color(cat?.color ?? 0xFF888888);
-                final catIcon = cat != null
-                    ? StreamIconLibrary.getIcon(cat.iconKey)
-                    : Icons.category;
-                final fraction = total > 0 ? m.amount / total : 0.0;
+                final account = db?.accounts.where((a) => a.id == m.accountId).firstOrNull;
+                final destAccount = m.destinationAccountId != null
+                    ? db?.accounts.where((a) => a.id == m.destinationAccountId).firstOrNull
+                    : null;
 
-                return Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: StreamColors.surfaceHighlight.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: catColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(catIcon, size: 18, color: catColor),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  m.title,
-                                  style: StreamTypography.bodyBold.copyWith(
-                                    color: StreamColors.textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (subcat != null)
-                                  Text(
-                                    subcat.name,
-                                    style: StreamTypography.micro.copyWith(
-                                      color: StreamColors.textSecondary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                formatEuro(m.amount),
-                                style: StreamTypography.bodyBold.copyWith(
-                                  color: StreamColors.expense,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(2),
-                                child: LinearProgressIndicator(
-                                  value: fraction,
-                                  backgroundColor: catColor.withValues(alpha: 0.1),
-                                  valueColor: AlwaysStoppedAnimation(catColor),
-                                  minHeight: 3,
-                                  semanticsLabel: '${(fraction * 100).toInt()}%',
-                                ),
-                              ),
-                            ],
-                          ),
-                    ],
-                  ),
+                return MovementCard(
+                  movement: m,
+                  category: cat,
+                  subcategory: subcat,
+                  account: account,
+                  destinationAccount: destAccount,
+                  showNotes: false,
+                  showDate: true,
+                  onTap: hasCallbacks && onEdit != null
+                      ? () => onEdit!(m)
+                      : null,
+                  onEdit: onEdit != null ? () => onEdit!(m) : null,
+                  onDuplicate: onDuplicate != null
+                      ? () => onDuplicate!(m)
+                      : null,
+                  onSaveAsFavorite: onSaveAsFavorite != null
+                      ? () => onSaveAsFavorite!(m)
+                      : null,
+                  onAddQuick: onAddQuick != null
+                      ? () => onAddQuick!(m)
+                      : null,
+                  onDelete: onDelete != null ? () => onDelete!(m) : null,
                 );
               },
             ),

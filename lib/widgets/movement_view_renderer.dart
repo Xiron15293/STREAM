@@ -30,6 +30,7 @@ class MovementViewRenderer extends StatelessWidget {
   final ValueChanged<Movement> onEdit;
   final ValueChanged<Movement> onDuplicate;
   final ValueChanged<Movement> onSaveAsFavorite;
+  final ValueChanged<Movement> onAddQuick;
   final ValueChanged<Movement> onDelete;
 
   const MovementViewRenderer({
@@ -50,6 +51,7 @@ class MovementViewRenderer extends StatelessWidget {
     required this.onEdit,
     required this.onDuplicate,
     required this.onSaveAsFavorite,
+    required this.onAddQuick,
     required this.onDelete,
   });
 
@@ -91,6 +93,12 @@ class MovementViewRenderer extends StatelessWidget {
                 compactHeader: true,
                 categories: db.categories,
                 subcategories: db.subcategories,
+                db: db,
+                onEdit: onEdit,
+                onDuplicate: onDuplicate,
+                onSaveAsFavorite: onSaveAsFavorite,
+                onAddQuick: onAddQuick,
+                onDelete: onDelete,
               footerAction: OutlinedButton.icon(
                 key: const Key('movements_open_calendar_default_settings'),
                 onPressed: () {
@@ -136,6 +144,7 @@ class MovementViewRenderer extends StatelessWidget {
       onEdit: onEdit,
       onDuplicate: onDuplicate,
       onSaveAsFavorite: onSaveAsFavorite,
+      onAddQuick: onAddQuick,
       onDelete: onDelete,
     );
   }
@@ -162,6 +171,13 @@ class MovementViewRenderer extends StatelessWidget {
           onDaySelected: onDaySelected,
           onClearSelectedDay: onClearSelectedDay,
           categories: db.categories,
+          subcategories: db.subcategories,
+          db: db,
+          onEdit: onEdit,
+          onDuplicate: onDuplicate,
+          onSaveAsFavorite: onSaveAsFavorite,
+          onAddQuick: onAddQuick,
+          onDelete: onDelete,
         ),
         if (timeFilter.mode != TimeFilterMode.day)
           Padding(
@@ -178,6 +194,10 @@ class MovementViewRenderer extends StatelessWidget {
             onDayFilterChanged: onDayFilterChanged,
             db: db,
             onEdit: onEdit,
+            onDuplicate: onDuplicate,
+            onSaveAsFavorite: onSaveAsFavorite,
+            onAddQuick: onAddQuick,
+            onDelete: onDelete,
             selectedPeriodDay: selectedPeriodDay,
           ),
       ],
@@ -194,6 +214,10 @@ class _MovementPanel extends StatelessWidget {
   final ValueChanged<MovementType?>? onDayFilterChanged;
   final AppDatabase db;
   final ValueChanged<Movement> onEdit;
+  final ValueChanged<Movement> onDuplicate;
+  final ValueChanged<Movement> onSaveAsFavorite;
+  final ValueChanged<Movement> onAddQuick;
+  final ValueChanged<Movement> onDelete;
   final DateTime? selectedPeriodDay;
 
   const _MovementPanel({
@@ -205,6 +229,10 @@ class _MovementPanel extends StatelessWidget {
     required this.onDayFilterChanged,
     required this.db,
     required this.onEdit,
+    required this.onDuplicate,
+    required this.onSaveAsFavorite,
+    required this.onAddQuick,
+    required this.onDelete,
     this.selectedPeriodDay,
   });
 
@@ -306,6 +334,10 @@ class _MovementPanel extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       onEdit: (m) => onEdit(m),
+      onDuplicate: (m) => onDuplicate(m),
+      onSaveAsFavorite: (m) => onSaveAsFavorite(m),
+      onAddQuick: (m) => onAddQuick(m),
+      onDelete: (m) => onDelete(m),
     );
   }
 }

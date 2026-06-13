@@ -5,6 +5,7 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
+import '../utils/duplicate_date_selector.dart';
 import '../utils/movement_search.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/movement_view_renderer.dart';
@@ -170,16 +171,27 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 onDayFilterChanged: (MovementType? type) =>
                     setState(() => _dayFilter = type),
                 onEdit: (movement) => _showPicker(context, prefill: movement),
-                onDuplicate: (movement) {
-                  widget.db.duplicateMovement(movement);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Movimento duplicato')),
-                  );
+                onDuplicate: (movement) async {
+                  final date = await showDuplicateDateSheet(context);
+                  if (date != null) {
+                    widget.db.duplicateMovement(movement, date: date);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Movimento duplicato')),
+                      );
+                    }
+                  }
                 },
                 onSaveAsFavorite: (movement) {
                   widget.db.saveMovementAsFavorite(movement);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Salvato nei preferiti')),
+                  );
+                },
+                onAddQuick: (movement) {
+                  widget.db.saveMovementAsQuick(movement);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Salvato nei rapidi')),
                   );
                 },
                 onDelete: (movement) {
