@@ -1,6 +1,73 @@
 # HERMES QA REPORT
 
-> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics, V0.8.6 Category Treemap Analytics e V0.8.10 Period Views Premium + Subcategory Hardening.
+> Contiene QA e note di verifica per le milestone Hermes completate, incluse V0.8.0 Calculator Pad, V0.8.1 Categories Layout Modes, V0.8.2 Financial KPI Corrections, V0.8.5 Movimenti Analytics, V0.8.6 Category Treemap Analytics, V0.8.10 Period Views Premium + Subcategory Hardening, e V0.8.10b Universal Movement Actions + Duplicate Date Choice.
+
+---
+
+## Delta finale — Refresh immediato colore/icona categoria madre → sottocategorie ✅
+
+### Cosa è cambiato
+1. **`updateCategory` più esplicito**
+   - conserva `oldCategoryColor` e `oldCategoryIconKey`
+   - propaga con:
+     - `sub.color == null || sub.color == oldCategoryColor`
+     - `sub.iconKey == null || sub.iconKey == oldCategoryIconKey`
+   - preserva le sottocategorie con custom color/icon diversi
+
+2. **Refresh UI immediato**
+   - la causa residua era anche UI, non solo dati
+   - `categories_screen` rilegge dal DB notificato
+   - category sheet/dialog usa `ListenableBuilder` e `setState` dove necessario
+   - `movement_form` e `movement_picker` ascoltano il DB mentre mostrano categoria/sottocategoria
+   - non serve più uscire/rientrare
+
+3. **Test**
+   - `test/subcategories_test.dart`: ereditarietà iniziale, propagazione colore/icona, preservazione custom, refresh category sheet, refresh movement picker
+   - `test/movement_card_test.dart`: refresh immediato dopo update madre
+
+### Verifica locale finale
+- `flutter analyze --no-pub`: nessun errore o warning bloccante; restano solo info lint/deprecazioni pre-esistenti
+- `flutter test --no-pub`: **759/759 All tests passed**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+---
+
+## Hermes V0.8.10b — Universal Movement Actions + Duplicate Date Choice ✅ COMPLETATO
+
+### Delta
+
+**Cosa è cambiato:**
+
+1. **Azioni movimento universali**
+   - Ogni `MovementCard` ora mostra popup menu con Modifica, Duplica, Aggiungi a rapido, Aggiungi a preferito, Elimina
+   - Viste coperte: Movimenti, categorie (`_CategoryMovementsSheet`), conti (`_AccountMovementsSheet`), dashboard (`_CategoryDetailSheet`), ripartizione spese giorno (`_DayExpenseDetailSheet`)
+   - `_PopupMenu` reso pubblico come `MovementCardPopupMenu` per riuso
+
+2. **Dashboard sheet reattivo**
+   - `_CategoryDetailSheet` avvolto in `ListenableBuilder(listenable: db)`
+   - Il builder re-filtra `db.movements` per `item.categoryId`
+   - Delete/duplicate/modifica aggiornano la UI senza chiudere/riaprire
+
+3. **Duplica con scelta data**
+   - Nuova utility: `lib/utils/duplicate_date_selector.dart`
+   - Bottom sheet `showDuplicateDateSheet` con opzioni: Oggi / Domani / Ieri / Scegli data / Annulla
+   - Annulla → nessun movimento creato
+   - Duplicato ha nuovo id, non copia fingerprint/import metadata
+   - Tutti gli screen aggiornati (movements, categories, accounts, dashboard)
+
+### Test modificati
+- `test/qa_movements_test.dart`: test 53 aggiornato (tap Oggi dopo Duplica), nuovi test 53b (annulla non crea) e 53c (Domani funziona)
+
+### Verifica locale finale
+- `flutter analyze --no-pub`: **PASS** — 0 errori, 0 warning, 25 info pre-esistenti
+- `flutter test --no-pub`: **749/749 All tests passed** (+2 test)
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
 
 ---
 
@@ -37,7 +104,7 @@
 
 ### Verifica locale finale
 - `flutter analyze --no-pub`: **PASS** — 0 errori, 0 warning, 27 info pre-esistenti
-- `flutter test --no-pub`: **747/747 All tests passed** (invariato)
+- `flutter test --no-pub`: **749/749 All tests passed** (invariato locale, +2 da V0.8.10b)
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto

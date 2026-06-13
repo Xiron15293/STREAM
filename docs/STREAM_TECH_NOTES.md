@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** V0.8.10 — Period Views Premium + Subcategory Hardening | **DB:** v10 | **Build:** ✅ flutter analyze 0 errors/0 warnings | **Test:** 747/747
+**Stato:** V0.8.10b + refresh immediato madre→sottocategorie | **DB:** v10 | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`) | **Test:** 759/759
 
 ## Stack
 
@@ -75,8 +75,9 @@
 | showNotes | bool | false | Mostra note nei MovementCard |
 | scrollController | ScrollController? | null | Per DraggableScrollableSheet compatibilità |
 | onEdit | Function(Movement)? | null | Azione modifica movimento |
-| onDuplicate | Function(Movement)? | null | Azione duplica |
+| onDuplicate | Function(Movement)? | null | Azione duplica (con scelta data) |
 | onSaveAsFavorite | Function(Movement)? | null | Salva come preferito |
+| onAddQuick | Function(Movement)? | null | Salva come rapido |
 | onDelete | Function(Movement)? | null | Elimina movimento |
 
 **Comportamento**:
@@ -96,6 +97,23 @@
 updatedAt desc → createdAt desc → id asc
 categoryId, type, amount, title NON influenzano
 ```
+
+### MovementCardPopupMenu (V0.8.10b)
+
+> Widget popup menu movimento reso pubblico per riuso in layout custom.
+
+**File**: `lib/widgets/movement_card.dart` (ex `_PopupMenu`)
+**API**: `onEdit`, `onDuplicate`, `onSaveAsFavorite`, `onAddQuick`, `onDelete` (tutti `VoidCallback?`)
+
+### showDuplicateDateSheet (V0.8.10b)
+
+> Utility per scelta data duplicata con bottom sheet modale.
+
+**File**: `lib/utils/duplicate_date_selector.dart`
+**Opzioni**: Oggi / Domani / Ieri / Scegli data / Annulla
+**Return**: `Future<DateTime?>` — `null` se annulla
+**Uso**: chiamato da ogni `onDuplicate` callback in `movements_screen.dart`, `categories_screen.dart`, `accounts_screen.dart`, `dashboard_screen.dart`
+**Copia sicura**: nuovo id (`microsecondsSinceEpoch`), nessuna copia di fingerprint/import metadata
 
 **Sostituisce 3 implementazioni separate**:
 
@@ -495,6 +513,26 @@ String formatEuro(double amount) {
 4. Singolo `notifyListeners()` alla fine
 
 **Vincolo rimosso:** la condizione originale `sc.color != null && sc.color == old.color` non copriva le sottocategorie con `null` (ereditarietà pura). Ora `sc.color == null || sc.color == old.color` aggiorna sia quelle con null sia quelle con colore esplicito uguale al vecchio colore madre.
+
+**Ultima rifinitura:** `updateCategory` mantiene in modo esplicito `oldCategoryColor`, `oldCategoryIconKey`, `newCategoryColor`, `newCategoryIconKey`, così la regola di update sulle sottocategorie ereditate è leggibile e testabile.
+
+### Immediate UI refresh for inherited subcategory style
+
+> Il bug residuo non era solo nel dato aggiornato ma in alcune UI agganciate a snapshot vecchi.
+
+**File:** `lib/screens/categories_screen.dart`, `lib/widgets/movement_form.dart`, `lib/widgets/movement_picker.dart`
+
+**Intervento:**
+- `categories_screen` rilegge i dati aggiornati dal DB notificato
+- `_CategoryMovementsSheet` calcola categoria e movimenti dentro `ListenableBuilder`
+- `_CategoryFormDialog` dopo `await widget.db.updateCategory(...)` esegue `if (!mounted) return` e `setState(() {})`
+- `MovementForm` e i form di `MovementPicker` ascoltano `widget.db` mentre renderizzano `CategorySubcategorySelector`
+
+**Effetto UX:**
+- lista categorie e righe sottocategorie si riallineano subito
+- category sheet/dialog non resta con valori vecchi
+- movement form / movement picker / movement card riflettono subito il nuovo colore o la nuova icona della madre se la sottocategoria la eredita
+- non serve uscire/rientrare
 
 ### _DayExpenseBreakdown / _DayExpenseDetailSheet (V0.8.10)
 

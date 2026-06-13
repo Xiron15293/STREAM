@@ -7,6 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Delta docs — refresh immediato colore/icona categoria madre → sottocategorie**
+  - `updateCategory` ora conserva esplicitamente `oldCategoryColor` e `oldCategoryIconKey`
+  - Propaga verso le sottocategorie ereditate con:
+    - `sub.color == null || sub.color == oldCategoryColor`
+    - `sub.iconKey == null || sub.iconKey == oldCategoryIconKey`
+  - Le sottocategorie con custom color/icon diversi restano preservate
+  - `categories_screen` rilegge i dati aggiornati dal DB notificato
+  - category sheet/dialog usa `ListenableBuilder` e `setState` dove necessario
+  - `movement_form` e `movement_picker` ascoltano il DB mentre mostrano categoria/sottocategoria
+  - Non serve più uscire/rientrare per vedere il nuovo colore/icona sulle sottocategorie ereditate
+  - Test aggiornati:
+    - `test/subcategories_test.dart`: ereditarietà iniziale, propagazione, preservazione custom, refresh category sheet, refresh movement picker
+    - `test/movement_card_test.dart`: refresh immediato dopo update della madre
+
+- **V0.8.10b — Universal Movement Actions + Duplicate Date Choice**
+  - **Azioni movimento universali**: ogni `MovementCard` ora ha popup menu completo (Modifica, Duplica, Aggiungi a rapido, Aggiungi a preferito, Elimina) in tutte le viste
+  - Viste coperte: Movimenti, categorie/sottocategorie, conti/account sheet, dashboard category detail sheet, ripartizione spese giorno (`_DayExpenseDetailSheet`)
+  - `_PopupMenu` reso pubblico come `MovementCardPopupMenu` (`lib/widgets/movement_card.dart`)
+  - **Dashboard sheet reattivo**: `_CategoryDetailSheet` ora avvolto in `ListenableBuilder(listenable: db)` — dopo delete/duplicate/modifica la UI si aggiorna senza chiudere/riaprire
+  - **Duplica con scelta data**: nuova utility `lib/utils/duplicate_date_selector.dart` con bottom sheet `showDuplicateDateSheet`:
+    - Oggi / Domani / Ieri / Scegli data / Annulla
+    - Annulla non crea duplicato
+    - duplicato ha nuovo id (non copia fingerprint/import metadata pericolosi)
+    - preserva campi normali: importo, categoria, sottocategoria, conto, descrizione, tipo, transfer info
+  - Chiamate `onDuplicate` in tutti gli screen aggiornate per usare `showDuplicateDateSheet`
+
 - **V0.8.10 — Period Views Premium + Subcategory Hardening**
   - **Filtro Settimana per Movimenti**
     - `TimeFilterMode.week` in `lib/models/time_filter.dart`
@@ -97,9 +123,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `updateCategory` ora propaga colore/icona anche a sottocategorie con `null` (ereditarietà pura: `== null || == old`)
 
 ### QA
-- `flutter analyze --no-pub`: 0 errori, 0 warning, 27 info (26 pre-esistenti + 1 nuovo `unnecessary_underscores` in `period_heatmap_card.dart`)
-- `flutter test --no-pub`: **747/747 All tests passed**
-- 5 nuovi test in `period_summary_card_test.dart`: chip giorno selezionato, clear callback, semester grid rendering, cross-year semester, partial semester
+- `flutter analyze --no-pub`: nessun errore o warning bloccante; restano solo info lint/deprecazioni pre-esistenti
+- `flutter test --no-pub`: **759/759 All tests passed**
+- Nessun DB/schema/migrazione modificato
+- Backup/restore/import/reset non modificati
+- Nessuno skip aggiunto
+- Nessun commit/push
+
+- `flutter analyze --no-pub`: 0 errori, 0 warning, 25 info (pre-esistenti + `use_key_in_widget_constructors` per `MovementCardPopupMenu`)
+- `flutter test --no-pub`: **749/749 All tests passed**
+- Nuovi test: annulla non crea duplicato (53b), Domani funziona (53c), update test 53 con scelta Oggi
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
