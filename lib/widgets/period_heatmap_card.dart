@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../data/preferences_service.dart';
+import '../design/stream_icon_library.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
+import '../models/subcategory.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
@@ -14,22 +16,28 @@ class PeriodHeatmapCard extends StatelessWidget {
   final TimeFilter timeFilter;
   final List<Movement> movements;
   final DateTime? selectedDay;
+  final DateTime? selectedPeriodDay;
   final ValueChanged<DateTime>? onDaySelected;
+  final VoidCallback? onClearSelectedDay;
   final Widget? footerAction;
   final bool compactHeader;
   final bool annualCompact;
   final List<Category>? categories;
+  final List<Subcategory>? subcategories;
 
   const PeriodHeatmapCard({
     super.key,
     required this.timeFilter,
     required this.movements,
     this.selectedDay,
+    this.selectedPeriodDay,
     this.onDaySelected,
+    this.onClearSelectedDay,
     this.footerAction,
     this.compactHeader = false,
     this.annualCompact = false,
     this.categories,
+    this.subcategories,
   });
 
   @override
@@ -105,6 +113,8 @@ class PeriodHeatmapCard extends StatelessWidget {
     switch (timeFilter.mode) {
       case TimeFilterMode.day:
         return '';
+      case TimeFilterMode.week:
+        return 'Heatmap settimanale del periodo selezionato';
       case TimeFilterMode.month:
         return 'Heatmap mensile del periodo selezionato';
       case TimeFilterMode.year:
@@ -115,31 +125,47 @@ class PeriodHeatmapCard extends StatelessWidget {
   }
 
   Widget _buildBody() {
+    final effectiveSelectedDay = selectedPeriodDay ?? selectedDay;
+
     switch (timeFilter.mode) {
       case TimeFilterMode.day:
         return _buildDaySurface();
+      case TimeFilterMode.week:
+        return _buildWeekSurface();
       case TimeFilterMode.month:
         return KeyedSubtree(
           key: const Key('period_heatmap_month_surface'),
-          child: ExpenseHeatmap(
-            key: const Key('period_heatmap_month_grid'),
-            allMovements: movements,
-            year: timeFilter.startDate.year,
-            month: timeFilter.startDate.month,
-            selectedDay: selectedDay,
-            onDaySelected: onDaySelected,
-            variant: ExpenseHeatmapVariant.calendar,
+          child: Column(
+            children: [
+              if (selectedPeriodDay != null)
+                _buildSelectedPeriodDayChip(selectedPeriodDay!),
+              ExpenseHeatmap(
+                key: const Key('period_heatmap_month_grid'),
+                allMovements: movements,
+                year: timeFilter.startDate.year,
+                month: timeFilter.startDate.month,
+                selectedDay: effectiveSelectedDay,
+                onDaySelected: onDaySelected,
+                variant: ExpenseHeatmapVariant.calendar,
+              ),
+            ],
           ),
         );
       case TimeFilterMode.year:
         return KeyedSubtree(
           key: const Key('period_heatmap_year_surface'),
-          child: AnnualHeatmapCard(
-            year: timeFilter.startDate.year,
-            movements: movements,
-            selectedDay: selectedDay,
-            onDaySelected: onDaySelected,
-            compact: annualCompact,
+          child: Column(
+            children: [
+              if (selectedPeriodDay != null)
+                _buildSelectedPeriodDayChip(selectedPeriodDay!),
+              AnnualHeatmapCard(
+                year: timeFilter.startDate.year,
+                movements: movements,
+                selectedDay: effectiveSelectedDay,
+                onDaySelected: onDaySelected,
+                compact: annualCompact,
+              ),
+            ],
           ),
         );
       case TimeFilterMode.customRange:
@@ -317,6 +343,244 @@ class PeriodHeatmapCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: StreamSpacing.md),
+          Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+          const SizedBox(height: StreamSpacing.md),
+          _DayExpenseBreakdown(
+            dayDate: dayDate,
+            movements: dayMoves,
+            categories: categories ?? [],
+            subcategories: subcategories ?? [],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeekSurface() {
+    final start = timeFilter.startDate;
+    final metrics = MovementPeriodMetrics.fromMovements(movements);
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final effectiveSelectedDay = selectedPeriodDay ?? selectedDay;
+
+    final balanceColor = metrics.netBalance > 0
+        ? StreamColors.income
+        : metrics.netBalance < 0
+        ? StreamColors.expense
+        : StreamColors.textPrimary;
+
+    final dailyTotals = <int, double>{};
+    for (final m in movements) {
+      if (m.isTransfer) continue;
+      if (!m.isExpense) continue;
+      final offset = m.date.difference(start).inDays;
+      if (offset >= 0 && offset < 7) {
+        dailyTotals.update(offset, (v) => v + m.amount, ifAbsent: () => m.amount);
+      }
+    }
+
+    return Container(
+      key: const Key('week_period_card'),
+      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.md),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(StreamRadius.xl),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            StreamColors.surfaceHighlight.withValues(alpha: 0.72),
+            StreamColors.surface.withValues(alpha: 0.96),
+          ],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 30,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Settimana',
+                      key: const Key('week_period_title'),
+                      style: StreamTypography.h3.copyWith(
+                        color: StreamColors.primary,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      timeFilter.label,
+                      key: const Key('week_period_range'),
+                      style: StreamTypography.caption.copyWith(
+                        color: StreamColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: StreamSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricChip(
+                  keyName: 'week_period_income',
+                  label: 'Entrate',
+                  value: formatEuro(metrics.totalIncome),
+                  color: StreamColors.income,
+                ),
+              ),
+              const SizedBox(width: StreamSpacing.md),
+              Expanded(
+                child: _MetricChip(
+                  keyName: 'week_period_expense',
+                  label: 'Uscite',
+                  value: formatEuro(metrics.totalExpense),
+                  color: StreamColors.expense,
+                ),
+              ),
+              const SizedBox(width: StreamSpacing.md),
+              Expanded(
+                child: _MetricChip(
+                  keyName: 'week_period_balance',
+                  label: 'Saldo',
+                  value:
+                      '${metrics.netBalance > 0 ? '+' : metrics.netBalance < 0 ? '-' : ''}${formatEuro(metrics.netBalance.abs())}',
+                  color: balanceColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: StreamSpacing.sm),
+          _MetricChip(
+            keyName: 'week_period_movements_count',
+            label: 'Movimenti della settimana',
+            value: '${metrics.movementCount}',
+            color: StreamColors.textPrimary,
+          ),
+          if (selectedPeriodDay != null) ...[
+            const SizedBox(height: StreamSpacing.md),
+            _buildSelectedPeriodDayChip(selectedPeriodDay!),
+          ],
+          const SizedBox(height: StreamSpacing.md),
+          ValueListenableBuilder<HeatmapSettings>(
+            valueListenable: PreferencesService.heatmapSettingsNotifier,
+            builder: (context, settings, _) {
+              return Row(
+                key: const Key('week_heatmap'),
+                children: List.generate(7, (index) {
+                  final dayDate = start.add(Duration(days: index));
+                  final total = dailyTotals[index] ?? 0.0;
+                  final isSelected = effectiveSelectedDay != null &&
+                      effectiveSelectedDay.year == dayDate.year &&
+                      effectiveSelectedDay.month == dayDate.month &&
+                      effectiveSelectedDay.day == dayDate.day;
+                  final isToday = dayDate == todayDate;
+                  final bgColor = total > 0
+                      ? heatmapColorForAmount(total, settings: settings)
+                      : Colors.transparent;
+
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: index > 0 ? 4 : 0,
+                      ),
+                      child: GestureDetector(
+                        onTap: onDaySelected != null
+                            ? () => onDaySelected!(dayDate)
+                            : null,
+                        child: Container(
+                          key: Key(
+                            'week_heatmap_day_${dayDate.year}_${dayDate.month}_${dayDate.day}',
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(StreamRadius.md),
+                            border: isSelected
+                                ? Border.all(
+                                    color: StreamColors.primary,
+                                    width: 2,
+                                  )
+                                : isToday
+                                    ? Border.all(
+                                        color: StreamColors.primary
+                                            .withValues(alpha: 0.45),
+                                        width: 1,
+                                      )
+                                    : total > 0
+                                        ? Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.15),
+                                            width: 0.5,
+                                          )
+                                        : Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.06),
+                                            width: 0.5,
+                                          ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _weekdayLabels[index],
+                                style: StreamTypography.micro.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${dayDate.day}',
+                                style: StreamTypography.captionBold.copyWith(
+                                  color: total > 0
+                                      ? Colors.white
+                                      : StreamColors.textMuted,
+                                ),
+                              ),
+                              if (total > 0) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  formatEuro(total),
+                                  style: StreamTypography.micro.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 9,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -359,6 +623,8 @@ class PeriodHeatmapCard extends StatelessWidget {
         : metrics.netBalance < 0
         ? StreamColors.expense
         : StreamColors.textPrimary;
+
+    final effectiveSelectedDay = selectedPeriodDay ?? selectedDay;
 
     return Container(
       key: const Key('period_heatmap_range_surface'),
@@ -403,9 +669,17 @@ class PeriodHeatmapCard extends StatelessWidget {
             value: '${metrics.movementCount}',
             color: StreamColors.textPrimary,
           ),
+          if (selectedPeriodDay != null) ...[
+            const SizedBox(height: StreamSpacing.md),
+            _buildSelectedPeriodDayChip(selectedPeriodDay!),
+          ],
           const SizedBox(height: StreamSpacing.md),
-          if (totalDays <= 31) _buildShortRangeGrid(start, end)
-          else _buildLongRangeGrid(start, end),
+          if (totalDays <= 31)
+            _buildShortRangeGrid(start, end, effectiveSelectedDay)
+          else if (totalDays <= 183)
+            _buildLongRangeGrid(start, end, effectiveSelectedDay)
+          else
+            _buildSemesterRangeGrid(start, end, effectiveSelectedDay),
           if (totalDays > 31) ...[
             const SizedBox(height: StreamSpacing.md),
             const _RangeHeatmapLegend(),
@@ -415,7 +689,84 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
-  Widget _buildShortRangeGrid(DateTime start, DateTime end) {
+  Widget _buildSelectedPeriodDayChip(DateTime day) {
+    const months = [
+      'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+    ];
+    final label = '${day.day} ${months[day.month - 1]} ${day.year}';
+
+    String clearLabel;
+    Key chipKey;
+    Key clearKey;
+    switch (timeFilter.mode) {
+      case TimeFilterMode.week:
+        clearLabel = 'Tutta settimana';
+        chipKey = const Key('period_selected_day_chip');
+        clearKey = const Key('week_clear_selected_day');
+      case TimeFilterMode.month:
+        clearLabel = 'Tutto mese';
+        chipKey = const Key('period_selected_day_chip');
+        clearKey = const Key('month_clear_selected_day');
+      case TimeFilterMode.year:
+        clearLabel = 'Tutto anno';
+        chipKey = const Key('period_selected_day_chip');
+        clearKey = const Key('year_clear_selected_day');
+      case TimeFilterMode.customRange:
+        clearLabel = 'Tutto intervallo';
+        chipKey = const Key('range_selected_day_chip');
+        clearKey = const Key('range_clear_selected_day');
+      case TimeFilterMode.day:
+        clearLabel = 'Tutto il giorno';
+        chipKey = const Key('period_selected_day_chip');
+        clearKey = const Key('day_clear_selected_day');
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            key: chipKey,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: StreamColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(StreamRadius.full),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.today, size: 14, color: StreamColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  key: Key('period_selected_day_${day.year}_${day.month}_${day.day}'),
+                  style: StreamTypography.micro.copyWith(
+                    color: StreamColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: StreamSpacing.sm),
+          TextButton.icon(
+            key: clearKey,
+            icon: const Icon(Icons.close, size: 14),
+            label: Text(clearLabel),
+            style: TextButton.styleFrom(
+              foregroundColor: StreamColors.textSecondary,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            onPressed: onClearSelectedDay,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShortRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay) {
     final totalDays = end.difference(start).inDays + 1;
     final firstWeekday = start.weekday;
     final dailyTotals = <int, double>{};
@@ -442,10 +793,10 @@ class PeriodHeatmapCard extends StatelessWidget {
         for (int offset = 0; offset < totalDays; offset++) {
           final dayDate = start.add(Duration(days: offset));
           final total = dailyTotals[offset] ?? 0.0;
-          final isSelected = selectedDay != null &&
-              selectedDay!.year == dayDate.year &&
-              selectedDay!.month == dayDate.month &&
-              selectedDay!.day == dayDate.day;
+          final isSelected = effectiveSelectedDay != null &&
+              effectiveSelectedDay.year == dayDate.year &&
+              effectiveSelectedDay.month == dayDate.month &&
+              effectiveSelectedDay.day == dayDate.day;
           final bgColor = total > 0
               ? heatmapColorForAmount(total, settings: settings)
               : Colors.transparent;
@@ -546,7 +897,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLongRangeGrid(DateTime start, DateTime end) {
+  Widget _buildLongRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay) {
     final firstDay = start;
     final lastDay = end;
     final startMonday = firstDay.subtract(
@@ -610,7 +961,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                 for (int dow = 0; dow < 7; dow++)
                   Padding(
                     padding: EdgeInsets.only(bottom: gap),
-                    child: _buildRangeDayRow(
+                    child:                     _buildRangeDayRow(
                       dow: dow,
                       weeks: weeks,
                       cellWidth: cellWidth,
@@ -622,6 +973,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                       settings: settings,
                       start: start,
                       end: end,
+                      effectiveSelectedDay: effectiveSelectedDay,
                     ),
                   ),
               ],
@@ -699,6 +1051,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     required HeatmapSettings settings,
     required DateTime start,
     required DateTime end,
+    required DateTime? effectiveSelectedDay,
   }) {
     return Row(
       children: [
@@ -728,6 +1081,7 @@ class PeriodHeatmapCard extends StatelessWidget {
             settings,
             start,
             end,
+            effectiveSelectedDay,
           ),
         ],
       ],
@@ -743,6 +1097,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     HeatmapSettings settings,
     DateTime start,
     DateTime end,
+    DateTime? effectiveSelectedDay,
   ) {
     if (date == null) {
       return SizedBox(width: width, height: height);
@@ -751,10 +1106,11 @@ class PeriodHeatmapCard extends StatelessWidget {
     final key = date.month * 100 + date.day;
     final total = daysInRange[key] ?? 0.0;
     final isToday = date == todayDate;
-    final isSelected = selectedDay != null &&
-        selectedDay!.year == date.year &&
-        selectedDay!.month == date.month &&
-        selectedDay!.day == date.day;
+    final sel = effectiveSelectedDay;
+    final isSelected = sel != null &&
+        sel.year == date.year &&
+        sel.month == date.month &&
+        sel.day == date.day;
 
     final bgColor = total > 0
         ? heatmapColorForAmount(total, settings: settings)
@@ -789,12 +1145,321 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
+  Widget _buildSemesterRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay) {
+    final semesterBlocks = <_SemesterBlock>[];
+    var cursor = DateTime(start.year, start.month, 1);
+
+    while (!cursor.isAfter(end)) {
+      final semStartMonth = cursor.month <= 6 ? 1 : 7;
+      final semEndMonth = semStartMonth == 1 ? 6 : 12;
+      final blockStart = DateTime(cursor.year, semStartMonth, 1);
+      final blockEnd = DateTime(cursor.year, semEndMonth + 1, 0);
+
+      semesterBlocks.add(_SemesterBlock(
+        startDate: blockStart.isBefore(start) ? start : blockStart,
+        endDate: blockEnd.isAfter(end) ? end : blockEnd,
+        year: cursor.year,
+        startMonth: blockStart.month,
+        endMonth: blockEnd.month,
+      ));
+
+      cursor = DateTime(cursor.year, semEndMonth + 1, 1);
+    }
+
+    return KeyedSubtree(
+      key: const Key('range_semester_heatmap'),
+      child: ValueListenableBuilder<HeatmapSettings>(
+        valueListenable: PreferencesService.heatmapSettingsNotifier,
+        builder: (context, settings, _) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final block in semesterBlocks)
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: block == semesterBlocks.last ? 0 : StreamSpacing.md,
+                  ),
+                  child: _RangeSemesterGrid(
+                    startDate: block.startDate,
+                    endDate: block.endDate,
+                    year: block.year,
+                    startMonth: block.startMonth,
+                    endMonth: block.endMonth,
+                    movements: movements,
+                    effectiveSelectedDay: effectiveSelectedDay,
+                    onDaySelected: onDaySelected,
+                    settings: settings,
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   static const _weekdayLabels = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
   static const _rangeDayLabels = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
   static const _rangeMonthLabels = [
     'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
     'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
   ];
+}
+
+class _SemesterBlock {
+  final DateTime startDate;
+  final DateTime endDate;
+  final int year;
+  final int startMonth;
+  final int endMonth;
+
+  const _SemesterBlock({
+    required this.startDate,
+    required this.endDate,
+    required this.year,
+    required this.startMonth,
+    required this.endMonth,
+  });
+}
+
+class _RangeSemesterGrid extends StatelessWidget {
+  final DateTime startDate;
+  final DateTime endDate;
+  final int year;
+  final int startMonth;
+  final int endMonth;
+  final List<Movement> movements;
+  final DateTime? effectiveSelectedDay;
+  final ValueChanged<DateTime>? onDaySelected;
+  final HeatmapSettings settings;
+
+  const _RangeSemesterGrid({
+    required this.startDate,
+    required this.endDate,
+    required this.year,
+    required this.startMonth,
+    required this.endMonth,
+    required this.movements,
+    required this.effectiveSelectedDay,
+    required this.onDaySelected,
+    required this.settings,
+  });
+
+  static const _dayLabels = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+  static const _monthLabels = [
+    'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
+    'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final firstDay = startDate;
+    final lastDay = endDate;
+    final startMonday = firstDay.subtract(Duration(days: (firstDay.weekday - 1) % 7));
+    final endSunday = lastDay.add(Duration(days: (7 - lastDay.weekday) % 7));
+
+    final weeks = <List<DateTime?>>[];
+    var current = startMonday;
+    while (!current.isAfter(endSunday)) {
+      final week = <DateTime?>[];
+      for (int i = 0; i < 7; i++) {
+        final day = current.add(Duration(days: i));
+        if (day.isBefore(firstDay) || day.isAfter(lastDay)) {
+          week.add(null);
+        } else {
+          week.add(day);
+        }
+      }
+      weeks.add(week);
+      current = current.add(const Duration(days: 7));
+    }
+
+    final daysInRange = <int, double>{};
+    for (final m in movements) {
+      if (m.isTransfer) continue;
+      if (!m.isExpense) continue;
+      if (!m.date.isBefore(firstDay) && !m.date.isAfter(lastDay)) {
+        final key = m.date.month * 100 + m.date.day;
+        daysInRange.update(key, (v) => v + m.amount, ifAbsent: () => m.amount);
+      }
+    }
+
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWeeks = weeks.length;
+        final dayLabelWidth = 14.0;
+        final gap = 1.5;
+        final cellWidth = ((constraints.maxWidth - dayLabelWidth - gap * (totalWeeks - 1)) / totalWeeks)
+            .clamp(8.0, 22.0);
+        final cellHeight = cellWidth;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildMonthLabelRow(weeks, cellWidth, dayLabelWidth, gap),
+            const SizedBox(height: 2),
+            for (int dow = 0; dow < 7; dow++)
+              Padding(
+                padding: EdgeInsets.only(bottom: gap),
+                child: _buildDayRow(
+                  dow: dow,
+                  weeks: weeks,
+                  cellWidth: cellWidth,
+                  cellHeight: cellHeight,
+                  dayLabelWidth: dayLabelWidth,
+                  gap: gap,
+                  daysInRange: daysInRange,
+                  todayDate: todayDate,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMonthLabelRow(
+    List<List<DateTime?>> weeks,
+    double cellWidth,
+    double dayLabelWidth,
+    double gap,
+  ) {
+    final monthChanges = <int, int>{};
+    int? lastMonth;
+    for (int col = 0; col < weeks.length; col++) {
+      final week = weeks[col];
+      final firstDayOfWeek = week.firstWhere((d) => d != null, orElse: () => null);
+      if (firstDayOfWeek == null) continue;
+      if (firstDayOfWeek.month != lastMonth) {
+        monthChanges[col] = firstDayOfWeek.month;
+        lastMonth = firstDayOfWeek.month;
+      }
+    }
+
+    final labelPositions = <MapEntry<int, int>>[];
+    final sortedCols = monthChanges.keys.toList()..sort();
+    for (int i = 0; i < sortedCols.length; i++) {
+      final col = sortedCols[i];
+      final nextCol = i + 1 < sortedCols.length ? sortedCols[i + 1] : weeks.length;
+      labelPositions.add(MapEntry(col, nextCol - col));
+    }
+
+    return SizedBox(
+      height: cellWidth * 1.1,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          SizedBox(width: dayLabelWidth),
+          for (final entry in labelPositions)
+            Container(
+              width: entry.value * cellWidth + (entry.value - 1) * gap,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: 2, bottom: 2),
+              child: Text(
+                _monthLabels[monthChanges[entry.key]! - 1],
+                style: StreamTypography.micro.copyWith(
+                  color: StreamColors.textMuted,
+                  fontSize: 9,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          if (labelPositions.isNotEmpty)
+            const Spacer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayRow({
+    required int dow,
+    required List<List<DateTime?>> weeks,
+    required double cellWidth,
+    required double cellHeight,
+    required double dayLabelWidth,
+    required double gap,
+    required Map<int, double> daysInRange,
+    required DateTime todayDate,
+  }) {
+    return Row(
+      children: [
+        SizedBox(
+          width: dayLabelWidth,
+          height: cellHeight,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _dayLabels[dow],
+              style: TextStyle(
+                fontSize: 8,
+                color: StreamColors.textMuted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+        for (int col = 0; col < weeks.length; col++) ...[
+          if (col > 0) SizedBox(width: gap),
+          _buildCell(weeks[col][dow], cellWidth, cellHeight, daysInRange, todayDate),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCell(
+    DateTime? date,
+    double width,
+    double height,
+    Map<int, double> daysInRange,
+    DateTime todayDate,
+  ) {
+    if (date == null) {
+      return SizedBox(width: width, height: height);
+    }
+
+    final key = date.month * 100 + date.day;
+    final total = daysInRange[key] ?? 0.0;
+    final isToday = date == todayDate;
+    final sel = effectiveSelectedDay;
+    final isSelected = sel != null &&
+        sel.year == date.year &&
+        sel.month == date.month &&
+        sel.day == date.day;
+
+    final bgColor = total > 0
+        ? heatmapColorForAmount(total, settings: settings)
+        : Colors.transparent;
+
+    return GestureDetector(
+      onTap: onDaySelected != null ? () => onDaySelected!(date) : null,
+      child: Container(
+        key: Key('range_semester_day_${date.year}_${date.month}_${date.day}'),
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(2),
+          border: isSelected
+              ? Border.all(color: StreamColors.primary, width: 1.5)
+              : isToday
+              ? Border.all(
+                  color: StreamColors.primary.withValues(alpha: 0.5),
+                  width: 1,
+                )
+              : total > 0
+              ? Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 0.5,
+                )
+              : null,
+        ),
+      ),
+    );
+  }
 }
 
 class _MetricChip extends StatelessWidget {
@@ -925,6 +1590,294 @@ class _DayKpi extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _DayExpenseBreakdown extends StatelessWidget {
+  final DateTime dayDate;
+  final List<Movement> movements;
+  final List<Category> categories;
+  final List<Subcategory> subcategories;
+
+  const _DayExpenseBreakdown({
+    required this.dayDate,
+    required this.movements,
+    required this.categories,
+    required this.subcategories,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final expenseByCat = <String, double>{};
+    for (final m in movements) {
+      if (m.isTransfer || !m.isExpense) continue;
+      expenseByCat.update(m.categoryId, (v) => v + m.amount, ifAbsent: () => m.amount);
+    }
+    if (expenseByCat.isEmpty) return const SizedBox.shrink();
+
+    final total = expenseByCat.values.fold(0.0, (a, b) => a + b);
+    final entries = expenseByCat.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final catMap = {for (final c in categories) c.id: c};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Ripartizione spese',
+              style: StreamTypography.captionBold.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
+            if (entries.length > 1)
+              TextButton.icon(
+                key: const Key('day_detail_button'),
+                icon: const Icon(Icons.chevron_right, size: 16),
+                label: const Text('Vedi dettaglio'),
+                style: TextButton.styleFrom(
+                  foregroundColor: StreamColors.primary,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () => _showDetailSheet(context),
+              ),
+          ],
+        ),
+        const SizedBox(height: StreamSpacing.sm),
+        ...entries.map((e) {
+          final cat = catMap[e.key];
+          final catColor = Color(cat?.color ?? 0xFF888888);
+          final catIcon = cat != null
+              ? StreamIconLibrary.getIcon(cat.iconKey)
+              : Icons.category;
+          final fraction = total > 0 ? e.value / total : 0.0;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(catIcon, size: 14, color: catColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        cat?.name ?? e.key,
+                        style: StreamTypography.micro.copyWith(
+                          color: StreamColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      formatEuro(e.value),
+                      style: StreamTypography.micro.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: StreamColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: fraction,
+                    backgroundColor: catColor.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation(catColor),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  void _showDetailSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: StreamColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: _DayExpenseDetailSheet(
+            dayDate: dayDate,
+            movements: movements,
+            categories: categories,
+            subcategories: subcategories,
+            scrollController: scrollController,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DayExpenseDetailSheet extends StatelessWidget {
+  final DateTime dayDate;
+  final List<Movement> movements;
+  final List<Category> categories;
+  final List<Subcategory> subcategories;
+  final ScrollController scrollController;
+
+  const _DayExpenseDetailSheet({
+    required this.dayDate,
+    required this.movements,
+    required this.categories,
+    required this.subcategories,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final expenseMoves = movements
+        .where((m) => !m.isTransfer && m.isExpense)
+        .toList()
+      ..sort((a, b) => b.amount.compareTo(a.amount));
+
+    final total = expenseMoves.fold(0.0, (sum, m) => sum + m.amount);
+
+    final catMap = {for (final c in categories) c.id: c};
+    final subcatMap = {for (final s in subcategories) s.id: s};
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: StreamColors.textMuted.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            'Dettaglio spese — ${_formatDate(dayDate)}',
+            style: StreamTypography.h3.copyWith(color: StreamColors.textPrimary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${expenseMoves.length} movimenti · ${formatEuro(total)}',
+            style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              controller: scrollController,
+              itemCount: expenseMoves.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final m = expenseMoves[index];
+                final cat = catMap[m.categoryId];
+                final subcat = m.subcategoryId != null ? subcatMap[m.subcategoryId] : null;
+                final catColor = Color(cat?.color ?? 0xFF888888);
+                final catIcon = cat != null
+                    ? StreamIconLibrary.getIcon(cat.iconKey)
+                    : Icons.category;
+                final fraction = total > 0 ? m.amount / total : 0.0;
+
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: StreamColors.surfaceHighlight.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: catColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(catIcon, size: 18, color: catColor),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  m.title,
+                                  style: StreamTypography.bodyBold.copyWith(
+                                    color: StreamColors.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (subcat != null)
+                                  Text(
+                                    subcat.name,
+                                    style: StreamTypography.micro.copyWith(
+                                      color: StreamColors.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                formatEuro(m.amount),
+                                style: StreamTypography.bodyBold.copyWith(
+                                  color: StreamColors.expense,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: LinearProgressIndicator(
+                                  value: fraction,
+                                  backgroundColor: catColor.withValues(alpha: 0.1),
+                                  valueColor: AlwaysStoppedAnimation(catColor),
+                                  minHeight: 3,
+                                  semanticsLabel: '${(fraction * 100).toInt()}%',
+                                ),
+                              ),
+                            ],
+                          ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }
 

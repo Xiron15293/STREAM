@@ -21,6 +21,8 @@ class TimeFilterBar extends StatelessWidget {
     switch (mode) {
       case TimeFilterMode.day:
         onChanged(TimeFilter.day(s));
+      case TimeFilterMode.week:
+        onChanged(TimeFilter.week(s));
       case TimeFilterMode.month:
         onChanged(TimeFilter.month(s.year, s.month));
       case TimeFilterMode.year:
@@ -45,6 +47,15 @@ class TimeFilterBar extends StatelessWidget {
         if (picked != null) {
           onDatePicked?.call(picked);
           onChanged(TimeFilter.day(picked));
+        }
+      case TimeFilterMode.week:
+        final picked = await StreamDatePicker.show(
+          context: context,
+          initialDate: activeFilter.startDate,
+        );
+        if (picked != null) {
+          onDatePicked?.call(picked);
+          onChanged(TimeFilter.week(picked));
         }
       case TimeFilterMode.month:
         final picked = await StreamDatePicker.show(
@@ -86,6 +97,7 @@ class TimeFilterBar extends StatelessWidget {
           SegmentedButton<TimeFilterMode>(
             segments: const [
               ButtonSegment(value: TimeFilterMode.day, label: Text('Giorno')),
+              ButtonSegment(value: TimeFilterMode.week, label: Text('Sett.')),
               ButtonSegment(value: TimeFilterMode.month, label: Text('Mese')),
               ButtonSegment(value: TimeFilterMode.year, label: Text('Anno')),
               ButtonSegment(

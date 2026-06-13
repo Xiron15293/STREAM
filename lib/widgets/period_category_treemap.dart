@@ -114,10 +114,12 @@ class PeriodCategoryTreemap extends StatelessWidget {
     switch (filter.mode) {
       case TimeFilterMode.day:
         return 'Categorie del giorno';
+      case TimeFilterMode.week:
+        return 'Categorie della settimana';
       case TimeFilterMode.month:
         return 'Categorie del mese';
       case TimeFilterMode.year:
-        return 'Categorie dell’anno';
+        return 'Categorie dell\'anno';
       case TimeFilterMode.customRange:
         return 'Categorie del periodo';
     }

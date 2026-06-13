@@ -25,6 +25,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
   late TimeFilter _activeFilter;
   String _searchQuery = '';
   DateTime? _selectedDay;
+  DateTime? _selectedPeriodDay;
   late DateTime _visibleCalendarMonth;
   DateTime? _lastPickedDate;
   MovementType? _dayFilter;
@@ -162,7 +163,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 showNotes: _showNotes || _searchQuery.trim().isNotEmpty,
                 hasQuery: hasQuery,
                 selectedDay: _selectedDay,
-                onDaySelected: (day) => setState(() => _selectedDay = day),
+                selectedPeriodDay: _selectedPeriodDay,
+                onDaySelected: _onHeatmapDayTap,
+                onClearSelectedDay: _clearSelectedPeriodDay,
                 dayFilter: _dayFilter,
                 onDayFilterChanged: (MovementType? type) =>
                     setState(() => _dayFilter = type),
@@ -239,8 +242,29 @@ class _MovementsScreenState extends State<MovementsScreen> {
     _lastPickedDate = DateTime(date.year, date.month, date.day);
   }
 
+  void _onHeatmapDayTap(DateTime day) {
+    setState(() {
+      switch (_activeFilter.mode) {
+        case TimeFilterMode.day:
+          _selectedDay = day;
+          _activeFilter = TimeFilter.day(day);
+          _visibleCalendarMonth = DateTime(day.year, day.month, 1);
+        case TimeFilterMode.week:
+        case TimeFilterMode.month:
+        case TimeFilterMode.year:
+        case TimeFilterMode.customRange:
+          _selectedPeriodDay = day;
+      }
+    });
+  }
+
+  void _clearSelectedPeriodDay() {
+    setState(() => _selectedPeriodDay = null);
+  }
+
   void _setActiveFilter(TimeFilter filter) {
     setState(() {
+      _selectedPeriodDay = null;
       final pickedDate = _lastPickedDate;
       _lastPickedDate = null;
       _activeFilter = filter;
@@ -289,6 +313,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
           filter.startDate.month,
           filter.startDate.day,
         );
+      case TimeFilterMode.week:
       case TimeFilterMode.month:
       case TimeFilterMode.year:
       case TimeFilterMode.customRange:

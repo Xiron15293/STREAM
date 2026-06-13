@@ -42,6 +42,8 @@ String formatTimeFilterTitle(TimeFilter filter) {
   switch (filter.mode) {
     case TimeFilterMode.day:
       return _formatFullDate(filter.startDate);
+    case TimeFilterMode.week:
+      return filter.label;
     case TimeFilterMode.month:
       return '${_capitalize(_monthName(filter.startDate.month))} ${filter.startDate.year}';
     case TimeFilterMode.year:
@@ -55,6 +57,8 @@ String timeFilterPeriodLabel(TimeFilterMode mode) {
   switch (mode) {
     case TimeFilterMode.day:
       return 'giorno';
+    case TimeFilterMode.week:
+      return 'settimana';
     case TimeFilterMode.month:
       return 'mese';
     case TimeFilterMode.year:

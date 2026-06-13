@@ -1,6 +1,6 @@
 import 'movement.dart';
 
-enum TimeFilterMode { day, month, year, customRange }
+enum TimeFilterMode { day, week, month, year, customRange }
 
 class TimeFilter {
   final TimeFilterMode mode;
@@ -23,6 +23,29 @@ class TimeFilter {
       startDate: start,
       endDate: start,
       label: '${d.day} ${_monthNames[d.month - 1]} ${d.year}',
+    );
+  }
+
+  factory TimeFilter.week(DateTime dateInWeek) {
+    final d = _normalize(dateInWeek);
+    final weekday = d.weekday;
+    final monday = d.subtract(Duration(days: weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+
+    String label;
+    if (monday.month == sunday.month) {
+      label = '${monday.day}–${sunday.day} ${_monthNames[sunday.month - 1]} ${sunday.year}';
+    } else if (monday.year == sunday.year) {
+      label = '${monday.day} ${_monthNames[monday.month - 1]} – ${sunday.day} ${_monthNames[sunday.month - 1]} ${sunday.year}';
+    } else {
+      label = '${monday.day} ${_monthNames[monday.month - 1]} ${monday.year} – ${sunday.day} ${_monthNames[sunday.month - 1]} ${sunday.year}';
+    }
+
+    return TimeFilter._(
+      mode: TimeFilterMode.week,
+      startDate: monday,
+      endDate: sunday,
+      label: label,
     );
   }
 
@@ -91,6 +114,9 @@ class TimeFilter {
           startDate.day + 1,
         );
         return TimeFilter.day(next);
+      case TimeFilterMode.week:
+        final next = startDate.add(const Duration(days: 7));
+        return TimeFilter.week(next);
       case TimeFilterMode.month:
         final nextMonth = startDate.month < 12
             ? DateTime.utc(startDate.year, startDate.month + 1, 1)
@@ -112,6 +138,9 @@ class TimeFilter {
           startDate.day - 1,
         );
         return TimeFilter.day(prev);
+      case TimeFilterMode.week:
+        final prev = startDate.subtract(const Duration(days: 7));
+        return TimeFilter.week(prev);
       case TimeFilterMode.month:
         final prevMonth = startDate.month > 1
             ? DateTime.utc(startDate.year, startDate.month - 1, 1)

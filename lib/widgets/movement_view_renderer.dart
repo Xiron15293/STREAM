@@ -9,7 +9,6 @@ import '../screens/settings_screen.dart';
 import '../theme.dart';
 import 'expense_heatmap.dart';
 import 'grouped_movements_list.dart';
-import 'movement_card.dart';
 import 'movements_heatmap_preview_card.dart';
 import 'period_heatmap_card.dart';
 import 'period_summary_card.dart';
@@ -23,7 +22,9 @@ class MovementViewRenderer extends StatelessWidget {
   final bool showNotes;
   final AppDatabase db;
   final DateTime? selectedDay;
+  final DateTime? selectedPeriodDay;
   final ValueChanged<DateTime>? onDaySelected;
+  final VoidCallback? onClearSelectedDay;
   final MovementType? dayFilter;
   final ValueChanged<MovementType?>? onDayFilterChanged;
   final ValueChanged<Movement> onEdit;
@@ -41,7 +42,9 @@ class MovementViewRenderer extends StatelessWidget {
     required this.showNotes,
     required this.db,
     required this.selectedDay,
+    this.selectedPeriodDay,
     required this.onDaySelected,
+    this.onClearSelectedDay,
     required this.dayFilter,
     required this.onDayFilterChanged,
     required this.onEdit,
@@ -76,14 +79,18 @@ class MovementViewRenderer extends StatelessWidget {
       key: const Key('movements_layout_list'),
       topWidget: Column(
         children: [
-          if (timeFilter.mode == TimeFilterMode.year)
+          if (timeFilter.mode == TimeFilterMode.year ||
+              timeFilter.mode == TimeFilterMode.week)
               PeriodHeatmapCard(
                 timeFilter: timeFilter,
                 movements: movements,
                 selectedDay: selectedDay,
+                selectedPeriodDay: selectedPeriodDay,
                 onDaySelected: onDaySelected,
+                onClearSelectedDay: onClearSelectedDay,
                 compactHeader: true,
                 categories: db.categories,
+                subcategories: db.subcategories,
               footerAction: OutlinedButton.icon(
                 key: const Key('movements_open_calendar_default_settings'),
                 onPressed: () {
@@ -151,7 +158,9 @@ class MovementViewRenderer extends StatelessWidget {
           timeFilter: timeFilter,
           movements: movements,
           selectedDay: selectedDay,
+          selectedPeriodDay: selectedPeriodDay,
           onDaySelected: onDaySelected,
+          onClearSelectedDay: onClearSelectedDay,
           categories: db.categories,
         ),
         if (timeFilter.mode != TimeFilterMode.day)
@@ -160,16 +169,17 @@ class MovementViewRenderer extends StatelessWidget {
             child: HeatmapLegend(),
           ),
         const SizedBox(height: StreamSpacing.md),
-        _MovementPanel(
-          movements: displayedMovements,
-          periodMovements: periodMovements,
-          hasQuery: hasQuery,
-          includeTypeFilters: includeTypeFilters,
-          dayFilter: dayFilter,
-          onDayFilterChanged: onDayFilterChanged,
-          db: db,
-          onEdit: onEdit,
-        ),
+          _MovementPanel(
+            movements: displayedMovements,
+            periodMovements: periodMovements,
+            hasQuery: hasQuery,
+            includeTypeFilters: includeTypeFilters,
+            dayFilter: dayFilter,
+            onDayFilterChanged: onDayFilterChanged,
+            db: db,
+            onEdit: onEdit,
+            selectedPeriodDay: selectedPeriodDay,
+          ),
       ],
     );
   }
@@ -184,6 +194,7 @@ class _MovementPanel extends StatelessWidget {
   final ValueChanged<MovementType?>? onDayFilterChanged;
   final AppDatabase db;
   final ValueChanged<Movement> onEdit;
+  final DateTime? selectedPeriodDay;
 
   const _MovementPanel({
     required this.movements,
@@ -194,10 +205,18 @@ class _MovementPanel extends StatelessWidget {
     required this.onDayFilterChanged,
     required this.db,
     required this.onEdit,
+    this.selectedPeriodDay,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveMovements = selectedPeriodDay != null
+        ? movements.where((m) =>
+            m.date.year == selectedPeriodDay!.year &&
+            m.date.month == selectedPeriodDay!.month &&
+            m.date.day == selectedPeriodDay!.day).toList()
+        : movements;
+
     return Container(
       key: const Key('day_movements_panel'),
       decoration: BoxDecoration(
@@ -213,7 +232,7 @@ class _MovementPanel extends StatelessWidget {
             _buildDayFilterChips(),
             const Divider(height: 1, color: StreamColors.divider),
           ],
-          movements.isEmpty
+          effectiveMovements.isEmpty
               ? Padding(
                   padding: const EdgeInsets.all(StreamSpacing.xl),
                   child: Center(
@@ -230,7 +249,7 @@ class _MovementPanel extends StatelessWidget {
                     ),
                   ),
                 )
-              : _buildMovementsList(),
+              : _buildMovementsList(effectiveMovements),
         ],
       ),
     );
@@ -279,43 +298,14 @@ class _MovementPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildMovementsList() {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+  Widget _buildMovementsList(List<Movement> items) {
+    return GroupedMovementsList(
+      movements: items,
+      db: db,
+      filterType: dayFilter,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: movements.length,
-      separatorBuilder: (_, index) => const SizedBox(height: 4),
-      itemBuilder: (context, index) {
-        final movement = movements[index];
-        final category = db.categories
-            .where((category) => category.id == movement.categoryId)
-            .firstOrNull;
-        final account = db.accounts
-            .where((account) => account.id == movement.accountId)
-            .firstOrNull;
-        final destinationAccount = movement.destinationAccountId == null
-            ? null
-            : db.accounts
-                  .where(
-                    (account) => account.id == movement.destinationAccountId,
-                  )
-                  .firstOrNull;
-        final subcategory = movement.subcategoryId == null
-            ? null
-            : db.subcategories
-                  .where((sub) => sub.id == movement.subcategoryId)
-                  .firstOrNull;
-
-        return MovementCard(
-          movement: movement,
-          category: category,
-          subcategory: subcategory,
-          account: account,
-          destinationAccount: destinationAccount,
-          onTap: () => onEdit(movement),
-        );
-      },
+      onEdit: (m) => onEdit(m),
     );
   }
 }
