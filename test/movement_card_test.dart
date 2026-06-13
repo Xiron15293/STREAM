@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:stream_app/data/database.dart';
+import 'package:stream_app/design/stream_icon_library.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/account.dart';
@@ -323,5 +325,73 @@ void main() {
       );
       expect(find.byIcon(Icons.more_horiz), findsNothing);
     });
+
+    testWidgets(
+      'aggiorna subito icona sottocategoria dopo update della madre',
+      (tester) async {
+        final db = AppDatabase();
+        await db.addCategory(
+          'Tempo libero',
+          MovementType.expense,
+          0xFF1E88E5,
+          iconKey: 'star',
+        );
+        final parent = db.categories.firstWhere(
+          (c) => c.name == 'Tempo libero',
+        );
+        await db.createSubcategory(
+          parent.id,
+          'Ristorante',
+          iconKey: parent.iconKey,
+          color: parent.color,
+        );
+        final sub = db.subcategories.firstWhere((s) => s.name == 'Ristorante');
+        final movement = Movement(
+          id: 'm_refresh',
+          title: 'Cena',
+          amount: 18,
+          type: MovementType.expense,
+          date: now,
+          categoryId: parent.id,
+          subcategoryId: sub.id,
+          createdAt: now,
+        );
+
+        await tester.pumpWidget(
+          wrapWithTheme(
+            ListenableBuilder(
+              listenable: db,
+              builder: (context, _) {
+                final liveCategory = db.categories.firstWhere(
+                  (c) => c.id == parent.id,
+                );
+                final liveSub = db.subcategories.firstWhere(
+                  (s) => s.id == sub.id,
+                );
+                return MovementCard(
+                  movement: movement,
+                  category: liveCategory,
+                  subcategory: liveSub,
+                );
+              },
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await db.updateCategory(
+          parent.id,
+          parent.name,
+          0xFF009688,
+          iconKey: 'wallet',
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(StreamIconLibrary.getIcon('wallet')), findsWidgets);
+        final liveSub = db.subcategories.firstWhere((s) => s.id == sub.id);
+        expect(liveSub.color, 0xFF009688);
+        expect(liveSub.iconKey, 'wallet');
+      },
+    );
   });
 }

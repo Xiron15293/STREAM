@@ -6,6 +6,7 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
+import '../utils/duplicate_date_selector.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/calculator_amount_pad.dart';
@@ -992,6 +993,24 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                           movements: movements,
                           db: widget.db,
                           showNotes: true,
+                          onEdit: (m) => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => MovementPicker(
+                              db: widget.db,
+                              prefill: m,
+                            ),
+                          ),
+                          onDuplicate: (m) async {
+                            final date = await showDuplicateDateSheet(context);
+                            if (date != null) widget.db.duplicateMovement(m, date: date);
+                          },
+                          onSaveAsFavorite: (m) =>
+                              widget.db.saveMovementAsFavorite(m),
+                          onAddQuick: (m) =>
+                              widget.db.saveMovementAsQuick(m),
+                          onDelete: (m) =>
+                              widget.db.deleteMovement(m.id),
                         )
                       : Center(
                           child: Text(

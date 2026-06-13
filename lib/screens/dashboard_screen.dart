@@ -6,6 +6,7 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
+import '../utils/duplicate_date_selector.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 import '../widgets/grouped_movements_list.dart';
@@ -685,89 +686,113 @@ class _CategoryDetailSheet extends StatelessWidget {
               top: Radius.circular(StreamRadius.xl),
             ),
           ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: StreamSpacing.sm),
-                width: 32,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: StreamColors.textMuted,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(StreamSpacing.lg),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(StreamRadius.sm),
-                      ),
-                      child: Icon(iconData, color: Colors.white, size: 20),
+          child: ListenableBuilder(
+            listenable: db,
+            builder: (context, _) {
+              final currentMovements = db.movements
+                  .where((m) => m.categoryId == item.categoryId)
+                  .toList();
+              return Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: StreamSpacing.sm),
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: StreamColors.textMuted,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    const SizedBox(width: StreamSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            category?.name ?? item.categoryId,
-                            style: StreamTypography.h3,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(StreamSpacing.lg),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(StreamRadius.sm),
                           ),
-                          const SizedBox(height: StreamSpacing.xs),
-                          Text(
-                            '${movements.length} movimenti · ${item.total.toStringAsFixed(2)} €',
-                            style: StreamTypography.caption.copyWith(
-                              color: StreamColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => MovementPicker(
-                            db: db,
-                            categoryPreFill: item.categoryId,
-                          ),
-                        );
-                      },
-                      tooltip: 'Aggiungi movimento in questa categoria',
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: StreamColors.divider),
-              Expanded(
-                child: movements.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(StreamSpacing.xl),
-                          child: Text(
-                            'Nessun movimento in questa categoria nel periodo',
-                            style: StreamTypography.body.copyWith(
-                              color: StreamColors.textSecondary,
-                            ),
+                          child: Icon(iconData, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: StreamSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                category?.name ?? item.categoryId,
+                                style: StreamTypography.h3,
+                              ),
+                              const SizedBox(height: StreamSpacing.xs),
+                              Text(
+                                '${currentMovements.length} movimenti · ${item.total.toStringAsFixed(2)} €',
+                                style: StreamTypography.caption.copyWith(
+                                  color: StreamColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      )
-                    : GroupedMovementsList(
-                        movements: movements,
-                        db: db,
-                        showNotes: false,
-                        scrollController: scrollController,
-                      ),
-              ),
-            ],
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => MovementPicker(
+                                db: db,
+                                categoryPreFill: item.categoryId,
+                              ),
+                            );
+                          },
+                          tooltip: 'Aggiungi movimento in questa categoria',
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: StreamColors.divider),
+                  Expanded(
+                    child: currentMovements.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(StreamSpacing.xl),
+                              child: Text(
+                                'Nessun movimento in questa categoria nel periodo',
+                                style: StreamTypography.body.copyWith(
+                                  color: StreamColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          )
+                        : GroupedMovementsList(
+                            movements: currentMovements,
+                            db: db,
+                            showNotes: false,
+                            scrollController: scrollController,
+                            onEdit: (m) => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => MovementPicker(
+                                db: db,
+                                prefill: m,
+                              ),
+                            ),
+                            onDuplicate: (m) async {
+                              final date = await showDuplicateDateSheet(context);
+                              if (date != null) db.duplicateMovement(m, date: date);
+                            },
+                            onSaveAsFavorite: (m) =>
+                                db.saveMovementAsFavorite(m),
+                            onAddQuick: (m) => db.saveMovementAsQuick(m),
+                            onDelete: (m) => db.deleteMovement(m.id),
+                          ),
+                  ),
+                ],
+              );
+            },
           ),
         );
       },

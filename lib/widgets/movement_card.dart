@@ -17,6 +17,7 @@ class MovementCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDuplicate;
   final VoidCallback? onSaveAsFavorite;
+  final VoidCallback? onAddQuick;
   final VoidCallback? onDelete;
   final bool showNotes;
   final bool showDate;
@@ -32,6 +33,7 @@ class MovementCard extends StatelessWidget {
     this.onEdit,
     this.onDuplicate,
     this.onSaveAsFavorite,
+    this.onAddQuick,
     this.onDelete,
     this.showNotes = false,
     this.showDate = false,
@@ -55,6 +57,7 @@ class MovementCard extends StatelessWidget {
         onEdit != null ||
         onDuplicate != null ||
         onSaveAsFavorite != null ||
+        onAddQuick != null ||
         onDelete != null;
 
     return Container(
@@ -157,10 +160,11 @@ class MovementCard extends StatelessWidget {
                     ),
                     if (hasPopup) ...[
                       const SizedBox(width: StreamSpacing.xs),
-                      _PopupMenu(
+                      MovementCardPopupMenu(
                         onEdit: onEdit,
                         onDuplicate: onDuplicate,
                         onSaveAsFavorite: onSaveAsFavorite,
+                        onAddQuick: onAddQuick,
                         onDelete: onDelete,
                       ),
                     ],
@@ -253,16 +257,18 @@ class _NoteBox extends StatelessWidget {
   }
 }
 
-class _PopupMenu extends StatelessWidget {
+class MovementCardPopupMenu extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDuplicate;
   final VoidCallback? onSaveAsFavorite;
+  final VoidCallback? onAddQuick;
   final VoidCallback? onDelete;
 
-  const _PopupMenu({
+  const MovementCardPopupMenu({
     this.onEdit,
     this.onDuplicate,
     this.onSaveAsFavorite,
+    this.onAddQuick,
     this.onDelete,
   });
 
@@ -321,6 +327,18 @@ class _PopupMenu extends StatelessWidget {
             ),
           );
         }
+        if (onAddQuick != null) {
+          items.add(
+            const PopupMenuItem(
+              value: 'rapido',
+              child: ListTile(
+                leading: Icon(Icons.flash_on, size: 20),
+                title: Text('Salva rapido'),
+                dense: true,
+              ),
+            ),
+          );
+        }
         if (onSaveAsFavorite != null) {
           items.add(
             const PopupMenuItem(
@@ -360,6 +378,8 @@ class _PopupMenu extends StatelessWidget {
             onEdit?.call();
           case 'duplica':
             onDuplicate?.call();
+          case 'rapido':
+            onAddQuick?.call();
           case 'preferito':
             onSaveAsFavorite?.call();
           case 'elimina':
