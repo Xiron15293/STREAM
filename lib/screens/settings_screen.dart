@@ -102,33 +102,35 @@ class SettingsScreen extends StatelessWidget {
               child: _HeatmapSettingsSection(),
             ),
           ),
-          const SizedBox(height: StreamSpacing.lg),
-          Card(
-            key: const Key('settings_profile_section'),
-            color: StreamColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(StreamSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Profilo', style: StreamTypography.h3),
-                  const SizedBox(height: StreamSpacing.sm),
-                  ListTile(
-                    key: const Key('settings_active_profile_tile'),
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.person_outline,
-                      color: StreamColors.primary,
+          if (onManageProfiles != null) ...[
+            const SizedBox(height: StreamSpacing.lg),
+            Card(
+              key: const Key('settings_profile_section'),
+              color: StreamColors.surface,
+              child: Padding(
+                padding: const EdgeInsets.all(StreamSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Profilo', style: StreamTypography.h3),
+                    const SizedBox(height: StreamSpacing.sm),
+                    ListTile(
+                      key: const Key('settings_active_profile_tile'),
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.person_outline,
+                        color: StreamColors.primary,
+                      ),
+                      title: const Text('Principale'),
+                      subtitle: const Text('Profilo attivo'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: onManageProfiles,
                     ),
-                    title: const Text('Principale'),
-                    subtitle: const Text('Profilo attivo'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: onManageProfiles,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: StreamSpacing.lg),
           Card(
             color: StreamColors.surface,
