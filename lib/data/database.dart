@@ -1224,7 +1224,35 @@ class AppDatabase extends ChangeNotifier {
 
   bool get hasAnyBeneficiaryProfiles => _beneficiaryProfiles.isNotEmpty;
 
+  String cleanBeneficiaryName(String? payee) {
+    if (payee == null) return '';
+    return BeneficiaryProfile.cleanDisplayName(payee);
+  }
+
+  BeneficiaryProfile? resolveBeneficiaryProfile(String? payee) {
+    final cleaned = cleanBeneficiaryName(payee);
+    if (cleaned.isEmpty) return null;
+    return getBeneficiaryProfile(BeneficiaryProfile.normalizeKey(cleaned));
+  }
+
   Future<void> addBeneficiaryProfile(BeneficiaryProfile bp) async {
+    final existingIndex = _beneficiaryProfiles.indexWhere((b) => b.key == bp.key);
+    if (existingIndex >= 0) {
+      _beneficiaryProfiles[existingIndex] = bp.copyWith(
+        id: _beneficiaryProfiles[existingIndex].id,
+        createdAt: _beneficiaryProfiles[existingIndex].createdAt,
+        updatedAt: DateTime.now(),
+      );
+      if (_sqlite != null) {
+        try {
+          await _sqlite.updateBeneficiaryProfile(_beneficiaryProfiles[existingIndex]);
+        } catch (_) {
+          return;
+        }
+      }
+      notifyListeners();
+      return;
+    }
     if (_sqlite != null) {
       try {
         await _sqlite.insertBeneficiaryProfile(bp);
@@ -1262,11 +1290,33 @@ class AppDatabase extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<BeneficiaryProfile?> createManualBeneficiaryProfile(
+    String rawName, {
+    String iconKey = BeneficiaryProfile.defaultIconKey,
+    int color = StreamColorPalette.defaultColor,
+  }) async {
+    final cleaned = cleanBeneficiaryName(rawName);
+    if (cleaned.isEmpty) return null;
+    final key = BeneficiaryProfile.normalizeKey(cleaned);
+    if (hasBeneficiaryProfile(key)) return getBeneficiaryProfile(key);
+
+    final profile = BeneficiaryProfile(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      key: key,
+      displayName: cleaned,
+      iconKey: iconKey,
+      color: color,
+      createdAt: DateTime.now(),
+    );
+    await addBeneficiaryProfile(profile);
+    return getBeneficiaryProfile(key) ?? profile;
+  }
+
   String resolveBeneficiaryDisplayName(String? payee) {
-    if (payee == null || payee.isEmpty) return '';
-    final key = BeneficiaryProfile.normalizeKey(payee);
-    final profile = getBeneficiaryProfile(key);
-    return profile?.displayName ?? payee;
+    final cleaned = cleanBeneficiaryName(payee);
+    if (cleaned.isEmpty) return '';
+    final profile = resolveBeneficiaryProfile(cleaned);
+    return profile?.displayName ?? cleaned;
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
+import '../models/beneficiary_profile.dart';
 import '../models/category.dart';
 import '../models/subcategory.dart';
 import '../models/account.dart';
@@ -13,6 +14,9 @@ class MovementCard extends StatelessWidget {
   final Subcategory? subcategory;
   final Account? account;
   final Account? destinationAccount;
+  final String? beneficiaryDisplayName;
+  final String? beneficiaryIconKey;
+  final int? beneficiaryColor;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDuplicate;
@@ -29,6 +33,9 @@ class MovementCard extends StatelessWidget {
     this.subcategory,
     this.account,
     this.destinationAccount,
+    this.beneficiaryDisplayName,
+    this.beneficiaryIconKey,
+    this.beneficiaryColor,
     this.onTap,
     this.onEdit,
     this.onDuplicate,
@@ -120,6 +127,24 @@ class MovementCard extends StatelessWidget {
                               icon: Icons.help_outline,
                               iconColor: StreamColors.textMuted,
                               text: movement.categoryId,
+                            ),
+                          if (!isTransfer &&
+                              movement.payee != null &&
+                              movement.payee!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 1),
+                              child: _MetadataRow(
+                                icon: StreamIconLibrary.getIcon(
+                                  beneficiaryIconKey ??
+                                      BeneficiaryProfile.defaultIconKey,
+                                ),
+                                iconColor: Color(
+                                  beneficiaryColor ??
+                                      StreamColorPalette.defaultColor,
+                                ),
+                                text: beneficiaryDisplayName ??
+                                    movement.payee!.trim(),
+                              ),
                             ),
                           if (!isTransfer && account != null)
                             Padding(
@@ -265,6 +290,7 @@ class MovementCardPopupMenu extends StatelessWidget {
   final VoidCallback? onDelete;
 
   const MovementCardPopupMenu({
+    super.key,
     this.onEdit,
     this.onDuplicate,
     this.onSaveAsFavorite,

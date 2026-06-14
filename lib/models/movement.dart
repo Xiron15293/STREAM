@@ -1,6 +1,8 @@
 import 'category.dart';
 import 'account.dart';
 
+const Object _movementFieldUnset = Object();
+
 class Movement {
   final String id;
   final String title;
@@ -49,11 +51,11 @@ class Movement {
     MovementType? type,
     DateTime? date,
     String? categoryId,
-    String? subcategoryId,
+    Object? subcategoryId = _movementFieldUnset,
     String? accountId,
-    String? destinationAccountId,
-    String? note,
-    String? payee,
+    Object? destinationAccountId = _movementFieldUnset,
+    Object? note = _movementFieldUnset,
+    Object? payee = _movementFieldUnset,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -64,11 +66,15 @@ class Movement {
       type: type ?? this.type,
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
-      subcategoryId: subcategoryId ?? this.subcategoryId,
+      subcategoryId: subcategoryId == _movementFieldUnset
+          ? this.subcategoryId
+          : subcategoryId as String?,
       accountId: accountId ?? this.accountId,
-      destinationAccountId: destinationAccountId ?? this.destinationAccountId,
-      note: note ?? this.note,
-      payee: payee ?? this.payee,
+      destinationAccountId: destinationAccountId == _movementFieldUnset
+          ? this.destinationAccountId
+          : destinationAccountId as String?,
+      note: note == _movementFieldUnset ? this.note : note as String?,
+      payee: payee == _movementFieldUnset ? this.payee : payee as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

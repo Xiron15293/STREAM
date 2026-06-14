@@ -135,12 +135,16 @@ class GroupedMovementsList extends StatelessWidget {
         final subcat = m.subcategoryId == null
             ? null
             : db.subcategories.where((s) => s.id == m.subcategoryId).firstOrNull;
+        final beneficiaryProfile = db.resolveBeneficiaryProfile(m.payee);
         return MovementCard(
           movement: m,
           category: cat,
           subcategory: subcat,
           account: acc,
           destinationAccount: destinationAcc,
+          beneficiaryDisplayName: db.resolveBeneficiaryDisplayName(m.payee),
+          beneficiaryIconKey: beneficiaryProfile?.iconKey,
+          beneficiaryColor: beneficiaryProfile?.color,
           showNotes: showNotes,
           showDate: false,
           onEdit: onEdit != null ? () => onEdit!(m) : null,

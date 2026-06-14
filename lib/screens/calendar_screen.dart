@@ -313,12 +313,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final subcat = m.subcategoryId == null
             ? null
             : widget.db.subcategories.where((s) => s.id == m.subcategoryId).firstOrNull;
+        final beneficiaryProfile = widget.db.resolveBeneficiaryProfile(m.payee);
         return MovementCard(
           movement: m,
           category: cat,
           subcategory: subcat,
           account: acc,
           destinationAccount: destinationAcc,
+          beneficiaryDisplayName: widget.db.resolveBeneficiaryDisplayName(
+            m.payee,
+          ),
+          beneficiaryIconKey: beneficiaryProfile?.iconKey,
+          beneficiaryColor: beneficiaryProfile?.color,
           onTap: () => _showPicker(context, prefill: m),
         );
       },

@@ -4,6 +4,7 @@ import '../design/stream_icon_library.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../theme.dart';
+import '../util/beneficiary_helpers.dart';
 import 'calculator_amount_pad.dart';
 import 'category_subcategory_selector.dart';
 
@@ -21,6 +22,7 @@ class _MovementFormState extends State<MovementForm> {
   late final TextEditingController _titleCtrl;
   late final TextEditingController _amountCtrl;
   late final TextEditingController _noteCtrl;
+  late final TextEditingController _payeeCtrl;
   MovementType _type = MovementType.expense;
   String? _selectedCategoryId;
   String? _selectedSubcategoryId;
@@ -37,6 +39,7 @@ class _MovementFormState extends State<MovementForm> {
       text: p != null ? p.amount.toString() : '',
     );
     _noteCtrl = TextEditingController(text: p?.note ?? '');
+    _payeeCtrl = TextEditingController(text: p?.payee ?? '');
     _date = p?.date ?? DateTime.now();
     if (p != null) {
       _type = p.type;
@@ -52,6 +55,7 @@ class _MovementFormState extends State<MovementForm> {
     _titleCtrl.dispose();
     _amountCtrl.dispose();
     _noteCtrl.dispose();
+    _payeeCtrl.dispose();
     super.dispose();
   }
 
@@ -61,7 +65,7 @@ class _MovementFormState extends State<MovementForm> {
             .where((c) => c.type == _type && !c.archived)
             .toList();
 
-  void _submit() {
+  Future<void> _submit() async {
     final title = _titleCtrl.text.trim();
     final amountText = _amountCtrl.text.trim();
     final isTransfer = _type == MovementType.transfer;
@@ -86,7 +90,7 @@ class _MovementFormState extends State<MovementForm> {
       }
 
       if (widget.prefill != null) {
-        widget.db.updateMovement(
+        await widget.db.updateMovement(
           widget.prefill!.copyWith(
             title: title.isEmpty ? widget.prefill!.title : title,
             amount: amount,
@@ -101,7 +105,7 @@ class _MovementFormState extends State<MovementForm> {
           ),
         );
       } else {
-        widget.db.createMovementFromTemplate(
+        await widget.db.createMovementFromTemplate(
           title: title,
           amount: amount,
           type: _type,
@@ -112,12 +116,19 @@ class _MovementFormState extends State<MovementForm> {
           note: note,
         );
       }
+      if (!mounted) return;
       Navigator.of(context).pop();
       return;
     }
 
+    final payee = widget.db.cleanBeneficiaryName(_payeeCtrl.text);
+    final payeeDecision = await askToSaveBeneficiary(context, widget.db, payee);
+    if (!mounted || payeeDecision == SaveBeneficiaryDecision.cancel) {
+      return;
+    }
+
     if (widget.prefill != null) {
-      widget.db.updateMovement(
+      await widget.db.updateMovement(
         widget.prefill!.copyWith(
           title: title,
           amount: amount,
@@ -127,11 +138,12 @@ class _MovementFormState extends State<MovementForm> {
           subcategoryId: _selectedSubcategoryId,
           accountId: _selectedAccountId,
           note: note,
+          payee: payee.isEmpty ? null : payee,
           updatedAt: DateTime.now(),
         ),
       );
     } else {
-      widget.db.createMovementFromTemplate(
+      await widget.db.createMovementFromTemplate(
         title: title,
         amount: amount,
         type: _type,
@@ -140,8 +152,14 @@ class _MovementFormState extends State<MovementForm> {
         subcategoryId: _selectedSubcategoryId,
         accountId: _selectedAccountId,
         note: note,
+        payee: payee.isEmpty ? null : payee,
       );
     }
+    if (payeeDecision == SaveBeneficiaryDecision.saveBeneficiary &&
+        payee.isNotEmpty) {
+      await widget.db.createManualBeneficiaryProfile(payee);
+    }
+    if (!mounted) return;
     Navigator.of(context).pop();
   }
 
@@ -287,6 +305,14 @@ class _MovementFormState extends State<MovementForm> {
                     _selectedCategoryId = categoryId;
                     _selectedSubcategoryId = subcategoryId;
                   }),
+                ),
+                const SizedBox(height: StreamSpacing.md),
+                TextField(
+                  controller: _payeeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Beneficiario (opzionale)',
+                  ),
+                  textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: StreamSpacing.md),
               ],

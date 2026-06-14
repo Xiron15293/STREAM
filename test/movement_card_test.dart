@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:stream_app/data/database.dart';
 import 'package:stream_app/design/stream_icon_library.dart';
+import 'package:stream_app/models/beneficiary_profile.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/account.dart';
@@ -391,6 +392,55 @@ void main() {
         final liveSub = db.subcategories.firstWhere((s) => s.id == sub.id);
         expect(liveSub.color, 0xFF009688);
         expect(liveSub.iconKey, 'wallet');
+      },
+    );
+
+    testWidgets(
+      'mostra displayName beneficiario da profilo senza riscrivere movement.payee',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createManualBeneficiaryProfile(
+          'ristorante rossi',
+          iconKey: BeneficiaryProfile.defaultIconKey,
+        );
+        await db.updateBeneficiaryProfile(
+          db.beneficiaryProfiles.first.copyWith(
+            displayName: 'Ristorante Rossi Srl',
+          ),
+        );
+        final movement = Movement(
+          id: 'm_payee',
+          title: 'Cena',
+          amount: 42,
+          type: MovementType.expense,
+          date: now,
+          categoryId: 'exp_1',
+          payee: 'ristorante rossi',
+          createdAt: now,
+        );
+        final profile = db.resolveBeneficiaryProfile(movement.payee);
+
+        await tester.pumpWidget(
+          wrapWithTheme(
+            MovementCard(
+              movement: movement,
+              category: Category(
+                id: 'exp_1',
+                name: 'Spesa',
+                type: MovementType.expense,
+                color: 0xFFFF7043,
+              ),
+              beneficiaryDisplayName: db.resolveBeneficiaryDisplayName(
+                movement.payee,
+              ),
+              beneficiaryIconKey: profile?.iconKey,
+              beneficiaryColor: profile?.color,
+            ),
+          ),
+        );
+
+        expect(find.text('Ristorante Rossi Srl'), findsOneWidget);
+        expect(movement.payee, 'ristorante rossi');
       },
     );
   });

@@ -293,6 +293,112 @@ Future<void> _createV7NoInitialBalanceSchema(Database db) async {
   });
 }
 
+/// Create V11 schema on an open database (payee present, beneficiary_profiles absent).
+Future<void> _createV11Schema(Database db) async {
+  await db.execute('''
+    CREATE TABLE movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      subcategory_id TEXT,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      destination_account_id TEXT,
+      date TEXT NOT NULL,
+      note TEXT,
+      payee TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE categories (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      color INTEGER, icon_key TEXT NOT NULL DEFAULT 'tag',
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE subcategories (
+      id TEXT PRIMARY KEY,
+      category_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      icon_key TEXT,
+      color INTEGER,
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute(
+    'CREATE INDEX idx_subcategories_category_id ON subcategories(category_id)',
+  );
+  await db.execute(
+    'CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)',
+  );
+  await db.execute('''
+    CREATE TABLE quick_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      subcategory_id TEXT,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE favorite_movements (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL,
+      type TEXT NOT NULL, category_id TEXT NOT NULL,
+      subcategory_id TEXT,
+      account_id TEXT NOT NULL DEFAULT '$defaultAccountId',
+      note TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE accounts (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT NOT NULL,
+      initial_balance REAL NOT NULL DEFAULT 0.0,
+      icon_key TEXT NOT NULL DEFAULT 'wallet',
+      color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+      archived INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )
+  ''');
+  final now = DateTime.now().toIso8601String();
+  await db.insert('accounts', {
+    'id': defaultAccountId,
+    'name': 'Principale',
+    'type': 'bank',
+    'initial_balance': 0.0,
+    'icon_key': StreamIconLibrary.defaultAccountIcon,
+    'color': StreamColorPalette.getDefault(),
+    'archived': 0,
+    'created_at': now,
+    'updated_at': now,
+  });
+  await db.insert('categories', {
+    'id': 'exp_1',
+    'name': 'Spesa',
+    'type': 'expense',
+    'color': 0xFFEF5350,
+    'icon_key': 'shopping_cart',
+    'archived': 0,
+    'created_at': now,
+    'updated_at': now,
+  });
+}
+
+Future<String> _makeV11Db() async {
+  final path = _tempDbPath('v11.db');
+  final db = await openDatabase(
+    path,
+    version: 11,
+    onCreate: (db, _) => _createV11Schema(db),
+  );
+  await db.close();
+  return path;
+}
+
 void main() {
   setUpAll(() {
     sqfliteFfiInit();
@@ -1111,6 +1217,104 @@ void main() {
 
       expect(appDb.movements.length, 1);
       expect(appDb.movements.first.date, isNotNull);
+
+      await sqlite.close();
+    });
+  });
+
+  group('V11→V12 — beneficiary_profiles migration', () {
+    test('crea beneficiary_profiles e preserva movement.payee raw', () async {
+      final path = await _makeV11Db();
+      final seedDb = await openDatabase(path, version: 11);
+      final now = DateTime(2026, 6, 14).toIso8601String();
+      await seedDb.insert('movements', {
+        'id': 'bp_mig_1',
+        'title': 'Spesa legacy',
+        'amount': 12.5,
+        'type': 'expense',
+        'category_id': 'exp_1',
+        'account_id': defaultAccountId,
+        'date': now,
+        'payee': 'Tigros Spa',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await seedDb.close();
+
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      expect(appDb.movements, hasLength(1));
+      expect(appDb.movements.first.payee, 'Tigros Spa');
+      expect(appDb.beneficiaryProfiles, isEmpty);
+
+      final migratedDb = await openDatabase(path);
+      final tableRows = await migratedDb.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'beneficiary_profiles'",
+      );
+      final payeeColumns = await migratedDb.rawQuery(
+        'PRAGMA table_info(movements)',
+      );
+
+      expect(tableRows, isNotEmpty);
+      expect(payeeColumns.where((row) => row['name'] == 'payee'), isNotEmpty);
+      expect(payeeColumns.where((row) => row['name'] == 'payee_id'), isEmpty);
+
+      await migratedDb.close();
+      await sqlite.close();
+    });
+
+    test('migration v12 resta idempotente su riaperture multiple', () async {
+      final path = await _makeV11Db();
+
+      final sqliteA = SQLiteService();
+      await sqliteA.open(path: path);
+      await sqliteA.close();
+
+      final sqliteB = SQLiteService();
+      await sqliteB.open(path: path);
+      final db = await openDatabase(path);
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'beneficiary_profiles'",
+      );
+      final indexes = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_beneficiary_key'",
+      );
+
+      expect(tables, hasLength(1));
+      expect(indexes, hasLength(1));
+
+      await db.close();
+      await sqliteB.close();
+    });
+
+    test('reloadFromDb mantiene i profili beneficiario', () async {
+      final path = _tempDbPath('v12_reload.db');
+      final sqlite = SQLiteService();
+      await sqlite.open(path: path);
+      final appDb = AppDatabase(sqlite: sqlite);
+      await appDb.initialize();
+
+      await appDb.createManualBeneficiaryProfile('Tigros Spa');
+      await appDb.updateBeneficiaryProfile(
+        appDb.beneficiaryProfiles.first.copyWith(
+          displayName: 'Tigros',
+          iconKey: 'shopping_bag',
+          color: 0xFF00897B,
+          updatedAt: DateTime.now(),
+        ),
+      );
+
+      await appDb.reloadFromDb();
+
+      expect(appDb.beneficiaryProfiles, hasLength(1));
+      expect(appDb.beneficiaryProfiles.first.key, 'tigros spa');
+      expect(appDb.beneficiaryProfiles.first.displayName, 'Tigros');
+      expect(appDb.beneficiaryProfiles.first.iconKey, 'shopping_bag');
+      expect(appDb.beneficiaryProfiles.first.color, 0xFF00897B);
+      expect(appDb.beneficiaryProfiles.first.updatedAt, isNotNull);
 
       await sqlite.close();
     });

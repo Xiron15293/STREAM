@@ -17,7 +17,7 @@ class ArchiveScreen extends StatefulWidget {
 class _ArchiveScreenState extends State<ArchiveScreen> {
   int _selectedSection = 0;
 
-  static const _sections = ['Movimenti', 'Conti', 'Categorie', 'Beneficiari'];
+  static const _sections = ['Movimenti', 'Conti', 'Categorie', 'Benefic.']; // shortened to fit in one line
   static const _icons = [
     Icons.swap_vert,
     Icons.account_balance,

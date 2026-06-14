@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stream_app/data/database.dart';
 import 'package:stream_app/main.dart';
 import 'package:stream_app/screens/accounts_screen.dart';
+import 'package:stream_app/screens/beneficiaries_screen.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/screens/movements_screen.dart';
 
@@ -15,7 +16,7 @@ void main() {
     });
   });
 
-  testWidgets('ArchiveScreen mostra solo Movimenti Conti Categorie', (
+  testWidgets('ArchiveScreen mostra Movimenti Conti Categorie Beneficiari', (
     tester,
   ) async {
     final db = AppDatabase();
@@ -28,6 +29,10 @@ void main() {
     expect(find.byKey(const Key('archive_section_movements')), findsOneWidget);
     expect(find.byKey(const Key('archive_section_accounts')), findsOneWidget);
     expect(find.byKey(const Key('archive_section_categories')), findsOneWidget);
+    expect(
+      find.byKey(const Key('archive_section_beneficiaries')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('archive_section_calendar')), findsNothing);
     expect(
       find.descendant(
@@ -40,7 +45,7 @@ void main() {
     final segmentedButton = tester.widget<SegmentedButton<int>>(
       find.byType(SegmentedButton<int>),
     );
-    expect(segmentedButton.segments.length, 3);
+    expect(segmentedButton.segments.length, 4);
 
     expect(find.byType(MovementsScreen), findsOneWidget);
 
@@ -61,5 +66,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(MovementsScreen), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const Key('archive_section_beneficiaries')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(BeneficiariesScreen), findsOneWidget);
   });
 }

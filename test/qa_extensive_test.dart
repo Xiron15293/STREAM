@@ -27,6 +27,8 @@ import 'package:stream_app/utils/movement_search.dart';
 import 'package:stream_app/widgets/grouped_movements_list.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
+const Object _throwingMovementUnset = Object();
+
 class _FailingTransactionSQLiteService extends SQLiteService {
   @override
   Future<T> transaction<T>(Future<T> Function(Transaction txn) action) async {
@@ -63,10 +65,11 @@ class _ThrowingMovement extends Movement {
     MovementType? type,
     DateTime? date,
     String? categoryId,
-    String? subcategoryId,
+    Object? subcategoryId = _throwingMovementUnset,
     String? accountId,
-    String? destinationAccountId,
-    String? note,
+    Object? destinationAccountId = _throwingMovementUnset,
+    Object? note = _throwingMovementUnset,
+    Object? payee = _throwingMovementUnset,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

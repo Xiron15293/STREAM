@@ -1,0 +1,536 @@
+import 'package:flutter/material.dart';
+
+import '../data/database.dart';
+import '../design/stream_icon_library.dart';
+import '../models/beneficiary_profile.dart';
+import '../models/category.dart';
+import '../models/movement.dart';
+import '../theme.dart';
+import '../util/beneficiary_helpers.dart';
+import '../widgets/grouped_movements_list.dart';
+
+class BeneficiariesScreen extends StatefulWidget {
+  final AppDatabase db;
+
+  const BeneficiariesScreen({super.key, required this.db});
+
+  @override
+  State<BeneficiariesScreen> createState() => _BeneficiariesScreenState();
+}
+
+class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
+  late final TextEditingController _searchCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+    _searchCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: widget.db,
+      builder: (context, _) {
+        final allEntries = _buildEntries();
+        final query = BeneficiaryProfile.normalizeKey(_searchCtrl.text);
+        final filtered = query.isEmpty
+            ? allEntries
+            : allEntries.where((entry) {
+                return entry.searchKey.contains(query) ||
+                    BeneficiaryProfile.normalizeKey(entry.displayName).contains(
+                      query,
+                    );
+              }).toList();
+
+        return SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  StreamSpacing.lg,
+                  StreamSpacing.md,
+                  StreamSpacing.lg,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('beneficiaries_search_field'),
+                        controller: _searchCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Cerca beneficiario',
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: StreamSpacing.sm),
+                    IconButton.filled(
+                      key: const Key('beneficiaries_add_button'),
+                      onPressed: () => showCreateBeneficiaryDialog(
+                        context,
+                        widget.db,
+                      ),
+                      icon: const Icon(Icons.add),
+                      tooltip: 'Nuovo beneficiario',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              Expanded(
+                child: filtered.isEmpty
+                    ? _BeneficiariesEmptyState(hasQuery: query.isNotEmpty)
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(
+                          StreamSpacing.lg,
+                          0,
+                          StreamSpacing.lg,
+                          80,
+                        ),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: StreamSpacing.sm),
+                        itemBuilder: (context, index) {
+                          return _BeneficiaryCard(
+                            entry: filtered[index],
+                            onTap: () => _showBeneficiaryDetail(
+                              context,
+                              filtered[index],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<_BeneficiaryEntry> _buildEntries() {
+    final entries = <String, _BeneficiaryEntry>{};
+
+    for (final profile in widget.db.beneficiaryProfiles) {
+      entries[profile.key] = _BeneficiaryEntry.fromProfile(profile);
+    }
+
+    for (final movement in widget.db.movements) {
+      final cleanedPayee = widget.db.cleanBeneficiaryName(movement.payee);
+      if (cleanedPayee.isEmpty) continue;
+
+      final key = BeneficiaryProfile.normalizeKey(cleanedPayee);
+      final profile = widget.db.getBeneficiaryProfile(key);
+      final current =
+          entries[key] ??
+          _BeneficiaryEntry(
+            key: key,
+            displayName: profile?.displayName ?? cleanedPayee,
+            iconKey: profile?.iconKey ?? BeneficiaryProfile.defaultIconKey,
+            color: profile?.color ?? StreamColorPalette.defaultColor,
+            movementCount: 0,
+            totalIncome: 0,
+            totalExpense: 0,
+            searchKey: key,
+          );
+
+      final updated = current.copyWith(
+        displayName: profile?.displayName ?? current.displayName,
+        iconKey: profile?.iconKey ?? current.iconKey,
+        color: profile?.color ?? current.color,
+        movementCount: current.movementCount + 1,
+        totalIncome: current.totalIncome +
+            (movement.type == MovementType.income ? movement.amount : 0),
+        totalExpense: current.totalExpense +
+            (movement.type == MovementType.expense ? movement.amount : 0),
+      );
+      entries[key] = updated;
+    }
+
+    final list = entries.values.toList()
+      ..sort(
+        (a, b) => a.displayName.toLowerCase().compareTo(
+          b.displayName.toLowerCase(),
+        ),
+      );
+    return list;
+  }
+
+  void _showBeneficiaryDetail(BuildContext context, _BeneficiaryEntry entry) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _BeneficiaryDetailSheet(
+        db: widget.db,
+        beneficiaryKey: entry.key,
+      ),
+    );
+  }
+}
+
+class _BeneficiaryCard extends StatelessWidget {
+  final _BeneficiaryEntry entry;
+  final VoidCallback onTap;
+
+  const _BeneficiaryCard({required this.entry, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('beneficiary_card_${entry.key}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(StreamRadius.lg),
+        child: Container(
+          decoration: BoxDecoration(
+            color: StreamColors.surface,
+            borderRadius: BorderRadius.circular(StreamRadius.lg),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(StreamSpacing.md),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Color(entry.color),
+                    borderRadius: BorderRadius.circular(StreamRadius.md),
+                  ),
+                  child: Icon(
+                    StreamIconLibrary.getIcon(entry.iconKey),
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: StreamSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.displayName, style: StreamTypography.bodyBold),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${entry.movementCount} movimenti',
+                        style: StreamTypography.caption.copyWith(
+                          color: StreamColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: StreamSpacing.xs),
+                      Wrap(
+                        spacing: StreamSpacing.sm,
+                        runSpacing: StreamSpacing.xs,
+                        children: [
+                          _StatChip(
+                            label: 'Entrate',
+                            value: _formatEuro(entry.totalIncome),
+                          ),
+                          _StatChip(
+                            label: 'Uscite',
+                            value: _formatEuro(entry.totalExpense),
+                          ),
+                          _StatChip(
+                            label: 'Saldo',
+                            value: _formatEuro(entry.balance),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: StreamSpacing.sm),
+                Icon(Icons.chevron_right, color: StreamColors.textMuted),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatEuro(double value) => '${value.toStringAsFixed(2)} €';
+}
+
+class _BeneficiaryDetailSheet extends StatelessWidget {
+  final AppDatabase db;
+  final String beneficiaryKey;
+
+  const _BeneficiaryDetailSheet({
+    required this.db,
+    required this.beneficiaryKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.45,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          key: const Key('beneficiary_detail_sheet'),
+          decoration: BoxDecoration(
+            color: StreamColors.canvas,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(StreamRadius.xl),
+            ),
+          ),
+          child: ListenableBuilder(
+            listenable: db,
+            builder: (context, _) {
+              final entry = _buildDetailEntry();
+              final beneficiaryMovements = db.movements.where((movement) {
+                final cleaned = db.cleanBeneficiaryName(movement.payee);
+                if (cleaned.isEmpty) {
+                  return false;
+                }
+                return BeneficiaryProfile.normalizeKey(cleaned) == beneficiaryKey;
+              }).toList();
+
+              return Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: StreamSpacing.sm),
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: StreamColors.textMuted,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(StreamSpacing.lg),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Color(entry.color),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.sm,
+                            ),
+                          ),
+                          child: Icon(
+                            StreamIconLibrary.getIcon(entry.iconKey),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: StreamSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                entry.displayName,
+                                style: StreamTypography.h3,
+                              ),
+                              const SizedBox(height: StreamSpacing.xs),
+                              Text(
+                                '${entry.movementCount} movimenti',
+                                style: StreamTypography.caption.copyWith(
+                                  color: StreamColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(height: 1, color: StreamColors.divider),
+                  Expanded(
+                    child: beneficiaryMovements.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(StreamSpacing.xl),
+                              child: Text(
+                                'Nessun movimento collegato a questo beneficiario',
+                                style: StreamTypography.body.copyWith(
+                                  color: StreamColors.textSecondary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )
+                        : GroupedMovementsList(
+                            movements: beneficiaryMovements,
+                            db: db,
+                            scrollController: scrollController,
+                          ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  _BeneficiaryEntry _buildDetailEntry() {
+    final profile = db.getBeneficiaryProfile(beneficiaryKey);
+    if (profile != null) {
+      return _BeneficiaryEntry.fromProfile(profile).copyWith(
+        movementCount: _movementCount,
+        totalIncome: _totalIncome,
+        totalExpense: _totalExpense,
+      );
+    }
+
+    return _BeneficiaryEntry(
+      key: beneficiaryKey,
+      displayName: beneficiaryKey,
+      iconKey: BeneficiaryProfile.defaultIconKey,
+      color: StreamColorPalette.defaultColor,
+      movementCount: _movementCount,
+      totalIncome: _totalIncome,
+      totalExpense: _totalExpense,
+      searchKey: beneficiaryKey,
+    );
+  }
+
+  int get _movementCount => _matchingMovements.length;
+
+  double get _totalIncome => _matchingMovements.fold(
+    0.0,
+    (sum, movement) =>
+        sum + (movement.type == MovementType.income ? movement.amount : 0.0),
+  );
+
+  double get _totalExpense => _matchingMovements.fold(
+    0.0,
+    (sum, movement) =>
+        sum + (movement.type == MovementType.expense ? movement.amount : 0.0),
+  );
+
+  List<Movement> get _matchingMovements => db.movements.where((movement) {
+    final cleaned = db.cleanBeneficiaryName(movement.payee);
+    if (cleaned.isEmpty) {
+      return false;
+    }
+    return BeneficiaryProfile.normalizeKey(cleaned) == beneficiaryKey;
+  }).toList();
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StreamSpacing.sm,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: StreamColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(StreamRadius.full),
+      ),
+      child: Text(
+        '$label $value',
+        style: StreamTypography.caption.copyWith(
+          color: StreamColors.textSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+class _BeneficiariesEmptyState extends StatelessWidget {
+  final bool hasQuery;
+
+  const _BeneficiariesEmptyState({required this.hasQuery});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(StreamSpacing.xl),
+        child: Text(
+          hasQuery
+              ? 'Nessun beneficiario trovato'
+              : 'Nessun beneficiario disponibile',
+          style: StreamTypography.body.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _BeneficiaryEntry {
+  final String key;
+  final String displayName;
+  final String iconKey;
+  final int color;
+  final int movementCount;
+  final double totalIncome;
+  final double totalExpense;
+  final String searchKey;
+
+  const _BeneficiaryEntry({
+    required this.key,
+    required this.displayName,
+    required this.iconKey,
+    required this.color,
+    required this.movementCount,
+    required this.totalIncome,
+    required this.totalExpense,
+    required this.searchKey,
+  });
+
+  factory _BeneficiaryEntry.fromProfile(BeneficiaryProfile profile) {
+    return _BeneficiaryEntry(
+      key: profile.key,
+      displayName: profile.displayName,
+      iconKey: profile.iconKey,
+      color: profile.color,
+      movementCount: 0,
+      totalIncome: 0,
+      totalExpense: 0,
+      searchKey:
+          '${profile.key} ${BeneficiaryProfile.normalizeKey(profile.displayName)}',
+    );
+  }
+
+  double get balance => totalIncome - totalExpense;
+
+  _BeneficiaryEntry copyWith({
+    String? displayName,
+    String? iconKey,
+    int? color,
+    int? movementCount,
+    double? totalIncome,
+    double? totalExpense,
+  }) {
+    return _BeneficiaryEntry(
+      key: key,
+      displayName: displayName ?? this.displayName,
+      iconKey: iconKey ?? this.iconKey,
+      color: color ?? this.color,
+      movementCount: movementCount ?? this.movementCount,
+      totalIncome: totalIncome ?? this.totalIncome,
+      totalExpense: totalExpense ?? this.totalExpense,
+      searchKey:
+          '$key ${BeneficiaryProfile.normalizeKey(displayName ?? this.displayName)}',
+    );
+  }
+}

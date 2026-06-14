@@ -13,11 +13,13 @@ import 'backup_screen.dart';
 class SettingsScreen extends StatelessWidget {
   final AppDatabase db;
   final Future<String> Function(AppDatabase db)? createPreResetBackup;
+  final VoidCallback? onManageProfiles;
 
   const SettingsScreen({
     super.key,
     required this.db,
     this.createPreResetBackup,
+    this.onManageProfiles,
   });
 
   @override
@@ -98,6 +100,33 @@ class SettingsScreen extends StatelessWidget {
             child: const Padding(
               padding: EdgeInsets.all(StreamSpacing.lg),
               child: _HeatmapSettingsSection(),
+            ),
+          ),
+          const SizedBox(height: StreamSpacing.lg),
+          Card(
+            key: const Key('settings_profile_section'),
+            color: StreamColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(StreamSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Profilo', style: StreamTypography.h3),
+                  const SizedBox(height: StreamSpacing.sm),
+                  ListTile(
+                    key: const Key('settings_active_profile_tile'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      Icons.person_outline,
+                      color: StreamColors.primary,
+                    ),
+                    title: const Text('Principale'),
+                    subtitle: const Text('Profilo attivo'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: onManageProfiles,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: StreamSpacing.lg),

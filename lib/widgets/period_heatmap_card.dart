@@ -1851,6 +1851,7 @@ class _DayExpenseDetailSheet extends StatelessWidget {
                 final destAccount = m.destinationAccountId != null
                     ? db?.accounts.where((a) => a.id == m.destinationAccountId).firstOrNull
                     : null;
+                final beneficiaryProfile = db?.resolveBeneficiaryProfile(m.payee);
 
                 return MovementCard(
                   movement: m,
@@ -1858,6 +1859,9 @@ class _DayExpenseDetailSheet extends StatelessWidget {
                   subcategory: subcat,
                   account: account,
                   destinationAccount: destAccount,
+                  beneficiaryDisplayName: db?.resolveBeneficiaryDisplayName(m.payee),
+                  beneficiaryIconKey: beneficiaryProfile?.iconKey,
+                  beneficiaryColor: beneficiaryProfile?.color,
                   showNotes: false,
                   showDate: true,
                   onTap: hasCallbacks && onEdit != null
