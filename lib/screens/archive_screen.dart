@@ -3,6 +3,7 @@ import '../data/database.dart';
 import 'movements_screen.dart';
 import 'accounts_screen.dart';
 import 'categories_screen.dart';
+import 'beneficiaries_screen.dart';
 
 class ArchiveScreen extends StatefulWidget {
   final AppDatabase db;
@@ -16,11 +17,12 @@ class ArchiveScreen extends StatefulWidget {
 class _ArchiveScreenState extends State<ArchiveScreen> {
   int _selectedSection = 0;
 
-  static const _sections = ['Movimenti', 'Conti', 'Categorie'];
+  static const _sections = ['Movimenti', 'Conti', 'Categorie', 'Beneficiari'];
   static const _icons = [
     Icons.swap_vert,
     Icons.account_balance,
     Icons.category,
+    Icons.person,
   ];
 
   @override
@@ -41,7 +43,9 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                           ? const Key('archive_section_movements')
                           : i == 1
                           ? const Key('archive_section_accounts')
-                          : const Key('archive_section_categories'),
+                          : i == 2
+                          ? const Key('archive_section_categories')
+                          : const Key('archive_section_beneficiaries'),
                       child: Text(_sections[i]),
                     ),
                     icon: Icon(_icons[i], size: 18),
@@ -70,6 +74,10 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                 ),
                 CategoriesScreen(
                   key: const Key('archive_categories_screen'),
+                  db: widget.db,
+                ),
+                BeneficiariesScreen(
+                  key: const Key('archive_beneficiaries_screen'),
                   db: widget.db,
                 ),
               ],

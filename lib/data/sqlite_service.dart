@@ -9,22 +9,30 @@ import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
+import '../models/beneficiary_profile.dart';
 
 class SQLiteService {
   Database? _db;
+  String? _path;
+
+  String? get path => _path;
 
   Future<void> open({String? path}) async {
+    _path = path ?? join(await getDatabasesPath(), 'stream.db');
     _db = await openDatabase(
-      path ?? join(await getDatabasesPath(), 'stream.db'),
-      version: 10,
+      _path!,
+      version: 12,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+    debugPrint('[SQLiteService] opened dbPath=$_path');
   }
 
   Future<void> close() async {
+    debugPrint('[SQLiteService] closing dbPath=$_path');
     await _db?.close();
     _db = null;
+    _path = null;
   }
 
   Future<T> transaction<T>(Future<T> Function(Transaction txn) action) async {
@@ -49,6 +57,7 @@ class SQLiteService {
         destination_account_id TEXT,
         date TEXT NOT NULL,
         note TEXT,
+        payee TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -125,6 +134,20 @@ class SQLiteService {
         updated_at TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE beneficiary_profiles (
+        id TEXT PRIMARY KEY,
+        key TEXT NOT NULL UNIQUE,
+        display_name TEXT NOT NULL,
+        icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultCategoryIcon}',
+        color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+        archived INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT
+      )
+    ''');
+    await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiary_key ON beneficiary_profiles(key)');
 
     await _insertDefaultAccount(db);
   }
@@ -303,6 +326,34 @@ class SQLiteService {
         migrationLabel: 'Migration V10 add color to subcategories',
       );
     }
+    if (oldVersion < 11) {
+      await _addColumnIfMissing(
+        db,
+        table: 'movements',
+        column: 'payee',
+        definition: 'TEXT',
+        migrationLabel: 'Migration V11 add payee to movements',
+      );
+    }
+    if (oldVersion < 12) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS beneficiary_profiles (
+          id TEXT PRIMARY KEY,
+          key TEXT NOT NULL UNIQUE,
+          display_name TEXT NOT NULL,
+          icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultCategoryIcon}',
+          color INTEGER NOT NULL DEFAULT ${StreamColorPalette.getDefault()},
+          archived INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT
+        )
+      ''');
+      try {
+        await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiary_key ON beneficiary_profiles(key)');
+      } catch (e) {
+        debugPrint('Migration V12 create index error: $e');
+      }
+    }
   }
 
   Future<void> _insertDefaultAccount(DatabaseExecutor db) async {
@@ -356,6 +407,7 @@ class SQLiteService {
   Future<void> resetAllData() async {
     final db = _database;
     await db.transaction((txn) async {
+      await txn.delete('beneficiary_profiles');
       await txn.delete('movements');
       await txn.delete('categories');
       await txn.delete('subcategories');
@@ -426,6 +478,7 @@ class SQLiteService {
         'destination_account_id': m.destinationAccountId,
         'date': _toDateOnly(m.date),
         'note': m.note,
+        'payee': m.payee,
         'created_at': m.createdAt.toIso8601String(),
         'updated_at': m.updatedAt.toIso8601String(),
       };
@@ -448,6 +501,7 @@ class SQLiteService {
         destinationAccountId: map['destination_account_id'] as String?,
         date: _parseDateSafe(map['date'], fallback: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1))),
         note: map['note'] as String?,
+        payee: map['payee'] as String?,
         createdAt: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1)),
         updatedAt: _parseDateSafe(map['updated_at'], fallback: DateTime(2020, 1, 1)),
       );
@@ -800,10 +854,74 @@ class SQLiteService {
         updatedAt: DateTime.parse(map['updated_at'] as String),
       );
 
+  // ── Beneficiary Profiles ──
+
+  Future<List<BeneficiaryProfile>> loadBeneficiaryProfiles() async {
+    final db = _database;
+    final rows = await db.query('beneficiary_profiles');
+    return rows.map(_beneficiaryProfileFromMap).toList();
+  }
+
+  Future<void> insertBeneficiaryProfile(BeneficiaryProfile bp) async {
+    final db = _database;
+    await db.insert('beneficiary_profiles', _beneficiaryProfileToMap(bp),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> updateBeneficiaryProfile(BeneficiaryProfile bp) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.update(
+      'beneficiary_profiles',
+      {
+        'key': bp.key,
+        'display_name': bp.displayName,
+        'icon_key': bp.iconKey,
+        'color': bp.color,
+        'archived': bp.archived ? 1 : 0,
+        'updated_at': now,
+      },
+      where: 'id = ?',
+      whereArgs: [bp.id],
+    );
+  }
+
+  Future<void> deleteBeneficiaryProfile(String id) async {
+    final db = _database;
+    await db.delete('beneficiary_profiles', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Map<String, dynamic> _beneficiaryProfileToMap(BeneficiaryProfile bp) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': bp.id,
+      'key': bp.key,
+      'display_name': bp.displayName,
+      'icon_key': bp.iconKey,
+      'color': bp.color,
+      'archived': bp.archived ? 1 : 0,
+      'created_at': bp.createdAt.toIso8601String(),
+      'updated_at': now,
+    };
+  }
+
+  BeneficiaryProfile _beneficiaryProfileFromMap(Map<String, dynamic> map) =>
+      BeneficiaryProfile(
+        id: map['id'] as String,
+        key: map['key'] as String,
+        displayName: map['display_name'] as String,
+        iconKey: map['icon_key'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
+        color: map['color'] as int? ?? StreamColorPalette.getDefault(),
+        archived: (map['archived'] as int) == 1,
+        createdAt: DateTime.parse(map['created_at'] as String),
+        updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+      );
+
   // ── Delete all (for reset/test) ──
 
   Future<void> deleteAll() async {
     final db = _database;
+    await db.delete('beneficiary_profiles');
     await db.delete('movements');
     await db.delete('categories');
     await db.delete('subcategories');

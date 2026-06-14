@@ -8,6 +8,7 @@ import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
 import '../models/backup_data.dart';
+import '../models/beneficiary_profile.dart';
 import '../models/category.dart';
 import '../models/subcategory.dart';
 import '../models/favorite_movement.dart';
@@ -53,6 +54,7 @@ class BackupService {
       version: currentVersion,
       createdAt: DateTime.now().toIso8601String(),
       accounts: db.accounts.toList(),
+      beneficiaryProfiles: db.beneficiaryProfiles.toList(),
       categories: db.categories.toList(),
       subcategories: db.subcategories.toList(),
       movements: db.movements.toList(),
@@ -206,6 +208,23 @@ class BackupService {
       }
     }
 
+    // ── Validate beneficiaryProfiles (optional list) ──
+    if (parsed['beneficiaryProfiles'] is List) {
+      final bpList = parsed['beneficiaryProfiles'] as List;
+      for (var i = 0; i < bpList.length; i++) {
+        final item = bpList[i];
+        if (item is! Map) {
+          return 'Beneficiario #${i + 1}: non è un oggetto valido';
+        }
+        if (_fieldString(item, 'id') == null) {
+          return 'Beneficiario #${i + 1}: campo "id" mancante o vuoto';
+        }
+        if (_fieldString(item, 'key') == null) {
+          return 'Beneficiario #${i + 1}: campo "key" mancante o vuoto';
+        }
+      }
+    }
+
     // ── Validate favoriteMovements (optional list) ──
     if (parsed['favoriteMovements'] is List) {
       final favList = parsed['favoriteMovements'] as List;
@@ -236,6 +255,7 @@ class BackupService {
     try {
       if (sqlite != null) {
         await sqlite.transaction((txn) async {
+          await txn.delete('beneficiary_profiles');
           await txn.delete('subcategories');
           await txn.delete('movements');
           await txn.delete('categories');
@@ -247,6 +267,14 @@ class BackupService {
             await txn.insert(
               'accounts',
               _accountToRow(acc),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+
+          for (final bp in snapshot.beneficiaryProfiles) {
+            await txn.insert(
+              'beneficiary_profiles',
+              _beneficiaryToRow(bp),
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
@@ -300,6 +328,7 @@ class BackupService {
         quickMovements: snapshot.quickMovements,
         favoriteMovements: snapshot.favoriteMovements,
         accounts: snapshot.accounts,
+        beneficiaries: snapshot.beneficiaryProfiles,
       );
 
       if (data.settings != null) {
@@ -371,6 +400,7 @@ class BackupService {
       for (final sub in data.subcategories) sub.id: sub,
     };
 
+    final beneficiaryProfiles = data.beneficiaryProfiles.toList();
     final accounts = accountMap.values.toList();
     final categories = categoryMap.values.toList();
     final subcategories = subcategoryMap.values.toList();
@@ -393,6 +423,7 @@ class BackupService {
 
     return _RestoreSnapshot(
       accounts: accounts,
+      beneficiaryProfiles: beneficiaryProfiles,
       categories: categories,
       subcategories: subcategories,
       movements: movements,
@@ -537,6 +568,20 @@ class BackupService {
     };
   }
 
+  static Map<String, dynamic> _beneficiaryToRow(BeneficiaryProfile bp) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'id': bp.id,
+      'key': bp.key,
+      'display_name': bp.displayName,
+      'icon_key': bp.iconKey,
+      'color': bp.color,
+      'archived': bp.archived ? 1 : 0,
+      'created_at': bp.createdAt.toIso8601String(),
+      'updated_at': now,
+    };
+  }
+
   static Map<String, dynamic> _accountToRow(Account account) => {
         'id': account.id,
         'name': account.name,
@@ -611,6 +656,7 @@ class BackupService {
 
 class _RestoreSnapshot {
   final List<Account> accounts;
+  final List<BeneficiaryProfile> beneficiaryProfiles;
   final List<Category> categories;
   final List<Subcategory> subcategories;
   final List<Movement> movements;
@@ -619,6 +665,7 @@ class _RestoreSnapshot {
 
   const _RestoreSnapshot({
     required this.accounts,
+    required this.beneficiaryProfiles,
     required this.categories,
     required this.subcategories,
     required this.movements,

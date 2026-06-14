@@ -6,6 +6,7 @@ import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
+import '../models/beneficiary_profile.dart';
 import 'categories_data.dart';
 import 'sqlite_service.dart';
 
@@ -17,6 +18,7 @@ class AppDatabase extends ChangeNotifier {
   List<QuickMovement> _quickMovements = [];
   final List<FavoriteMovement> _favoriteMovements = [];
   List<Account> _accounts = [];
+  final List<BeneficiaryProfile> _beneficiaryProfiles = [];
 
   AppDatabase({SQLiteService? sqlite}) : _sqlite = sqlite {
     if (sqlite == null) {
@@ -96,6 +98,9 @@ class AppDatabase extends ChangeNotifier {
       ..clear()
       ..addAll(await _sqlite.loadFavoriteMovements());
     _accounts = await _sqlite.loadAccounts();
+    _beneficiaryProfiles
+      ..clear()
+      ..addAll(await _sqlite.loadBeneficiaryProfiles());
     notifyListeners();
   }
 
@@ -114,6 +119,8 @@ class AppDatabase extends ChangeNotifier {
   List<FavoriteMovement> get favoriteMovements =>
       List.unmodifiable(_favoriteMovements);
   List<Account> get accounts => List.unmodifiable(_accounts);
+  List<BeneficiaryProfile> get beneficiaryProfiles =>
+      List.unmodifiable(_beneficiaryProfiles);
 
   Account? getAccountOrNull(String id) {
     final idx = _accounts.indexWhere((a) => a.id == id);
@@ -295,6 +302,7 @@ class AppDatabase extends ChangeNotifier {
       accountId: m.accountId,
       destinationAccountId: m.destinationAccountId,
       note: m.note,
+      payee: m.payee,
       createdAt: now,
     );
     if (_sqlite != null) {
@@ -359,6 +367,7 @@ class AppDatabase extends ChangeNotifier {
     required String categoryId,
     String? subcategoryId,
     String? note,
+    String? payee,
     String? accountId,
     String? destinationAccountId,
     DateTime? date,
@@ -381,6 +390,7 @@ class AppDatabase extends ChangeNotifier {
       accountId: originAccountId,
       destinationAccountId: destinationAccountId,
       note: note,
+      payee: payee,
       createdAt: DateTime.now(),
     );
     if (_sqlite != null) {
@@ -861,6 +871,9 @@ class AppDatabase extends ChangeNotifier {
         ..clear()
         ..addAll(await _sqlite.loadFavoriteMovements());
       _accounts = await _sqlite.loadAccounts();
+      _beneficiaryProfiles
+        ..clear()
+        ..addAll(await _sqlite.loadBeneficiaryProfiles());
     } catch (e) {
       debugPrint('reloadFromDb error: $e');
     }
@@ -868,12 +881,15 @@ class AppDatabase extends ChangeNotifier {
   }
 
   Future<void> resetAllData() async {
+    final dbPath = _sqlite?.path;
+    debugPrint('[Reset] resetAllData dbPath=${dbPath ?? 'in-memory'}');
     if (_sqlite == null) {
       _movements.clear();
       _categories = List.from(DefaultCategories.all);
       _subcategories.clear();
       _quickMovements = _defaultQuickMovements();
       _favoriteMovements.clear();
+      _beneficiaryProfiles.clear();
       _accounts = [
         Account(
           id: defaultAccountId,
@@ -906,6 +922,7 @@ class AppDatabase extends ChangeNotifier {
     _subcategories.clear();
     _quickMovements.clear();
     _favoriteMovements.clear();
+    _beneficiaryProfiles.clear();
     _accounts.clear();
   }
 
@@ -1086,6 +1103,7 @@ class AppDatabase extends ChangeNotifier {
     required List<QuickMovement> quickMovements,
     required List<FavoriteMovement> favoriteMovements,
     required List<Account> accounts,
+    List<BeneficiaryProfile>? beneficiaries,
   }) {
     _movements
       ..clear()
@@ -1099,6 +1117,11 @@ class AppDatabase extends ChangeNotifier {
       ..clear()
       ..addAll(favoriteMovements);
     _accounts = List.from(accounts);
+    if (beneficiaries != null) {
+      _beneficiaryProfiles
+        ..clear()
+        ..addAll(beneficiaries);
+    }
   }
 
   Future<void> internalAddAccount(Account a) async {
@@ -1186,6 +1209,64 @@ class AppDatabase extends ChangeNotifier {
       }
     }
     _favoriteMovements.add(fm);
+  }
+
+  // ── Beneficiary Profiles ──
+
+  BeneficiaryProfile? getBeneficiaryProfile(String key) {
+    final idx = _beneficiaryProfiles.indexWhere((b) => b.key == key);
+    return idx >= 0 ? _beneficiaryProfiles[idx] : null;
+  }
+
+  bool hasBeneficiaryProfile(String key) {
+    return _beneficiaryProfiles.any((b) => b.key == key);
+  }
+
+  bool get hasAnyBeneficiaryProfiles => _beneficiaryProfiles.isNotEmpty;
+
+  Future<void> addBeneficiaryProfile(BeneficiaryProfile bp) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.insertBeneficiaryProfile(bp);
+      } catch (_) {
+        return;
+      }
+    }
+    _beneficiaryProfiles.add(bp);
+    notifyListeners();
+  }
+
+  Future<void> updateBeneficiaryProfile(BeneficiaryProfile bp) async {
+    final index = _beneficiaryProfiles.indexWhere((b) => b.id == bp.id);
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.updateBeneficiaryProfile(bp);
+      } catch (_) {
+        return;
+      }
+    }
+    _beneficiaryProfiles[index] = bp;
+    notifyListeners();
+  }
+
+  Future<void> deleteBeneficiaryProfile(String id) async {
+    if (_sqlite != null) {
+      try {
+        await _sqlite.deleteBeneficiaryProfile(id);
+      } catch (_) {
+        return;
+      }
+    }
+    _beneficiaryProfiles.removeWhere((b) => b.id == id);
+    notifyListeners();
+  }
+
+  String resolveBeneficiaryDisplayName(String? payee) {
+    if (payee == null || payee.isEmpty) return '';
+    final key = BeneficiaryProfile.normalizeKey(payee);
+    final profile = getBeneficiaryProfile(key);
+    return profile?.displayName ?? payee;
   }
 }
 

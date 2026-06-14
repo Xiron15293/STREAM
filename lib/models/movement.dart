@@ -12,6 +12,7 @@ class Movement {
   final String accountId;
   final String? destinationAccountId;
   final String? note;
+  final String? payee;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -26,6 +27,7 @@ class Movement {
     String? accountId,
     this.destinationAccountId,
     this.note,
+    this.payee,
     required this.createdAt,
     DateTime? updatedAt,
   }) : accountId = accountId ?? defaultAccountId,
@@ -51,6 +53,7 @@ class Movement {
     String? accountId,
     String? destinationAccountId,
     String? note,
+    String? payee,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -65,6 +68,7 @@ class Movement {
       accountId: accountId ?? this.accountId,
       destinationAccountId: destinationAccountId ?? this.destinationAccountId,
       note: note ?? this.note,
+      payee: payee ?? this.payee,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

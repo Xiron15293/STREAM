@@ -1,5 +1,6 @@
 import '../design/stream_icon_library.dart';
 import 'account.dart';
+import 'beneficiary_profile.dart';
 import 'category.dart';
 import 'subcategory.dart';
 import 'movement.dart';
@@ -22,6 +23,7 @@ class BackupData {
   final int version;
   final String createdAt;
   final List<Account> accounts;
+  final List<BeneficiaryProfile> beneficiaryProfiles;
   final List<Category> categories;
   final List<Subcategory> subcategories;
   final List<Movement> movements;
@@ -33,6 +35,7 @@ class BackupData {
     required this.version,
     required this.createdAt,
     required this.accounts,
+    this.beneficiaryProfiles = const [],
     required this.categories,
     this.subcategories = const [],
     required this.movements,
@@ -45,6 +48,7 @@ class BackupData {
         'version': version,
         'createdAt': createdAt,
         'accounts': accounts.map((a) => _accountToMap(a)).toList(),
+        'beneficiaryProfiles': beneficiaryProfiles.map((b) => _beneficiaryToMap(b)).toList(),
         'categories': categories.map((c) => _categoryToMap(c)).toList(),
         'subcategories': subcategories.map((s) => _subcategoryToMap(s)).toList(),
         'movements': movements.map((m) => _movementToMap(m)).toList(),
@@ -58,6 +62,7 @@ class BackupData {
       version: json['version'] as int,
       createdAt: json['createdAt'] as String? ?? '',
       accounts: (json['accounts'] as List<dynamic>?)?.map((e) => _accountFromMap(e as Map<String, dynamic>)).toList() ?? [],
+      beneficiaryProfiles: (json['beneficiaryProfiles'] as List<dynamic>?)?.map((e) => _beneficiaryFromMap(e as Map<String, dynamic>)).toList() ?? [],
       categories: (json['categories'] as List<dynamic>?)?.map((e) => _categoryFromMap(e as Map<String, dynamic>)).toList() ?? [],
       subcategories: (json['subcategories'] as List<dynamic>?)?.map((e) => _subcategoryFromMap(e as Map<String, dynamic>)).toList() ?? [],
       movements: (json['movements'] as List<dynamic>?)?.map((e) => _movementFromMap(e as Map<String, dynamic>)).toList() ?? [],
@@ -92,6 +97,28 @@ class BackupData {
         type: AccountType.values.byName(m['type'] as String),
         initialBalance: (m['initialBalance'] as num?)?.toDouble() ?? 0.0,
         iconKey: m['iconKey'] as String? ?? StreamIconLibrary.defaultAccountIcon,
+        color: m['color'] as int? ?? StreamColorPalette.defaultColor,
+        archived: m['archived'] as bool? ?? false,
+        createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
+        updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,
+      );
+
+  static Map<String, dynamic> _beneficiaryToMap(BeneficiaryProfile b) => {
+        'id': b.id,
+        'key': b.key,
+        'displayName': b.displayName,
+        'iconKey': b.iconKey,
+        'color': b.color,
+        'archived': b.archived,
+        'createdAt': b.createdAt.toIso8601String(),
+        'updatedAt': b.updatedAt?.toIso8601String(),
+      };
+
+  static BeneficiaryProfile _beneficiaryFromMap(Map<String, dynamic> m) => BeneficiaryProfile(
+        id: m['id'] as String,
+        key: m['key'] as String,
+        displayName: m['displayName'] as String,
+        iconKey: m['iconKey'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
         color: m['color'] as int? ?? StreamColorPalette.defaultColor,
         archived: m['archived'] as bool? ?? false,
         createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
@@ -147,6 +174,7 @@ class BackupData {
         'accountId': m.accountId,
         'destinationAccountId': m.destinationAccountId,
         'note': m.note,
+        'payee': m.payee,
         'createdAt': m.createdAt.toIso8601String(),
         'updatedAt': m.updatedAt.toIso8601String(),
       };
@@ -162,6 +190,7 @@ class BackupData {
         accountId: m['accountId'] as String?,
         destinationAccountId: m['destinationAccountId'] as String?,
         note: m['note'] as String?,
+        payee: m['payee'] as String?,
         createdAt: _parseDateSafe(m['createdAt'], fallback: DateTime(2020, 1, 1)),
         updatedAt: m['updatedAt'] != null ? _parseDateSafe(m['updatedAt'], fallback: DateTime(2020, 1, 1)) : null,
       );
