@@ -7,6 +7,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Beneficiari manuali + proposta salvataggio da form movimento**
+  - Tab Beneficiari con tasto `+` e dialog `Nuovo beneficiario` (nome, icona, colore)
+  - Creazione di `BeneficiaryProfile` anche senza movimenti collegati
+  - `key = normalize(nome)`, `displayName = nome pulito`, default icon/color beneficiario se non personalizzati
+  - Niente duplicati normalizzati: il dialog blocca la creazione se esiste già un profilo con la stessa key
+  - `BeneficiariesScreen` unisce beneficiari derivati da `movement.payee` e profili manuali senza movimenti
+  - Tap su beneficiario apre il dettaglio con movimenti filtrati per key normalizzata
+  - I profili manuali vuoti appaiono con `0 movimenti`, `entrate 0`, `uscite 0`, `saldo 0`
+  - La search trova anche beneficiari manuali senza movimenti
+  - Backup/restore preservano i `BeneficiaryProfile` manuali
+  - `MovementPicker` e `MovementForm` propongono al salvataggio: `No, solo movimento` / `Salva beneficiario` / `Annulla`
+  - Se il payee esiste già come profilo, nessuna proposta: il rendering usa metadata del profilo
+  - `MovementCard` mostra `profile.displayName` se esiste, altrimenti `movement.payee` pulito, senza riscrivere `movement.payee`
+  - Import iFinance non apre dialog e non crea automaticamente profili beneficiario persistiti
+  - DB version incrementata a `v12` con nuova tabella `beneficiary_profiles` senza modificare `movements.payee` e senza introdurre `payee_id`
+  - Test aggiunti per migrazione `v11 → v12`, idempotenza migrazione e `reloadFromDb()` dei profili beneficiario
+
+### Changed
+- **Bugfix critico iFinance import — transfer pairing e import normali**
+  - `IFinanceCsvRow.isLikelyTransfer()` riconosce i transfer usando `title`, `payee`, `labels`, `categoryRaw`, `categoryParent`
+  - Il pairing transfer non lavora più solo per data: ora usa gruppo `data + importo assoluto`
+  - I gruppi semplici `1 negativo + 1 positivo` vengono accoppiati subito se i conti sono diversi
+  - I gruppi multi-match usano gli indizi `Trasferimento da ...` / `Trasferimento su ...` per trovare un matching completo univoco
+  - Solo i gruppi senza soluzione univoca restano ambigui
+  - I movimenti normali non vengono più persi perché bloccati da candidate transfer accoppiabili
+  - Preview iFinance espone anche `transferCandidateRows` e `ambiguousTransferGroups`
+  - Il dedupe dei transfer usa fingerprint coerente anche al reimport dello stesso CSV
+  - Vincoli preservati:
+    - nessun dialog Beneficiari durante import iFinance
+    - `movement.payee` raw invariato
+    - note importate restano pulite
+    - fingerprint/import metadata non regressi
+  - Sanity check su CSV reale `Transazioni finale.csv`:
+    - `4265` righe lette
+    - `3067` movimenti normali importabili
+    - `584` transfer accoppiati
+    - `30` righe ambigue residue in `24` gruppi
+    - reimport dello stesso CSV: `0` nuovi movimenti
+
+- **Audit finale Beneficiari V0.9.0e**
+  - Chiuso il delta residuo del branch Beneficiari con dettaglio tappabile, copertura migrazione `v12` e pulizia di 2 info lint evitabili
+  - `flutter analyze --no-pub`: `36 info`, `0 errori`, `0 warning`
+  - `flutter test --no-pub`: `875 passed`, `1 skipped`, `0 failures`
+
 - **Date più chiare nei periodi/giorni**
   - `TimeFilter.customRange.label` ora include l'anno: `"15 giu 2026 → 30 giu 2026"` (invece di `"15 giu → 30 giu"`)
   - `DayHeader` mostra mese+anno (es. `giugno 2026`) sotto il weekday
@@ -130,6 +174,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Clear button contestuale per ogni mode: "Tutta settimana" / "Tutto mese" / "Tutto anno" / "Tutto intervallo"
 
 ### Fixed
+- **iFinance import: pairing transfer corretto e ambiguità ridotte**
+  - Fix al pairing che prima lasciava importare solo una piccola parte dei movimenti quando molti transfer entravano nello stesso giorno
+  - Ridotte le ambiguità ai soli casi realmente non risolvibili in modo univoco
+  - Reimport dello stesso CSV ora non crea nuovi movimenti né per i movimenti normali né per i transfer
+
 - Archive/restore sottocategorie aggiorna subito la UI (`async`+`await`+`setState` nei 3 punti: row inline, form dialog archive, form dialog restore)
 - `deleteSubcategoryCascade` gestisce anche movimenti rapidi e preferiti
 - Bottone delete sottocategoria aggiunto nella row principale
@@ -145,6 +194,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
 - Nessuno skip aggiunto
+- Nessun commit/push
+
+### QA (delta iFinance bugfix critico)
+- `flutter analyze --no-pub`: `36 info`, `0 errori`, `0 warning`
+- `flutter test --no-pub`: **881 passed, 1 skipped, 0 failures**
+- `test/ifinance_csv_import_test.dart` aggiornato con copertura su:
+  - pairing semplice `da/su`
+  - movimenti normali non bloccati
+  - multi-match risolvibile con indizi
+  - gruppi davvero ambigui lasciati ambigui
+  - reimport stesso CSV = `0` nuovi movimenti
+- CSV reale verificato su DB temporaneo:
+  - `4265` righe, `3651` importabili, `584` transfer, `30` righe ambigue residue in `24` gruppi
+- Nessun DB/schema/migrazione modificato
+- Import iFinance non apre dialog Beneficiari
+- `movement.payee` raw invariato
 - Nessun commit/push
 
 - `flutter analyze --no-pub`: nessun errore o warning bloccante; restano solo info lint/deprecazioni pre-esistenti

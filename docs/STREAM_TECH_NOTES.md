@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog | **DB:** v10 | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`) | **Test:** 759/759
+**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog + beneficiari manuali auditati + bugfix critico iFinance | **DB:** v12 | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
 
 ## Stack
 
@@ -116,6 +116,95 @@ categoryId, type, amount, title NON influenzano
 **Copia sicura**: nuovo id (`microsecondsSinceEpoch`), nessuna copia di fingerprint/import metadata
 
 **Sostituisce 3 implementazioni separate**:
+
+### BeneficiaryProfile / payee resolution
+
+> I beneficiari manuali sono metadata persistiti separati dai movimenti.
+
+**Modello:** `lib/models/beneficiary_profile.dart`
+- Campi: `id`, `key`, `displayName`, `iconKey`, `color`, `archived`, `createdAt`, `updatedAt`
+- `key` usa `normalizeKey()`
+- `displayName` usa nome pulito, non modifica `movement.payee`
+
+**Persistenza:**
+- `SQLiteService` usa `version: 12`
+- Migrazione `v11 → v12` crea `beneficiary_profiles` con `CREATE TABLE IF NOT EXISTS`
+- `AppDatabase` mantiene cache `_beneficiaryProfiles`
+- `BackupData` e `BackupService` includono `beneficiaryProfiles`
+- Restore ripristina anche profili manuali senza movimenti
+- `movements.payee` resta invariato; non esiste `payee_id` nella tabella `movements`
+
+**Risoluzione UI:**
+- `MovementCard` mostra `profile.displayName` se esiste un profilo con `normalize(movement.payee)`
+- fallback: `movement.payee` pulito
+- `BeneficiariesScreen` costruisce la lista unendo:
+  - beneficiari derivati da `movement.payee`
+  - profili manuali senza movimenti
+  - tap su beneficiario apre il dettaglio con `GroupedMovementsList` filtrato per key normalizzata
+
+**Picker icone:**
+- Il picker beneficiari riusa `IconPickerDialog` e `StreamIconLibrary`
+- Non esiste una `beneficiary_icon_library.dart` dedicata: deviazione non bloccante emersa dall’audit, senza impatto funzionale sul flusso Beneficiari
+
+**Form movimento:**
+- `MovementPicker` e `MovementForm` propongono il salvataggio del beneficiario solo al submit
+- Se il payee non esiste:
+  - `No, solo movimento` salva solo `movement.payee`
+  - `Salva beneficiario` salva movimento + crea `BeneficiaryProfile`
+  - `Annulla` non salva nulla
+- Import iFinance escluso: nessun dialog durante preview/commit
+
+### iFinance CSV import — transfer pairing hardening
+
+> Il pairing transfer ora separa meglio i veri transfer dai movimenti normali e lascia ambigui solo i casi non risolvibili in modo univoco.
+
+**File:** `lib/services/ifinance_csv_import_service.dart`
+**Test:** `test/ifinance_csv_import_test.dart`
+
+**Riconoscimento transfer**
+- `IFinanceCsvRow.isLikelyTransfer()` usa un haystack combinato:
+  - `title`
+  - `payee`
+  - `labels`
+  - `categoryRaw`
+  - `categoryParent`
+- Scopo: riconoscere anche export dove la parola `Trasferimento` non sta solo nel titolo
+
+**Strategia di pairing**
+- Chiave gruppo: `data + abs(importo)`
+- Caso semplice:
+  - se il gruppo contiene esattamente `1` riga negativa e `1` positiva
+  - e i conti sono diversi
+  - viene creato subito un `IFinanceTransferPair`
+- Caso multi-match:
+  - parsing di hint `Trasferimento da ...` / `Trasferimento su ...`
+  - normalizzazione del nome conto anche con suffissi parentetici
+  - costruzione grafo candidati coerenti con source/destination hint
+  - accettazione solo se esiste un matching perfetto univoco
+- Se il matching completo non è univoco, il gruppo resta in `ambiguousTransfers`
+
+**Dedupe**
+- I transfer accoppiati usano fingerprint coerente con:
+  - `MovementType.transfer`
+  - account sorgente
+  - account destinazione
+  - titolo
+  - nota
+- Il reimport dello stesso CSV salta correttamente sia i movimenti normali sia i transfer già importati
+
+**Metadati preview**
+- `IFinanceImportPreview` espone anche:
+  - `transferCandidateRows`
+  - `ambiguousTransferGroups`
+- La UI preview può distinguere tra:
+  - righe candidate transfer
+  - righe ambigue residue
+  - gruppi realmente ambigui
+
+**Vincoli preservati**
+- Nessun dialog Beneficiari durante import iFinance
+- `movement.payee` resta il raw importato
+- note/commenti rimangono puliti, senza metadati sporchi aggiunti dal pairing
 
 | File | Prima (V0.6.1) | Dopo (V0.6.2) |
 |------|----------------|----------------|

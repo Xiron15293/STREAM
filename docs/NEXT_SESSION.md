@@ -1,6 +1,6 @@
 # NEXT SESSION — Stato Progetto e Priorità
 
-> Aggiornato: 2026-06-13
+> Aggiornato: 2026-06-14
 
 ---
 
@@ -35,8 +35,10 @@
 | **V0.8.10 — Period Views Premium + Subcategory Hardening** | **Filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, expense breakdown, range premium, formatEuro, delete subcategory sicuro, propagazione colore/icona (condizione null), fix archive/restore** | ✅ **COMPLETATO** |
 | Delta finale V0.8.10 — Refresh immediato madre → sottocategorie | `updateCategory` esplicito con old color/icon, UI riallineata via `ListenableBuilder`/`setState`, refresh immediato in categories screen, sheet/dialog, movement form/picker | ✅ COMPLETATO |
 | **Delta date formatting + propagation dialog** | **Date più chiare (customRange con anno, DayHeader mese+anno) + dialog propagazione stile categoria con checkbox sottocategorie selezionabili** | ✅ **COMPLETATO** |
+| **V0.9.0e — Beneficiari audit finale** | **Creazione manuale `BeneficiaryProfile`, merge profili+payee derivati, proposta salvataggio da movement form/picker, display metadata su MovementCard, dettaglio tappabile, backup/restore, DB v11→v12, payee raw preservato** | ✅ **COMPLETATO** |
+| **Bugfix critico iFinance — transfer pairing** | **Pairing per `data + importo`, matching univoco con indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** | ✅ **COMPLETATO** |
 | Flutter analyze | — | ✅ 0 errori, 0 warning, solo info pre-esistenti |
-| `flutter test --no-pub` | — | ✅ **759/759 test passati** |
+| `flutter test --no-pub` | — | ✅ **881 passed, 1 skipped** |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -69,6 +71,54 @@
 - Nessun DB/schema/migrazione modificato
 - Nessun commit/push
 
+### Delta — Beneficiari manuali + proposta salvataggio
+
+#### Cosa è stato completato
+- Tab Beneficiari con tasto `+` e dialog `Nuovo beneficiario`
+- Creazione manuale di `BeneficiaryProfile` senza creare `Movement`
+- Duplicati normalizzati bloccati in creazione
+- Lista Beneficiari costruita come merge tra:
+  - payee derivati dai movimenti
+  - profili manuali senza movimenti
+- Search compatibile anche con beneficiari manuali vuoti
+- `MovementPicker` e `MovementForm` propongono:
+  - `No, solo movimento`
+  - `Salva beneficiario`
+  - `Annulla`
+- `MovementCard` risolve `displayName` dal profilo senza riscrivere `movement.payee`
+- Tap su beneficiario apre uno sheet con movimenti filtrati per beneficiario
+- Backup/restore preservano i profili manuali
+- Import iFinance non apre dialog e non crea profili persistiti automaticamente
+- Audit finale completato su `DB v12` con test espliciti di migrazione `v11 → v12`, idempotenza e `reloadFromDb()`
+
+#### Nota architetturale
+- Il beneficiario manuale resta solo `BeneficiaryProfile` finché non viene usato in un movimento
+- `movement.payee` resta il dato sorgente del movimento; nome/icona/colore del profilo sono metadata separati
+
+### Delta — Bugfix critico iFinance transfer pairing
+
+#### Cosa è stato completato
+- Riconoscimento transfer esteso oltre `title/payee` anche a `labels`, `categoryRaw`, `categoryParent`
+- Pairing transfer spostato da logica greedy per sola data a gruppi `data + importo assoluto`
+- Nei gruppi multi-match il pairing usa gli indizi testuali `Trasferimento da ...` e `Trasferimento su ...`
+- Solo i gruppi senza soluzione completa univoca restano ambigui
+- I movimenti normali vengono importati correttamente anche quando nello stesso CSV sono presenti molti transfer
+- Dedupe transfer verificato: reimport dello stesso CSV non aggiunge movimenti
+
+#### Verifica su CSV reale
+- `Transazioni finale.csv` verificato su DB temporaneo/account test
+- `4265` righe lette
+- `3067` movimenti normali importabili
+- `584` transfer accoppiati
+- `30` righe ambigue residue in `24` gruppi
+- Reimport dello stesso CSV: `0` nuovi movimenti
+
+#### Vincoli preservati
+- Nessun dialog Beneficiari durante import iFinance
+- `movement.payee` raw invariato
+- Note importate pulite
+- Nessun DB/schema/migrazione modificato
+
 ### V0.8.10b — Universal Movement Actions + Duplicate Date Choice
 
 **Cosa è stato completato:**
@@ -88,21 +138,15 @@
 ## 3. Priorità Immediata (Prossima Sessione)
 
 ### Stato attuale
-- Date più chiare (customRange con anno, DayHeader mese+anno) ✅
-- Dialog propagazione stile categoria verso sottocategorie selezionate ✅
-- Azioni movimento universali completate in ogni vista ✅
-- Dashboard sheet reattivo ✅
-- Duplica con scelta data (Oggi/Domani/Ieri/Scegli data/Annulla) ✅
-- Test: 759/759 ✅
+- Audit Beneficiari chiuso e bugfix iFinance completato: test finali `881 passed, 1 skipped` ✅
+- `flutter analyze --no-pub`: `36 info`, `0 errori`, `0 warning` ✅
+- DB `v12` verificato: `beneficiary_profiles` presente, `movements.payee` invariato ✅
+- Unica deviazione non bloccante: picker icone beneficiari riusa `StreamIconLibrary`, non esiste una libreria dedicata separata ✅
 
 ### Prossimi step consigliati
-1. **V0.9.0 — Notes & Tags**
-   - Campo notes su movimento
-   - Tag multi-selezione su movimento
-   - Filtro per tag in dashboard
-2. **V0.9.1 — Dashboard recalcolo + tabella editor**
-   - recalcolo KPI, tabella modificabile
-3. **V0.9.2 — Export/Backup**
+1. **QA manuale estesa iFinance su altri export reali**
+2. **V0.9.x — Notes & Tags**
+3. **V0.9.x — Dashboard recalcolo + tabella editor**
 4. **Subcategories Analytics — Budget/Actual/Scenari**
 
 ---
@@ -177,7 +221,20 @@
 - `movement_form.dart` e `movement_picker.dart` ascoltano `widget.db` mentre mostrano il selector `Categoria / Sottocategoria`
 
 ### DB version corrente
-- **v10** (da V0.8.8, invariato in V0.8.10 — nessuna migrazione)
+- **v12** (`beneficiary_profiles`; nessuna modifica a `movements.payee`, nessun `payee_id`)
+
+### iFinance transfer pairing
+- `IFinanceCsvRow.isLikelyTransfer()` usa un haystack combinato: `title`, `payee`, `labels`, `categoryRaw`, `categoryParent`
+- Pairing per chiave `data + abs(importo)`, non più solo per data
+- Caso semplice:
+  - `1` negativo + `1` positivo + conti diversi → pair immediato
+- Caso multi-match:
+  - parsing di `Trasferimento da X` / `Trasferimento su Y`
+  - verifica coerenza tra hint e conti delle righe candidate
+  - matching completo accettato solo se univoco
+- `IFinanceImportPreview` espone anche:
+  - `transferCandidateRows`
+  - `ambiguousTransferGroups`
 
 ### Subcategories
 - Nessuna FK SQLite, validazione applicativa (coerente con schema attuale)

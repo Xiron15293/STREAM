@@ -4,6 +4,163 @@
 
 ---
 
+## Delta — Beneficiari manuali + proposta salvataggio ✅
+
+### Cosa è cambiato
+1. **Creazione manuale beneficiario**
+   - Tab Beneficiari con tasto `+`
+   - Dialog `Nuovo beneficiario` con nome, icona, colore
+   - Creazione `BeneficiaryProfile` anche senza movimenti collegati
+   - Blocco duplicati su key normalizzata
+
+2. **Merge lista Beneficiari**
+   - La schermata unisce beneficiari derivati dai `movement.payee` e profili manuali senza movimenti
+   - Un profilo manuale con la stessa key di un payee già usato produce una sola entry
+   - I manuali vuoti mostrano `0 movimenti`, `0 entrate`, `0 uscite`, `0 saldo`
+   - La ricerca trova anche i manuali senza movimenti
+
+3. **Proposta salvataggio da form movimento**
+   - `MovementPicker` e `MovementForm` mostrano:
+     - `No, solo movimento`
+     - `Salva beneficiario`
+     - `Annulla`
+   - Nessuna proposta se il payee è vuoto o già presente come profilo
+   - Import iFinance escluso: nessun dialog durante import
+
+4. **Risoluzione display**
+   - `MovementCard` mostra `profile.displayName` se esiste un profilo per `normalize(movement.payee)`
+   - fallback a `movement.payee` pulito
+   - il profilo resta metadata: `movement.payee` non viene riscritto
+
+### Verifica locale
+- Widget test aggiunti per:
+  - creazione manuale
+  - ricerca manuale
+  - blocco duplicato normalizzato
+  - backup/restore profilo manuale senza movimenti
+  - proposta salvataggio in `MovementPicker`
+  - proposta salvataggio in `MovementForm`
+- Regressioni aggiunte per:
+  - displayName su `MovementCard` senza riscrittura `movement.payee`
+  - iFinance: nessun profilo auto-creato e nessuna duplicazione movimenti al reimport con profilo esistente
+- DB `v12` con `beneficiary_profiles`; `movements.payee` invariato
+- Nessun commit/push
+
+---
+
+## Bugfix critico iFinance — transfer pairing ✅
+
+### Cosa è cambiato
+1. **Pairing transfer corretto**
+   - Il riconoscimento transfer ora usa anche `labels`, `categoryRaw`, `categoryParent`
+   - Il pairing è per gruppo `data + importo assoluto`, non più solo per data
+   - I gruppi semplici `1 negativo + 1 positivo` vengono accoppiati subito se i conti sono diversi
+
+2. **Ambiguità ridotte ai casi reali**
+   - Nei gruppi multi-match il parser usa gli indizi `Trasferimento da ...` / `Trasferimento su ...`
+   - Il pair viene accettato solo se il matching completo è univoco
+   - I gruppi senza soluzione univoca restano in `ambiguousTransfers`
+
+3. **Movimenti normali sbloccati**
+   - I movimenti non-transfer nello stesso file non vengono più persi o bloccati da candidate transfer accoppiabili
+   - Il reimport dello stesso CSV resta idempotente anche per i transfer
+
+### Verifica con test mirati
+- `test/ifinance_csv_import_test.dart`
+  - pair semplice con `da/su`
+  - righe normali non bloccate da transfer accoppiato
+  - multi-match risolvibile con indizi
+  - multi-match realmente ambiguo lasciato ambiguo
+  - `Settimanale` + `Trasferimento da/su` ancora accoppiato correttamente
+  - reimport stesso CSV con transfer = `0` nuovi movimenti
+
+### Verifica su CSV reale
+- File verificato: `Transazioni finale.csv`
+- Ambiente: DB temporaneo / account test
+- Risultato preview:
+  - `4265` righe lette
+  - `3067` movimenti normali importabili
+  - `584` transfer accoppiati
+  - `3651` movimenti totali importabili
+  - `30` righe ambigue residue in `24` gruppi
+  - `0` errori preview
+- Risultato commit:
+  - `3067` movimenti normali importati
+  - `584` transfer importati
+  - `0` errori commit
+- Reimport dello stesso CSV:
+  - `0` nuovi movimenti
+  - `3651` duplicati correttamente saltati
+
+### Vincoli verificati
+- Import iFinance non apre dialog Beneficiari
+- `movement.payee` raw invariato
+- fingerprint/import metadata non regressi
+- note pulite preservate
+- Nessun DB/schema/migrazione modificato
+- Nessun commit/push
+
+---
+
+## Audit finale V0.9.0e — Beneficiari ✅
+
+### Esito finale
+- `flutter analyze --no-pub`: `36 info`, `0 errori`, `0 warning`
+- `flutter test --no-pub`: `875 passed`, `1 skipped`, `0 failures`
+- Nessun commit/push
+
+### Perché non sono più `870`, e perché non sono `873`
+- Il run `870 passed, 1 skipped` apparteneva a uno stato intermedio del branch Beneficiari prima della chiusura dell’audit finale.
+- Durante l’audit sono stati aggiunti `5` test mancanti:
+  - `2` test UI Beneficiari: merge manuale+derivato e dettaglio tappabile filtrato
+  - `3` test migrazione/persistenza: `v11 → v12`, idempotenza migrazione, `reloadFromDb()` dei profili
+- Per questo il conteggio pubblicabile finale è `875 passed, 1 skipped`.
+- Il vecchio riferimento `873 passed, 1 skipped` non corrisponde al tree finale corrente: nel tree auditato non risultano test Beneficiari rimossi o silenziosamente esclusi.
+- Lo skip resta `1` ed è pre-esistente: fixture CSV reale in `test/one_money_csv_import_test.dart`.
+
+### Analyze info: perché sono `36`
+- Gli `info` sono scesi da `38` a `36` correggendo due lint evitabili introdotti nel flusso recente:
+  - `lib/widgets/movement_form.dart`
+  - `lib/widgets/movement_card.dart`
+- I `36` residui sono non bloccanti e ricadono in tre gruppi:
+  - lint storici in `lib/data/database.dart`
+  - deprecazioni storiche in `backup_screen.dart` e `categories_screen.dart`
+  - test locali rumorosi (`quick_test.dart`, `segmented_test*.dart`)
+
+### Verifiche chiave chiuse
+- `DB v12` verificato: `beneficiary_profiles` presente e caricata correttamente
+- Migrazione `v11 → v12` verificata e idempotente
+- `movements.payee` preservato raw; nessun `payee_id` introdotto
+- `MovementCard` mostra `displayName` risolto senza riscrivere `movement.payee`
+- Reimport iFinance con profilo beneficiario esistente non duplica i movimenti
+- Beneficiario manuale senza movimenti visibile, ricercabile e preservato da backup/restore
+- Tap beneficiario apre il dettaglio con movimenti filtrati correttamente
+
+### Test critici Beneficiari passati
+- `test/beneficiary_flow_test.dart`
+  - creazione manuale senza movimenti
+  - ricerca beneficiario manuale
+  - blocco duplicato normalizzato
+  - merge manuale + derivato
+  - dettaglio tappabile con filtro corretto
+  - dialog `No, solo movimento` / `Salva beneficiario` / `Annulla`
+  - legacy `movement_form.dart`
+- `test/persistence_migration_test.dart`
+  - migrazione `v11 → v12`
+  - idempotenza `beneficiary_profiles`
+  - `reloadFromDb()` dei profili
+- `test/movement_card_test.dart`
+  - `displayName` risolto senza riscrivere `movement.payee`
+- `test/ifinance_csv_import_test.dart`
+  - import iFinance non crea profili automaticamente
+  - reimport con profilo esistente non duplica
+
+### Nota non bloccante
+- Il picker icone beneficiari riusa `IconPickerDialog` e `StreamIconLibrary`.
+- Non esiste una `beneficiary_icon_library.dart` dedicata: deviazione architetturale non bloccante, senza regressioni funzionali rilevate nel flusso Beneficiari.
+
+---
+
 ## Delta — Date più chiare + Dialog propagazione stile categoria ✅
 
 ### Cosa è cambiato

@@ -55,6 +55,7 @@
 | F45 | V0.8.10b Universal Movement Actions — ogni `MovementCard` ha popup completo (Modifica/Duplica/Rapido/Preferito/Elimina) in tutte le viste; dashboard sheet reattivo con `ListenableBuilder`; duplica con scelta data utility `showDuplicateDateSheet` | V0.8.10b | 2026-06-13 |
 | F46 | Date più chiare — `TimeFilter.customRange.label` con anno, `DayHeader` mese+anno sotto weekday | delta | 2026-06-13 |
 | F47 | Dialog propagazione stile categoria — `_CategoryPropagateStyleDialog` con checkbox sottocategorie, `updateCategory` con `propagateToSubcategoryIds` | delta | 2026-06-13 |
+| F48 | Beneficiari manuali + save proposal — tab Beneficiari con creazione `BeneficiaryProfile`, merge profili+payee derivati, proposta `No/Salva/Annulla` da form movimento, display metadata su `MovementCard`, backup/restore preservato, iFinance senza dialog | delta | 2026-06-14 |
 
 ---
 
