@@ -46,6 +46,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - `30` righe ambigue residue in `24` gruppi
     - reimport dello stesso CSV: `0` nuovi movimenti
 
+- **Profili separati con isolamento dati reale**
+  - La voce `Profili` torna visibile solo quando il flusso è realmente collegato da `SettingsScreen`
+  - Ogni profilo usa un file SQLite dedicato:
+    - `main` → `stream.db`
+    - profili secondari → `stream_profile_<profileId>.db`
+  - `ProfileService` persiste registry profili + `activeProfileId` e sana mapping corrotti o duplicati di `dbFileName`
+  - `MainScaffold` viene ricreato con `ValueKey('main_scaffold_$activeProfileId')` per evitare bleed di stato dopo lo switch
+  - `_MainScaffoldState` non mantiene più un `AppDatabase` stale dopo cambio profilo
+  - Isolamento verificato per:
+    - movimenti
+    - reset dati
+    - beneficiari
+    - import iFinance
+  - `BackupScreen` continua a mostrare `Importa CSV iFinance` anche quando `Profili` è nascosto per callback assente
+  - Vincoli preservati:
+    - nessun cambio app id `com.mattiasironi.flow`
+    - nessun dialog Beneficiari durante import iFinance
+    - `movement.payee` raw invariato
+    - nessuna regressione sul transfer pairing iFinance
+  - QA finale sul tree con Profili separati:
+    - `flutter analyze --no-pub`: `26 info`, `0 errori`, `0 warning`
+    - `flutter test --no-pub`: `851 passed`, `1 skipped`, `0 failures`
+
 - **Audit finale Beneficiari V0.9.0e**
   - Chiuso il delta residuo del branch Beneficiari con dettaglio tappabile, copertura migrazione `v12` e pulizia di 2 info lint evitabili
   - `flutter analyze --no-pub`: `36 info`, `0 errori`, `0 warning`

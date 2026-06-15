@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog + beneficiari manuali auditati + bugfix critico iFinance | **DB:** v12 | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
+**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog + beneficiari manuali auditati + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
 
 ## Stack
 
@@ -205,6 +205,54 @@ categoryId, type, amount, title NON influenzano
 - Nessun dialog Beneficiari durante import iFinance
 - `movement.payee` resta il raw importato
 - note/commenti rimangono puliti, senza metadati sporchi aggiunti dal pairing
+
+### Profili separati / isolamento dati reale
+
+> Ogni profilo utente punta a un database SQLite distinto. Lo switch profilo cambia davvero il DB attivo e ricrea lo scaffold principale per evitare bleed di stato.
+
+**File principali**
+- `lib/models/profile.dart`
+- `lib/services/profiles_controller.dart`
+- `lib/services/profile_service.dart`
+- `lib/main.dart`
+- `lib/screens/profiles_screen.dart`
+- `lib/screens/profile_picker_screen.dart`
+
+**Registry**
+- Persistenza file-based `profiles.json`
+- Contiene:
+  - lista profili
+  - `activeProfileId`
+  - `dbFileName` per profilo
+- Regole:
+  - profilo `main` → `stream.db`
+  - profili secondari → `stream_profile_<profileId>.db`
+  - healing automatico di registry corrotti:
+    - secondario con `stream.db`
+    - `dbFileName` duplicati
+    - `dbFileName` vuoti
+    - `activeProfileId` non valido
+
+**App root**
+- `main()` inizializza `ProfileService`
+- `ProfileAwareStreamApp` apre il DB del profilo attivo
+- allo switch:
+  - salva il nuovo `activeProfileId`
+  - apre il nuovo SQLite path
+  - inizializza un nuovo `AppDatabase`
+  - chiude il DB precedente
+
+**Protezione anti-stale DB**
+- `MainScaffold` usa `ValueKey('main_scaffold_$activeProfileId')`
+- `_MainScaffoldState` usa `widget.db` direttamente
+- nessun `late final` con `AppDatabase` persistito tra profili
+
+**Isolamento verificato**
+- movimenti separati per profilo
+- reset dati limitato al profilo attivo
+- beneficiari separati per profilo
+- import iFinance separato per profilo
+- `BackupScreen` e `Importa CSV iFinance` restano accessibili anche senza callback profili
 
 | File | Prima (V0.6.1) | Dopo (V0.6.2) |
 |------|----------------|----------------|

@@ -1,6 +1,6 @@
 # NEXT SESSION — Stato Progetto e Priorità
 
-> Aggiornato: 2026-06-14
+> Aggiornato: 2026-06-15
 
 ---
 
@@ -37,8 +37,9 @@
 | **Delta date formatting + propagation dialog** | **Date più chiare (customRange con anno, DayHeader mese+anno) + dialog propagazione stile categoria con checkbox sottocategorie selezionabili** | ✅ **COMPLETATO** |
 | **V0.9.0e — Beneficiari audit finale** | **Creazione manuale `BeneficiaryProfile`, merge profili+payee derivati, proposta salvataggio da movement form/picker, display metadata su MovementCard, dettaglio tappabile, backup/restore, DB v11→v12, payee raw preservato** | ✅ **COMPLETATO** |
 | **Bugfix critico iFinance — transfer pairing** | **Pairing per `data + importo`, matching univoco con indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** | ✅ **COMPLETATO** |
+| **Delta — Profili separati con isolamento dati reale** | **Registry profili persistito, DB SQLite separato per profilo, switch reale DB attivo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** | ✅ **COMPLETATO** |
 | Flutter analyze | — | ✅ 0 errori, 0 warning, solo info pre-esistenti |
-| `flutter test --no-pub` | — | ✅ **881 passed, 1 skipped** |
+| `flutter test --no-pub` | — | ✅ **851 passed, 1 skipped** |
 | `flutter build apk --release --no-pub` | — | ⏳ da rilanciare localmente |
 | `flutter build ios --release --no-codesign --no-pub` | — | ⏳ da rilanciare localmente |
 
@@ -119,6 +120,38 @@
 - Note importate pulite
 - Nessun DB/schema/migrazione modificato
 
+### Delta — Profili separati con isolamento dati reale
+
+#### Cosa è stato completato
+- `SettingsScreen` mostra `Profili` solo se riceve un callback reale
+- `ProfileService` persiste:
+  - lista profili
+  - `activeProfileId`
+  - mapping profilo → `dbFileName`
+- `main` continua a usare `stream.db`
+- i profili secondari usano `stream_profile_<profileId>.db`
+- Il registry sana casi corrotti:
+  - profilo secondario che punta a `stream.db`
+  - `dbFileName` duplicati o vuoti
+  - `activeProfileId` non valido
+- `ProfileAwareStreamApp` apre davvero il DB del profilo attivo e chiude il DB precedente allo switch
+- `MainScaffold` usa `ValueKey('main_scaffold_$activeProfileId')` e non conserva un riferimento stale al DB
+- Isolamento verificato tra profili per:
+  - movimenti
+  - reset dati
+  - beneficiari
+  - import iFinance
+- `BackupScreen` resta accessibile e continua a mostrare `Importa CSV iFinance`
+
+#### QA
+- `flutter analyze --no-pub`: `26 info`, `0 errori`, `0 warning`
+- `flutter test --no-pub`: `851 passed`, `1 skipped`
+- Test aggiunti/aggiornati:
+  - `test/profile_test.dart`
+  - `test/profile_app_switch_test.dart`
+  - `test/profiles_screen_test.dart`
+  - `test/settings_profiles_visibility_test.dart`
+
 ### V0.8.10b — Universal Movement Actions + Duplicate Date Choice
 
 **Cosa è stato completato:**
@@ -138,16 +171,17 @@
 ## 3. Priorità Immediata (Prossima Sessione)
 
 ### Stato attuale
-- Audit Beneficiari chiuso e bugfix iFinance completato: test finali `881 passed, 1 skipped` ✅
-- `flutter analyze --no-pub`: `36 info`, `0 errori`, `0 warning` ✅
+- Audit Beneficiari, bugfix iFinance e Profili separati completati: test finali `851 passed, 1 skipped` ✅
+- `flutter analyze --no-pub`: `26 info`, `0 errori`, `0 warning` ✅
 - DB `v12` verificato: `beneficiary_profiles` presente, `movements.payee` invariato ✅
 - Unica deviazione non bloccante: picker icone beneficiari riusa `StreamIconLibrary`, non esiste una libreria dedicata separata ✅
 
 ### Prossimi step consigliati
 1. **QA manuale estesa iFinance su altri export reali**
-2. **V0.9.x — Notes & Tags**
-3. **V0.9.x — Dashboard recalcolo + tabella editor**
-4. **Subcategories Analytics — Budget/Actual/Scenari**
+2. **QA manuale switch/create/delete profili su device reale**
+3. **V0.9.x — Notes & Tags**
+4. **V0.9.x — Dashboard recalcolo + tabella editor**
+5. **Subcategories Analytics — Budget/Actual/Scenari**
 
 ---
 

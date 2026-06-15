@@ -102,6 +102,51 @@
 
 ---
 
+## Delta — Profili separati con isolamento dati reale ✅
+
+### Cosa è cambiato
+1. **Flusso Profili riattivato solo se collegato**
+   - `SettingsScreen` mostra la voce `Profili` solo quando riceve `onManageProfiles`
+   - Se il callback manca, la voce non appare e non restano bottoni morti
+   - `BackupScreen` continua comunque a mostrare `Importa CSV iFinance`
+
+2. **DB separato per profilo**
+   - profilo principale: `stream.db`
+   - profili secondari: `stream_profile_<profileId>.db`
+   - `ProfileService` persiste il registry e sana mapping invalidi o duplicati
+
+3. **Regressione stale DB chiusa**
+   - `MainScaffold` keyed con `activeProfileId`
+   - lo state non riusa un `AppDatabase` stale
+   - lo switch profilo apre davvero il DB corretto e chiude quello precedente
+
+4. **Isolamento verificato**
+   - movimenti Profilo A non visibili in Profilo B
+   - reset su Profilo B non tocca Profilo A
+   - beneficiari separati per profilo
+   - import iFinance su Profilo B non scrive su Profilo A
+
+### Verifica locale
+- Test aggiunti/aggiornati:
+  - `test/profile_test.dart`
+  - `test/profile_app_switch_test.dart`
+  - `test/profiles_screen_test.dart`
+  - `test/settings_profiles_visibility_test.dart`
+- Copertura inclusa:
+  - create/switch/rename/delete profilo
+  - healing registry corrotto
+  - isolamento movimenti
+  - reset isolato
+  - beneficiari isolati
+  - iFinance isolato
+  - regressione `MainScaffold` keyed per profilo
+- QA finale:
+  - `flutter analyze --no-pub`: `26 info`, `0 errori`, `0 warning`
+  - `flutter test --no-pub`: `851 passed`, `1 skipped`, `0 failures`
+- Nessun commit/push
+
+---
+
 ## Audit finale V0.9.0e — Beneficiari ✅
 
 ### Esito finale

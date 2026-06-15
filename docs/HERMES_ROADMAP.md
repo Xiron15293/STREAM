@@ -53,12 +53,13 @@
 | — | Refresh immediato colore/icona categoria madre → sottocategorie | ✅ COMPLETATO | 2026-06-13 |
 | — | Date più chiare + Dialog propagazione stile categoria | ✅ COMPLETATO | 2026-06-13 |
 | V0.9.0e | Beneficiari — audit finale + hardening | ✅ COMPLETATO | 2026-06-14 |
+| — | iFinance import — transfer pairing hardening | ✅ COMPLETATO | 2026-06-14 |
+| — | Profili separati con isolamento dati reale | ✅ COMPLETATO | 2026-06-15 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| Bugfix critico | iFinance import transfer pairing | 📋 PRIORITARIA |
 | V0.9.0 | Notes & Tags | 📋 PRIORITARIA |
 | V0.9.1 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
 | V0.9.1 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
@@ -78,6 +79,8 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **V0.8.10** | **Period Views Premium + Subcategory Hardening (✅) — filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità, solo Day cambia), expense breakdown, range premium (blocchi semestrali per >183gg), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, formatEuro, raggruppamento giorno in panel mode, DayHeader Oggi/Ieri/count, ListenableBuilder dialog categorie, delete sottocategorie sicuro, propagazione colore/icona (fix condizione null), fix archive/restore** |
 | **V0.8.10b** | **Universal Movement Actions + Duplicate Date Choice (✅) — azioni movimento universali in ogni vista, dashboard sheet reattivo, duplica con scelta data (Oggi/Domani/Ieri/Scegli data/Annulla)** |
 | **V0.9.0e** | **Beneficiari (✅) — creazione `BeneficiaryProfile`, merge manuali+payee derivati, proposta salvataggio da form movimento, display metadata su MovementCard, dettaglio tappabile, backup/restore, DB v12, payee raw preservato, audit finale chiuso** |
+| **Delta** | **iFinance transfer pairing hardening (✅) — pairing per `data + importo`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** |
+| **Delta** | **Profili separati (✅) — registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** |
 | **V0.9.0** | **Notes & Tags** |
 | V0.9.0 | Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard |
 | V0.9.1 | Dashboard recalcolo + tabella editor (📋) — recalcolo KPI, tabella modificabile |
