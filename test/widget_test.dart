@@ -202,7 +202,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(FilledButton, 'Esporta backup'), findsOneWidget);
-    expect(find.text('Importa backup'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.widgetWithText(FilledButton, 'Seleziona file backup'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FilledButton, 'Seleziona file backup'), findsOneWidget);
+    expect(find.text('Importa CSV iFinance'), findsOneWidget);
+    expect(find.byKey(const Key('backup_ifinance_import_button')), findsOneWidget);
   });
 
   testWidgets('Account dialog shows saldo iniziale and saldo attuale', (

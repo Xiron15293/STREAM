@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart' show getDatabasesPath;
 import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../services/backup_service.dart';
+import '../services/ifinance_csv_import_service.dart';
 import '../services/one_money_csv_import_service.dart';
 import '../theme.dart';
 
@@ -215,6 +216,61 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
+  Future<void> _pickIFinanceCsvFile() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        allowMultiple: false,
+        withData: false,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final path = result.files.single.path;
+      if (path == null) {
+        _showSnackBar('Impossibile aprire il file CSV selezionato');
+        return;
+      }
+
+      final csv = await readFile(path);
+      if (!mounted) return;
+      setState(() {
+        _importing = true;
+        _importError = null;
+      });
+
+      final preview = await IFinanceCsvImportService.previewCsv(widget.db, csv);
+
+      if (!mounted) return;
+      setState(() => _importing = false);
+
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => IFinanceImportPreviewDialog(preview: preview),
+      );
+
+      if (confirm != true) return;
+
+      if (!mounted) return;
+      setState(() => _importing = true);
+
+      final report = await IFinanceCsvImportService.commitImport(
+        widget.db,
+        preview,
+      );
+
+      if (!mounted) return;
+      setState(() => _importing = false);
+      await _showIFinanceImportReport(report);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _importing = false);
+        _showSnackBar('Errore durante l\'import CSV iFinance: $e');
+      }
+    }
+  }
+
   Future<void> _import(String jsonString) async {
     final validation = BackupService.validate(jsonString);
     if (!validation.isValid) {
@@ -312,6 +368,58 @@ class _BackupScreenState extends State<BackupScreen> {
                     child: Text(
                       error,
                       style: StreamTypography.caption.copyWith(color: StreamColors.expense),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Chiudi'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showIFinanceImportReport(IFinanceImportReport report) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Import CSV iFinance completato'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Movimenti importati: ${report.movementsImported}'),
+              Text('Transfer importati: ${report.transfersImported}'),
+              Text('Duplicati saltati: ${report.duplicatesSkipped}'),
+              Text('Conti creati: ${report.accountsCreated}'),
+              Text('Categorie create: ${report.categoriesCreated}'),
+              Text('Sottocategorie create: ${report.subcategoriesCreated}'),
+              Text('Errori: ${report.errorsCount}'),
+              if (report.errors.isNotEmpty) ...[
+                const SizedBox(height: StreamSpacing.md),
+                Text(
+                  'Dettagli errori',
+                  style: StreamTypography.bodyBold.copyWith(
+                    color: StreamColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: StreamSpacing.xs),
+                ...report.errors.map(
+                  (error) => Padding(
+                    padding: const EdgeInsets.only(bottom: StreamSpacing.xs),
+                    child: Text(
+                      error,
+                      style: StreamTypography.caption.copyWith(
+                        color: StreamColors.expense,
+                      ),
                     ),
                   ),
                 ),
@@ -432,6 +540,48 @@ class _BackupScreenState extends State<BackupScreen> {
                               )
                             : const Icon(Icons.upload_file),
                         label: Text(_importing ? 'Importazione...' : 'Seleziona CSV 1Money'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              Card(
+                color: StreamColors.surface,
+                child: Padding(
+                  padding: const EdgeInsets.all(StreamSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet_outlined, color: StreamColors.primary),
+                          const SizedBox(width: StreamSpacing.md),
+                          const Text('Importa CSV iFinance', style: StreamTypography.h3),
+                        ],
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        'Apri il flusso di anteprima per importare il CSV esportato da iFinance senza scrivere dati prima della conferma finale.',
+                        style: StreamTypography.body.copyWith(color: StreamColors.textSecondary),
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        'Il flusso usa anteprima + conferma, non apre dialog Beneficiari e mantiene i dedupe già attivi.',
+                        style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      FilledButton.icon(
+                        key: const Key('backup_ifinance_import_button'),
+                        onPressed: _importing ? null : _pickIFinanceCsvFile,
+                        icon: _importing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.upload_file),
+                        label: Text(_importing ? 'Importazione...' : 'Seleziona CSV iFinance'),
                       ),
                     ],
                   ),

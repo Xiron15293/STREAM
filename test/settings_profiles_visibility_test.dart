@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:stream_app/data/database.dart';
+import 'package:stream_app/screens/backup_screen.dart';
 import 'package:stream_app/screens/settings_screen.dart';
 import 'package:stream_app/theme.dart';
 
@@ -22,6 +23,22 @@ void main() {
     expect(find.byKey(const Key('settings_profile_section')), findsNothing);
     expect(find.byKey(const Key('settings_active_profile_tile')), findsNothing);
     expect(find.text('Profilo'), findsNothing);
+  });
+
+  testWidgets('iFinance import resta accessibile anche senza Profili', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(SettingsScreen(db: AppDatabase())),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ListTile, 'Backup & Restore'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BackupScreen), findsOneWidget);
+    expect(find.text('Importa CSV iFinance'), findsOneWidget);
+    expect(find.byKey(const Key('backup_ifinance_import_button')), findsOneWidget);
   });
 
   testWidgets('voce Profilo appare e reagisce al tap con callback', (
