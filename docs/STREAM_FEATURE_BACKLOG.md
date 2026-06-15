@@ -56,6 +56,8 @@
 | F46 | Date più chiare — `TimeFilter.customRange.label` con anno, `DayHeader` mese+anno sotto weekday | delta | 2026-06-13 |
 | F47 | Dialog propagazione stile categoria — `_CategoryPropagateStyleDialog` con checkbox sottocategorie, `updateCategory` con `propagateToSubcategoryIds` | delta | 2026-06-13 |
 | F48 | Beneficiari manuali + save proposal — tab Beneficiari con creazione `BeneficiaryProfile`, merge profili+payee derivati, proposta `No/Salva/Annulla` da form movimento, display metadata su `MovementCard`, backup/restore preservato, iFinance senza dialog | delta | 2026-06-14 |
+| F49 | iFinance import transfer pairing hardening — riconoscimento transfer esteso, pairing per `data + importo assoluto`, matching univoco con `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = `0` nuovi movimenti | delta | 2026-06-14 |
+| F50 | Profili separati con isolamento dati reale — registry profili persistito, DB SQLite dedicato per profilo, `MainScaffold` keyed per `activeProfileId`, reset/beneficiari/iFinance isolati, voce Profili visibile solo con callback reale | delta | 2026-06-15 |
 
 ---
 
