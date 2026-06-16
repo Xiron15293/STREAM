@@ -7,8 +7,10 @@ import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
+import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/movements_screen.dart';
 import 'package:stream_app/screens/settings_screen.dart';
+import 'package:stream_app/widgets/movement_view_renderer.dart';
 
 void main() {
   late DateTime today;
@@ -253,6 +255,51 @@ void main() {
       expect(find.byKey(const Key('heatmap_settings_section')), findsOneWidget);
       expect(find.byKey(const Key('heatmap_primary_metric')), findsOneWidget);
       expect(find.text('Metrica principale: Totale uscite'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'list mode heatmap preview exposes Configura heatmap and opens settings',
+    (tester) async {
+      final db = seededDb();
+      final now = DateTime.now();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MovementViewRenderer(
+              viewMode: MovementsViewMode.list,
+              timeFilter: TimeFilter.month(now.year, now.month),
+              movements: db.movements,
+              periodMovements: db.movements,
+              hasQuery: false,
+              showNotes: false,
+              db: db,
+              selectedDay: now,
+              onDaySelected: (_) {},
+              dayFilter: null,
+              onDayFilterChanged: (_) {},
+              onEdit: (_) {},
+              onDuplicate: (_) {},
+              onSaveAsFavorite: (_) {},
+              onAddQuick: (_) {},
+              onDelete: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('movements_list_heatmap_preview_card')), findsOneWidget);
+      expect(
+        find.byKey(const Key('movements_preview_configure_heatmap_button')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('movements_preview_configure_heatmap_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('heatmap_settings_screen')), findsOneWidget);
     },
   );
 }
