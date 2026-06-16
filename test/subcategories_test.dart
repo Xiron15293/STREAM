@@ -240,6 +240,43 @@ void main() {
       expect(loaded.iconKey, 'car');
       expect(loaded.color, 0xFFFF7043);
     });
+
+    test('21. sottocategoria con movimenti resta modificabile', () async {
+      final cat = db.categories.first;
+      await db.createSubcategory(
+        cat.id,
+        'Con movimenti',
+        iconKey: 'tag',
+        color: 0xFF42A5F5,
+      );
+      final sub = db.getSubcategoriesForCategory(cat.id).last;
+
+      await db.addMovement(
+        Movement(
+          id: 'sub_move_1',
+          title: 'Test',
+          amount: 10,
+          type: cat.type,
+          date: DateTime.now(),
+          categoryId: cat.id,
+          subcategoryId: sub.id,
+          createdAt: DateTime.now(),
+        ),
+      );
+
+      await db.updateSubcategory(
+        sub.id,
+        'Sottocategoria Rinominata',
+        iconKey: 'car',
+        color: 0xFFFF7043,
+      );
+
+      final updated = db.subcategories.firstWhere((s) => s.id == sub.id);
+      expect(updated.name, 'Sottocategoria Rinominata');
+      expect(updated.iconKey, 'car');
+      expect(updated.color, 0xFFFF7043);
+      expect(db.movements.any((m) => m.subcategoryId == sub.id), true);
+    });
   });
 
   group('Subcategories — UI edit dialog', () {

@@ -147,6 +147,138 @@ void main() {
       // Il db permette comunque l'aggiunta (la validazione è UI-side)
       expect(db.categories.length, count + 1);
     });
+
+    test('12. Categoria con movimenti resta modificabile in campi sicuri', () async {
+      final db = AppDatabase();
+      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+
+      await db.addMovement(Movement(
+        id: 'safe_edit_mov',
+        title: 'Test',
+        amount: 42,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: cat.id,
+        createdAt: DateTime.now(),
+      ));
+
+      await db.updateCategory(
+        cat.id,
+        'Nome Sicuro',
+        0xFF123456,
+        iconKey: 'shopping_cart',
+      );
+
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
+      expect(updated.name, 'Nome Sicuro');
+      expect(updated.color, 0xFF123456);
+      expect(updated.iconKey, 'shopping_cart');
+      expect(db.movements.any((m) => m.categoryId == cat.id), true);
+    });
+
+    test('13. Categoria entrata con movimenti segue le stesse regole', () async {
+      final db = AppDatabase();
+      final cat = db.categories.firstWhere((c) => c.type == MovementType.income);
+
+      await db.addMovement(Movement(
+        id: 'safe_income_mov',
+        title: 'Stipendio',
+        amount: 1000,
+        type: MovementType.income,
+        date: DateTime.now(),
+        categoryId: cat.id,
+        createdAt: DateTime.now(),
+      ));
+
+      await db.updateCategory(
+        cat.id,
+        'Entrata Rinominata',
+        0xFF4CAF50,
+        iconKey: 'attach_money',
+      );
+
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
+      expect(updated.name, 'Entrata Rinominata');
+      expect(updated.color, 0xFF4CAF50);
+      expect(updated.iconKey, 'attach_money');
+    });
+
+    test('14. Eliminazione categoria con contenuti collegati resta bloccata', () async {
+      final db = AppDatabase();
+      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+
+      await db.addMovement(Movement(
+        id: 'blocked_delete_mov',
+        title: 'Test',
+        amount: 12,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: cat.id,
+        createdAt: DateTime.now(),
+      ));
+      await db.createSubcategory(cat.id, 'Sub collegata');
+
+      final before = db.categories.length;
+      await db.deleteCategory(cat.id);
+
+      expect(db.categories.length, before);
+      expect(db.categories.any((c) => c.id == cat.id), true);
+    });
+
+    test('15. Archiviazione categoria con movimenti resta coerente', () async {
+      final db = AppDatabase();
+      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+
+      await db.addMovement(Movement(
+        id: 'archive_safe_mov',
+        title: 'Test',
+        amount: 25,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: cat.id,
+        createdAt: DateTime.now(),
+      ));
+
+      await db.archiveCategory(cat.id);
+
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
+      expect(updated.archived, true);
+      expect(db.movements.any((m) => m.categoryId == cat.id), true);
+    });
+
+    test('16. Categoria importata stile CSV segue le stesse regole sicure', () async {
+      final db = AppDatabase();
+      final imported = Category(
+        id: 'csv_cat_1',
+        name: 'Importata CSV',
+        type: MovementType.expense,
+        color: 0xFF42A5F5,
+        iconKey: 'receipt',
+      );
+      db.internalAddCategory(imported);
+
+      await db.addMovement(Movement(
+        id: 'csv_mov',
+        title: 'Test CSV',
+        amount: 18,
+        type: MovementType.expense,
+        date: DateTime.now(),
+        categoryId: imported.id,
+        createdAt: DateTime.now(),
+      ));
+
+      await db.updateCategory(
+        imported.id,
+        'CSV Rinominata',
+        0xFF009688,
+        iconKey: 'shopping_cart',
+      );
+
+      final updated = db.categories.firstWhere((c) => c.id == imported.id);
+      expect(updated.name, 'CSV Rinominata');
+      expect(updated.color, 0xFF009688);
+      expect(updated.iconKey, 'shopping_cart');
+    });
   });
 
   group('Categories — SQLite persistence', () {

@@ -422,6 +422,25 @@ class AppDatabase extends ChangeNotifier {
     return _movements.any((m) => m.categoryId == categoryId);
   }
 
+  bool categoryHasSubcategories(String categoryId) {
+    return _subcategories.any((s) => s.categoryId == categoryId);
+  }
+
+  bool categoryHasQuickMovements(String categoryId) {
+    return _quickMovements.any((q) => q.categoryId == categoryId);
+  }
+
+  bool categoryHasFavoriteMovements(String categoryId) {
+    return _favoriteMovements.any((f) => f.categoryId == categoryId);
+  }
+
+  bool categoryHasLinkedContent(String categoryId) {
+    return categoryHasMovements(categoryId) ||
+        categoryHasSubcategories(categoryId) ||
+        categoryHasQuickMovements(categoryId) ||
+        categoryHasFavoriteMovements(categoryId);
+  }
+
   List<Category> get activeCategories =>
       _categories.where((c) => !c.archived).toList();
 
@@ -535,6 +554,9 @@ class AppDatabase extends ChangeNotifier {
   }
 
   Future<void> deleteCategory(String id) async {
+    if (categoryHasLinkedContent(id)) {
+      return;
+    }
     if (_sqlite != null) {
       try {
         await _sqlite.deleteCategory(id);

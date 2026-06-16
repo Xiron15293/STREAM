@@ -175,6 +175,23 @@ int _countFavForSubcategory(AppDatabase db, String subcategoryId) {
       .length;
 }
 
+String _describeCategoryLinkedContent(AppDatabase db, Category category) {
+  final parts = <String>[];
+  if (db.categoryHasMovements(category.id)) {
+    parts.add('movimenti');
+  }
+  if (db.categoryHasSubcategories(category.id)) {
+    parts.add('sottocategorie');
+  }
+  if (db.categoryHasQuickMovements(category.id)) {
+    parts.add('movimenti rapidi');
+  }
+  if (db.categoryHasFavoriteMovements(category.id)) {
+    parts.add('preferiti');
+  }
+  return parts.join(', ');
+}
+
 class _ChildSubOption {
   final String subcategoryId;
   final String subcategoryName;
@@ -1801,14 +1818,16 @@ class _CleanListTile extends StatelessWidget {
   }
 
   void _tryDelete(BuildContext context) {
-    if (db.categoryHasMovements(category.id)) {
+    final linkedContent = _describeCategoryLinkedContent(db, category);
+    if (linkedContent.isNotEmpty) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Impossibile eliminare'),
           content: Text(
-            'La categoria "${category.name}" contiene movimenti.\n\n'
-            'Archiviala o riassegna i movimenti prima di eliminarla.',
+            'La categoria "${category.name}" contiene elementi collegati '
+            '($linkedContent).\n\n'
+            'Archiviala o sposta/elimina prima gli elementi collegati.',
           ),
           actions: [
             TextButton(
@@ -1965,14 +1984,16 @@ class _GroupedListTile extends StatelessWidget {
   }
 
   void _tryDelete(BuildContext context) {
-    if (db.categoryHasMovements(category.id)) {
+    final linkedContent = _describeCategoryLinkedContent(db, category);
+    if (linkedContent.isNotEmpty) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Impossibile eliminare'),
           content: Text(
-            'La categoria "${category.name}" contiene movimenti.\n\n'
-            'Archiviala o riassegna i movimenti prima di eliminarla.',
+            'La categoria "${category.name}" contiene elementi collegati '
+            '($linkedContent).\n\n'
+            'Archiviala o sposta/elimina prima gli elementi collegati.',
           ),
           actions: [
             TextButton(
@@ -2177,14 +2198,16 @@ class _StreamCardGridTile extends StatelessWidget {
   }
 
   void _tryDelete(BuildContext context) {
-    if (db.categoryHasMovements(category.id)) {
+    final linkedContent = _describeCategoryLinkedContent(db, category);
+    if (linkedContent.isNotEmpty) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Impossibile eliminare'),
           content: Text(
-            'La categoria "${category.name}" contiene movimenti.\n\n'
-            'Archiviala o riassegna i movimenti prima di eliminarla.',
+            'La categoria "${category.name}" contiene elementi collegati '
+            '($linkedContent).\n\n'
+            'Archiviala o sposta/elimina prima gli elementi collegati.',
           ),
           actions: [
             TextButton(
