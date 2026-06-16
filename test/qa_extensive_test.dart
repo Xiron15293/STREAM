@@ -2206,11 +2206,11 @@ void main() {
 
         await tapVisible(
           tester,
-          find.byKey(const Key('transfer_origin_chip_acc_a')),
+          find.byKey(const Key('transfer_origin_option_acc_a')),
         );
         await tapVisible(
           tester,
-          find.byKey(const Key('transfer_destination_chip_acc_b')),
+          find.byKey(const Key('transfer_destination_option_acc_b')),
         );
         await tapVisible(
           tester,

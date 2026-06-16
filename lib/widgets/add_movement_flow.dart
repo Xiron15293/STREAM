@@ -568,7 +568,6 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildTransferAccountsStep() {
-    final frequent = _frequentAccounts();
     final invalid = _accountId != null &&
         _destinationAccountId != null &&
         _accountId == _destinationAccountId;
@@ -579,6 +578,40 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
         children: [
           Text('Trasferisci denaro', style: StreamTypography.h3),
           const SizedBox(height: StreamSpacing.md),
+          if (_selectedAccount != null || _selectedDestinationAccount != null) ...[
+            Container(
+              key: const Key('transfer_selection_summary'),
+              padding: const EdgeInsets.all(StreamSpacing.md),
+              decoration: BoxDecoration(
+                color: StreamColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(StreamRadius.lg),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _TransferSelectionSummary(
+                      label: 'Origine',
+                      account: _selectedAccount,
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: StreamSpacing.sm),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+                  Expanded(
+                    child: _TransferSelectionSummary(
+                      label: 'Destinazione',
+                      account: _selectedDestinationAccount,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: StreamSpacing.lg),
+          ],
           Text('Conto origine', style: StreamTypography.h3),
           Text(
             'Scegli da dove inviare',
@@ -587,22 +620,28 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             ),
           ),
           const SizedBox(height: StreamSpacing.sm),
-          Wrap(
-            spacing: StreamSpacing.sm,
-            runSpacing: StreamSpacing.sm,
-            children: frequent.map((account) {
-              return _SelectionChip(
-                widgetKey: Key('transfer_origin_chip_${account.id}'),
-                label: account.name,
-                icon: StreamIconLibrary.getAccountIcon(account.iconKey),
-                color: Color(account.color),
-                selected: _accountId == account.id,
-                onTap: () => setState(() {
-                  _accountId = account.id;
-                  _selectionError = null;
-                }),
-              );
-            }).toList(),
+          Container(
+            key: const Key('transfer_origin_list'),
+            padding: const EdgeInsets.all(StreamSpacing.sm),
+            decoration: BoxDecoration(
+              color: StreamColors.surfaceHighlight,
+              borderRadius: BorderRadius.circular(StreamRadius.lg),
+            ),
+            child: Column(
+              children: _activeAccounts
+                  .map(
+                    (account) => _buildTransferAccountTile(
+                      account,
+                      scope: 'origin',
+                      selected: _accountId == account.id,
+                      onTap: () => setState(() {
+                        _accountId = account.id;
+                        _selectionError = null;
+                      }),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
           const SizedBox(height: StreamSpacing.lg),
           Text('Conto destinazione', style: StreamTypography.h3),
@@ -613,37 +652,27 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             ),
           ),
           const SizedBox(height: StreamSpacing.sm),
-          Wrap(
-            spacing: StreamSpacing.sm,
-            runSpacing: StreamSpacing.sm,
-            children: _activeAccounts.map((account) {
-              return _SelectionChip(
-                widgetKey: Key('transfer_destination_chip_${account.id}'),
-                label: account.name,
-                icon: StreamIconLibrary.getAccountIcon(account.iconKey),
-                color: Color(account.color),
-                selected: _destinationAccountId == account.id,
-                onTap: () => setState(() {
-                  _destinationAccountId = account.id;
-                  _selectionError = null;
-                }),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: StreamSpacing.lg),
-          Text('I tuoi conti', style: StreamTypography.h3),
-          const SizedBox(height: StreamSpacing.sm),
-          ..._activeAccounts.map(
-            (account) => _buildAccountTile(
-              account,
-              onTap: () => setState(() {
-                if (_accountId == null) {
-                  _accountId = account.id;
-                } else {
-                  _destinationAccountId = account.id;
-                }
-                _selectionError = null;
-              }),
+          Container(
+            key: const Key('transfer_destination_list'),
+            padding: const EdgeInsets.all(StreamSpacing.sm),
+            decoration: BoxDecoration(
+              color: StreamColors.surfaceHighlight,
+              borderRadius: BorderRadius.circular(StreamRadius.lg),
+            ),
+            child: Column(
+              children: _activeAccounts
+                  .map(
+                    (account) => _buildTransferAccountTile(
+                      account,
+                      scope: 'destination',
+                      selected: _destinationAccountId == account.id,
+                      onTap: () => setState(() {
+                        _destinationAccountId = account.id;
+                        _selectionError = null;
+                      }),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
           if (invalid) ...[
@@ -666,6 +695,12 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                     _step = _FlowStep.details;
                   }),
             child: const Text('Continua'),
+          ),
+          const SizedBox(height: StreamSpacing.sm),
+          OutlinedButton(
+            key: const Key('transfer_cancel_button'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancella'),
           ),
         ],
       ),
@@ -965,6 +1000,112 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTransferAccountTile(
+    Account account, {
+    required String scope,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final balance = widget.db.getAccountBalance(account);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+      child: Material(
+        color: selected ? StreamColors.primary.withValues(alpha: 0.08) : StreamColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(StreamRadius.md),
+        child: InkWell(
+          key: Key('transfer_${scope}_option_${account.id}'),
+          borderRadius: BorderRadius.circular(StreamRadius.md),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(StreamSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(StreamRadius.md),
+              border: Border.all(
+                color: selected ? StreamColors.primary : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                _IconBubble(
+                  color: account.color,
+                  iconKey: account.iconKey,
+                ),
+                const SizedBox(width: StreamSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(account.name, style: StreamTypography.bodyBold),
+                      Text(
+                        _formatCurrency(balance),
+                        style: StreamTypography.caption.copyWith(
+                          color: StreamColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  selected
+                      ? Icons.check_circle_rounded
+                      : Icons.chevron_right_rounded,
+                  color: selected
+                      ? StreamColors.primary
+                      : StreamColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransferSelectionSummary extends StatelessWidget {
+  final String label;
+  final Account? account;
+
+  const _TransferSelectionSummary({
+    required this.label,
+    required this.account,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedAccount = account;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: StreamTypography.caption.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: StreamSpacing.xs),
+        Row(
+          children: [
+            _IconBubble(
+              color: selectedAccount?.color ?? StreamColors.primary.toARGB32(),
+              iconKey: selectedAccount?.iconKey ??
+                  StreamIconLibrary.defaultAccountIcon,
+            ),
+            const SizedBox(width: StreamSpacing.sm),
+            Expanded(
+              child: Text(
+                selectedAccount?.name ?? 'Seleziona conto',
+                style: StreamTypography.bodyBold,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

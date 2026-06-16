@@ -85,7 +85,10 @@ void main() {
       expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
       expect(find.text('Conto origine'), findsOneWidget);
       expect(find.text('Conto destinazione'), findsOneWidget);
+      expect(find.byKey(const Key('transfer_origin_list')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_destination_list')), findsOneWidget);
       expect(find.text('Tutte le categorie'), findsNothing);
+      expect(find.byKey(const Key('transfer_destination_chip_acc_2')), findsNothing);
     });
 
     testWidgets('selezione categoria spesa apre form spesa', (tester) async {
@@ -139,10 +142,14 @@ void main() {
 
       await tester.tap(find.text('Trasferimento').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('transfer_origin_chip_acc_default')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('transfer_destination_chip_acc_2')));
-      await tester.pumpAndSettle();
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_origin_option_acc_default')),
+      );
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_destination_option_acc_2')),
+      );
       await _tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
 
       expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
@@ -156,10 +163,14 @@ void main() {
 
       await tester.tap(find.text('Trasferimento').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('transfer_origin_chip_acc_default')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('transfer_destination_chip_acc_default')));
-      await tester.pumpAndSettle();
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_origin_option_acc_default')),
+      );
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_destination_option_acc_default')),
+      );
 
       expect(find.byKey(const Key('transfer_continue_button')), findsOneWidget);
       expect(
@@ -167,6 +178,42 @@ void main() {
         isNull,
       );
       expect(find.byKey(const Key('transfer_same_account_error')), findsOneWidget);
+    });
+
+    testWidgets('liste trasferimento mostrano tutti i conti attivi senza duplicare la destinazione', (tester) async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Revolut',
+          type: AccountType.bank,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await db.addAccount(
+        Account(
+          id: 'acc_3',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Trasferimento').last);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('transfer_origin_list')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_destination_list')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_origin_option_acc_default')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_origin_option_acc_2')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_origin_option_acc_3')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_destination_option_acc_default')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_destination_option_acc_2')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_destination_option_acc_3')), findsOneWidget);
+      expect(find.byKey(const Key('transfer_destination_chip_acc_default')), findsNothing);
+      expect(find.text('I tuoi conti'), findsNothing);
     });
 
     testWidgets('calculator pad mostra + - * / e backspace funziona', (tester) async {

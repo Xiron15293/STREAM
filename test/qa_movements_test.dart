@@ -1419,7 +1419,10 @@ void main() {
     expect(find.text('Tutte le categorie'), findsNothing);
     expect(find.text('Conto origine'), findsOneWidget);
     expect(find.text('Conto destinazione'), findsOneWidget);
-    await tapVisible(tester, find.text('Risparmio').last);
+    await tapVisible(
+      tester,
+      find.byKey(const Key('transfer_destination_option_acc_risparmio')),
+    );
     await tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
     await enterAmountWithCalculator(tester, '25');
 
