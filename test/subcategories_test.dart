@@ -313,16 +313,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(
-          find.byKey(const Key('movement_category_subcategory_field')),
-          findsOneWidget,
-        );
-        expect(find.text('Categoria / Sottocategoria'), findsOneWidget);
-        expect(
-          find.byKey(const Key('movement_subcategory_dropdown')),
-          findsNothing,
-        );
-        expect(find.text('Sottocategoria'), findsNothing);
+        expect(find.byKey(const Key('add_movement_category_step')), findsOneWidget);
+        expect(find.byKey(const Key('add_movement_category_search')), findsOneWidget);
+        expect(find.byKey(const Key('movement_category_subcategory_field')), findsNothing);
+        expect(find.byKey(const Key('movement_subcategory_dropdown')), findsNothing);
       },
     );
 
@@ -341,21 +335,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Titolo'),
-          'Cena',
-        );
+        await tapVisible(tester, find.byKey(Key('category_option_${parent.id}')));
+        await tapVisible(tester, find.byKey(const Key('skip_subcategory_button')));
+        await enterMovementTitle(tester, 'Cena');
         await enterAmountWithCalculator(tester, '25');
-        await _selectCategoryOrSubcategory(
-          tester,
-          optionKey: Key('category_option_${parent.id}'),
-          searchText: 'Tempo libero',
-        );
-        expect(find.text('Tempo libero'), findsOneWidget);
-
-        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-        await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-        await tester.pumpAndSettle();
+        await submitMovement(tester);
 
         final movement = db.movements.singleWhere((m) => m.title == 'Cena');
         expect(movement.categoryId, parent.id);
@@ -379,21 +363,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Titolo'),
-          'Pranzo',
-        );
+        await tapVisible(tester, find.byKey(Key('category_option_${parent.id}')));
+        await tapVisible(tester, find.byKey(Key('subcategory_option_${sub.id}')));
+        await enterMovementTitle(tester, 'Pranzo');
         await enterAmountWithCalculator(tester, '18');
-        await _selectCategoryOrSubcategory(
-          tester,
-          optionKey: Key('subcategory_option_${sub.id}'),
-          searchText: 'Ristorante',
-        );
-        expect(find.text('Tempo libero / Ristorante'), findsOneWidget);
-
-        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-        await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-        await tester.pumpAndSettle();
+        await submitMovement(tester);
 
         final movement = db.movements.singleWhere((m) => m.title == 'Pranzo');
         expect(movement.categoryId, parent.id);
@@ -426,13 +400,8 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(
-          find.byKey(const Key('movement_category_subcategory_field')),
-        );
-        await tester.pumpAndSettle();
-
         await tester.enterText(
-          find.byKey(const Key('category_subcategory_search_field')),
+          find.byKey(const Key('add_movement_category_search')),
           'tempo libero',
         );
         await tester.pumpAndSettle();
@@ -442,20 +411,20 @@ void main() {
           findsNothing,
         );
 
-        await tester.enterText(
-          find.byKey(const Key('category_subcategory_search_field')),
-          'rist',
-        );
-        await tester.pumpAndSettle();
-        expect(find.byKey(Key('category_option_${parent.id}')), findsOneWidget);
+        await tapVisible(tester, find.byKey(Key('category_option_${parent.id}')));
         expect(find.byKey(Key('subcategory_option_${sub.id}')), findsOneWidget);
         expect(
           find.byKey(Key('subcategory_option_${archivedSub.id}')),
           findsNothing,
         );
 
+        await tapVisible(
+          tester,
+          find.byIcon(Icons.arrow_back_ios_new_rounded).first,
+        );
+        await tester.pumpAndSettle();
         await tester.enterText(
-          find.byKey(const Key('category_subcategory_search_field')),
+          find.byKey(const Key('add_movement_category_search')),
           'spesa (',
         );
         await tester.pumpAndSettle();
@@ -478,21 +447,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await _selectCategoryOrSubcategory(
-        tester,
-        optionKey: Key('subcategory_option_${sub.id}'),
-        searchText: 'Ristorante',
-      );
-      expect(find.text('Tempo libero / Ristorante'), findsOneWidget);
+      final expenseParent = db.categories.firstWhere((c) => c.name == 'Tempo libero');
+      await tapVisible(tester, find.byKey(Key('category_option_${expenseParent.id}')));
+      await tapVisible(tester, find.byKey(Key('subcategory_option_${sub.id}')));
+      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+      expect(find.text('Ristorante'), findsOneWidget);
 
       await tester.tap(find.text('Entrata'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tempo libero / Ristorante'), findsNothing);
-      await tester.tap(
-        find.byKey(const Key('movement_category_subcategory_field')),
-      );
-      await tester.pumpAndSettle();
+      expect(find.text('Ristorante'), findsNothing);
+      expect(find.byKey(const Key('add_movement_category_step')), findsOneWidget);
       expect(find.byKey(Key('category_option_${income.id}')), findsOneWidget);
       expect(find.text('Tempo libero'), findsNothing);
     });
@@ -512,19 +477,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Titolo'),
-          'Flat',
-        );
+        await tapVisible(tester, find.byKey(Key('category_option_${flat.id}')));
+        await enterMovementTitle(tester, 'Flat');
         await enterAmountWithCalculator(tester, '14');
-        await _selectCategoryOrSubcategory(
-          tester,
-          optionKey: Key('category_option_${flat.id}'),
-          searchText: 'Spesa (',
-        );
-        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-        await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-        await tester.pumpAndSettle();
+        await submitMovement(tester);
 
         final movement = db.movements.singleWhere((m) => m.title == 'Flat');
         expect(movement.categoryId, flat.id);

@@ -9,6 +9,8 @@ import 'package:stream_app/models/account.dart';
 import 'package:stream_app/widgets/calculator_amount_pad.dart';
 import 'package:stream_app/widgets/movement_picker.dart';
 
+import 'helpers/calculator_test_helpers.dart';
+
 void main() {
   group('AmountExpressionEvaluator', () {
     const evaluator = AmountExpressionEvaluator();
@@ -336,10 +338,8 @@ void main() {
       await _pumpMainScaffold(tester, db);
 
       await _openMovementPicker(tester);
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Titolo'),
-        'Spesa pad',
-      );
+      await prepareManualMovementDetails(tester);
+      await enterMovementTitle(tester, 'Spesa pad');
       await _enterAmountWithPad(tester, ['1', '0', '+', '5']);
       await _saveMovement(tester);
 
@@ -355,12 +355,8 @@ void main() {
       await _pumpMainScaffold(tester, db);
 
       await _openMovementPicker(tester);
-      await tester.tap(find.text('Entrata'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Titolo'),
-        'Entrata pad',
-      );
+      await prepareManualMovementDetails(tester, type: 'Entrata');
+      await enterMovementTitle(tester, 'Entrata pad');
       await _enterAmountWithPad(tester, ['2', '0', '*', '2']);
       await _saveMovement(tester);
 
@@ -482,6 +478,14 @@ Future<void> _enterAmountWithPad(
   List<String> keys, {
   String label = 'Importo (€)',
 }) async {
+  if (find.byKey(const Key('movement_pad_0')).evaluate().isNotEmpty) {
+    for (final key in keys) {
+      final mapped = key == '.' ? ',' : key;
+      await tapVisible(tester, find.byKey(Key('movement_pad_$mapped')));
+    }
+    return;
+  }
+
   await tester.tap(find.widgetWithText(TextField, label).last);
   await tester.pumpAndSettle();
   for (final key in keys) {
@@ -509,8 +513,5 @@ Future<void> _replaceAmountWithPad(
 }
 
 Future<void> _saveMovement(WidgetTester tester) async {
-  await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
+  await submitMovement(tester);
 }

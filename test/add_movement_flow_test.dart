@@ -1,0 +1,333 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:stream_app/data/database.dart';
+import 'package:stream_app/main.dart';
+import 'package:stream_app/models/account.dart';
+import 'package:stream_app/models/category.dart';
+import 'package:stream_app/services/backup_service.dart';
+import 'package:stream_app/widgets/movement_calculator_pad.dart';
+
+void main() {
+  SharedPreferences.setMockInitialValues({});
+
+  group('AddMovementFlow UI', () {
+    testWidgets('tap su + Movimento apre flow guidato', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+
+      await _openAddMovement(tester);
+
+      expect(find.byKey(const Key('add_movement_category_step')), findsOneWidget);
+      expect(find.text('Spesa'), findsWidgets);
+      expect(find.text('Entrata'), findsWidgets);
+      expect(find.text('Trasferimento'), findsWidgets);
+    });
+
+    testWidgets('cambio tab Entrata / Spesa / Trasferimento', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Entrata').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Scegli categoria entrata'), findsOneWidget);
+
+      await tester.tap(find.text('Spesa').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Scegli categoria spesa'), findsOneWidget);
+
+      await tester.tap(find.text('Trasferimento').last);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
+    });
+
+    testWidgets('Spesa mostra categorie spesa', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      expect(find.text('Casa'), findsWidgets);
+      expect(find.text('Spesa'), findsWidgets);
+      expect(find.text('Stipendio'), findsNothing);
+    });
+
+    testWidgets('Entrata mostra categorie entrata', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Entrata').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stipendio'), findsWidgets);
+      expect(find.text('Rimborso'), findsWidgets);
+      expect(find.text('Casa'), findsNothing);
+    });
+
+    testWidgets('Trasferimento mostra conti e non categorie', (tester) async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Revolut',
+          type: AccountType.bank,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Trasferimento').last);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
+      expect(find.text('Conto origine'), findsOneWidget);
+      expect(find.text('Conto destinazione'), findsOneWidget);
+      expect(find.text('Tutte le categorie'), findsNothing);
+    });
+
+    testWidgets('selezione categoria spesa apre form spesa', (tester) async {
+      final db = AppDatabase();
+      await db.createSubcategory('exp_2', 'Affitto');
+      final subId = db.getSubcategoriesForCategory('exp_2').single.id;
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_2')));
+      expect(find.byKey(const Key('add_movement_subcategory_step')), findsOneWidget);
+      await _tapVisible(tester, find.byKey(Key('subcategory_option_$subId')));
+      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+      expect(find.text('Nuova spesa'), findsOneWidget);
+    });
+
+    testWidgets('selezione categoria entrata + conto apre form entrata', (tester) async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Entrata').last);
+      await tester.pumpAndSettle();
+      await _tapVisible(tester, find.byKey(const Key('category_option_inc_1')));
+      await _tapVisible(tester, find.byKey(const Key('income_account_chip_acc_2')));
+
+      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+      expect(find.text('Nuova entrata'), findsOneWidget);
+    });
+
+    testWidgets('selezione origine/destinazione trasferimento apre form trasferimento', (tester) async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Trasferimento').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('transfer_origin_chip_acc_default')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('transfer_destination_chip_acc_2')));
+      await tester.pumpAndSettle();
+      await _tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
+
+      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+      expect(find.text('Nuovo trasferimento'), findsOneWidget);
+    });
+
+    testWidgets('origine e destinazione uguali bloccano il trasferimento', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Trasferimento').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('transfer_origin_chip_acc_default')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('transfer_destination_chip_acc_default')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('transfer_continue_button')), findsOneWidget);
+      expect(
+        tester.widget<FilledButton>(find.byKey(const Key('transfer_continue_button'))).onPressed,
+        isNull,
+      );
+      expect(find.byKey(const Key('transfer_same_account_error')), findsOneWidget);
+    });
+
+    testWidgets('calculator pad mostra + - * / e backspace funziona', (tester) async {
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MovementCalculatorPad(controller: controller),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('movement_pad_+')), findsOneWidget);
+      expect(find.byKey(const Key('movement_pad_-')), findsOneWidget);
+      expect(find.byKey(const Key('movement_pad_*')), findsOneWidget);
+      expect(find.byKey(const Key('movement_pad_/')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('movement_pad_1')));
+      await tester.tap(find.byKey(const Key('movement_pad_2')));
+      await tester.pumpAndSettle();
+      expect(controller.text, '12');
+
+      await tester.tap(find.byKey(const Key('movement_pad_backspace')));
+      await tester.pumpAndSettle();
+      expect(controller.text, '1');
+    });
+
+    testWidgets('data modificabile tramite date picker', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      await tester.tap(find.byKey(const Key('movement_date_field')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('OK'), findsWidgets);
+    });
+  });
+
+  group('AddMovementFlow logic', () {
+    test('entrata aumenta saldo conto', () async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+
+      final before = db.getAccountBalance(db.getAccount('acc_2'));
+      await db.createMovementFromTemplate(
+        title: 'Stipendio',
+        amount: 100,
+        type: MovementType.income,
+        date: DateTime(2026, 6, 15),
+        categoryId: 'inc_1',
+        accountId: 'acc_2',
+      );
+
+      expect(db.movements.single.type, MovementType.income);
+      expect(db.getAccountBalance(db.getAccount('acc_2')), before + 100);
+    });
+
+    test('spesa diminuisce saldo conto', () async {
+      final db = AppDatabase();
+      final before = db.getAccountBalance(db.getAccount(defaultAccountId));
+      await db.createMovementFromTemplate(
+        title: 'Spesa casa',
+        amount: 25,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 15),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+      );
+
+      expect(db.movements.single.type, MovementType.expense);
+      expect(db.getAccountBalance(db.getAccount(defaultAccountId)), before - 25);
+    });
+
+    test('trasferimento muove saldi e lascia patrimonio invariato', () async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Salvadanaio',
+          type: AccountType.savings,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+
+      final beforeOrigin = db.getAccountBalance(db.getAccount(defaultAccountId));
+      final beforeDestination = db.getAccountBalance(db.getAccount('acc_2'));
+      final beforeTotal = db.totalAccountsBalance;
+
+      await db.createMovementFromTemplate(
+        title: 'Trasferimento interno',
+        amount: 40,
+        type: MovementType.transfer,
+        date: DateTime(2026, 6, 15),
+        categoryId: '',
+        accountId: defaultAccountId,
+        destinationAccountId: 'acc_2',
+      );
+
+      expect(db.movements.single.type, MovementType.transfer);
+      expect(db.getAccountBalance(db.getAccount(defaultAccountId)), beforeOrigin - 40);
+      expect(db.getAccountBalance(db.getAccount('acc_2')), beforeDestination + 40);
+      expect(db.totalAccountsBalance, beforeTotal);
+      expect(db.totalIncome, 0);
+      expect(db.totalExpenses, 0);
+    });
+
+    test('backup export/validate conserva trasferimenti', () async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await db.createMovementFromTemplate(
+        title: 'Trasferimento interno',
+        amount: 35,
+        type: MovementType.transfer,
+        date: DateTime(2026, 6, 15),
+        categoryId: '',
+        accountId: defaultAccountId,
+        destinationAccountId: 'acc_2',
+      );
+
+      final json = await BackupService.exportToJson(db);
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+      expect(validation.data!.movements.length, 1);
+      expect(validation.data!.movements.single.type, MovementType.transfer);
+      expect(validation.data!.movements.single.destinationAccountId, 'acc_2');
+    });
+  });
+}
+
+Future<void> _pumpApp(WidgetTester tester, AppDatabase db) async {
+  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openAddMovement(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('bottom_nav_archive')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(FloatingActionButton));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder, warnIfMissed: false);
+  await tester.pumpAndSettle();
+}

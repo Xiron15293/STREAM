@@ -96,16 +96,10 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Titolo'),
-      'Test salvataggio',
-    );
+    await prepareManualMovementDetails(tester);
+    await enterMovementTitle(tester, 'Test salvataggio');
     await enterAmountWithCalculator(tester, '150');
-
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await submitMovement(tester);
 
     expect(find.text('Test salvataggio'), findsOneWidget);
     expect(db.movements.length, 1);
@@ -125,16 +119,10 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Titolo'),
-      'Spesa con virgola',
-    );
+    await prepareManualMovementDetails(tester);
+    await enterMovementTitle(tester, 'Spesa con virgola');
     await enterAmountWithCalculator(tester, '10,50');
-
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await submitMovement(tester);
 
     expect(find.text('Spesa con virgola'), findsOneWidget);
     expect(db.movements.length, 1);
@@ -157,20 +145,10 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Titolo'),
-      'Stipendio',
-    );
+    await prepareManualMovementDetails(tester, type: 'Entrata');
+    await enterMovementTitle(tester, 'Stipendio');
     await enterAmountWithCalculator(tester, '2000');
-
-    // Switch to income type
-    await tester.tap(find.text('Entrata'));
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await submitMovement(tester);
 
     // Go back to dashboard
     await tester.tap(find.text('Dashboard'));

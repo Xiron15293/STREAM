@@ -295,25 +295,17 @@ Future<void> _fillManualMovementForm(
       ? 'Trasferimento'
       : income
       ? 'Entrata'
-      : 'Uscita';
-  await tester.tap(find.text(typeText));
-  await tester.pumpAndSettle();
-  await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
+      : 'Spesa';
+  await prepareManualMovementDetails(tester, type: typeText);
+  await enterMovementTitle(tester, title);
   await enterAmountWithCalculator(tester, amount);
   if (note != null) {
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nota (opzionale)'),
-      note,
-    );
-    await tester.pumpAndSettle();
+    await enterMovementNote(tester, note);
   }
 }
 
 Future<void> _saveManualMovement(WidgetTester tester) async {
-  await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
+  await submitMovement(tester);
 }
 
 Future<void> _chooseQuickDate(WidgetTester tester, String choice) async {
@@ -2206,14 +2198,29 @@ void main() {
         await _pumpMainApp(tester, db);
 
         await _openMovementPicker(tester);
-        expect(find.text('Conto'), findsWidgets);
-        expect(find.text('Categoria / Sottocategoria'), findsWidgets);
-
         await tester.tap(find.text('Trasferimento'));
         await tester.pumpAndSettle();
+        expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
         expect(find.text('Conto origine'), findsWidgets);
         expect(find.text('Conto destinazione'), findsWidgets);
-        expect(find.text('Categoria / Sottocategoria'), findsNothing);
+
+        await tapVisible(
+          tester,
+          find.byKey(const Key('transfer_origin_chip_acc_a')),
+        );
+        await tapVisible(
+          tester,
+          find.byKey(const Key('transfer_destination_chip_acc_b')),
+        );
+        await tapVisible(
+          tester,
+          find.byKey(const Key('transfer_continue_button')),
+        );
+
+        expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+        expect(find.text('Origine'), findsWidgets);
+        expect(find.text('Destinazione'), findsWidgets);
+        expect(find.text('Categoria'), findsNothing);
 
         await _fillManualMovementForm(
           tester,

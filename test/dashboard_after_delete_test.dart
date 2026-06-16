@@ -31,17 +31,13 @@ Future<void> saveMovement(
   await tester.pumpAndSettle();
   await tester.tap(find.byType(FloatingActionButton));
   await tester.pumpAndSettle();
-  await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
+  await prepareManualMovementDetails(
+    tester,
+    type: isIncome ? 'Entrata' : 'Spesa',
+  );
+  await enterMovementTitle(tester, title);
   await enterAmountWithCalculator(tester, amount);
-  if (isIncome) {
-    await tester.tap(find.text('Entrata'));
-    await tester.pumpAndSettle();
-  }
-
-  await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
+  await submitMovement(tester);
 }
 
 /// Navigate to Dashboard tab

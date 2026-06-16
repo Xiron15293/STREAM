@@ -68,23 +68,25 @@ Future<void> _fillMovementData(
   required String amount,
   String? payee,
 }) async {
-  await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
+  await prepareManualMovementDetails(tester);
+  await enterMovementTitle(tester, title);
   if (payee != null) {
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Beneficiario (opzionale)'),
-      payee,
-    );
+    final counterpartyField = find.byKey(const Key('movement_counterparty_field'));
+    if (counterpartyField.evaluate().isNotEmpty) {
+      await tester.enterText(counterpartyField, payee);
+    } else {
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Beneficiario (opzionale)'),
+        payee,
+      );
+    }
   }
   await enterAmountWithCalculator(tester, amount);
   await tester.pumpAndSettle();
 }
 
 Future<void> _tapSaveButton(WidgetTester tester) async {
-  final saveButton = find.widgetWithText(FilledButton, 'Salva');
-  await tester.ensureVisible(saveButton);
-  await tester.pumpAndSettle();
-  await tester.tap(saveButton);
-  await tester.pumpAndSettle();
+  await submitMovement(tester);
 }
 
 void main() {

@@ -30,6 +30,7 @@ Future<void> saveMovement(
   required String amount,
   bool isIncome = false,
   String? note,
+  String? categoryLabel,
 }) async {
   // Navigate to Archivio tab (Movimenti is default section)
   await tester.tap(find.text('Archivio'));
@@ -38,28 +39,21 @@ Future<void> saveMovement(
   await tester.tap(find.byType(FloatingActionButton));
   await tester.pumpAndSettle();
 
-  await tester.enterText(find.widgetWithText(TextField, 'Titolo'), title);
+  await prepareManualMovementDetails(
+    tester,
+    type: isIncome ? 'Entrata' : 'Spesa',
+    categoryLabel: categoryLabel,
+  );
+  await enterMovementTitle(tester, title);
   if (amount.isNotEmpty) {
     await enterAmountWithCalculator(tester, amount);
   }
 
-  if (isIncome) {
-    await tester.tap(find.text('Entrata'));
-    await tester.pumpAndSettle();
-  }
-
   if (note != null) {
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nota (opzionale)'),
-      note,
-    );
-    await tester.pumpAndSettle();
+    await enterMovementNote(tester, note);
   }
 
-  await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-  await tester.pumpAndSettle();
+  await submitMovement(tester);
 }
 
 Future<void> openArchivePicker(WidgetTester tester) async {
@@ -166,7 +160,7 @@ void main() {
     await saveMovement(tester, title: 'Zero', amount: '0');
     expect(db.movements.length, 0, reason: 'importo <= 0 deve essere bloccato');
     expect(
-      find.text('Nuovo movimento'),
+      find.byKey(const Key('add_movement_details_step')),
       findsOneWidget,
       reason: 'il form deve restare aperto',
     );
@@ -189,18 +183,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Titolo'),
-      'Negativo',
-    );
+    await prepareManualMovementDetails(tester);
+    await enterMovementTitle(tester, 'Negativo');
     // Open pad, type "-50", pad won't close (allowNegative: false)
     await openPadAndType(tester, '-50');
     // Clear and close the pad
     await closeCalculatorPad(tester);
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await submitMovement(tester);
     expect(db.movements.length, 0);
   });
 
@@ -609,25 +598,12 @@ void main() {
 
   testWidgets('37. Movimento categoria Auto (exp_3)', (tester) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Archivio'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Benzina');
-    await enterAmountWithCalculator(tester, '65');
-
-    // Select "Auto" category from dropdown
-    await tester.tap(find.text('Spesa')); // current default
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Auto').last);
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await saveMovement(
+      tester,
+      title: 'Benzina',
+      amount: '65',
+      categoryLabel: 'Auto',
+    );
 
     expect(db.movements.length, 1);
     expect(db.movements.first.title, 'Benzina');
@@ -636,24 +612,12 @@ void main() {
 
   testWidgets('38. Movimento categoria Svago (exp_4)', (tester) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Archivio'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.widgetWithText(TextField, 'Titolo'), 'Cinema');
-    await enterAmountWithCalculator(tester, '12');
-
-    await tester.tap(find.text('Spesa'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Svago').last);
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await saveMovement(
+      tester,
+      title: 'Cinema',
+      amount: '12',
+      categoryLabel: 'Svago',
+    );
 
     expect(db.movements.length, 1);
     expect(db.movements.first.categoryId, 'exp_4');
@@ -1449,20 +1413,17 @@ void main() {
     );
 
     await openArchivePicker(tester);
-
-    await enterAmountWithCalculator(tester, '25');
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Trasferimento'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Categoria'), findsNothing);
+    expect(find.text('Tutte le categorie'), findsNothing);
     expect(find.text('Conto origine'), findsOneWidget);
     expect(find.text('Conto destinazione'), findsOneWidget);
+    await tapVisible(tester, find.text('Risparmio').last);
+    await tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
+    await enterAmountWithCalculator(tester, '25');
 
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
-    await tester.pumpAndSettle();
+    await submitMovement(tester, label: 'Trasferisci');
 
     expect(db.movements.length, 1);
     expect(db.movements.first.type, MovementType.transfer);

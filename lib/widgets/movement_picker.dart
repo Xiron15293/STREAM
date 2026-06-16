@@ -9,6 +9,7 @@ import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import 'add_movement_flow.dart';
 import 'calculator_amount_pad.dart';
 import 'category_subcategory_selector.dart';
 
@@ -230,14 +231,22 @@ class _MovementPickerState extends State<MovementPicker> {
   Widget _buildContent() {
     switch (_mode) {
       case AddMode.manuale:
-        return _ManualForm(
-          db: widget.db,
-          prefill: widget.prefill,
-          categoryPreFill: widget.categoryPreFill,
-          accountPreFill: widget.accountPreFill,
-          initialType: widget.initialType,
-          onSaved: () => Navigator.of(context).pop(),
-        );
+        return widget.prefill != null
+            ? _ManualForm(
+                db: widget.db,
+                prefill: widget.prefill,
+                categoryPreFill: widget.categoryPreFill,
+                accountPreFill: widget.accountPreFill,
+                initialType: widget.initialType,
+                onSaved: () => Navigator.of(context).pop(),
+              )
+            : AddMovementFlow(
+                db: widget.db,
+                categoryPreFill: widget.categoryPreFill,
+                accountPreFill: widget.accountPreFill,
+                initialType: widget.initialType,
+                onSaved: () => Navigator.of(context).pop(),
+              );
       case AddMode.rapidi:
         return _QuickPanel(
           db: widget.db,
