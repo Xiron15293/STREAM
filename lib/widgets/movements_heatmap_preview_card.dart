@@ -35,46 +35,51 @@ class MovementsHeatmapPreviewCard extends StatelessWidget {
         border: Border.all(color: StreamColors.divider),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: StreamSpacing.sm,
-          vertical: 6,
-        ),
-        child: Row(
+        padding: const EdgeInsets.all(StreamSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              width: 92,
-              child: Text(
-                monthLabel,
-                style: StreamTypography.captionBold,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: StreamSpacing.sm),
-            Expanded(
-              child: ExpenseHeatmap(
-                key: const Key('movements_list_heatmap_preview_grid'),
-                allMovements: allMovements,
-                year: year,
-                month: month,
-                selectedDay: selectedDay,
-                onDaySelected: onDaySelected,
-                rowCompact: true,
-              ),
-            ),
-            const SizedBox(width: StreamSpacing.sm),
-            TextButton.icon(
-              key: const Key('movements_open_calendar_default_settings'),
-              icon: const Icon(Icons.settings_outlined, size: 16),
-              label: const Text('Vista calendario predefinita'),
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, 32),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: StreamSpacing.sm,
+            Row(
+              children: [
+                SizedBox(
+                  width: 92,
+                  child: Text(
+                    monthLabel,
+                    style: StreamTypography.captionBold,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                visualDensity: VisualDensity.compact,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                const SizedBox(width: StreamSpacing.sm),
+                Expanded(
+                  child: ExpenseHeatmap(
+                    key: const Key('movements_list_heatmap_preview_grid'),
+                    allMovements: allMovements,
+                    year: year,
+                    month: month,
+                    selectedDay: selectedDay,
+                    onDaySelected: onDaySelected,
+                    rowCompact: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: StreamSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('movements_preview_configure_heatmap_button'),
+                icon: const Icon(Icons.tune_rounded, size: 16),
+                label: const Text('Configura heatmap'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 32),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StreamSpacing.sm,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: onOpenSettings,
               ),
-              onPressed: onOpenSettings,
             ),
           ],
         ),

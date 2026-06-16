@@ -75,12 +75,12 @@ class PeriodHeatmapCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
+          if (footerAction != null) ...[
+            const SizedBox(height: StreamSpacing.sm),
+            Align(alignment: Alignment.centerLeft, child: footerAction!),
+          ],
           const SizedBox(height: StreamSpacing.md),
           _buildBody(),
-          if (footerAction != null) ...[
-            const SizedBox(height: StreamSpacing.lg),
-            Center(child: footerAction!),
-          ],
         ],
       ),
     );

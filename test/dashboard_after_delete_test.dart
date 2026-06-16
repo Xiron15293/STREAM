@@ -46,6 +46,13 @@ Future<void> goToDashboard(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> openVisibleMovementActionMenu(WidgetTester tester) async {
+  final actionMenu = find.byKey(const Key('movement_card_action')).first;
+  await tester.ensureVisible(actionMenu);
+  await tester.tap(actionMenu.hitTestable());
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUpAll(() {
     sqfliteFfiInit();
@@ -576,8 +583,7 @@ void main() {
       // Torna a Movimenti ed elimina
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.more_horiz));
-      await tester.pumpAndSettle();
+      await openVisibleMovementActionMenu(tester);
       await tester.tap(find.text('Elimina'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Elimina'));
@@ -610,8 +616,7 @@ void main() {
       // Elimina
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.more_horiz));
-      await tester.pumpAndSettle();
+      await openVisibleMovementActionMenu(tester);
       await tester.tap(find.text('Elimina'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Elimina'));
@@ -634,8 +639,7 @@ void main() {
       // Elimina
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.more_horiz));
-      await tester.pumpAndSettle();
+      await openVisibleMovementActionMenu(tester);
       await tester.tap(find.text('Elimina'));
       await tester.pumpAndSettle();
 

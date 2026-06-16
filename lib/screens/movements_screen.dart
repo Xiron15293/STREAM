@@ -7,6 +7,7 @@ import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/duplicate_date_selector.dart';
 import '../utils/movement_search.dart';
+import 'heatmap_settings_screen.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/movement_view_renderer.dart';
 import '../widgets/time_filter_bar.dart';
@@ -235,7 +236,30 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 onChanged: _setActiveFilter,
                 onDatePicked: _rememberPickedDate,
               ),
-              const SizedBox(height: StreamSpacing.xs),
+              if (_activeFilter.mode == TimeFilterMode.day)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    StreamSpacing.lg,
+                    0,
+                    StreamSpacing.lg,
+                    StreamSpacing.xs,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('movements_day_configure_heatmap_button'),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const HeatmapSettingsScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.tune_rounded, size: 18),
+                      label: const Text('Configura heatmap'),
+                    ),
+                  ),
+                ),
               Expanded(child: body),
             ],
           );

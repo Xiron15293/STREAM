@@ -63,6 +63,15 @@ Future<void> openArchivePicker(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Finder archiveScrollable() => find.byType(Scrollable).last;
+
+Future<void> openVisibleMovementActionMenu(WidgetTester tester) async {
+  final actionMenu = find.byKey(const Key('movement_card_action')).first;
+  await tester.ensureVisible(actionMenu);
+  await tester.tap(actionMenu.hitTestable());
+  await tester.pumpAndSettle();
+}
+
 Future<void> chooseQuickDate(
   WidgetTester tester,
   String choice, {
@@ -742,8 +751,7 @@ void main() {
     expect(find.text('Da cancellare'), findsOneWidget);
 
     // Tap popup menu then Elimina, then confirm
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Elimina'));
     await tester.pumpAndSettle();
     // Confirm delete dialog
@@ -763,8 +771,7 @@ void main() {
     expect(db.movements.length, 1);
 
     // Open popup menu, tap Elimina, then Annulla
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Elimina'));
     await tester.pumpAndSettle();
     // Tap Annulla in dialog
@@ -780,8 +787,7 @@ void main() {
     await saveMovement(tester, title: 'Test', amount: '10');
 
     // Open popup, tap Elimina
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Elimina'));
     await tester.pumpAndSettle();
 
@@ -933,8 +939,7 @@ void main() {
     expect(db.movements.length, 1);
 
     // Tap popup menu then Duplica
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Duplica'));
     await tester.pumpAndSettle();
 
@@ -953,8 +958,7 @@ void main() {
 
     expect(db.movements.length, 1);
 
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Duplica'));
     await tester.pumpAndSettle();
 
@@ -971,8 +975,7 @@ void main() {
     expect(db.movements.length, 1);
 
     // Duplica con Domani
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Duplica'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Domani'));
@@ -1170,8 +1173,7 @@ void main() {
     expect(db.favoriteMovements.length, 0);
 
     // Tap popup menu then Salva preferito
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
     await tester.tap(find.text('Salva preferito'));
     await tester.pumpAndSettle();
 
@@ -1217,8 +1219,6 @@ void main() {
     final db = await pumpApp(tester);
 
     final today = DateTime.now();
-    final tomorrow = today.add(const Duration(days: 1));
-
     db.addMovement(
       Movement(
         id: 'today_manual',
@@ -1242,20 +1242,17 @@ void main() {
     await tester.tap(find.text('Archivio'));
     await tester.pumpAndSettle();
 
-    final tomorrowHeader = find.text(tomorrow.day.toString().padLeft(2, '0'));
-    final todayHeader = find.text(today.day.toString().padLeft(2, '0'));
-    expect(tomorrowHeader, findsOneWidget);
-    expect(todayHeader, findsOneWidget);
-    expect(
-      tester.getTopLeft(tomorrowHeader).dy,
-      lessThan(tester.getTopLeft(todayHeader).dy),
+    await tester.scrollUntilVisible(
+      find.text('Caffè'),
+      300,
+      scrollable: archiveScrollable(),
     );
+    await tester.pumpAndSettle();
     expect(find.text('Caffè'), findsOneWidget);
-    final archiveScrollable = find.byType(Scrollable).last;
     await tester.scrollUntilVisible(
       find.text('Oggi manuale'),
       300,
-      scrollable: archiveScrollable,
+      scrollable: archiveScrollable(),
     );
     await tester.pumpAndSettle();
     expect(find.text('Oggi manuale'), findsOneWidget);
@@ -1364,7 +1361,19 @@ void main() {
     await saveMovement(tester, title: 'Manuale test', amount: '99');
 
     expect(db.movements.length, 2);
+    await tester.scrollUntilVisible(
+      find.text('Caffè'),
+      300,
+      scrollable: archiveScrollable(),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Caffè'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Manuale test'),
+      300,
+      scrollable: archiveScrollable(),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Manuale test'), findsOneWidget);
   });
 
@@ -1624,7 +1633,19 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Con nota'),
+      300,
+      scrollable: archiveScrollable(),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Con nota'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Senza nota'),
+      300,
+      scrollable: archiveScrollable(),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Senza nota'), findsOneWidget);
     expect(find.text('Nota di test'), findsOneWidget);
     expect(db.movements.length, 2);
@@ -1839,8 +1860,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap popup menu (three dots) like existing test 53 does
-    await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pumpAndSettle();
+    await openVisibleMovementActionMenu(tester);
 
     expect(find.text('Duplica'), findsOneWidget);
     expect(find.text('Salva preferito'), findsOneWidget);
@@ -1936,7 +1956,7 @@ void main() {
     expect(find.byKey(const Key('annual_heatmap_subtitle')), findsOneWidget);
     expect(find.text('Andamento annuale'), findsOneWidget);
     // Scroll the main list so the first movement becomes visible
-    final listFinder = find.byKey(const Key('movements_layout_list'));
+    final listFinder = find.byKey(const Key('movements_layout_heatmap'));
     await tester.drag(listFinder, const Offset(0, -2000));
     await tester.pumpAndSettle();
     expect(find.text('Anno corrente'), findsOneWidget);

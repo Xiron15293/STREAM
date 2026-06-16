@@ -53,43 +53,90 @@ void main() {
   Future<void> pumpMovements(
     WidgetTester tester,
     AppDatabase db, {
-    required String mode,
+    String? mode,
   }) async {
-    SharedPreferences.setMockInitialValues({'movements_view_mode': mode});
+    SharedPreferences.setMockInitialValues(
+      mode == null ? <String, Object>{} : {'movements_view_mode': mode},
+    );
     await tester.pumpWidget(MaterialApp(home: MovementsScreen(db: db)));
     await tester.pumpAndSettle();
   }
 
-  test('save and load movement view preference uses new enum values', () async {
-    await PreferencesService.saveMovementsViewMode(MovementsViewMode.heatmap);
+  Future<void> expectHeatmapConfigureButtonVisible(WidgetTester tester) async {
+    final cardButton = find.byKey(
+      const Key('movements_card_configure_heatmap_button'),
+    );
+    final dayButton = find.byKey(
+      const Key('movements_day_configure_heatmap_button'),
+    );
+    final screenScrollable = find.byKey(const Key('movements_layout_heatmap'));
 
-    final mode = await PreferencesService.loadMovementsViewMode();
-    expect(mode, MovementsViewMode.heatmap);
-    expect(PreferencesService.movementsViewModeNotifier.value, mode);
-  });
+    for (var attempt = 0;
+        attempt < 5 &&
+            cardButton.evaluate().isEmpty &&
+            dayButton.evaluate().isEmpty &&
+            screenScrollable.evaluate().isNotEmpty;
+        attempt++) {
+      await tester.drag(screenScrollable, const Offset(0, -250));
+      await tester.pumpAndSettle();
+    }
+
+    expect(cardButton.evaluate().isNotEmpty || dayButton.evaluate().isNotEmpty, isTrue);
+  }
+
+  void expectNoLegacyMovementLayouts() {
+    expect(find.byKey(const Key('movements_layout_list')), findsNothing);
+    expect(find.byKey(const Key('movements_layout_calendar')), findsNothing);
+  }
 
   test(
-    'load movement view preference keeps legacy values compatible',
+    'saving movement view preference persists heatmap as the only configurable mode',
     () async {
-      SharedPreferences.setMockInitialValues({
-        'movements_view_mode': 'listHeatmap',
-      });
-      expect(
-        await PreferencesService.loadMovementsViewMode(),
-        MovementsViewMode.list,
-      );
+      await PreferencesService.saveMovementsViewMode(MovementsViewMode.list);
 
-      SharedPreferences.setMockInitialValues({
-        'movements_view_mode': 'advancedHeatmap',
-      });
-      expect(
-        await PreferencesService.loadMovementsViewMode(),
-        MovementsViewMode.heatmap,
-      );
+      final mode = await PreferencesService.loadMovementsViewMode();
+      expect(mode, MovementsViewMode.heatmap);
+      expect(PreferencesService.movementsViewModeNotifier.value, mode);
     },
   );
 
-  testWidgets('settings screen changes default movement view', (tester) async {
+  test('legacy movement view values fallback safely to heatmap', () async {
+    SharedPreferences.setMockInitialValues({
+      'movements_view_mode': 'listHeatmap',
+    });
+    expect(
+      await PreferencesService.loadMovementsViewMode(),
+      MovementsViewMode.heatmap,
+    );
+
+    SharedPreferences.setMockInitialValues({
+      'movements_view_mode': 'list',
+    });
+    expect(
+      await PreferencesService.loadMovementsViewMode(),
+      MovementsViewMode.heatmap,
+    );
+
+    SharedPreferences.setMockInitialValues({
+      'movements_view_mode': 'calendar',
+    });
+    expect(
+      await PreferencesService.loadMovementsViewMode(),
+      MovementsViewMode.heatmap,
+    );
+
+    SharedPreferences.setMockInitialValues({
+      'movements_view_mode': 'advancedHeatmap',
+    });
+    expect(
+      await PreferencesService.loadMovementsViewMode(),
+      MovementsViewMode.heatmap,
+    );
+  });
+
+  testWidgets('settings screen exposes only Configura heatmap for movements', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -101,100 +148,111 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Vista movimenti predefinita'),
+      find.byKey(const Key('settings_heatmap_configure_tile')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    final tile = find.widgetWithText(ListTile, 'Vista movimenti predefinita');
-    expect(tile, findsOneWidget);
 
-    await tester.tap(tile, warnIfMissed: false);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('movements_view_mode_heatmap')));
+    expect(find.text('Vista movimenti predefinita'), findsNothing);
+    expect(find.text('Modalità vista movimenti'), findsNothing);
+    expect(find.byKey(const Key('movements_view_mode_setting')), findsNothing);
+    expect(find.byKey(const Key('settings_heatmap_configure_tile')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('settings_heatmap_configure_tile')));
     await tester.pumpAndSettle();
 
-    expect(
-      await PreferencesService.loadMovementsViewMode(),
-      MovementsViewMode.heatmap,
-    );
+    expect(find.byKey(const Key('heatmap_settings_screen')), findsOneWidget);
+    expect(find.text('Configura heatmap'), findsOneWidget);
   });
 
   testWidgets(
-    'movements screen in list mode hides inline selector and shows only list layout',
+    'legacy listHeatmap preference does not restore list or calendar UI and keeps movements in heatmap mode',
     (tester) async {
-      await pumpMovements(tester, seededDb(), mode: 'list');
+      await pumpMovements(tester, seededDb(), mode: 'listHeatmap');
 
-      expect(
-        find.byKey(const Key('movements_mode_inline_selector')),
-        findsNothing,
-      );
-      expect(find.byKey(const Key('movements_layout_list')), findsOneWidget);
+      expectNoLegacyMovementLayouts();
+      expect(find.byKey(const Key('movements_layout_heatmap')), findsOneWidget);
+      expect(find.text('Vista movimenti predefinita'), findsNothing);
+      expect(find.text('Modalità vista movimenti'), findsNothing);
+      expect(find.text('Vista calendario predefinita'), findsNothing);
       expect(
         find.byKey(const Key('movements_open_calendar_default_settings')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('movements_card_configure_heatmap_button')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('movements_layout_calendar')), findsNothing);
-      expect(find.byKey(const Key('movements_layout_heatmap')), findsNothing);
     },
   );
 
-  testWidgets('list mode CTA points user to default calendar settings', (
-    tester,
-  ) async {
-    await pumpMovements(tester, seededDb(), mode: 'list');
+  testWidgets(
+    'legacy listHeatmap preference does not make settings show old movement view controls',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'movements_view_mode': 'listHeatmap',
+      });
 
-    expect(
-      find.byKey(const Key('movements_open_calendar_default_settings')),
-      findsOneWidget,
-    );
-    expect(find.text('Vista calendario predefinita'), findsOneWidget);
-  });
+      await tester.pumpWidget(MaterialApp(home: SettingsScreen(db: seededDb())));
+      await tester.pumpAndSettle();
 
-  testWidgets('movements screen in calendar mode shows only calendar layout', (
-    tester,
-  ) async {
-    await pumpMovements(tester, seededDb(), mode: 'calendar');
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('settings_heatmap_configure_tile')),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
 
-    expect(find.byKey(const Key('movements_layout_list')), findsNothing);
-    expect(find.byKey(const Key('movements_layout_calendar')), findsOneWidget);
-    expect(find.byKey(const Key('movements_layout_heatmap')), findsNothing);
-    expect(
-      find.byKey(const Key('period_heatmap_month_surface')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('day_filter_transfer')), findsNothing);
-  });
+      expect(find.text('Vista movimenti predefinita'), findsNothing);
+      expect(find.text('Modalità vista movimenti'), findsNothing);
+      expect(find.byKey(const Key('movements_view_mode_setting')), findsNothing);
+      expect(find.byKey(const Key('settings_heatmap_configure_tile')), findsOneWidget);
+    },
+  );
 
-  testWidgets('movements screen in heatmap mode shows only heatmap layout', (
-    tester,
-  ) async {
-    await pumpMovements(tester, seededDb(), mode: 'heatmap');
+  testWidgets(
+    'movements heatmap shows Configura heatmap for all periods and opens the same screen',
+    (tester) async {
+      await pumpMovements(tester, seededDb(), mode: 'heatmap');
 
-    expect(find.byKey(const Key('movements_layout_list')), findsNothing);
-    expect(find.byKey(const Key('movements_layout_calendar')), findsNothing);
-    expect(find.byKey(const Key('movements_layout_heatmap')), findsOneWidget);
-    await tester.drag(
-      find.byKey(const Key('movements_layout_heatmap')),
-      const Offset(0, -600),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('advanced_heatmap_kpi_panel')), findsOneWidget);
-    expect(find.byKey(const Key('day_filter_transfer')), findsOneWidget);
-  });
+      expectNoLegacyMovementLayouts();
+      await expectHeatmapConfigureButtonVisible(tester);
 
-  testWidgets('year filter shows premium annual heatmap with 12 months', (
-    tester,
-  ) async {
-    await pumpMovements(tester, seededDb(), mode: 'calendar');
+      await tester.tap(find.text('Giorno'));
+      await tester.pumpAndSettle();
+      expectNoLegacyMovementLayouts();
 
-    await tester.tap(find.text('Anno'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Sett.'));
+      await tester.pumpAndSettle();
+      expectNoLegacyMovementLayouts();
 
-    expect(find.byKey(const Key('annual_heatmap')), findsOneWidget);
-    expect(find.text('Andamento annuale'), findsOneWidget);
-    expect(find.text('Heatmap annuale compatta dei 12 mesi'), findsNothing);
-    for (int month = 1; month <= 12; month++) {
-      expect(find.byKey(Key('annual_heatmap_month_label_$month')), findsOneWidget);
-    }
-  });
+      await tester.tap(find.text('Mese'));
+      await tester.pumpAndSettle();
+      expectNoLegacyMovementLayouts();
+
+      await tester.tap(find.text('Anno'));
+      await tester.pumpAndSettle();
+      expectNoLegacyMovementLayouts();
+
+      await tester.tap(find.text('Intervallo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Seleziona intervallo'), findsOneWidget);
+      await tester.tap(find.text('Annulla'));
+      await tester.pumpAndSettle();
+      expectNoLegacyMovementLayouts();
+
+      final configureButton = find.byKey(
+        const Key('movements_card_configure_heatmap_button'),
+      ).evaluate().isNotEmpty
+          ? find.byKey(const Key('movements_card_configure_heatmap_button'))
+          : find.byKey(const Key('movements_day_configure_heatmap_button'));
+
+      await tester.tap(configureButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('heatmap_settings_screen')), findsOneWidget);
+      expect(find.byKey(const Key('heatmap_settings_section')), findsOneWidget);
+      expect(find.byKey(const Key('heatmap_primary_metric')), findsOneWidget);
+      expect(find.text('Metrica principale: Totale uscite'), findsOneWidget);
+    },
+  );
 }

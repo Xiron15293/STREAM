@@ -13,7 +13,7 @@ class PreferencesService {
   static const heatmapColorsKey = 'heatmap_colors';
 
   static const defaultCategoryLayout = 'cleanList';
-  static const defaultMovementsViewMode = MovementsViewMode.list;
+  static const defaultMovementsViewMode = MovementsViewMode.heatmap;
   static const defaultHeatmapSettings = HeatmapSettings.defaults;
 
   static final categoryLayoutNotifier = ValueNotifier<String>(
@@ -60,25 +60,19 @@ class PreferencesService {
   static Future<MovementsViewMode> loadMovementsViewMode() async {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getString(_movementsViewModeKey);
-    if (value == null) return defaultMovementsViewMode;
-    switch (value) {
-      case 'list':
-      case 'listHeatmap':
-        return MovementsViewMode.list;
-      case 'calendar':
-        return MovementsViewMode.calendar;
-      case 'heatmap':
-      case 'advancedHeatmap':
-        return MovementsViewMode.heatmap;
-      default:
-        return defaultMovementsViewMode;
-    }
+    final mode = switch (value) {
+      'heatmap' || 'advancedHeatmap' => MovementsViewMode.heatmap,
+      'calendar' || 'list' || 'listHeatmap' => MovementsViewMode.heatmap,
+      _ => defaultMovementsViewMode,
+    };
+    movementsViewModeNotifier.value = mode;
+    return mode;
   }
 
   static Future<void> saveMovementsViewMode(MovementsViewMode mode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_movementsViewModeKey, mode.name);
-    movementsViewModeNotifier.value = mode;
+    await prefs.setString(_movementsViewModeKey, MovementsViewMode.heatmap.name);
+    movementsViewModeNotifier.value = MovementsViewMode.heatmap;
   }
 
   static Future<HeatmapSettings> loadHeatmapSettings() async {

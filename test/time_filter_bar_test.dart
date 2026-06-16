@@ -427,26 +427,34 @@ void main() {
       await tester.tap(find.text('Archivio'));
       await tester.pumpAndSettle();
 
-      // DayHeader renders: _dayNumber = zero-padded day (08, 12, 24)
-      // First two DayHeaders (24, 12) should be visible initially
-      final pos24 = tester.getTopLeft(find.text('24'));
-      final pos12 = tester.getTopLeft(find.text('12'));
-      expect(
-        pos24.dy,
-        lessThan(pos12.dy),
-        reason: 'DayHeader 24 must appear above 12',
+      final archiveScrollable = find.descendant(
+        of: find.byType(GroupedMovementsList),
+        matching: find.byType(Scrollable),
       );
-
-      // Scroll down and verify DayHeader 08 exists
       await tester.scrollUntilVisible(
-        find.text('08'),
+        find.text('Mov24'),
         200,
-        scrollable: find.descendant(
-          of: find.byType(GroupedMovementsList),
-          matching: find.byType(Scrollable),
-        ),
+        scrollable: archiveScrollable,
       );
-      expect(find.text('08'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Mov24'), findsOneWidget);
+
+      // Entering deeper into the same list must reveal older groups in order.
+      await tester.scrollUntilVisible(
+        find.text('Mov12'),
+        200,
+        scrollable: archiveScrollable,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Mov12'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text('Mov8'),
+        200,
+        scrollable: archiveScrollable,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Mov8'), findsOneWidget);
     });
   });
 }

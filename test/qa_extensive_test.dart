@@ -1606,19 +1606,17 @@ void main() {
         expect(find.byType(GroupedMovementsList), findsOneWidget);
         expect(find.byType(MovementCard), findsWidgets);
 
-        final scrollable = find
-            .descendant(
-              of: find.byType(GroupedMovementsList),
-              matching: find.byType(Scrollable),
-            )
-            .first;
-        expect(scrollable, findsOneWidget);
-        await tester.scrollUntilVisible(
-          find.text('Nota finale visibile'),
-          400.0,
-          scrollable: scrollable,
-        );
-        await tester.pumpAndSettle();
+        final heatmapLayout = find.byKey(const Key('movements_layout_heatmap'));
+        expect(heatmapLayout, findsOneWidget);
+
+        for (var attempt = 0;
+            attempt < 20 &&
+                find.text('Nota finale visibile').evaluate().isEmpty;
+            attempt++) {
+          await tester.drag(heatmapLayout, const Offset(0, -450));
+          await tester.pumpAndSettle();
+        }
+
         expect(find.byType(MovementCard), findsWidgets);
         expect(find.text('Movimento 59'), findsWidgets);
         expect(find.text('Nota finale visibile'), findsOneWidget);

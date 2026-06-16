@@ -7,6 +7,7 @@ import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
+import 'package:stream_app/screens/heatmap_settings_screen.dart';
 import 'package:stream_app/screens/settings_screen.dart';
 import 'package:stream_app/utils/heatmap_utils.dart';
 import 'package:stream_app/widgets/categories_treemap.dart';
@@ -76,6 +77,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(
+      find.byKey(const Key('settings_heatmap_configure_tile')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('settings_heatmap_configure_tile')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('settings_heatmap_configure_tile')),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('heatmap_settings_screen')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_settings_section')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_settings_preview')), findsOneWidget);
     expect(find.byKey(const Key('heatmap_thresholds_editor')), findsOneWidget);
@@ -98,7 +114,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: SettingsScreen(db: AppDatabase())),
+      const MaterialApp(home: HeatmapSettingsScreen()),
     );
     await tester.pumpAndSettle();
 
@@ -129,7 +145,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: SettingsScreen(db: AppDatabase())),
+      const MaterialApp(home: HeatmapSettingsScreen()),
     );
     await tester.pumpAndSettle();
 

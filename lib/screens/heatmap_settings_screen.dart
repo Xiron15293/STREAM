@@ -133,11 +133,13 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
   Widget build(BuildContext context) {
     final bands = _settings.bands;
     return Scaffold(
+      key: const Key('heatmap_settings_screen'),
       appBar: AppBar(title: const Text('Configura heatmap')),
       body: ListView(
         padding: const EdgeInsets.all(StreamSpacing.lg),
         children: [
           Card(
+            key: const Key('heatmap_settings_section'),
             color: StreamColors.surface,
             child: Padding(
               padding: const EdgeInsets.all(StreamSpacing.lg),
@@ -149,6 +151,14 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                   Text(
                     'Colori e intervalli della heatmap Movimenti.',
                     style: StreamTypography.body.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: StreamSpacing.xs),
+                  Text(
+                    'Metrica principale: Totale uscite',
+                    key: const Key('heatmap_primary_metric'),
+                    style: StreamTypography.caption.copyWith(
                       color: StreamColors.textSecondary,
                     ),
                   ),

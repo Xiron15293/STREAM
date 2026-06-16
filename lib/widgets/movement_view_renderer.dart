@@ -5,7 +5,7 @@ import '../data/preferences_service.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
-import '../screens/settings_screen.dart';
+import '../screens/heatmap_settings_screen.dart';
 import '../theme.dart';
 import 'expense_heatmap.dart';
 import 'grouped_movements_list.dart';
@@ -62,10 +62,12 @@ class MovementViewRenderer extends StatelessWidget {
         return _buildListMode(context);
       case MovementsViewMode.calendar:
         return _buildPanelMode(
+          context,
           layoutKey: const Key('movements_layout_calendar'),
         );
       case MovementsViewMode.heatmap:
         return _buildPanelMode(
+          context,
           layoutKey: const Key('movements_layout_heatmap'),
           includeTypeFilters: true,
         );
@@ -100,14 +102,16 @@ class MovementViewRenderer extends StatelessWidget {
                 onAddQuick: onAddQuick,
                 onDelete: onDelete,
               footerAction: OutlinedButton.icon(
-                key: const Key('movements_open_calendar_default_settings'),
+                key: const Key('movements_card_configure_heatmap_button'),
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => SettingsScreen(db: db)),
+                    MaterialPageRoute(
+                      builder: (_) => const HeatmapSettingsScreen(),
+                    ),
                   );
                 },
-                icon: const Icon(Icons.settings_outlined, size: 18),
-                label: const Text('Vista calendario predefinita'),
+                icon: const Icon(Icons.tune_rounded, size: 18),
+                label: const Text('Configura heatmap'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: StreamSpacing.lg,
@@ -132,7 +136,9 @@ class MovementViewRenderer extends StatelessWidget {
               onDaySelected: onDaySelected,
               onOpenSettings: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => SettingsScreen(db: db)),
+                  MaterialPageRoute(
+                    builder: (_) => const HeatmapSettingsScreen(),
+                  ),
                 );
               },
             ),
@@ -149,7 +155,7 @@ class MovementViewRenderer extends StatelessWidget {
     );
   }
 
-  Widget _buildPanelMode({
+  Widget _buildPanelMode(BuildContext context, {
     required Key layoutKey,
     bool includeTypeFilters = false,
   }) {
@@ -157,50 +163,80 @@ class MovementViewRenderer extends StatelessWidget {
         ? movements.where((movement) => movement.type == dayFilter).toList()
         : movements;
 
-    return ListView(
+    return SingleChildScrollView(
       key: layoutKey,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-      children: [
-        PeriodSummaryCard(timeFilter: timeFilter, movements: movements),
-        const SizedBox(height: StreamSpacing.md),
-        PeriodHeatmapCard(
-          timeFilter: timeFilter,
-          movements: movements,
-          selectedDay: selectedDay,
-          selectedPeriodDay: selectedPeriodDay,
-          onDaySelected: onDaySelected,
-          onClearSelectedDay: onClearSelectedDay,
-          categories: db.categories,
-          subcategories: db.subcategories,
-          db: db,
-          onEdit: onEdit,
-          onDuplicate: onDuplicate,
-          onSaveAsFavorite: onSaveAsFavorite,
-          onAddQuick: onAddQuick,
-          onDelete: onDelete,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+        child: Column(
+          children: [
+            PeriodSummaryCard(timeFilter: timeFilter, movements: movements),
+            const SizedBox(height: StreamSpacing.md),
+            PeriodHeatmapCard(
+              timeFilter: timeFilter,
+              movements: movements,
+              selectedDay: selectedDay,
+              selectedPeriodDay: selectedPeriodDay,
+              onDaySelected: onDaySelected,
+              onClearSelectedDay: onClearSelectedDay,
+              categories: db.categories,
+              subcategories: db.subcategories,
+              db: db,
+              onEdit: onEdit,
+              onDuplicate: onDuplicate,
+              onSaveAsFavorite: onSaveAsFavorite,
+              onAddQuick: onAddQuick,
+              onDelete: onDelete,
+              footerAction: OutlinedButton.icon(
+                key: const Key('movements_card_configure_heatmap_button'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const HeatmapSettingsScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.tune_rounded, size: 18),
+                label: const Text('Configura heatmap'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StreamSpacing.lg,
+                    vertical: StreamSpacing.md,
+                  ),
+                  side: BorderSide(
+                    color: StreamColors.primary.withValues(alpha: 0.8),
+                  ),
+                  foregroundColor: StreamColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(StreamRadius.md),
+                  ),
+                ),
+              ),
+            ),
+            if (timeFilter.mode != TimeFilterMode.day)
+              Padding(
+                padding: EdgeInsets.only(top: StreamSpacing.md),
+                child: HeatmapLegend(),
+              ),
+            const SizedBox(height: StreamSpacing.md),
+            _MovementPanel(
+              movements: displayedMovements,
+              periodMovements: periodMovements,
+              hasQuery: hasQuery,
+              includeTypeFilters: includeTypeFilters,
+              showNotes: showNotes,
+              dayFilter: dayFilter,
+              onDayFilterChanged: onDayFilterChanged,
+              db: db,
+              onEdit: onEdit,
+              onDuplicate: onDuplicate,
+              onSaveAsFavorite: onSaveAsFavorite,
+              onAddQuick: onAddQuick,
+              onDelete: onDelete,
+              selectedPeriodDay: selectedPeriodDay,
+            ),
+          ],
         ),
-        if (timeFilter.mode != TimeFilterMode.day)
-          Padding(
-            padding: EdgeInsets.only(top: StreamSpacing.md),
-            child: HeatmapLegend(),
-          ),
-        const SizedBox(height: StreamSpacing.md),
-          _MovementPanel(
-            movements: displayedMovements,
-            periodMovements: periodMovements,
-            hasQuery: hasQuery,
-            includeTypeFilters: includeTypeFilters,
-            dayFilter: dayFilter,
-            onDayFilterChanged: onDayFilterChanged,
-            db: db,
-            onEdit: onEdit,
-            onDuplicate: onDuplicate,
-            onSaveAsFavorite: onSaveAsFavorite,
-            onAddQuick: onAddQuick,
-            onDelete: onDelete,
-            selectedPeriodDay: selectedPeriodDay,
-          ),
-      ],
+      ),
     );
   }
 }
@@ -210,6 +246,7 @@ class _MovementPanel extends StatelessWidget {
   final List<Movement> periodMovements;
   final bool hasQuery;
   final bool includeTypeFilters;
+  final bool showNotes;
   final MovementType? dayFilter;
   final ValueChanged<MovementType?>? onDayFilterChanged;
   final AppDatabase db;
@@ -225,6 +262,7 @@ class _MovementPanel extends StatelessWidget {
     required this.periodMovements,
     required this.hasQuery,
     required this.includeTypeFilters,
+    required this.showNotes,
     required this.dayFilter,
     required this.onDayFilterChanged,
     required this.db,
@@ -330,6 +368,7 @@ class _MovementPanel extends StatelessWidget {
     return GroupedMovementsList(
       movements: items,
       db: db,
+      showNotes: showNotes,
       filterType: dayFilter,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
