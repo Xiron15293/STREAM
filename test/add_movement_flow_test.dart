@@ -253,6 +253,105 @@ void main() {
 
       expect(find.text('OK'), findsWidgets);
     });
+
+    testWidgets('calculator pad nel flow aggiorna l importo in tempo reale', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+      expect(find.text('Nuova spesa'), findsOneWidget);
+      expect(_amountDisplayText(tester), '0,00 €');
+
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_1')));
+      expect(_amountDisplayText(tester), '1,00 €');
+
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_2')));
+      expect(_amountDisplayText(tester), '12,00 €');
+
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_backspace')));
+      expect(_amountDisplayText(tester), '1,00 €');
+
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_00')));
+      expect(_amountDisplayText(tester), '100,00 €');
+    });
+
+    testWidgets('salvataggio movimento usa l importo mostrato', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+      await _tapVisible(tester, find.byKey(const Key('movement_title_field')));
+      await tester.enterText(
+        find.byKey(const Key('movement_title_field')),
+        'Spesa test',
+      );
+      await tester.ensureVisible(find.byType(MovementCalculatorPad));
+      await tester.pumpAndSettle();
+
+      await _tapPadKey(tester, 'movement_pad_1');
+      await _tapPadKey(tester, 'movement_pad_0');
+      await _tapPadKey(tester, 'movement_pad_+');
+      await _tapPadKey(tester, 'movement_pad_5');
+
+      expect(_amountDisplayText(tester), '15,00 €');
+      await _tapVisible(tester, find.byKey(const Key('movement_submit_button')));
+
+      expect(db.movements, hasLength(1));
+      expect(db.movements.single.amount, 15);
+      expect(db.movements.single.type, MovementType.expense);
+    });
+
+    testWidgets('trasferimento usa l importo mostrato', (tester) async {
+      final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+
+      await tester.tap(find.text('Trasferimento').last);
+      await tester.pumpAndSettle();
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_origin_option_acc_default')),
+      );
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_destination_option_acc_2')),
+      );
+      await _tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
+
+      await _tapVisible(tester, find.byKey(const Key('movement_title_field')));
+      await tester.enterText(
+        find.byKey(const Key('movement_title_field')),
+        'Trasferimento test',
+      );
+      await tester.ensureVisible(find.byType(MovementCalculatorPad));
+      await tester.pumpAndSettle();
+
+      await _tapPadKey(tester, 'movement_pad_2');
+      await _tapPadKey(tester, 'movement_pad_0');
+      await _tapPadKey(tester, 'movement_pad_-');
+      await _tapPadKey(tester, 'movement_pad_5');
+
+      expect(_amountDisplayText(tester), '15,00 €');
+      await _tapVisible(tester, find.byKey(const Key('movement_submit_button')));
+
+      expect(db.movements, hasLength(1));
+      expect(db.movements.single.type, MovementType.transfer);
+      expect(db.movements.single.amount, 15);
+      expect(db.movements.single.accountId, defaultAccountId);
+      expect(db.movements.single.destinationAccountId, 'acc_2');
+    });
   });
 
   group('AddMovementFlow logic', () {
@@ -372,9 +471,24 @@ Future<void> _openAddMovement(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle();
-  await tester.tap(finder, warnIfMissed: false);
-  await tester.pumpAndSettle();
-}
+  Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder, warnIfMissed: false);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> _tapPadKey(WidgetTester tester, String key) async {
+    final finder = find.byKey(Key(key));
+    final scrollable = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
+
+  String _amountDisplayText(WidgetTester tester) {
+    return tester.widget<Text>(
+      find.byKey(const Key('movement_amount_display')),
+    ).data!;
+  }

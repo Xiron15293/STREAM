@@ -50,6 +50,10 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   DateTime _date = DateTime.now();
   String? _selectionError;
 
+  void _handleAmountChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,10 +64,12 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     _searchCtrl.addListener(() {
       setState(() => _search = _searchCtrl.text.trim().toLowerCase());
     });
+    _amountCtrl.addListener(_handleAmountChanged);
   }
 
   @override
   void dispose() {
+    _amountCtrl.removeListener(_handleAmountChanged);
     _titleCtrl.dispose();
     _counterpartyCtrl.dispose();
     _noteCtrl.dispose();
@@ -760,6 +766,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             key: const Key('movement_title_field'),
             controller: _titleCtrl,
             decoration: const InputDecoration(labelText: 'Titolo'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
           const SizedBox(height: StreamSpacing.md),
           TextField(
@@ -768,6 +776,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             decoration: InputDecoration(
               labelText: _counterpartyLabel(),
             ),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
           const SizedBox(height: StreamSpacing.md),
           TextField(
@@ -775,6 +785,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             controller: _noteCtrl,
             maxLines: 2,
             decoration: const InputDecoration(labelText: 'Note'),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
           const SizedBox(height: StreamSpacing.md),
           InkWell(

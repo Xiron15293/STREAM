@@ -160,6 +160,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   controller: nameController,
                   decoration: const InputDecoration(labelText: 'Nome'),
                   textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: StreamSpacing.lg),
                 DropdownButtonFormField<AccountType>(

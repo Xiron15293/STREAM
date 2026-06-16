@@ -2384,6 +2384,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'Nome'),
                   textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                 ),
                 if (currentExisting == null) ...[
                   const SizedBox(height: 16),
