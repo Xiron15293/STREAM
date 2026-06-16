@@ -7,6 +7,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Guided `+ Movimento` flow**
+  - Flow step-based per Entrata, Spesa e Trasferimento
+  - Shared `MovementCalculatorPad` con aggiornamento realtime dell’importo
+  - Campi principali con conferma esplicita e `TextInputAction.done` dove appropriato
+
+- **Transfer UX dedicata**
+  - Selezione separata di conto origine e conto destinazione
+  - Fallback sicuro quando origine e destinazione coincidono
+  - Persistenza transfer coerente con saldo origine/destinazione
+
+- **Profile isolation hardening**
+  - Registry profili riparato per `dbFileName` corrotti o duplicati
+  - DB SQLite separato per profilo
+  - `MainScaffold` ricreato con chiave legata ad `activeProfileId`
+
+- **Category safety + duplicate validation**
+  - Safe edit consentito anche con movimenti, sottocategorie o altri collegamenti
+  - Blocco solo per azioni distruttive
+  - Confronto duplicati con ID + namespace + nome normalizzato
+
+- **Documentation refresh**
+  - Aggiornati `README.md`, `docs/NEXT_SESSION.md`, `docs/HERMES_ROADMAP.md`
+
 - **Beneficiari manuali + proposta salvataggio da form movimento**
   - Tab Beneficiari con tasto `+` e dialog `Nuovo beneficiario` (nome, icona, colore)
   - Creazione di `BeneficiaryProfile` anche senza movimenti collegati
@@ -25,6 +48,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Test aggiunti per migrazione `v11 → v12`, idempotenza migrazione e `reloadFromDb()` dei profili beneficiario
 
 ### Changed
+- **Movimenti heatmap-first**
+  - La schermata Movimenti non espone più la vista lista/calendario come default utente
+  - Le preferenze legacy `list`, `calendar`, `listHeatmap`, `advancedHeatmap` confluiscono in heatmap
+  - Le impostazioni mostrano solo `Configura heatmap`
+
+- **Heatmap settings consolidati**
+  - Soglie e colori configurabili con preview e restore default
+  - La stessa schermata è accessibile da Impostazioni e Movimenti
+
+- **Categories and subcategories**
+  - Modifiche innocue restano consentite anche con contenuti collegati
+  - Eliminazione e conversioni/merge rischiosi restano bloccati quando lascerebbero orfani
+  - Il controllo duplicati ignora l’entità corrente in modifica
+
 - **Bugfix critico iFinance import — transfer pairing e import normali**
   - `IFinanceCsvRow.isLikelyTransfer()` riconosce i transfer usando `title`, `payee`, `labels`, `categoryRaw`, `categoryParent`
   - Il pairing transfer non lavora più solo per data: ora usa gruppo `data + importo assoluto`
@@ -197,6 +234,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Clear button contestuale per ogni mode: "Tutta settimana" / "Tutto mese" / "Tutto anno" / "Tutto intervallo"
 
 ### Fixed
+- **Calculator/input handling**
+  - L’importo nel flow movimento si aggiorna in realtime su numeri, operatori, backspace e `00`
+  - I campi principali confermano con `done` o con il pulsante di salvataggio del form
+
+- **Duplicate validation**
+  - Evitato il falso duplicato quando si salva la stessa categoria/sottocategoria già aperta in modifica
+  - Applicata normalizzazione `trim + lowercase` su categorie e sottocategorie
+
+- **Category edit and delete safety**
+  - Safe edit su categorie con movimenti collegati
+  - Delete bloccato se esistono contenuti collegati
+
 - **iFinance import: pairing transfer corretto e ambiguità ridotte**
   - Fix al pairing che prima lasciava importare solo una piccola parte dei movimenti quando molti transfer entravano nello stesso giorno
   - Ridotte le ambiguità ai soli casi realmente non risolvibili in modo univoco
@@ -234,6 +283,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Import iFinance non apre dialog Beneficiari
 - `movement.payee` raw invariato
 - Nessun commit/push
+
+### QA (delta movement flow, heatmap, categories, docs)
+- `flutter analyze`: 0 errori, solo info pre-esistenti
+- `flutter test`: suite completa verde (`881 passed, 1 skipped`)
+- Test aggiornati per:
+  - guided movement flow
+  - calculator pad realtime
+  - categories/subcategories safe edit
+  - duplicate validation con ID/namespace
+  - heatmap-only movement view and settings
+- Documentazione aggiornata:
+  - `README.md`
+  - `docs/NEXT_SESSION.md`
+  - `docs/HERMES_ROADMAP.md`
+  - `docs/CHANGELOG.md`
 
 - `flutter analyze --no-pub`: nessun errore o warning bloccante; restano solo info lint/deprecazioni pre-esistenti
 - `flutter test --no-pub`: **759/759 All tests passed**

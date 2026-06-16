@@ -55,15 +55,20 @@
 | V0.9.0e | Beneficiari — audit finale + hardening | ✅ COMPLETATO | 2026-06-14 |
 | — | iFinance import — transfer pairing hardening | ✅ COMPLETATO | 2026-06-14 |
 | — | Profili separati con isolamento dati reale | ✅ COMPLETATO | 2026-06-15 |
+| — | Guided movement flow + realtime calculator | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
+| — | Trasferimenti UI con origine/destinazione dedicate | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
+| — | Heatmap settings, fallback legacy e Movimenti heatmap-first | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
+| — | Categorie safe edit + duplicate validation | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.9.0 | Notes & Tags | 📋 PRIORITARIA |
-| V0.9.1 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
-| V0.9.1 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
-| V0.9.2 | Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
+| V0.9.0 | Movement edit normalization / unified movement editor | 📋 PRIORITARIA |
+| V0.9.1 | Notes & Tags | 📋 APPROVATA |
+| V0.9.2 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
+| V0.9.3 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
+| V0.9.4 | Lista Movimenti Premium con heatmap annuale | 💡 IDEA |
 | V0.9.x | QA hardening hit-test warning nei test | 💡 IDEA |
 | V0.9.x | Fondi / Obiettivi | 💡 IDEA |
 | V0.9.x | Beneficiario + Etichette | 💡 IDEA |
@@ -82,8 +87,9 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **Delta** | **iFinance transfer pairing hardening (✅) — pairing per `data + importo`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** |
 | **Delta** | **Profili separati (✅) — registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** |
 | **V0.9.0** | **Notes & Tags** |
-| V0.9.0 | Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard |
-| V0.9.1 | Dashboard recalcolo + tabella editor (📋) — recalcolo KPI, tabella modificabile |
+| **V0.9.0** | **Movement edit normalization / unified movement editor (📋) — normalizzazione edit movimento, apertura coerente da Dashboard/Movimenti/Archivio, chip conto cliccabile, campi confermabili** |
+| **V0.9.1** | **Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard** |
+| **V0.9.2** | **Dashboard recalcolo + tabella editor (📋) — recalcolo KPI, tabella modificabile** |
 | V0.9.2 | Export/Backup (💡) |
 | V0.9.x | QA hardening opzionale (💡) — risolvere warning hit-test nei test prima di renderli fatali |
 | V0.9.x | Fondi / Obiettivi (💡) — evoluzione area insight e goal |
