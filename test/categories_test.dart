@@ -29,8 +29,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test Income', MovementType.income, 0xFF4CAF50);
 
-      final cat =
-          db.categories.firstWhere((c) => c.name == 'Test Income');
+      final cat = db.categories.firstWhere((c) => c.name == 'Test Income');
       expect(cat.type, MovementType.income);
       expect(cat.color, 0xFF4CAF50);
       expect(cat.archived, false);
@@ -42,8 +41,7 @@ void main() {
 
       await db.updateCategory(cat.id, 'Nome Modificato', cat.color);
 
-      final updated =
-          db.categories.firstWhere((c) => c.id == cat.id);
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
       expect(updated.name, 'Nome Modificato');
       expect(updated.color, cat.color);
       expect(updated.type, cat.type);
@@ -55,8 +53,7 @@ void main() {
 
       await db.updateCategory(cat.id, cat.name, 0xFFFF0000);
 
-      final updated =
-          db.categories.firstWhere((c) => c.id == cat.id);
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
       expect(updated.color, 0xFFFF0000);
     });
 
@@ -66,8 +63,7 @@ void main() {
 
       db.archiveCategory(cat.id);
 
-      final updated =
-          db.categories.firstWhere((c) => c.id == cat.id);
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
       expect(updated.archived, true);
     });
 
@@ -89,16 +85,14 @@ void main() {
       db.archiveCategory(cat.id);
       db.restoreCategory(cat.id);
 
-      final updated =
-          db.categories.firstWhere((c) => c.id == cat.id);
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
       expect(updated.archived, false);
     });
 
     test('8. Elimina categoria senza movimenti', () async {
       final db = AppDatabase();
       await db.addCategory('Da Eliminare', MovementType.expense, 0xFF0000);
-      final cat =
-          db.categories.firstWhere((c) => c.name == 'Da Eliminare');
+      final cat = db.categories.firstWhere((c) => c.name == 'Da Eliminare');
 
       expect(db.categoryHasMovements(cat.id), false);
 
@@ -109,17 +103,21 @@ void main() {
 
     test('9. Eliminazione bloccata per categoria con movimenti', () async {
       final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+      final cat = db.categories.firstWhere(
+        (c) => c.type == MovementType.expense,
+      );
 
-      await db.addMovement(Movement(
-        id: 'test_mov',
-        title: 'Test',
-        amount: 100,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: cat.id,
-        createdAt: DateTime.now(),
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'test_mov',
+          title: 'Test',
+          amount: 100,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: cat.id,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       expect(db.categoryHasMovements(cat.id), true);
       // Categoria con movimenti NON deve essere eliminabile
@@ -136,108 +134,136 @@ void main() {
       expect(db.activeCategories.length, activeBefore - 2);
     });
 
-    test('11. Aggiungi categoria con nome duplicato (controllo lato db)', () async {
-      final db = AppDatabase();
-      final existing = db.categories.first;
-      final count = db.categories.length;
+    test(
+      '11. Aggiungi categoria con nome duplicato (controllo lato db)',
+      () async {
+        final db = AppDatabase();
+        final existing = db.categories.first;
+        final count = db.categories.length;
 
-      // Aggiunta con nome identico (la UI blocca, ma il db permette)
-      await db.addCategory(existing.name, MovementType.expense, 0xFF0000);
+        // Aggiunta con nome identico (la UI blocca, ma il db permette)
+        await db.addCategory(existing.name, MovementType.expense, 0xFF0000);
 
-      // Il db permette comunque l'aggiunta (la validazione è UI-side)
-      expect(db.categories.length, count + 1);
-    });
+        // Il db permette comunque l'aggiunta (la validazione è UI-side)
+        expect(db.categories.length, count + 1);
+      },
+    );
 
-    test('12. Categoria con movimenti resta modificabile in campi sicuri', () async {
-      final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+    test(
+      '12. Categoria con movimenti resta modificabile in campi sicuri',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
 
-      await db.addMovement(Movement(
-        id: 'safe_edit_mov',
-        title: 'Test',
-        amount: 42,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: cat.id,
-        createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'safe_edit_mov',
+            title: 'Test',
+            amount: 42,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: cat.id,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      await db.updateCategory(
-        cat.id,
-        'Nome Sicuro',
-        0xFF123456,
-        iconKey: 'shopping_cart',
-      );
+        await db.updateCategory(
+          cat.id,
+          'Nome Sicuro',
+          0xFF123456,
+          iconKey: 'shopping_cart',
+        );
 
-      final updated = db.categories.firstWhere((c) => c.id == cat.id);
-      expect(updated.name, 'Nome Sicuro');
-      expect(updated.color, 0xFF123456);
-      expect(updated.iconKey, 'shopping_cart');
-      expect(db.movements.any((m) => m.categoryId == cat.id), true);
-    });
+        final updated = db.categories.firstWhere((c) => c.id == cat.id);
+        expect(updated.name, 'Nome Sicuro');
+        expect(updated.color, 0xFF123456);
+        expect(updated.iconKey, 'shopping_cart');
+        expect(db.movements.any((m) => m.categoryId == cat.id), true);
+      },
+    );
 
-    test('13. Categoria entrata con movimenti segue le stesse regole', () async {
-      final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.income);
+    test(
+      '13. Categoria entrata con movimenti segue le stesse regole',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.income,
+        );
 
-      await db.addMovement(Movement(
-        id: 'safe_income_mov',
-        title: 'Stipendio',
-        amount: 1000,
-        type: MovementType.income,
-        date: DateTime.now(),
-        categoryId: cat.id,
-        createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'safe_income_mov',
+            title: 'Stipendio',
+            amount: 1000,
+            type: MovementType.income,
+            date: DateTime.now(),
+            categoryId: cat.id,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      await db.updateCategory(
-        cat.id,
-        'Entrata Rinominata',
-        0xFF4CAF50,
-        iconKey: 'attach_money',
-      );
+        await db.updateCategory(
+          cat.id,
+          'Entrata Rinominata',
+          0xFF4CAF50,
+          iconKey: 'attach_money',
+        );
 
-      final updated = db.categories.firstWhere((c) => c.id == cat.id);
-      expect(updated.name, 'Entrata Rinominata');
-      expect(updated.color, 0xFF4CAF50);
-      expect(updated.iconKey, 'attach_money');
-    });
+        final updated = db.categories.firstWhere((c) => c.id == cat.id);
+        expect(updated.name, 'Entrata Rinominata');
+        expect(updated.color, 0xFF4CAF50);
+        expect(updated.iconKey, 'attach_money');
+      },
+    );
 
-    test('14. Eliminazione categoria con contenuti collegati resta bloccata', () async {
-      final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+    test(
+      '14. Eliminazione categoria con contenuti collegati resta bloccata',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
 
-      await db.addMovement(Movement(
-        id: 'blocked_delete_mov',
-        title: 'Test',
-        amount: 12,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: cat.id,
-        createdAt: DateTime.now(),
-      ));
-      await db.createSubcategory(cat.id, 'Sub collegata');
+        await db.addMovement(
+          Movement(
+            id: 'blocked_delete_mov',
+            title: 'Test',
+            amount: 12,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: cat.id,
+            createdAt: DateTime.now(),
+          ),
+        );
+        await db.createSubcategory(cat.id, 'Sub collegata');
 
-      final before = db.categories.length;
-      await db.deleteCategory(cat.id);
+        final before = db.categories.length;
+        await db.deleteCategory(cat.id);
 
-      expect(db.categories.length, before);
-      expect(db.categories.any((c) => c.id == cat.id), true);
-    });
+        expect(db.categories.length, before);
+        expect(db.categories.any((c) => c.id == cat.id), true);
+      },
+    );
 
     test('15. Archiviazione categoria con movimenti resta coerente', () async {
       final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+      final cat = db.categories.firstWhere(
+        (c) => c.type == MovementType.expense,
+      );
 
-      await db.addMovement(Movement(
-        id: 'archive_safe_mov',
-        title: 'Test',
-        amount: 25,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: cat.id,
-        createdAt: DateTime.now(),
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'archive_safe_mov',
+          title: 'Test',
+          amount: 25,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: cat.id,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       await db.archiveCategory(cat.id);
 
@@ -246,38 +272,122 @@ void main() {
       expect(db.movements.any((m) => m.categoryId == cat.id), true);
     });
 
-    test('16. Categoria importata stile CSV segue le stesse regole sicure', () async {
-      final db = AppDatabase();
-      final imported = Category(
-        id: 'csv_cat_1',
-        name: 'Importata CSV',
-        type: MovementType.expense,
-        color: 0xFF42A5F5,
-        iconKey: 'receipt',
-      );
-      db.internalAddCategory(imported);
+    test(
+      '16. Categoria importata stile CSV segue le stesse regole sicure',
+      () async {
+        final db = AppDatabase();
+        final imported = Category(
+          id: 'csv_cat_1',
+          name: 'Importata CSV',
+          type: MovementType.expense,
+          color: 0xFF42A5F5,
+          iconKey: 'receipt',
+        );
+        db.internalAddCategory(imported);
 
-      await db.addMovement(Movement(
-        id: 'csv_mov',
-        title: 'Test CSV',
-        amount: 18,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: imported.id,
-        createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'csv_mov',
+            title: 'Test CSV',
+            amount: 18,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: imported.id,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+        await db.updateCategory(
+          imported.id,
+          'CSV Rinominata',
+          0xFF009688,
+          iconKey: 'shopping_cart',
+        );
+
+        final updated = db.categories.firstWhere((c) => c.id == imported.id);
+        expect(updated.name, 'CSV Rinominata');
+        expect(updated.color, 0xFF009688);
+        expect(updated.iconKey, 'shopping_cart');
+      },
+    );
+
+    test('17. edit categoria esistente con stesso nome salva', () async {
+      final db = AppDatabase();
+      final cat = db.categories.firstWhere(
+        (c) => c.type == MovementType.expense,
+      );
+
+      expect(
+        db.categoryNameExists(
+          cat.type,
+          ' ${cat.name.toUpperCase()} ',
+          excludingCategoryId: cat.id,
+        ),
+        false,
+      );
 
       await db.updateCategory(
-        imported.id,
-        'CSV Rinominata',
-        0xFF009688,
+        cat.id,
+        cat.name,
+        0xFF123456,
         iconKey: 'shopping_cart',
       );
 
-      final updated = db.categories.firstWhere((c) => c.id == imported.id);
-      expect(updated.name, 'CSV Rinominata');
-      expect(updated.color, 0xFF009688);
+      final updated = db.categories.firstWhere((c) => c.id == cat.id);
+      expect(updated.name, cat.name);
+      expect(updated.color, 0xFF123456);
       expect(updated.iconKey, 'shopping_cart');
+    });
+
+    test(
+      '18. edit categoria A verso nome categoria B blocca il duplicato',
+      () async {
+        final db = AppDatabase();
+        final cats = db.categories
+            .where((c) => c.type == MovementType.expense)
+            .toList();
+        expect(cats.length, greaterThan(1));
+
+        expect(
+          db.categoryNameExists(
+            MovementType.expense,
+            cats[1].name,
+            excludingCategoryId: cats.first.id,
+          ),
+          true,
+        );
+      },
+    );
+
+    test(
+      '19. nuova categoria con nome già usato nello stesso namespace è bloccata',
+      () async {
+        final db = AppDatabase();
+        await db.addCategory(
+          'Namespace Comune',
+          MovementType.expense,
+          0xFF42A5F5,
+        );
+
+        expect(
+          db.categoryNameExists(MovementType.expense, 'Namespace Comune'),
+          true,
+        );
+      },
+    );
+
+    test('20. stesso nome in namespace diverso è consentito', () async {
+      final db = AppDatabase();
+      await db.addCategory(
+        'Namespace Comune 2',
+        MovementType.expense,
+        0xFF42A5F5,
+      );
+
+      expect(
+        db.categoryNameExists(MovementType.income, 'Namespace Comune 2'),
+        false,
+      );
     });
   });
 
@@ -288,13 +398,20 @@ void main() {
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
 
-      await db.addCategory('Categoria Persistente', MovementType.income, 0xFF4CAF50);
+      await db.addCategory(
+        'Categoria Persistente',
+        MovementType.income,
+        0xFF4CAF50,
+      );
 
       // Reload
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
 
-      expect(db2.categories.any((c) => c.name == 'Categoria Persistente'), true);
+      expect(
+        db2.categories.any((c) => c.name == 'Categoria Persistente'),
+        true,
+      );
 
       await sqlite.close();
     });
@@ -312,8 +429,7 @@ void main() {
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
 
-      final updated =
-          db2.categories.firstWhere((c) => c.id == cat.id);
+      final updated = db2.categories.firstWhere((c) => c.id == cat.id);
       expect(updated.name, 'Nome Aggiornato');
       expect(updated.color, 0xFFFF0000);
 
@@ -333,8 +449,7 @@ void main() {
       final db2 = AppDatabase(sqlite: sqlite);
       await db2.initialize();
 
-      final archived =
-          db2.categories.firstWhere((c) => c.id == cat.id);
+      final archived = db2.categories.firstWhere((c) => c.id == cat.id);
       expect(archived.archived, true);
 
       await sqlite.close();
@@ -347,8 +462,7 @@ void main() {
       await db.initialize();
 
       await db.addCategory('Temporanea', MovementType.expense, 0xFF0000);
-      final temp =
-          db.categories.firstWhere((c) => c.name == 'Temporanea');
+      final temp = db.categories.firstWhere((c) => c.name == 'Temporanea');
       await db.deleteCategory(temp.id);
 
       // Reload
@@ -360,25 +474,28 @@ void main() {
       await sqlite.close();
     });
 
-    test('16. Categorie iniziali non impattate da operazioni CRUD SQLite', () async {
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
+    test(
+      '16. Categorie iniziali non impattate da operazioni CRUD SQLite',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
 
-      await Future.delayed(const Duration(milliseconds: 100));
+        await Future.delayed(const Duration(milliseconds: 100));
 
-      final initialCount = await sqlite.getCategoriesCount();
-      expect(initialCount, 10);
+        final initialCount = await sqlite.getCategoriesCount();
+        expect(initialCount, 10);
 
-      await db.addCategory('Extra', MovementType.expense, 0xFF0000);
-      await Future.delayed(const Duration(milliseconds: 100));
+        await db.addCategory('Extra', MovementType.expense, 0xFF0000);
+        await Future.delayed(const Duration(milliseconds: 100));
 
-      final afterAdd = await sqlite.getCategoriesCount();
-      expect(afterAdd, 11);
+        final afterAdd = await sqlite.getCategoriesCount();
+        expect(afterAdd, 11);
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
 
     test('17. SQLite updateCategory preserva createdAt', () async {
       final sqlite = SQLiteService();
@@ -411,46 +528,59 @@ void main() {
       expect(fromDb?.name, 'Nuovo Nome');
     });
 
-    test('19. Rinomina categoria → risoluzione nome movimento usa db.categories', () async {
-      final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+    test(
+      '19. Rinomina categoria → risoluzione nome movimento usa db.categories',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
 
-      await db.addMovement(Movement(
-        id: 'm_rename_1',
-        title: 'Test',
-        amount: 50,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: cat.id,
-        createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'm_rename_1',
+            title: 'Test',
+            amount: 50,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: cat.id,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      await db.updateCategory(cat.id, 'Expense Rinominata', cat.color);
+        await db.updateCategory(cat.id, 'Expense Rinominata', cat.color);
 
-      final resolved = db.categories
-          .where((c) => c.id == cat.id)
-          .firstOrNull;
-      expect(resolved?.name, 'Expense Rinominata');
-      // Il movimento esiste ancora e referenzia l'ID corretto
-      expect(db.movements.any((m) => m.categoryId == cat.id), true);
-    });
+        final resolved = db.categories.where((c) => c.id == cat.id).firstOrNull;
+        expect(resolved?.name, 'Expense Rinominata');
+        // Il movimento esiste ancora e referenzia l'ID corretto
+        expect(db.movements.any((m) => m.categoryId == cat.id), true);
+      },
+    );
 
     test('20. Categoria custom → nome corretto in db.categories', () async {
       final db = AppDatabase();
-      await db.addCategory('Categoria Custom', MovementType.expense, 0xFFFF7043);
-      final custom = db.categories.where((c) => c.name == 'Categoria Custom').firstOrNull;
+      await db.addCategory(
+        'Categoria Custom',
+        MovementType.expense,
+        0xFFFF7043,
+      );
+      final custom = db.categories
+          .where((c) => c.name == 'Categoria Custom')
+          .firstOrNull;
       expect(custom, isNotNull);
       expect(custom?.name, 'Categoria Custom');
 
-      await db.addMovement(Movement(
-        id: 'm_custom_1',
-        title: 'Spesa Custom',
-        amount: 30,
-        type: MovementType.expense,
-        date: DateTime.now(),
-        categoryId: custom!.id,
-        createdAt: DateTime.now(),
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'm_custom_1',
+          title: 'Spesa Custom',
+          amount: 30,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: custom!.id,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       final resolved = db.categories
           .where((c) => c.id == custom.id)
@@ -460,19 +590,35 @@ void main() {
 
     test('21. Rinomina categoria → saldi invariati', () async {
       final db = AppDatabase();
-      final incCat = db.categories.firstWhere((c) => c.type == MovementType.income);
-      final expCat = db.categories.firstWhere((c) => c.type == MovementType.expense);
+      final incCat = db.categories.firstWhere(
+        (c) => c.type == MovementType.income,
+      );
+      final expCat = db.categories.firstWhere(
+        (c) => c.type == MovementType.expense,
+      );
 
-      await db.addMovement(Movement(
-        id: 'm_bal_1', title: 'Entrata', amount: 1000,
-        type: MovementType.income, date: DateTime.now(),
-        categoryId: incCat.id, createdAt: DateTime.now(),
-      ));
-      await db.addMovement(Movement(
-        id: 'm_bal_2', title: 'Uscita', amount: 300,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: expCat.id, createdAt: DateTime.now(),
-      ));
+      await db.addMovement(
+        Movement(
+          id: 'm_bal_1',
+          title: 'Entrata',
+          amount: 1000,
+          type: MovementType.income,
+          date: DateTime.now(),
+          categoryId: incCat.id,
+          createdAt: DateTime.now(),
+        ),
+      );
+      await db.addMovement(
+        Movement(
+          id: 'm_bal_2',
+          title: 'Uscita',
+          amount: 300,
+          type: MovementType.expense,
+          date: DateTime.now(),
+          categoryId: expCat.id,
+          createdAt: DateTime.now(),
+        ),
+      );
 
       final incomeBefore = db.totalIncome;
       final expensesBefore = db.totalExpenses;
@@ -486,136 +632,198 @@ void main() {
       expect(db.balance, balanceBefore);
     });
 
-    test('22. Rinomina categoria con SQLite → reload → nome persiste', () async {
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
+    test(
+      '22. Rinomina categoria con SQLite → reload → nome persiste',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
 
-      final cat = db.categories.first;
-      final catId = cat.id;
+        final cat = db.categories.first;
+        final catId = cat.id;
 
-      await db.addMovement(Movement(
-        id: 'm_sql_rename_1', title: 'Test', amount: 50,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: catId, createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'm_sql_rename_1',
+            title: 'Test',
+            amount: 50,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: catId,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      await db.updateCategory(catId, 'SQLite Renamed', cat.color);
+        await db.updateCategory(catId, 'SQLite Renamed', cat.color);
 
-      // Reload
-      final db2 = AppDatabase(sqlite: sqlite);
-      await db2.initialize();
+        // Reload
+        final db2 = AppDatabase(sqlite: sqlite);
+        await db2.initialize();
 
-      final resolved = db2.categories.where((c) => c.id == catId).firstOrNull;
-      expect(resolved?.name, 'SQLite Renamed');
-      expect(db2.movements.any((m) => m.categoryId == catId), true);
+        final resolved = db2.categories.where((c) => c.id == catId).firstOrNull;
+        expect(resolved?.name, 'SQLite Renamed');
+        expect(db2.movements.any((m) => m.categoryId == catId), true);
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
 
-    test('23. Rinomina categoria → rapido referenzia ID categoria rinominata', () async {
-      final db = AppDatabase();
-      final cat = db.categories.first;
+    test(
+      '23. Rinomina categoria → rapido referenzia ID categoria rinominata',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.first;
 
-      await db.addQuickMovement(QuickMovement(
-        id: 'qm_rename_1', title: 'Rapido Test', amount: 10,
-        type: MovementType.expense, categoryId: cat.id,
-      ));
+        await db.addQuickMovement(
+          QuickMovement(
+            id: 'qm_rename_1',
+            title: 'Rapido Test',
+            amount: 10,
+            type: MovementType.expense,
+            categoryId: cat.id,
+          ),
+        );
 
-      await db.updateCategory(cat.id, 'Nuovo Nome Rapido', cat.color);
+        await db.updateCategory(cat.id, 'Nuovo Nome Rapido', cat.color);
 
-      final resolved = db.categories.where((c) => c.id == cat.id).firstOrNull;
-      expect(resolved?.name, 'Nuovo Nome Rapido');
-      expect(db.quickMovements.any((q) => q.categoryId == cat.id), true);
-    });
+        final resolved = db.categories.where((c) => c.id == cat.id).firstOrNull;
+        expect(resolved?.name, 'Nuovo Nome Rapido');
+        expect(db.quickMovements.any((q) => q.categoryId == cat.id), true);
+      },
+    );
 
-    test('24. Rinomina categoria → preferito referenzia ID categoria rinominata', () async {
-      final db = AppDatabase();
-      final cat = db.categories.first;
+    test(
+      '24. Rinomina categoria → preferito referenzia ID categoria rinominata',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.first;
 
-      await db.addFavoriteMovement(FavoriteMovement(
-        id: 'fm_rename_1', title: 'Preferito Test', amount: 20,
-        type: MovementType.expense, categoryId: cat.id,
-      ));
+        await db.addFavoriteMovement(
+          FavoriteMovement(
+            id: 'fm_rename_1',
+            title: 'Preferito Test',
+            amount: 20,
+            type: MovementType.expense,
+            categoryId: cat.id,
+          ),
+        );
 
-      await db.updateCategory(cat.id, 'Nuovo Nome Preferito', cat.color);
+        await db.updateCategory(cat.id, 'Nuovo Nome Preferito', cat.color);
 
-      final resolved = db.categories.where((c) => c.id == cat.id).firstOrNull;
-      expect(resolved?.name, 'Nuovo Nome Preferito');
-      expect(db.favoriteMovements.any((f) => f.categoryId == cat.id), true);
-    });
+        final resolved = db.categories.where((c) => c.id == cat.id).firstOrNull;
+        expect(resolved?.name, 'Nuovo Nome Preferito');
+        expect(db.favoriteMovements.any((f) => f.categoryId == cat.id), true);
+      },
+    );
 
-    test('25. Archivia categoria → storico movimento risolve ancora nome', () async {
-      final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
-      final catId = cat.id;
+    test(
+      '25. Archivia categoria → storico movimento risolve ancora nome',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
+        final catId = cat.id;
 
-      await db.addMovement(Movement(
-        id: 'm_archive_view_1', title: 'Archiviato Test', amount: 40,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: catId, createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'm_archive_view_1',
+            title: 'Archiviato Test',
+            amount: 40,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: catId,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      db.archiveCategory(catId);
+        db.archiveCategory(catId);
 
-      // Anche archiviata, la categoria è ancora in db.categories
-      final resolved = db.categories.where((c) => c.id == catId).firstOrNull;
-      expect(resolved, isNotNull);
-      expect(resolved?.archived, true);
-      expect(resolved?.name, cat.name);
-    });
+        // Anche archiviata, la categoria è ancora in db.categories
+        final resolved = db.categories.where((c) => c.id == catId).firstOrNull;
+        expect(resolved, isNotNull);
+        expect(resolved?.archived, true);
+        expect(resolved?.name, cat.name);
+      },
+    );
 
-    test('26. Categoria custom + SQLite reload → nome corretto in db.categories', () async {
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
+    test(
+      '26. Categoria custom + SQLite reload → nome corretto in db.categories',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
 
-      await db.addCategory('Custom SQLite', MovementType.expense, 0xFF42A5F5);
-      final custom = db.categories.where((c) => c.name == 'Custom SQLite').first;
-      final customId = custom.id;
+        await db.addCategory('Custom SQLite', MovementType.expense, 0xFF42A5F5);
+        final custom = db.categories
+            .where((c) => c.name == 'Custom SQLite')
+            .first;
+        final customId = custom.id;
 
-      await db.addMovement(Movement(
-        id: 'm_custom_sql_1', title: 'Custom SQL', amount: 25,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: customId, createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'm_custom_sql_1',
+            title: 'Custom SQL',
+            amount: 25,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: customId,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      // Reload
-      final db2 = AppDatabase(sqlite: sqlite);
-      await db2.initialize();
+        // Reload
+        final db2 = AppDatabase(sqlite: sqlite);
+        await db2.initialize();
 
-      final resolved = db2.categories.where((c) => c.id == customId).firstOrNull;
-      expect(resolved?.name, 'Custom SQLite');
-      expect(db2.movements.any((m) => m.categoryId == customId), true);
+        final resolved = db2.categories
+            .where((c) => c.id == customId)
+            .firstOrNull;
+        expect(resolved?.name, 'Custom SQLite');
+        expect(db2.movements.any((m) => m.categoryId == customId), true);
 
-      await sqlite.close();
-    });
+        await sqlite.close();
+      },
+    );
   });
 
   group('Categoria rename + edit movimento', () {
-    test('27. Edit movimento + rename categoria → movimento mantiene categoryId', () async {
-      final db = AppDatabase();
-      final cat = db.categories.firstWhere((c) => c.type == MovementType.expense);
-      final catId = cat.id;
+    test(
+      '27. Edit movimento + rename categoria → movimento mantiene categoryId',
+      () async {
+        final db = AppDatabase();
+        final cat = db.categories.firstWhere(
+          (c) => c.type == MovementType.expense,
+        );
+        final catId = cat.id;
 
-      await db.addMovement(Movement(
-        id: 'm_edit_rename_1', title: 'Originale', amount: 60,
-        type: MovementType.expense, date: DateTime.now(),
-        categoryId: catId, createdAt: DateTime.now(),
-      ));
+        await db.addMovement(
+          Movement(
+            id: 'm_edit_rename_1',
+            title: 'Originale',
+            amount: 60,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: catId,
+            createdAt: DateTime.now(),
+          ),
+        );
 
-      await db.updateCategory(catId, 'Categoria Rinominata', cat.color);
+        await db.updateCategory(catId, 'Categoria Rinominata', cat.color);
 
-      // Edit movimento (es. cambio titolo)
-      final m = db.movements.first;
-      await db.updateMovement(m.copyWith(title: 'Modificato'));
+        // Edit movimento (es. cambio titolo)
+        final m = db.movements.first;
+        await db.updateMovement(m.copyWith(title: 'Modificato'));
 
-      final resolvedCat = db.categories.where((c) => c.id == catId).firstOrNull;
-      expect(resolvedCat?.name, 'Categoria Rinominata');
-      expect(db.movements.first.categoryId, catId);
-      expect(db.movements.first.title, 'Modificato');
-    });
+        final resolvedCat = db.categories
+            .where((c) => c.id == catId)
+            .firstOrNull;
+        expect(resolvedCat?.name, 'Categoria Rinominata');
+        expect(db.movements.first.categoryId, catId);
+        expect(db.movements.first.title, 'Modificato');
+      },
+    );
   });
 }

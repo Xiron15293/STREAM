@@ -422,6 +422,23 @@ class AppDatabase extends ChangeNotifier {
     return _movements.any((m) => m.categoryId == categoryId);
   }
 
+  String _normalizeName(String value) => value.trim().toLowerCase();
+
+  bool categoryNameExists(
+    MovementType type,
+    String name, {
+    String? excludingCategoryId,
+  }) {
+    final normalized = _normalizeName(name);
+    if (normalized.isEmpty) return false;
+    return _categories.any(
+      (c) =>
+          c.type == type &&
+          c.id != excludingCategoryId &&
+          _normalizeName(c.name) == normalized,
+    );
+  }
+
   bool categoryHasSubcategories(String categoryId) {
     return _subcategories.any((s) => s.categoryId == categoryId);
   }
@@ -529,7 +546,8 @@ class AppDatabase extends ChangeNotifier {
         if (_subcategories[i].categoryId != id) continue;
         final sc = _subcategories[i];
         final updateColor = sc.color == null || sc.color == oldCategoryColor;
-        final updateIcon = sc.iconKey == null || sc.iconKey == oldCategoryIconKey;
+        final updateIcon =
+            sc.iconKey == null || sc.iconKey == oldCategoryIconKey;
         if (!updateColor && !updateIcon) continue;
         final updatedSub = Subcategory(
           id: sc.id,
@@ -590,11 +608,18 @@ class AppDatabase extends ChangeNotifier {
         .toList();
   }
 
-  bool subcategoryNameExists(String categoryId, String name) {
+  bool subcategoryNameExists(
+    String categoryId,
+    String name, {
+    String? excludingSubcategoryId,
+  }) {
+    final normalized = _normalizeName(name);
+    if (normalized.isEmpty) return false;
     return _subcategories.any(
       (s) =>
           s.categoryId == categoryId &&
-          s.name.toLowerCase() == name.trim().toLowerCase(),
+          s.id != excludingSubcategoryId &&
+          _normalizeName(s.name) == normalized,
     );
   }
 
@@ -1258,7 +1283,9 @@ class AppDatabase extends ChangeNotifier {
   }
 
   Future<void> addBeneficiaryProfile(BeneficiaryProfile bp) async {
-    final existingIndex = _beneficiaryProfiles.indexWhere((b) => b.key == bp.key);
+    final existingIndex = _beneficiaryProfiles.indexWhere(
+      (b) => b.key == bp.key,
+    );
     if (existingIndex >= 0) {
       _beneficiaryProfiles[existingIndex] = bp.copyWith(
         id: _beneficiaryProfiles[existingIndex].id,
@@ -1267,7 +1294,9 @@ class AppDatabase extends ChangeNotifier {
       );
       if (_sqlite != null) {
         try {
-          await _sqlite.updateBeneficiaryProfile(_beneficiaryProfiles[existingIndex]);
+          await _sqlite.updateBeneficiaryProfile(
+            _beneficiaryProfiles[existingIndex],
+          );
         } catch (_) {
           return;
         }

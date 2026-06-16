@@ -183,6 +183,68 @@ void main() {
       expect(restored.iconKey, 'car');
       expect(restored.color, 0xFFFF7043);
     });
+
+    test('20. edit sottocategoria esistente con stesso nome salva', () async {
+      final cat = db.categories.first;
+      await db.createSubcategory(
+        cat.id,
+        'Stesso Nome',
+        iconKey: 'tag',
+        color: 0xFF42A5F5,
+      );
+      final sub = db.getSubcategoriesForCategory(cat.id).last;
+
+      expect(
+        db.subcategoryNameExists(
+          cat.id,
+          '  STESSO NOME  ',
+          excludingSubcategoryId: sub.id,
+        ),
+        false,
+      );
+
+      await db.updateSubcategory(
+        sub.id,
+        'Stesso Nome',
+        iconKey: 'car',
+        color: 0xFFFF7043,
+      );
+
+      final updated = db.subcategories.firstWhere((s) => s.id == sub.id);
+      expect(updated.name, 'Stesso Nome');
+      expect(updated.iconKey, 'car');
+      expect(updated.color, 0xFFFF7043);
+    });
+
+    test(
+      '21. rinomina sottocategoria nel nome di un altra dello stesso padre blocca il duplicato',
+      () async {
+        final cat = db.categories.first;
+        await db.createSubcategory(cat.id, 'Sub A');
+        await db.createSubcategory(cat.id, 'Sub B');
+        final subs = db.getSubcategoriesForCategory(cat.id);
+        final subA = subs.firstWhere((s) => s.name == 'Sub A');
+        final subB = subs.firstWhere((s) => s.name == 'Sub B');
+
+        expect(
+          db.subcategoryNameExists(
+            cat.id,
+            subB.name,
+            excludingSubcategoryId: subA.id,
+          ),
+          true,
+        );
+      },
+    );
+
+    test('22. stesso nome sotto padre diverso è consentito', () async {
+      final cats = db.categories.where((c) => !c.archived).take(2).toList();
+      if (cats.length < 2) return;
+
+      await db.createSubcategory(cats[0].id, 'Shared Name');
+
+      expect(db.subcategoryNameExists(cats[1].id, 'Shared Name'), false);
+    });
   });
 
   group('Subcategories — SQLite persistence', () {
@@ -350,10 +412,22 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.byKey(const Key('add_movement_category_step')), findsOneWidget);
-        expect(find.byKey(const Key('add_movement_category_search')), findsOneWidget);
-        expect(find.byKey(const Key('movement_category_subcategory_field')), findsNothing);
-        expect(find.byKey(const Key('movement_subcategory_dropdown')), findsNothing);
+        expect(
+          find.byKey(const Key('add_movement_category_step')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('add_movement_category_search')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('movement_category_subcategory_field')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('movement_subcategory_dropdown')),
+          findsNothing,
+        );
       },
     );
 
@@ -372,8 +446,14 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tapVisible(tester, find.byKey(Key('category_option_${parent.id}')));
-        await tapVisible(tester, find.byKey(const Key('skip_subcategory_button')));
+        await tapVisible(
+          tester,
+          find.byKey(Key('category_option_${parent.id}')),
+        );
+        await tapVisible(
+          tester,
+          find.byKey(const Key('skip_subcategory_button')),
+        );
         await enterMovementTitle(tester, 'Cena');
         await enterAmountWithCalculator(tester, '25');
         await submitMovement(tester);
@@ -400,8 +480,14 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tapVisible(tester, find.byKey(Key('category_option_${parent.id}')));
-        await tapVisible(tester, find.byKey(Key('subcategory_option_${sub.id}')));
+        await tapVisible(
+          tester,
+          find.byKey(Key('category_option_${parent.id}')),
+        );
+        await tapVisible(
+          tester,
+          find.byKey(Key('subcategory_option_${sub.id}')),
+        );
         await enterMovementTitle(tester, 'Pranzo');
         await enterAmountWithCalculator(tester, '18');
         await submitMovement(tester);
@@ -448,7 +534,10 @@ void main() {
           findsNothing,
         );
 
-        await tapVisible(tester, find.byKey(Key('category_option_${parent.id}')));
+        await tapVisible(
+          tester,
+          find.byKey(Key('category_option_${parent.id}')),
+        );
         expect(find.byKey(Key('subcategory_option_${sub.id}')), findsOneWidget);
         expect(
           find.byKey(Key('subcategory_option_${archivedSub.id}')),
@@ -484,17 +573,28 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final expenseParent = db.categories.firstWhere((c) => c.name == 'Tempo libero');
-      await tapVisible(tester, find.byKey(Key('category_option_${expenseParent.id}')));
+      final expenseParent = db.categories.firstWhere(
+        (c) => c.name == 'Tempo libero',
+      );
+      await tapVisible(
+        tester,
+        find.byKey(Key('category_option_${expenseParent.id}')),
+      );
       await tapVisible(tester, find.byKey(Key('subcategory_option_${sub.id}')));
-      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add_movement_details_step')),
+        findsOneWidget,
+      );
       expect(find.text('Ristorante'), findsOneWidget);
 
       await tester.tap(find.text('Entrata'));
       await tester.pumpAndSettle();
 
       expect(find.text('Ristorante'), findsNothing);
-      expect(find.byKey(const Key('add_movement_category_step')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add_movement_category_step')),
+        findsOneWidget,
+      );
       expect(find.byKey(Key('category_option_${income.id}')), findsOneWidget);
       expect(find.text('Tempo libero'), findsNothing);
     });
@@ -822,7 +922,9 @@ void main() {
         await tester.tap(find.widgetWithText(FilledButton, 'Salva').last);
         await tester.pumpAndSettle();
 
-        await tester.tap(find.widgetWithText(FilledButton, 'Applica alle selezionate'));
+        await tester.tap(
+          find.widgetWithText(FilledButton, 'Applica alle selezionate'),
+        );
         await tester.pumpAndSettle();
 
         expect(notifications, greaterThan(0));

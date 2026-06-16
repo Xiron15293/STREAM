@@ -2306,11 +2306,10 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   }
 
   bool get _isDuplicateName {
-    final name = _nameCtrl.text.trim().toLowerCase();
-    if (name.isEmpty) return false;
-    return widget.db.categories.any(
-      (c) =>
-          c.name.toLowerCase() == name && c.id != (widget.existing?.id ?? ''),
+    return widget.db.categoryNameExists(
+      _type,
+      _nameCtrl.text,
+      excludingCategoryId: widget.existing?.id,
     );
   }
 
@@ -2335,13 +2334,16 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
       final existingCat = widget.db.categories
           .where((c) => c.id == widget.existing!.id)
           .firstOrNull;
-      final subcategories =
-          widget.db.getSubcategoriesForCategory(widget.existing!.id);
+      final subcategories = widget.db.getSubcategoriesForCategory(
+        widget.existing!.id,
+      );
       final colorChanged = _color != existingCat?.color;
       final iconChanged = _iconKey != existingCat?.iconKey;
 
       Set<String>? propagateTo;
-      if (subcategories.isNotEmpty && (colorChanged || iconChanged) && existingCat != null) {
+      if (subcategories.isNotEmpty &&
+          (colorChanged || iconChanged) &&
+          existingCat != null) {
         final result = await showDialog<Set<String>>(
           context: context,
           builder: (_) => _CategoryPropagateStyleDialog(
@@ -2658,6 +2660,14 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
   ) async {
     final name = ctrl.text.trim();
     if (name.isEmpty) return;
+    if (widget.db.subcategoryNameExists(widget.categoryId, name)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esiste già una sottocategoria con questo nome'),
+        ),
+      );
+      return;
+    }
     await widget.db.createSubcategory(
       widget.categoryId,
       name,
@@ -2930,6 +2940,18 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Inserisci un nome')));
+      return;
+    }
+    if (widget.db.subcategoryNameExists(
+      _sub.categoryId,
+      name,
+      excludingSubcategoryId: _sub.id,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esiste già una sottocategoria con questo nome'),
+        ),
+      );
       return;
     }
     await widget.db.updateSubcategory(
@@ -3495,9 +3517,11 @@ class _CategoryPropagateStyleDialogState
   void initState() {
     super.initState();
     _selected = widget.subcategories
-        .where((s) =>
-            (s.color == null || s.color == widget.oldColor) &&
-            (s.iconKey == null || s.iconKey == widget.oldIconKey))
+        .where(
+          (s) =>
+              (s.color == null || s.color == widget.oldColor) &&
+              (s.iconKey == null || s.iconKey == widget.oldIconKey),
+        )
         .map((s) => s.id)
         .toSet();
   }
@@ -3515,9 +3539,11 @@ class _CategoryPropagateStyleDialogState
   void _selectInheriting() {
     setState(() {
       _selected = widget.subcategories
-          .where((s) =>
-              (s.color == null || s.color == widget.oldColor) &&
-              (s.iconKey == null || s.iconKey == widget.oldIconKey))
+          .where(
+            (s) =>
+                (s.color == null || s.color == widget.oldColor) &&
+                (s.iconKey == null || s.iconKey == widget.oldIconKey),
+          )
           .map((s) => s.id)
           .toSet();
     });
@@ -3547,8 +3573,7 @@ class _CategoryPropagateStyleDialogState
                 Row(
                   children: [
                     TextButton.icon(
-                      onPressed:
-                          allSelected ? null : () => _toggleAll(true),
+                      onPressed: allSelected ? null : () => _toggleAll(true),
                       icon: const Icon(Icons.select_all, size: 16),
                       label: const Text('Seleziona tutte'),
                     ),
