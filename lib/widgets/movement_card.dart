@@ -6,7 +6,9 @@ import '../models/category.dart';
 import '../models/subcategory.dart';
 import '../models/account.dart';
 import '../theme.dart';
+import '../utils/currency_formatter.dart';
 import 'category_subcategory_selector.dart';
+import 'movement_actions_sheet.dart';
 
 class MovementCard extends StatelessWidget {
   final Movement movement;
@@ -55,13 +57,14 @@ class MovementCard extends StatelessWidget {
             category: category!,
             subcategory: subcategory,
           );
+    final editAction = onEdit ?? onTap;
     final iconData = isTransfer
         ? Icons.swap_horiz
         : resolvedSelection != null
         ? StreamIconLibrary.getIcon(resolvedSelection.iconKey)
         : Icons.help_outline;
     final hasPopup =
-        onEdit != null ||
+        editAction != null ||
         onDuplicate != null ||
         onSaveAsFavorite != null ||
         onAddQuick != null ||
@@ -75,8 +78,19 @@ class MovementCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          key: Key('movement_card_${movement.id}'),
           borderRadius: BorderRadius.circular(StreamRadius.md),
-          onTap: onTap ?? onEdit,
+          onTap: editAction,
+          onLongPress: hasPopup
+              ? () => showMovementActionsSheet(
+                  context,
+                  onEdit: editAction,
+                  onDuplicate: onDuplicate,
+                  onSaveAsFavorite: onSaveAsFavorite,
+                  onAddQuick: onAddQuick,
+                  onDelete: onDelete,
+                )
+              : null,
           child: Padding(
             padding: const EdgeInsets.all(StreamSpacing.md),
             child: Column(
@@ -173,8 +187,13 @@ class MovementCard extends StatelessWidget {
                     const SizedBox(width: StreamSpacing.sm),
                     Text(
                       isTransfer
-                          ? '${movement.amount.toStringAsFixed(2)} €'
-                          : '${movement.type == MovementType.expense ? '-' : '+'}${movement.amount.toStringAsFixed(2)} €',
+                          ? formatMovementCurrency(movement.amount)
+                          : formatMovementCurrency(
+                              movement.type == MovementType.expense
+                                  ? -movement.amount
+                                  : movement.amount,
+                              showPositiveSign: true,
+                            ),
                       style: StreamTypography.amount.copyWith(
                         color: isTransfer
                             ? StreamColors.textSecondary
@@ -186,7 +205,7 @@ class MovementCard extends StatelessWidget {
                     if (hasPopup) ...[
                       const SizedBox(width: StreamSpacing.xs),
                       MovementCardPopupMenu(
-                        onEdit: onEdit,
+                        onEdit: editAction,
                         onDuplicate: onDuplicate,
                         onSaveAsFavorite: onSaveAsFavorite,
                         onAddQuick: onAddQuick,
@@ -298,120 +317,19 @@ class MovementCardPopupMenu extends StatelessWidget {
     this.onDelete,
   });
 
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminare movimento?'),
-        content: const Text('Questa operazione non può essere annullata.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onDelete?.call();
-            },
-            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
+    return IconButton(
       key: const Key('movement_card_action'),
+      onPressed: () => showMovementActionsSheet(
+        context,
+        onEdit: onEdit,
+        onDuplicate: onDuplicate,
+        onSaveAsFavorite: onSaveAsFavorite,
+        onAddQuick: onAddQuick,
+        onDelete: onDelete,
+      ),
       icon: Icon(Icons.more_horiz, size: 20, color: StreamColors.textMuted),
-      itemBuilder: (context) {
-        final items = <PopupMenuEntry<String>>[];
-        if (onEdit != null) {
-          items.add(
-            const PopupMenuItem(
-              value: 'modifica',
-              child: ListTile(
-                leading: Icon(Icons.edit, size: 20),
-                title: Text('Modifica'),
-                dense: true,
-              ),
-            ),
-          );
-        }
-        if (onDuplicate != null) {
-          items.add(
-            const PopupMenuItem(
-              value: 'duplica',
-              child: ListTile(
-                leading: Icon(Icons.copy, size: 20),
-                title: Text('Duplica'),
-                dense: true,
-              ),
-            ),
-          );
-        }
-        if (onAddQuick != null) {
-          items.add(
-            const PopupMenuItem(
-              value: 'rapido',
-              child: ListTile(
-                leading: Icon(Icons.flash_on, size: 20),
-                title: Text('Salva rapido'),
-                dense: true,
-              ),
-            ),
-          );
-        }
-        if (onSaveAsFavorite != null) {
-          items.add(
-            const PopupMenuItem(
-              value: 'preferito',
-              child: ListTile(
-                leading: Icon(Icons.favorite_border, size: 20),
-                title: Text('Salva preferito'),
-                dense: true,
-              ),
-            ),
-          );
-        }
-        if (onDelete != null) {
-          items.add(
-            PopupMenuItem(
-              value: 'elimina',
-              child: ListTile(
-                leading: Icon(
-                  Icons.delete_outline,
-                  size: 20,
-                  color: StreamColors.expense,
-                ),
-                title: Text(
-                  'Elimina',
-                  style: TextStyle(color: StreamColors.expense),
-                ),
-                dense: true,
-              ),
-            ),
-          );
-        }
-        return items;
-      },
-      onSelected: (value) {
-        switch (value) {
-          case 'modifica':
-            onEdit?.call();
-          case 'duplica':
-            onDuplicate?.call();
-          case 'rapido':
-            onAddQuick?.call();
-          case 'preferito':
-            onSaveAsFavorite?.call();
-          case 'elimina':
-            _confirmDelete(context);
-        }
-      },
     );
   }
 }

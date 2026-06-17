@@ -7,6 +7,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/archive_screen.dart';
 import 'screens/profiles_screen.dart';
 import 'screens/settings_screen.dart';
+import 'data/preferences_service.dart';
 import 'services/profile_service.dart';
 import 'theme.dart';
 
@@ -15,6 +16,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final profileService = ProfileService();
   await profileService.initialize();
+  await PreferencesService.loadCurrency();
   runApp(ProfileAwareStreamApp(profileService: profileService));
 }
 

@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import '../utils/currency_formatter.dart';
 import '../widgets/grouped_movements_list.dart';
 
 class BeneficiariesScreen extends StatefulWidget {
@@ -415,7 +416,7 @@ class _BeneficiaryCard extends StatelessWidget {
     );
   }
 
-  String _formatEuro(double value) => '${value.toStringAsFixed(2)} €';
+  String _formatEuro(double value) => formatMovementCurrency(value);
 }
 
 class _BeneficiaryDetailSheet extends StatelessWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:stream_app/data/database.dart';
+import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/design/stream_icon_library.dart';
 import 'package:stream_app/models/beneficiary_profile.dart';
 import 'package:stream_app/models/movement.dart';
@@ -19,6 +20,14 @@ Widget wrapWithTheme(Widget child) {
 }
 
 void main() {
+  setUp(() {
+    PreferencesService.currencyNotifier.value = AppCurrency.eur;
+  });
+
+  tearDown(() {
+    PreferencesService.currencyNotifier.value = AppCurrency.eur;
+  });
+
   final now = DateTime(2026, 6, 15);
 
   final incomeMovement = Movement(
@@ -296,7 +305,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byType(InkWell));
+      await tester.tap(find.byKey(const Key('movement_card_m1')));
       expect(tapped, true);
     });
 
@@ -312,6 +321,47 @@ void main() {
         ),
       );
       expect(find.byIcon(Icons.more_horiz), findsOneWidget);
+    });
+
+    testWidgets('usa il simbolo valuta selezionato', (tester) async {
+      PreferencesService.currencyNotifier.value = AppCurrency.usd;
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+          ),
+        ),
+      );
+      expect(find.textContaining('+2500.00 \$'), findsOneWidget);
+    });
+
+    testWidgets('long press apre il pannello azioni condiviso', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWithTheme(
+          MovementCard(
+            movement: incomeMovement,
+            category: category,
+            account: account,
+            onEdit: () {},
+            onDuplicate: () {},
+            onSaveAsFavorite: () {},
+            onAddQuick: () {},
+            onDelete: () {},
+          ),
+        ),
+      );
+
+      await tester.longPress(find.byKey(const Key('movement_card_m1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Azioni movimento'), findsOneWidget);
+      expect(find.byKey(const Key('movement_action_edit')), findsOneWidget);
+      expect(find.byKey(const Key('movement_action_duplicate')), findsOneWidget);
+      expect(find.byKey(const Key('movement_action_delete')), findsOneWidget);
     });
 
     testWidgets('popup menu assente senza callback', (tester) async {

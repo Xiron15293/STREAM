@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../models/daily_group.dart';
 import '../theme.dart';
+import '../utils/currency_formatter.dart';
 
 class DayHeader extends StatelessWidget {
   final DailyMovementGroup group;
@@ -25,7 +26,7 @@ class DayHeader extends StatelessWidget {
   }
 
   String _format(double value) {
-    return '${value.toStringAsFixed(2)} €';
+    return formatMovementCurrency(value);
   }
 
   String _balancePrefix() {

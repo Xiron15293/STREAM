@@ -15,6 +15,7 @@ import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
+import '../utils/currency_formatter.dart';
 
 bool _isConvertibleCategory(String name) {
   final trimmed = name.trim();
@@ -1152,8 +1153,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   String _formatMoney(double value) {
-    final sign = value >= 0 ? '+' : '';
-    return '$sign${value.toStringAsFixed(2)} €';
+    return formatMovementCurrency(value, showPositiveSign: true);
   }
 
   @override
@@ -2057,8 +2057,10 @@ class _StreamCardGridTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = StreamIconLibrary.getIcon(category.iconKey);
-    final sign = totalAmount >= 0 ? '+' : '';
-    final formattedTotal = '$sign${totalAmount.toStringAsFixed(2)} €';
+    final formattedTotal = formatMovementCurrency(
+      totalAmount,
+      showPositiveSign: true,
+    );
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -3482,7 +3484,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
   }
 
   String _formatMoney(double value) =>
-      '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+      formatMovementCurrency(value, showPositiveSign: true);
 }
 
 class _CategoryPropagateStyleDialog extends StatefulWidget {

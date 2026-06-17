@@ -3,17 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/heatmap_utils.dart';
 
 enum MovementsViewMode { list, calendar, heatmap }
+enum AppCurrency { eur, usd, gbp, chf, jpy }
 
 class PreferencesService {
   static const _showNotesKey = 'show_notes';
   static const _lastBackupDateKey = 'last_backup_date';
   static const _categoryLayoutKey = 'category_layout';
   static const _movementsViewModeKey = 'movements_view_mode';
+  static const _currencyKey = 'app_currency';
   static const heatmapThresholdsKey = 'heatmap_thresholds';
   static const heatmapColorsKey = 'heatmap_colors';
 
   static const defaultCategoryLayout = 'cleanList';
   static const defaultMovementsViewMode = MovementsViewMode.heatmap;
+  static const defaultCurrency = AppCurrency.eur;
   static const defaultHeatmapSettings = HeatmapSettings.defaults;
 
   static final categoryLayoutNotifier = ValueNotifier<String>(
@@ -25,6 +28,7 @@ class PreferencesService {
   static final heatmapSettingsNotifier = ValueNotifier<HeatmapSettings>(
     defaultHeatmapSettings,
   );
+  static final currencyNotifier = ValueNotifier<AppCurrency>(defaultCurrency);
 
   static Future<bool> loadShowNotes() async {
     final prefs = await SharedPreferences.getInstance();
@@ -73,6 +77,26 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_movementsViewModeKey, MovementsViewMode.heatmap.name);
     movementsViewModeNotifier.value = MovementsViewMode.heatmap;
+  }
+
+  static Future<AppCurrency> loadCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_currencyKey);
+    final currency = switch (value) {
+      'usd' => AppCurrency.usd,
+      'gbp' => AppCurrency.gbp,
+      'chf' => AppCurrency.chf,
+      'jpy' => AppCurrency.jpy,
+      _ => defaultCurrency,
+    };
+    currencyNotifier.value = currency;
+    return currency;
+  }
+
+  static Future<void> saveCurrency(AppCurrency currency) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_currencyKey, currency.name);
+    currencyNotifier.value = currency;
   }
 
   static Future<HeatmapSettings> loadHeatmapSettings() async {
@@ -127,5 +151,6 @@ class PreferencesService {
     await prefs.remove(_lastBackupDateKey);
     await prefs.remove(_categoryLayoutKey);
     await prefs.remove(_movementsViewModeKey);
+    await prefs.remove(_currencyKey);
   }
 }

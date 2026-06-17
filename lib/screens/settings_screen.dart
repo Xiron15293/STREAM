@@ -132,6 +132,45 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: StreamSpacing.lg),
+          Card(
+            key: const Key('settings_currency_card'),
+            color: StreamColors.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(StreamSpacing.lg),
+              child: ValueListenableBuilder<AppCurrency>(
+                valueListenable: PreferencesService.currencyNotifier,
+                builder: (context, currency, _) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Valuta', style: StreamTypography.h3),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        'Scegli il simbolo usato per mostrare gli importi.',
+                        style: StreamTypography.body.copyWith(
+                          color: StreamColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      ListTile(
+                        key: const Key('settings_currency_tile'),
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          Icons.payments_outlined,
+                          color: StreamColors.primary,
+                        ),
+                        title: const Text('Valuta'),
+                        subtitle: Text(_currencyLabel(currency)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showCurrencyPicker(context),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
           if (onManageProfiles != null) ...[
             const SizedBox(height: StreamSpacing.lg),
             Card(
@@ -224,6 +263,83 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showCurrencyPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<AppCurrency>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        Widget tile(AppCurrency currency) {
+          return ListTile(
+            key: Key('currency_option_${currency.name}'),
+            title: Text(_currencyLabel(currency)),
+            trailing: PreferencesService.currencyNotifier.value == currency
+                ? const Icon(Icons.check, color: StreamColors.primary)
+                : null,
+            onTap: () => Navigator.of(sheetContext).pop(currency),
+          );
+        }
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: StreamSpacing.sm),
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: StreamColors.divider,
+                    borderRadius: BorderRadius.circular(StreamRadius.full),
+                  ),
+                ),
+                const SizedBox(height: StreamSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StreamSpacing.lg,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Scegli valuta',
+                          style: StreamTypography.h3,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                tile(AppCurrency.eur),
+                tile(AppCurrency.usd),
+                tile(AppCurrency.gbp),
+                tile(AppCurrency.chf),
+                tile(AppCurrency.jpy),
+                const SizedBox(height: StreamSpacing.lg),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected == null) return;
+    await PreferencesService.saveCurrency(selected);
+  }
+
+  String _currencyLabel(AppCurrency currency) {
+    return switch (currency) {
+      AppCurrency.eur => 'EUR €',
+      AppCurrency.usd => 'USD \$',
+      AppCurrency.gbp => 'GBP £',
+      AppCurrency.chf => 'CHF',
+      AppCurrency.jpy => 'JPY ¥',
+    };
   }
 
   Future<void> _confirmReset(BuildContext context) async {

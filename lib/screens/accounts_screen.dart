@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
+import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
 import '../models/category.dart';
@@ -12,6 +13,7 @@ import '../widgets/icon_picker.dart';
 import '../widgets/calculator_amount_pad.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
+import '../utils/currency_formatter.dart';
 
 class AccountsScreen extends StatefulWidget {
   final AppDatabase db;
@@ -42,73 +44,82 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Conti')),
-      body: ListenableBuilder(
-        listenable: widget.db,
-        builder: (context, _) {
-          final db = widget.db;
-          final active = db.accounts.where((a) => !a.archived).toList();
-          final archived = db.accounts.where((a) => a.archived).toList();
-          final periodMovements = db.movements.filterByTime(_filter);
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              StreamSpacing.lg,
-              StreamSpacing.lg,
-              StreamSpacing.lg,
-              80,
-            ),
-            children: [
-              KeyedSubtree(
-                key: const Key('accounts_time_filter'),
-                child: TimeFilterBar(
-                  activeFilter: _filter,
-                  onChanged: (value) => setState(() => _filter = value),
+    return ValueListenableBuilder<AppCurrency>(
+      valueListenable: PreferencesService.currencyNotifier,
+      builder: (context, _, __) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Conti')),
+          body: ListenableBuilder(
+            listenable: widget.db,
+            builder: (context, _) {
+              final db = widget.db;
+              final active = db.accounts.where((a) => !a.archived).toList();
+              final archived = db.accounts.where((a) => a.archived).toList();
+              final periodMovements = db.movements.filterByTime(_filter);
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  StreamSpacing.lg,
+                  StreamSpacing.lg,
+                  StreamSpacing.lg,
+                  80,
                 ),
-              ),
-              const SizedBox(height: StreamSpacing.md),
-              ...active.map(
-                (a) => _AccountCard(
-                  key: Key('account_card_${a.id}'),
-                  db: db,
-                  account: a,
-                  periodMovements: periodMovements,
-                  allMovements: db.movements,
-                  filter: _filter,
-                  onTap: () => _showAccountMovements(context, db, a),
-                  onEdit: () => _showAddEditDialog(context, db, account: a),
-                  onArchive: () => db.archiveAccount(a.id),
-                ),
-              ),
-              if (archived.isNotEmpty) ...[
-                const SizedBox(height: StreamSpacing.section),
-                const KeyedSubtree(
-                  key: Key('accounts_archived_section'),
-                  child: _SectionHeader(title: 'Archiviati'),
-                ),
-                const SizedBox(height: StreamSpacing.md),
-                ...archived.map(
-                  (a) => _AccountCard(
-                    key: Key('account_card_${a.id}'),
-                    db: db,
-                    account: a,
-                    periodMovements: periodMovements,
-                    allMovements: db.movements,
-                    filter: _filter,
-                    onTap: () => _showAccountMovements(context, db, a),
-                    onEdit: () => _showAddEditDialog(context, db, account: a),
+                children: [
+                  KeyedSubtree(
+                    key: const Key('accounts_time_filter'),
+                    child: TimeFilterBar(
+                      activeFilter: _filter,
+                      onChanged: (value) => setState(() => _filter = value),
+                    ),
                   ),
-                ),
-              ],
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'accounts_fab',
-        onPressed: () => _showAddEditDialog(context, widget.db),
-        child: const Icon(Icons.add),
-      ),
+                  const SizedBox(height: StreamSpacing.md),
+                  ...active.map(
+                    (a) => _AccountCard(
+                      key: Key('account_card_${a.id}'),
+                      db: db,
+                      account: a,
+                      periodMovements: periodMovements,
+                      allMovements: db.movements,
+                      filter: _filter,
+                      onTap: () => _showAccountMovements(context, db, a),
+                      onEdit: () => _showAddEditDialog(context, db, account: a),
+                      onArchive: () => db.archiveAccount(a.id),
+                    ),
+                  ),
+                  if (archived.isNotEmpty) ...[
+                    const SizedBox(height: StreamSpacing.section),
+                    const KeyedSubtree(
+                      key: Key('accounts_archived_section'),
+                      child: _SectionHeader(title: 'Archiviati'),
+                    ),
+                    const SizedBox(height: StreamSpacing.md),
+                    ...archived.map(
+                      (a) => _AccountCard(
+                        key: Key('account_card_${a.id}'),
+                        db: db,
+                        account: a,
+                        periodMovements: periodMovements,
+                        allMovements: db.movements,
+                        filter: _filter,
+                        onTap: () => _showAccountMovements(context, db, a),
+                        onEdit: () => _showAddEditDialog(
+                          context,
+                          db,
+                          account: a,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+          floatingActionButton: FloatingActionButton(
+            heroTag: 'accounts_fab',
+            onPressed: () => _showAddEditDialog(context, widget.db),
+            child: const Icon(Icons.add),
+          ),
+        );
+      },
     );
   }
 
@@ -242,7 +253,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                           final currentBalance =
                               parsedInitialBalance + currentMovementsDelta;
                           return Text(
-                            '${currentBalance >= 0 ? '+' : ''}${currentBalance.toStringAsFixed(2)} €',
+                            formatMovementCurrency(
+                              currentBalance,
+                              showPositiveSign: true,
+                            ),
                             key: const Key('account_current_balance_value'),
                             style: StreamTypography.amount.copyWith(
                               color: currentBalance >= 0
@@ -593,7 +607,7 @@ class _AccountCard extends StatelessWidget {
   }
 
   String _formatMoney(double value) {
-    return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+    return formatMovementCurrency(value, showPositiveSign: true);
   }
 
   String _balanceLabel(TimeFilter filter) {
@@ -672,7 +686,7 @@ class _AccountPeriodSummary extends StatelessWidget {
   }
 
   String _formatMoney(double value) {
-    return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+    return formatMovementCurrency(value, showPositiveSign: true);
   }
 }
 
@@ -1032,7 +1046,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
   }
 
   String _formatMoney(double value) {
-    return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)} €';
+    return formatMovementCurrency(value, showPositiveSign: true);
   }
 
   String _balanceLabel(TimeFilter filter) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
+import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
 import '../models/category.dart';
@@ -7,6 +8,7 @@ import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/duplicate_date_selector.dart';
+import '../utils/currency_formatter.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/time_filter_bar.dart';
 import '../widgets/grouped_movements_list.dart';
@@ -59,72 +61,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('STREAM')),
-      body: ListenableBuilder(
-        listenable: widget.db,
-        builder: (context, _) {
-          final allMovements = widget.db.movements;
-          final filteredMovements = allMovements.filterByTime(_filter);
-          final previousFilter = _filter.mode == TimeFilterMode.customRange
-              ? null
-              : _filter.previous();
-          final previousMovements = previousFilter != null
-              ? allMovements.filterByTime(previousFilter)
-              : <Movement>[];
+    return ValueListenableBuilder<AppCurrency>(
+      valueListenable: PreferencesService.currencyNotifier,
+      builder: (context, _, __) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('STREAM')),
+          body: ListenableBuilder(
+            listenable: widget.db,
+            builder: (context, _) {
+              final allMovements = widget.db.movements;
+              final filteredMovements = allMovements.filterByTime(_filter);
+              final previousFilter = _filter.mode == TimeFilterMode.customRange
+                  ? null
+                  : _filter.previous();
+              final previousMovements = previousFilter != null
+                  ? allMovements.filterByTime(previousFilter)
+                  : <Movement>[];
 
-          final filteredIncome = sumIncome(filteredMovements);
-          final filteredExpenses = sumExpenses(filteredMovements);
-          final previousExpenses = sumExpenses(previousMovements);
-          final filteredBalance = netIncomeExpense(filteredMovements);
-          final filteredCount = filteredMovements.length;
-          final accountsBalance = widget.db.totalAccountsBalance;
-          final activeAccounts = widget.db.accounts
-              .where((a) => !a.archived)
-              .toList();
-          final categoryExpenses = _buildCategoryExpenses(
-            filteredMovements,
-            widget.db.categories,
-          );
-          final expenseComparison = previousFilter != null
-              ? filteredExpenses - previousExpenses
-              : null;
+              final filteredIncome = sumIncome(filteredMovements);
+              final filteredExpenses = sumExpenses(filteredMovements);
+              final previousExpenses = sumExpenses(previousMovements);
+              final filteredBalance = netIncomeExpense(filteredMovements);
+              final filteredCount = filteredMovements.length;
+              final accountsBalance = widget.db.totalAccountsBalance;
+              final activeAccounts = widget.db.accounts
+                  .where((a) => !a.archived)
+                  .toList();
+              final categoryExpenses = _buildCategoryExpenses(
+                filteredMovements,
+                widget.db.categories,
+              );
+              final expenseComparison = previousFilter != null
+                  ? filteredExpenses - previousExpenses
+                  : null;
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              StreamSpacing.lg,
-              StreamSpacing.lg,
-              StreamSpacing.lg,
-              StreamSpacing.xxl,
-            ),
-            children: [
-              TimeFilterBar(activeFilter: _filter, onChanged: _onFilterChanged),
-              const SizedBox(height: StreamSpacing.md),
-              _BalanceHero(
-                accountsBalance: accountsBalance,
-                accounts: activeAccounts,
-                db: widget.db,
-              ),
-              const SizedBox(height: StreamSpacing.lg),
-              _KpiGrid(
-                income: filteredIncome,
-                expenses: filteredExpenses,
-                balance: filteredBalance,
-                count: filteredCount,
-                expenseComparison: expenseComparison,
-              ),
-              const SizedBox(height: StreamSpacing.section),
-              _CategoryExpensesSection(
-                items: categoryExpenses,
-                totalExpenses: filteredExpenses,
-                db: widget.db,
-                onCategoryTap: (item) =>
-                    _showCategoryDetail(context, item, filteredMovements),
-              ),
-            ],
-          );
-        },
-      ),
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  StreamSpacing.lg,
+                  StreamSpacing.lg,
+                  StreamSpacing.lg,
+                  StreamSpacing.xxl,
+                ),
+                children: [
+                  TimeFilterBar(
+                    activeFilter: _filter,
+                    onChanged: _onFilterChanged,
+                  ),
+                  const SizedBox(height: StreamSpacing.md),
+                  _BalanceHero(
+                    accountsBalance: accountsBalance,
+                    accounts: activeAccounts,
+                    db: widget.db,
+                  ),
+                  const SizedBox(height: StreamSpacing.lg),
+                  _KpiGrid(
+                    income: filteredIncome,
+                    expenses: filteredExpenses,
+                    balance: filteredBalance,
+                    count: filteredCount,
+                    expenseComparison: expenseComparison,
+                  ),
+                  const SizedBox(height: StreamSpacing.section),
+                  _CategoryExpensesSection(
+                    items: categoryExpenses,
+                    totalExpenses: filteredExpenses,
+                    db: widget.db,
+                    onCategoryTap: (item) =>
+                        _showCategoryDetail(context, item, filteredMovements),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -166,7 +176,10 @@ class _BalanceHero extends StatelessWidget {
           ),
           const SizedBox(height: StreamSpacing.xs),
           Text(
-            '${accountsBalance >= 0 ? '+' : ''}${accountsBalance.toStringAsFixed(2)} €',
+            formatMovementCurrency(
+              accountsBalance,
+              showPositiveSign: true,
+            ),
             style: StreamTypography.display.copyWith(
               color: accountsBalance >= 0
                   ? StreamColors.income
@@ -233,7 +246,7 @@ class _AccountBalancePill extends StatelessWidget {
           ),
           const SizedBox(width: StreamSpacing.xs),
           Text(
-            '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
+            formatMovementCurrency(balance, showPositiveSign: true),
             style: StreamTypography.captionBold.copyWith(
               color: balance >= 0 ? StreamColors.income : StreamColors.expense,
             ),
@@ -446,7 +459,7 @@ class _CategoryExpenseRow extends StatelessWidget {
                   ),
                   const SizedBox(width: StreamSpacing.sm),
                   Text(
-                    '${item.total.toStringAsFixed(2)} €',
+                    formatMovementCurrency(item.total),
                     style: StreamTypography.amount.copyWith(
                       color: StreamColors.expense,
                     ),
@@ -499,7 +512,7 @@ class _KpiGrid extends StatelessWidget {
             Expanded(
               child: _KpiCard(
                 label: 'Entrate',
-                value: '${income.toStringAsFixed(2)} €',
+                value: formatMovementCurrency(income),
                 color: StreamColors.income,
               ),
             ),
@@ -507,7 +520,7 @@ class _KpiGrid extends StatelessWidget {
             Expanded(
               child: _KpiCard(
                 label: 'Uscite',
-                value: '${expenses.toStringAsFixed(2)} €',
+                value: formatMovementCurrency(expenses),
                 color: StreamColors.expense,
                 subtitle: expenseComparison != null
                     ? _formatExpenseComparison(expenseComparison!)
@@ -523,7 +536,7 @@ class _KpiGrid extends StatelessWidget {
               child: _KpiCard(
                 label: 'Saldo',
                 value:
-                    '${balance >= 0 ? '+' : ''}${balance.toStringAsFixed(2)} €',
+                    formatMovementCurrency(balance, showPositiveSign: true),
                 color: balance >= 0
                     ? StreamColors.income
                     : StreamColors.expense,
@@ -546,7 +559,7 @@ class _KpiGrid extends StatelessWidget {
   String _formatExpenseComparison(double value) {
     if (value == 0) return 'In linea col periodo precedente';
     final sign = value > 0 ? '+' : '-';
-    return '$sign${value.abs().toStringAsFixed(2)} € rispetto al periodo precedente';
+    return '$sign${formatMovementCurrency(value.abs())} rispetto al periodo precedente';
   }
 }
 
@@ -727,7 +740,7 @@ class _CategoryDetailSheet extends StatelessWidget {
                               ),
                               const SizedBox(height: StreamSpacing.xs),
                               Text(
-                                '${currentMovements.length} movimenti · ${item.total.toStringAsFixed(2)} €',
+                                '${currentMovements.length} movimenti · ${formatMovementCurrency(item.total)}',
                                 style: StreamTypography.caption.copyWith(
                                   color: StreamColors.textSecondary,
                                 ),
