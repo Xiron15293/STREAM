@@ -11,10 +11,12 @@ import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import '../utils/currency_formatter.dart';
 import 'beneficiary_picker_sheet.dart';
 import 'add_movement_flow.dart';
 import 'calculator_amount_pad.dart';
 import 'category_subcategory_selector.dart';
+import 'movement_text_suggestions.dart';
 
 enum AddMode { manuale, rapidi, preferiti }
 
@@ -605,6 +607,11 @@ class _ManualFormState extends State<_ManualForm> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => FocusScope.of(context).unfocus(),
               ),
+              MovementBeneficiarySuggestions(
+                db: widget.db,
+                controller: _payeeCtrl,
+                limit: 5,
+              ),
             ],
             const SizedBox(height: StreamSpacing.md),
             DropdownButtonFormField<String>(
@@ -785,7 +792,7 @@ class _QuickPanel extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${resolved?.label ?? qmCat?.name ?? ''} • ${qm.type == MovementType.expense ? '-' : '+'}${qm.amount.toStringAsFixed(2)} €',
+                                    '${resolved?.label ?? qmCat?.name ?? ''} • ${formatMovementCurrency(qm.type == MovementType.expense ? -qm.amount : qm.amount, showPositiveSign: true)}',
                                     style: StreamTypography.caption.copyWith(
                                       color: StreamColors.textSecondary,
                                     ),
@@ -1234,7 +1241,7 @@ class _FavoriteTile extends StatelessWidget {
                       Text(fm.title, style: StreamTypography.bodyBold),
                       const SizedBox(height: 2),
                       Text(
-                        '${resolved?.label ?? favCat?.name ?? ''} • ${fm.type == MovementType.expense ? '-' : '+'}${fm.amount.toStringAsFixed(2)} €',
+                        '${resolved?.label ?? favCat?.name ?? ''} • ${formatMovementCurrency(fm.type == MovementType.expense ? -fm.amount : fm.amount, showPositiveSign: true)}',
                         style: StreamTypography.caption.copyWith(
                           color: StreamColors.textSecondary,
                         ),

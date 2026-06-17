@@ -349,6 +349,11 @@ class _MovementFormState extends State<MovementForm> {
                   textInputAction: TextInputAction.done,
                   onChanged: (_) => setState(() {}),
                 ),
+                MovementBeneficiarySuggestions(
+                  db: widget.db,
+                  controller: _payeeCtrl,
+                  limit: 5,
+                ),
                 const SizedBox(height: StreamSpacing.md),
               ],
               DropdownButtonFormField<String>(

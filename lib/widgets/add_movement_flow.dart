@@ -8,6 +8,7 @@ import '../models/movement.dart';
 import '../models/subcategory.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import '../utils/currency_formatter.dart';
 import 'beneficiary_picker_sheet.dart';
 import 'calculator_amount_pad.dart';
 import 'movement_calculator_pad.dart';
@@ -236,17 +237,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   String _formatCurrency(double value) {
-    final fixed = value.abs().toStringAsFixed(2);
-    final parts = fixed.split('.');
-    final whole = parts[0];
-    final decimal = parts[1];
-    final chunks = <String>[];
-    for (var i = whole.length; i > 0; i -= 3) {
-      final start = (i - 3).clamp(0, whole.length);
-      chunks.insert(0, whole.substring(start, i));
-    }
-    final prefix = value < 0 ? '-' : '';
-    return '$prefix${chunks.join('.')},$decimal €';
+    return formatMovementCurrency(value);
   }
 
   String _formatDateLabel() {
@@ -880,6 +871,11 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             textInputAction: TextInputAction.done,
             onChanged: (_) => setState(() {}),
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          ),
+          MovementBeneficiarySuggestions(
+            db: widget.db,
+            controller: _counterpartyCtrl,
+            limit: 5,
           ),
           const SizedBox(height: StreamSpacing.md),
           TextField(

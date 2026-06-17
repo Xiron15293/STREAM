@@ -534,6 +534,42 @@ void main() {
       );
     });
 
+    test('beneficiario suggerimenti deduplicati e limitati a 5', () async {
+      final db = AppDatabase();
+      await db.createManualBeneficiaryProfile('McDonalds Grandate');
+      await db.createManualBeneficiaryProfile('McDonalds Como');
+      await db.createManualBeneficiaryProfile('Mc Donalds');
+      await db.createManualBeneficiaryProfile('McDonalds Milano');
+      await db.createManualBeneficiaryProfile('McDonalds Varese');
+      await db.createManualBeneficiaryProfile('McDonalds Cantu');
+      await db.createMovementFromTemplate(
+        title: 'Pasto 1',
+        amount: 12,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 10),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        payee: 'McDonalds Como',
+      );
+
+      final suggestions = buildMovementBeneficiarySuggestions(
+        db: db,
+        query: 'mcd',
+        currentValue: 'McDonalds Como',
+      );
+
+      expect(suggestions, isNotEmpty);
+      expect(suggestions.length, lessThanOrEqualTo(5));
+      expect(
+        suggestions.map((s) => normalizeMovementText(s.text)).toSet(),
+        hasLength(suggestions.length),
+      );
+      expect(
+        suggestions.map((s) => s.text).toList(),
+        isNot(contains('McDonalds Como')),
+      );
+    });
+
     testWidgets(
       'note mostra suggerimenti dopo 2 caratteri e tap compila il campo',
       (tester) async {
@@ -597,6 +633,59 @@ void main() {
               .controller!
               .text,
           expectedNote,
+        );
+      },
+    );
+
+    testWidgets(
+      'beneficiario mostra suggerimenti dopo 2 caratteri e tap compila il campo',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createManualBeneficiaryProfile('McDonalds Grandate');
+        await db.createManualBeneficiaryProfile('McDonalds Como');
+        await db.createMovementFromTemplate(
+          title: 'Pranzo',
+          amount: 18,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 10),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+          payee: 'Mc Donalds',
+        );
+
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('movement_counterparty_field')),
+          'mc',
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('movement_beneficiary_suggestion_0')),
+          findsOneWidget,
+        );
+        final suggestionChip = tester.widget<ActionChip>(
+          find.byKey(const Key('movement_beneficiary_suggestion_0')),
+        );
+        final expectedBeneficiary = (suggestionChip.label as Text).data!;
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('movement_beneficiary_suggestion_0')),
+        );
+        expect(
+          tester
+              .widget<TextField>(
+                find.byKey(const Key('movement_counterparty_field')),
+              )
+              .controller!
+              .text,
+          expectedBeneficiary,
         );
       },
     );
