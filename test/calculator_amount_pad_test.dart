@@ -98,11 +98,19 @@ void main() {
 
         await _openPad(tester);
         expect(find.text('0'), findsWidgets);
+        expect(find.text('0,00'), findsNothing);
 
         await tester.tap(find.byKey(const Key('calculator_key_5')));
         await tester.pumpAndSettle();
 
         expect(controller.text, '5');
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('calculator_amount_display')),
+            matching: find.text('5'),
+          ),
+          findsOneWidget,
+        );
         expect(find.text('05'), findsNothing);
       },
     );
@@ -117,6 +125,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(controller.text, '50');
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('calculator_amount_display')),
+          matching: find.text('50'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('0,50'), findsNothing);
     });
 
@@ -432,7 +447,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Modifica movimento'), findsOneWidget);
       expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
-      expect(find.text('10,00 €'), findsWidgets);
+      expect(find.text('10'), findsWidgets);
       await _replaceAmountWithPad(tester, ['1', '0', '+', '7']);
       await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
       await tester.tap(find.widgetWithText(FilledButton, 'Salva'));

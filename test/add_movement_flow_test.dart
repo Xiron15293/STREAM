@@ -683,22 +683,22 @@ void main() {
 
       await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
       expect(find.text('Nuova spesa'), findsOneWidget);
-      expect(_amountDisplayText(tester), '0,00 €');
+      expect(_amountDisplayText(tester), '0');
 
       await _tapVisible(tester, find.byKey(const Key('movement_pad_1')));
-      expect(_amountDisplayText(tester), '1,00 €');
+      expect(_amountDisplayText(tester), '1');
 
       await _tapVisible(tester, find.byKey(const Key('movement_pad_2')));
-      expect(_amountDisplayText(tester), '12,00 €');
+      expect(_amountDisplayText(tester), '12');
 
       await _tapVisible(
         tester,
         find.byKey(const Key('movement_pad_backspace')),
       );
-      expect(_amountDisplayText(tester), '1,00 €');
+      expect(_amountDisplayText(tester), '1');
 
       await _tapVisible(tester, find.byKey(const Key('movement_pad_00')));
-      expect(_amountDisplayText(tester), '100,00 €');
+      expect(_amountDisplayText(tester), '100');
     });
 
     testWidgets('importo iniziale parte da zero senza raw duplicate sotto', (
@@ -709,7 +709,22 @@ void main() {
       await _openAddMovement(tester);
       await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
 
-      expect(_amountDisplayText(tester), '0,00 €');
+      expect(_amountDisplayText(tester), '0');
+    });
+
+    testWidgets('tap 5 0 virgola 5 0 mostra 50,50', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_5')));
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_0')));
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_,')));
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_5')));
+      await _tapVisible(tester, find.byKey(const Key('movement_pad_0')));
+
+      expect(_amountDisplayText(tester), '50,50');
     });
 
     testWidgets('tap 5 da zero sostituisce lo zero', (tester) async {
@@ -764,7 +779,7 @@ void main() {
       await _tapPadKey(tester, 'movement_pad_+');
       await _tapPadKey(tester, 'movement_pad_5');
 
-      expect(_amountDisplayText(tester), '15,00 €');
+      expect(_amountDisplayText(tester), '10+5');
       await _tapVisible(
         tester,
         find.byKey(const Key('movement_submit_button')),
@@ -816,7 +831,7 @@ void main() {
       await _tapPadKey(tester, 'movement_pad_-');
       await _tapPadKey(tester, 'movement_pad_5');
 
-      expect(_amountDisplayText(tester), '15,00 €');
+      expect(_amountDisplayText(tester), '20-5');
       await _tapVisible(
         tester,
         find.byKey(const Key('movement_submit_button')),
@@ -860,7 +875,7 @@ void main() {
           find.byKey(const Key('movement_amount_display')),
           findsOneWidget,
         );
-        expect(_amountDisplayText(tester), '10,00 €');
+        expect(_amountDisplayText(tester), '10');
 
         await tester.enterText(
           find.byKey(const Key('movement_title_field')),
@@ -872,7 +887,7 @@ void main() {
         await _tapPadKey(tester, 'movement_pad_2');
         await _tapPadKey(tester, 'movement_pad_5');
 
-        expect(_amountDisplayText(tester), '25,00 €');
+        expect(_amountDisplayText(tester), '25');
         await _tapVisible(
           tester,
           find.byKey(const Key('movement_submit_button')),

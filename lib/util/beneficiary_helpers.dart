@@ -49,6 +49,9 @@ Future<SaveBeneficiaryDecision> askToSaveBeneficiary(
                   children: similarProfiles
                       .map(
                         (profile) => Chip(
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.zero,
                           label: Text(profile.displayName),
                           avatar: CircleAvatar(
                             backgroundColor: Color(profile.color),

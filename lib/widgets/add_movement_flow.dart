@@ -231,17 +231,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     });
   }
 
-  String _formattedAmount() {
-    final text = _amountCtrl.text.trim();
-    if (text.isEmpty) return _formatCurrency(0);
-    final result = _evaluator.evaluate(
-      text,
-      allowNegative: _type == MovementType.transfer ? false : false,
-    );
-    if (!result.isValid || result.value == null) {
-      return _formatCurrency(0);
-    }
-    return _formatCurrency(result.value!);
+  String _amountDisplayText() {
+    return formatAmountInputDisplay(_amountCtrl.text);
   }
 
   String _formatCurrency(double value) {
@@ -850,7 +841,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           _buildTopSelectors(),
           const SizedBox(height: StreamSpacing.lg),
           Text(
-            _formattedAmount(),
+            _amountDisplayText(),
             key: const Key('movement_amount_display'),
             textAlign: TextAlign.center,
             style: StreamTypography.amountLarge.copyWith(

@@ -382,3 +382,8 @@ String formatAmountExpressionValue(double value) {
   }
   return rounded.toStringAsFixed(2);
 }
+
+String formatAmountInputDisplay(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? '0' : trimmed;
+}

@@ -280,6 +280,9 @@ class MovementTextSuggestions extends StatelessWidget {
                   for (var i = 0; i < suggestions.length; i++)
                     ActionChip(
                       key: Key('movement_${field.name}_suggestion_$i'),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: EdgeInsets.zero,
                       label: Text(
                         suggestions[i].text,
                         overflow: TextOverflow.ellipsis,
