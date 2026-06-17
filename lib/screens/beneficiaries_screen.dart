@@ -11,8 +11,17 @@ import '../widgets/grouped_movements_list.dart';
 
 class BeneficiariesScreen extends StatefulWidget {
   final AppDatabase db;
+  final bool pickerMode;
+  final String? initialQuery;
+  final ValueChanged<String>? onBeneficiarySelected;
 
-  const BeneficiariesScreen({super.key, required this.db});
+  const BeneficiariesScreen({
+    super.key,
+    required this.db,
+    this.pickerMode = false,
+    this.initialQuery,
+    this.onBeneficiarySelected,
+  });
 
   @override
   State<BeneficiariesScreen> createState() => _BeneficiariesScreenState();
@@ -24,7 +33,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
   @override
   void initState() {
     super.initState();
-    _searchCtrl = TextEditingController();
+    _searchCtrl = TextEditingController(text: widget.initialQuery ?? '');
     _searchCtrl.addListener(() => setState(() {}));
   }
 
@@ -45,75 +54,185 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
             ? allEntries
             : allEntries.where((entry) {
                 return entry.searchKey.contains(query) ||
-                    BeneficiaryProfile.normalizeKey(entry.displayName).contains(
-                      query,
-                    );
+                    BeneficiaryProfile.normalizeKey(
+                      entry.displayName,
+                    ).contains(query);
               }).toList();
+        final grouped = _groupEntries(filtered);
 
-        return SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  StreamSpacing.lg,
-                  StreamSpacing.md,
-                  StreamSpacing.lg,
-                  0,
+        return Container(
+          decoration: BoxDecoration(
+            color: StreamColors.canvas,
+            borderRadius: widget.pickerMode
+                ? const BorderRadius.vertical(
+                    top: Radius.circular(StreamRadius.xl),
+                  )
+                : BorderRadius.zero,
+          ),
+          child: SafeArea(
+            top: true,
+            bottom: true,
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    StreamSpacing.lg,
+                    StreamSpacing.md,
+                    StreamSpacing.lg,
+                    0,
+                  ),
+                  child: TextField(
+                    key: const Key('beneficiaries_search_field'),
+                    controller: _searchCtrl,
+                    decoration: const InputDecoration(
+                      hintText: 'Cerca',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        key: const Key('beneficiaries_search_field'),
-                        controller: _searchCtrl,
-                        decoration: const InputDecoration(
-                          hintText: 'Cerca beneficiario',
-                          prefixIcon: Icon(Icons.search),
+                const SizedBox(height: StreamSpacing.md),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? _BeneficiariesEmptyState(hasQuery: query.isNotEmpty)
+                      : ListView.builder(
+                          padding: EdgeInsets.fromLTRB(
+                            StreamSpacing.lg,
+                            0,
+                            StreamSpacing.lg,
+                            widget.pickerMode ? 16 : 80,
+                          ),
+                          itemCount: grouped.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == grouped.length) {
+                              return const SizedBox(height: StreamSpacing.sm);
+                            }
+                            final section = grouped[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: StreamSpacing.lg,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: StreamSpacing.sm,
+                                      left: StreamSpacing.xs,
+                                    ),
+                                    child: Text(
+                                      section.letter,
+                                      key: Key(
+                                        'beneficiary_section_${section.letter}',
+                                      ),
+                                      style: StreamTypography.caption.copyWith(
+                                        color: StreamColors.textSecondary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  ...section.entries.map(
+                                    (entry) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: StreamSpacing.sm,
+                                      ),
+                                      child: _BeneficiaryCard(
+                                        entry: entry,
+                                        selectable: widget.pickerMode,
+                                        onTap: () => widget.pickerMode
+                                            ? widget.onBeneficiarySelected
+                                                  ?.call(entry.displayName)
+                                            : _showBeneficiaryDetail(
+                                                context,
+                                                entry,
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
+                ),
+                if (widget.pickerMode) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      StreamSpacing.lg,
+                      0,
+                      StreamSpacing.lg,
+                      StreamSpacing.lg,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          key: const Key('beneficiaries_picker_close'),
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                        const SizedBox(width: StreamSpacing.sm),
+                        Expanded(
+                          child: FilledButton(
+                            key: const Key('beneficiaries_picker_done'),
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Fatto'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      StreamSpacing.lg,
+                      0,
+                      StreamSpacing.lg,
+                      StreamSpacing.lg,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton.filled(
+                        key: const Key('beneficiaries_add_button'),
+                        onPressed: () =>
+                            showCreateBeneficiaryDialog(context, widget.db),
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Nuovo beneficiario',
                       ),
                     ),
-                    const SizedBox(width: StreamSpacing.sm),
-                    IconButton.filled(
-                      key: const Key('beneficiaries_add_button'),
-                      onPressed: () => showCreateBeneficiaryDialog(
-                        context,
-                        widget.db,
-                      ),
-                      icon: const Icon(Icons.add),
-                      tooltip: 'Nuovo beneficiario',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: StreamSpacing.md),
-              Expanded(
-                child: filtered.isEmpty
-                    ? _BeneficiariesEmptyState(hasQuery: query.isNotEmpty)
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
-                          StreamSpacing.lg,
-                          0,
-                          StreamSpacing.lg,
-                          80,
-                        ),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: StreamSpacing.sm),
-                        itemBuilder: (context, index) {
-                          return _BeneficiaryCard(
-                            entry: filtered[index],
-                            onTap: () => _showBeneficiaryDetail(
-                              context,
-                              filtered[index],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                  ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    if (!widget.pickerMode) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StreamSpacing.lg,
+        StreamSpacing.md,
+        StreamSpacing.lg,
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Beneficiari',
+              style: StreamTypography.h3,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          IconButton(
+            key: const Key('beneficiaries_picker_close_top'),
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ),
     );
   }
 
@@ -148,9 +267,11 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
         iconKey: profile?.iconKey ?? current.iconKey,
         color: profile?.color ?? current.color,
         movementCount: current.movementCount + 1,
-        totalIncome: current.totalIncome +
+        totalIncome:
+            current.totalIncome +
             (movement.type == MovementType.income ? movement.amount : 0),
-        totalExpense: current.totalExpense +
+        totalExpense:
+            current.totalExpense +
             (movement.type == MovementType.expense ? movement.amount : 0),
       );
       entries[key] = updated;
@@ -158,11 +279,39 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
 
     final list = entries.values.toList()
       ..sort(
-        (a, b) => a.displayName.toLowerCase().compareTo(
-          b.displayName.toLowerCase(),
-        ),
+        (a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
       );
     return list;
+  }
+
+  List<_BeneficiarySection> _groupEntries(List<_BeneficiaryEntry> entries) {
+    final sections = <String, List<_BeneficiaryEntry>>{};
+    for (final entry in entries) {
+      final firstChar = entry.displayName.trim().isEmpty
+          ? '#'
+          : entry.displayName.trim().substring(0, 1).toUpperCase();
+      sections.putIfAbsent(firstChar, () => <_BeneficiaryEntry>[]).add(entry);
+    }
+    final orderedLetters = sections.keys.toList()
+      ..sort((a, b) {
+        if (a == '#') return 1;
+        if (b == '#') return -1;
+        return a.compareTo(b);
+      });
+    return orderedLetters
+        .map(
+          (letter) => _BeneficiarySection(
+            letter: letter,
+            entries: sections[letter]!
+              ..sort(
+                (a, b) => a.displayName.toLowerCase().compareTo(
+                  b.displayName.toLowerCase(),
+                ),
+              ),
+          ),
+        )
+        .toList();
   }
 
   void _showBeneficiaryDetail(BuildContext context, _BeneficiaryEntry entry) {
@@ -170,10 +319,8 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _BeneficiaryDetailSheet(
-        db: widget.db,
-        beneficiaryKey: entry.key,
-      ),
+      builder: (_) =>
+          _BeneficiaryDetailSheet(db: widget.db, beneficiaryKey: entry.key),
     );
   }
 }
@@ -181,8 +328,13 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
 class _BeneficiaryCard extends StatelessWidget {
   final _BeneficiaryEntry entry;
   final VoidCallback onTap;
+  final bool selectable;
 
-  const _BeneficiaryCard({required this.entry, required this.onTap});
+  const _BeneficiaryCard({
+    required this.entry,
+    required this.onTap,
+    this.selectable = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +401,12 @@ class _BeneficiaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: StreamSpacing.sm),
-                Icon(Icons.chevron_right, color: StreamColors.textMuted),
+                Icon(
+                  selectable ? Icons.check_circle_outline : Icons.chevron_right,
+                  color: selectable
+                      ? StreamColors.primary
+                      : StreamColors.textMuted,
+                ),
               ],
             ),
           ),
@@ -295,7 +452,8 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
                 if (cleaned.isEmpty) {
                   return false;
                 }
-                return BeneficiaryProfile.normalizeKey(cleaned) == beneficiaryKey;
+                return BeneficiaryProfile.normalizeKey(cleaned) ==
+                    beneficiaryKey;
               }).toList();
 
               return Column(
@@ -474,6 +632,13 @@ class _BeneficiariesEmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BeneficiarySection {
+  final String letter;
+  final List<_BeneficiaryEntry> entries;
+
+  const _BeneficiarySection({required this.letter, required this.entries});
 }
 
 class _BeneficiaryEntry {

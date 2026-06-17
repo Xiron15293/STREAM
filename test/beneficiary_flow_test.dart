@@ -62,6 +62,23 @@ Future<void> _openSheet(
   await tester.pumpAndSettle();
 }
 
+Future<void> _openBeneficiaryPicker(
+  WidgetTester tester,
+  AppDatabase db, {
+  String? initialQuery,
+  void Function(String value)? onSelected,
+}) async {
+  await _openSheet(
+    tester,
+    builder: (_) => BeneficiariesScreen(
+      db: db,
+      pickerMode: true,
+      initialQuery: initialQuery,
+      onBeneficiarySelected: onSelected,
+    ),
+  );
+}
+
 Future<void> _fillMovementData(
   WidgetTester tester, {
   required String title,
@@ -71,14 +88,20 @@ Future<void> _fillMovementData(
   await prepareManualMovementDetails(tester);
   await enterMovementTitle(tester, title);
   if (payee != null) {
-    final counterpartyField = find.byKey(const Key('movement_counterparty_field'));
+    final counterpartyField = find.byKey(
+      const Key('movement_counterparty_field'),
+    );
     if (counterpartyField.evaluate().isNotEmpty) {
       await tester.enterText(counterpartyField, payee);
     } else {
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Beneficiario (opzionale)'),
-        payee,
-      );
+      final fallbackField =
+          find
+              .widgetWithText(TextField, 'Beneficiario / Esercente')
+              .evaluate()
+              .isNotEmpty
+          ? find.widgetWithText(TextField, 'Beneficiario / Esercente')
+          : find.widgetWithText(TextField, 'Pagatore / Fonte');
+      await tester.enterText(fallbackField, payee);
     }
   }
   await enterAmountWithCalculator(tester, amount);
@@ -100,12 +123,13 @@ void main() {
       (tester) async {
         final db = AppDatabase();
 
-        await tester.pumpWidget(
-          _wrapScreen(BeneficiariesScreen(db: db)),
-        );
+        await tester.pumpWidget(_wrapScreen(BeneficiariesScreen(db: db)));
         await tester.pumpAndSettle();
 
-        expect(find.byKey(const Key('beneficiaries_add_button')), findsOneWidget);
+        expect(
+          find.byKey(const Key('beneficiaries_add_button')),
+          findsOneWidget,
+        );
 
         await tester.tap(find.byKey(const Key('beneficiaries_add_button')));
         await tester.pumpAndSettle();
@@ -136,9 +160,7 @@ void main() {
       final db = AppDatabase();
       await db.createManualBeneficiaryProfile('Studio Dentistico');
 
-      await tester.pumpWidget(
-        _wrapScreen(BeneficiariesScreen(db: db)),
-      );
+      await tester.pumpWidget(_wrapScreen(BeneficiariesScreen(db: db)));
       await tester.pumpAndSettle();
 
       await tester.enterText(
@@ -155,9 +177,7 @@ void main() {
       final db = AppDatabase();
       await db.createManualBeneficiaryProfile('Mario Rossi');
 
-      await tester.pumpWidget(
-        _wrapScreen(BeneficiariesScreen(db: db)),
-      );
+      await tester.pumpWidget(_wrapScreen(BeneficiariesScreen(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('beneficiaries_add_button')));
@@ -179,27 +199,97 @@ void main() {
       expect(db.beneficiaryProfiles, hasLength(1));
     });
 
-    test('backup/restore preserva beneficiario manuale senza movimenti', () async {
-      final sourceDb = AppDatabase();
-      await sourceDb.createManualBeneficiaryProfile(
-        'Mario Rossi',
-        iconKey: BeneficiaryProfile.defaultIconKey,
-        color: StreamColorPalette.defaultColor,
+    testWidgets(
+      'beneficiario simile mostra suggerimenti ma non unisce i profili',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createManualBeneficiaryProfile('McDonalds Grandate');
+        await _openSheet(tester, builder: (_) => MovementPicker(db: db));
+
+        await _fillMovementData(
+          tester,
+          title: 'Cena',
+          amount: '25',
+          payee: 'McDonalds Como',
+        );
+        await _tapSaveButton(tester);
+
+        expect(find.text('Beneficiari simili già presenti:'), findsOneWidget);
+        expect(find.text('McDonalds Grandate'), findsOneWidget);
+
+        await tester.tap(find.text('No, solo movimento'));
+        await tester.pumpAndSettle();
+
+        expect(db.movements, hasLength(1));
+        expect(db.movements.first.payee, 'McDonalds Como');
+        expect(db.beneficiaryProfiles, hasLength(1));
+      },
+    );
+
+    test(
+      'backup/restore preserva beneficiario manuale senza movimenti',
+      () async {
+        final sourceDb = AppDatabase();
+        await sourceDb.createManualBeneficiaryProfile(
+          'Mario Rossi',
+          iconKey: BeneficiaryProfile.defaultIconKey,
+          color: StreamColorPalette.defaultColor,
+        );
+
+        final json = await BackupService.exportToJson(sourceDb);
+        final validation = BackupService.validate(json);
+
+        expect(validation.isValid, isTrue);
+        expect(validation.data, isNotNull);
+
+        final targetDb = AppDatabase();
+        await BackupService.restore(targetDb, validation.data!);
+
+        expect(targetDb.beneficiaryProfiles, hasLength(1));
+        expect(targetDb.beneficiaryProfiles.first.displayName, 'Mario Rossi');
+        expect(targetDb.beneficiaryProfiles.first.key, 'mario rossi');
+        expect(targetDb.movements, isEmpty);
+      },
+    );
+
+    testWidgets('edit movimento precompila e aggiorna beneficiario', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await db.createMovementFromTemplate(
+        title: 'Pranzo',
+        amount: 18,
+        type: MovementType.expense,
+        categoryId: 'exp_1',
+        payee: 'Bar Centrale',
       );
 
-      final json = await BackupService.exportToJson(sourceDb);
-      final validation = BackupService.validate(json);
+      await _openSheet(
+        tester,
+        builder: (_) => MovementPicker(db: db, prefill: db.movements.first),
+      );
 
-      expect(validation.isValid, isTrue);
-      expect(validation.data, isNotNull);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('movement_counterparty_field')),
+          matching: find.text('Bar Centrale'),
+        ),
+        findsOneWidget,
+      );
 
-      final targetDb = AppDatabase();
-      await BackupService.restore(targetDb, validation.data!);
+      await tester.enterText(
+        find.byKey(const Key('movement_counterparty_field')),
+        'Ristorante Blu',
+      );
+      await tester.pumpAndSettle();
+      await _tapSaveButton(tester);
 
-      expect(targetDb.beneficiaryProfiles, hasLength(1));
-      expect(targetDb.beneficiaryProfiles.first.displayName, 'Mario Rossi');
-      expect(targetDb.beneficiaryProfiles.first.key, 'mario rossi');
-      expect(targetDb.movements, isEmpty);
+      expect(find.text('Vuoi salvare questo beneficiario?'), findsOneWidget);
+      await tester.tap(find.text('No, solo movimento'));
+      await tester.pumpAndSettle();
+
+      expect(db.movements, hasLength(1));
+      expect(db.movements.first.payee, 'Ristorante Blu');
     });
 
     testWidgets('merge manuale + derivato resta una sola entry ricercabile', (
@@ -221,7 +311,10 @@ void main() {
       await tester.pumpWidget(_wrapScreen(BeneficiariesScreen(db: db)));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('beneficiary_card_tigros spa')), findsOneWidget);
+      expect(
+        find.byKey(const Key('beneficiary_card_tigros spa')),
+        findsOneWidget,
+      );
       expect(find.text('Tigros'), findsOneWidget);
       expect(find.text('1 movimenti'), findsOneWidget);
 
@@ -288,6 +381,85 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets('picker mostra sezioni alfabetiche, ricerca e fatto', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await db.createManualBeneficiaryProfile('Alpha Hotel');
+      await db.createManualBeneficiaryProfile('Beta Bar');
+      await db.createManualBeneficiaryProfile('Zeta Store');
+
+      await _openBeneficiaryPicker(tester, db);
+
+      expect(
+        find.byKey(const Key('beneficiaries_search_field')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('beneficiary_section_A')), findsOneWidget);
+      expect(find.byKey(const Key('beneficiary_section_B')), findsOneWidget);
+      expect(find.byKey(const Key('beneficiary_section_Z')), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('beneficiary_section_A'))).dy <
+            tester
+                .getTopLeft(find.byKey(const Key('beneficiary_section_B')))
+                .dy,
+        isTrue,
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('beneficiaries_search_field')),
+        'beta',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Beta Bar'), findsOneWidget);
+      expect(find.text('Alpha Hotel'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('beneficiaries_picker_done')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('beneficiaries_search_field')), findsNothing);
+    });
+
+    testWidgets(
+      'picker seleziona beneficiario dal movimento e popola il campo',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createManualBeneficiaryProfile('Alpha Hotel');
+        await db.createManualBeneficiaryProfile('Beta Bar');
+
+        await _openSheet(tester, builder: (_) => MovementPicker(db: db));
+
+        await _fillMovementData(tester, title: 'Cena', amount: '25');
+
+        await tester.tap(
+          find.byKey(const Key('movement_beneficiary_picker_button')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('beneficiaries_search_field')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('beneficiary_section_A')), findsOneWidget);
+
+        await tester.tap(find.text('Beta Bar').last);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('beneficiaries_search_field')),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('movement_counterparty_field')),
+            matching: find.text('Beta Bar'),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('Movement beneficiary proposal', () {
@@ -295,10 +467,7 @@ void main() {
       tester,
     ) async {
       final db = AppDatabase();
-      await _openSheet(
-        tester,
-        builder: (_) => MovementPicker(db: db),
-      );
+      await _openSheet(tester, builder: (_) => MovementPicker(db: db));
 
       await _fillMovementData(
         tester,
@@ -322,10 +491,7 @@ void main() {
       tester,
     ) async {
       final db = AppDatabase();
-      await _openSheet(
-        tester,
-        builder: (_) => MovementPicker(db: db),
-      );
+      await _openSheet(tester, builder: (_) => MovementPicker(db: db));
 
       await _fillMovementData(
         tester,
@@ -349,10 +515,7 @@ void main() {
 
     testWidgets('"Annulla" non salva nulla', (tester) async {
       final db = AppDatabase();
-      await _openSheet(
-        tester,
-        builder: (_) => MovementPicker(db: db),
-      );
+      await _openSheet(tester, builder: (_) => MovementPicker(db: db));
 
       await _fillMovementData(
         tester,
@@ -373,10 +536,7 @@ void main() {
     ) async {
       final db = AppDatabase();
       await db.createManualBeneficiaryProfile('Ristorante Blu');
-      await _openSheet(
-        tester,
-        builder: (_) => MovementPicker(db: db),
-      );
+      await _openSheet(tester, builder: (_) => MovementPicker(db: db));
 
       await _fillMovementData(
         tester,
@@ -395,10 +555,7 @@ void main() {
       tester,
     ) async {
       final db = AppDatabase();
-      await _openSheet(
-        tester,
-        builder: (_) => MovementForm(db: db),
-      );
+      await _openSheet(tester, builder: (_) => MovementForm(db: db));
 
       await _fillMovementData(
         tester,

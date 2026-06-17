@@ -6,11 +6,7 @@ import '../models/beneficiary_profile.dart';
 import '../theme.dart';
 import '../widgets/icon_picker.dart';
 
-enum SaveBeneficiaryDecision {
-  cancel,
-  movementOnly,
-  saveBeneficiary,
-}
+enum SaveBeneficiaryDecision { cancel, movementOnly, saveBeneficiary }
 
 Future<SaveBeneficiaryDecision> askToSaveBeneficiary(
   BuildContext context,
@@ -25,13 +21,50 @@ Future<SaveBeneficiaryDecision> askToSaveBeneficiary(
     return SaveBeneficiaryDecision.movementOnly;
   }
 
+  final similarProfiles = findSimilarBeneficiaryProfiles(db, cleaned);
+
   final decision = await showDialog<SaveBeneficiaryDecision>(
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
         title: const Text('Vuoi salvare questo beneficiario?'),
-        content: Text(
-          'Puoi salvare "$cleaned" come beneficiario per riutilizzare nome, icona e colore.',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Puoi salvare "$cleaned" come beneficiario per riutilizzare nome, icona e colore.',
+              ),
+              if (similarProfiles.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Beneficiari simili già presenti:',
+                  style: Theme.of(dialogContext).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: similarProfiles
+                      .map(
+                        (profile) => Chip(
+                          label: Text(profile.displayName),
+                          avatar: CircleAvatar(
+                            backgroundColor: Color(profile.color),
+                            child: Icon(
+                              StreamIconLibrary.getIcon(profile.iconKey),
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -64,6 +97,83 @@ Future<SaveBeneficiaryDecision> askToSaveBeneficiary(
   return decision ?? SaveBeneficiaryDecision.cancel;
 }
 
+List<BeneficiaryProfile> findSimilarBeneficiaryProfiles(
+  AppDatabase db,
+  String rawName, {
+  int limit = 3,
+}) {
+  final cleaned = db.cleanBeneficiaryName(rawName);
+  if (cleaned.isEmpty) return const <BeneficiaryProfile>[];
+
+  final normalized = BeneficiaryProfile.normalizeKey(cleaned);
+  if (normalized.isEmpty) return const <BeneficiaryProfile>[];
+
+  final scored = <({BeneficiaryProfile profile, double score})>[];
+  for (final profile in db.beneficiaryProfiles) {
+    if (profile.key == normalized) continue;
+    final score = _beneficiarySimilarity(normalized, profile.key);
+    if (score >= 0.55) {
+      scored.add((profile: profile, score: score));
+    }
+  }
+
+  scored.sort((a, b) {
+    final scoreCompare = b.score.compareTo(a.score);
+    if (scoreCompare != 0) return scoreCompare;
+    return a.profile.displayName.compareTo(b.profile.displayName);
+  });
+
+  return scored.take(limit).map((entry) => entry.profile).toList();
+}
+
+double _beneficiarySimilarity(String left, String right) {
+  final a = left.replaceAll(' ', '');
+  final b = right.replaceAll(' ', '');
+  if (a.isEmpty || b.isEmpty) return 0;
+  if (a == b) return 1;
+
+  final maxLength = a.length > b.length ? a.length : b.length;
+  final distance = _levenshteinDistance(a, b);
+  final baseScore = 1 - (distance / maxLength);
+  final tokensA = left.split(' ').where((token) => token.isNotEmpty).toSet();
+  final tokensB = right.split(' ').where((token) => token.isNotEmpty).toSet();
+  final sharedTokens = tokensA
+      .intersection(tokensB)
+      .where((token) => token.length > 4);
+  if (sharedTokens.isNotEmpty) {
+    return baseScore + 0.18;
+  }
+  if (a.startsWith(b) || b.startsWith(a) || a.contains(b) || b.contains(a)) {
+    return baseScore + 0.08;
+  }
+  return baseScore;
+}
+
+int _levenshteinDistance(String left, String right) {
+  if (left.isEmpty) return right.length;
+  if (right.isEmpty) return left.length;
+
+  final previous = List<int>.generate(right.length + 1, (index) => index);
+  final current = List<int>.filled(right.length + 1, 0);
+
+  for (var i = 0; i < left.length; i++) {
+    current[0] = i + 1;
+    for (var j = 0; j < right.length; j++) {
+      final cost = left[i] == right[j] ? 0 : 1;
+      current[j + 1] = [
+        current[j] + 1,
+        previous[j + 1] + 1,
+        previous[j] + cost,
+      ].reduce((a, b) => a < b ? a : b);
+    }
+    for (var j = 0; j < previous.length; j++) {
+      previous[j] = current[j];
+    }
+  }
+
+  return previous[right.length];
+}
+
 Future<BeneficiaryProfile?> showCreateBeneficiaryDialog(
   BuildContext context,
   AppDatabase db,
@@ -80,7 +190,8 @@ class _CreateBeneficiaryDialog extends StatefulWidget {
   const _CreateBeneficiaryDialog({required this.db});
 
   @override
-  State<_CreateBeneficiaryDialog> createState() => _CreateBeneficiaryDialogState();
+  State<_CreateBeneficiaryDialog> createState() =>
+      _CreateBeneficiaryDialogState();
 }
 
 class _CreateBeneficiaryDialogState extends State<_CreateBeneficiaryDialog> {
@@ -104,10 +215,8 @@ class _CreateBeneficiaryDialogState extends State<_CreateBeneficiaryDialog> {
   Future<void> _pickIcon() async {
     final iconKey = await showDialog<String>(
       context: context,
-      builder: (_) => IconPickerDialog(
-        currentIconKey: _selectedIconKey,
-        isAccount: false,
-      ),
+      builder: (_) =>
+          IconPickerDialog(currentIconKey: _selectedIconKey, isAccount: false),
     );
     if (!mounted || iconKey == null) return;
     setState(() => _selectedIconKey = iconKey);

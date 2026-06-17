@@ -11,6 +11,7 @@ import '../models/quick_movement.dart';
 import '../models/favorite_movement.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import 'beneficiary_picker_sheet.dart';
 import 'add_movement_flow.dart';
 import 'calculator_amount_pad.dart';
 import 'category_subcategory_selector.dart';
@@ -464,6 +465,29 @@ class _ManualFormState extends State<_ManualForm> {
     }
   }
 
+  String _counterpartyLabel() {
+    switch (_type) {
+      case MovementType.income:
+        return 'Pagatore / Fonte';
+      case MovementType.expense:
+        return 'Beneficiario / Esercente';
+      case MovementType.transfer:
+        return 'Causale';
+    }
+  }
+
+  Future<void> _pickBeneficiary() async {
+    final selected = await showBeneficiaryPickerSheet(
+      context,
+      widget.db,
+      initialQuery: _payeeCtrl.text,
+    );
+    if (!mounted || selected == null || selected.isEmpty) return;
+    setState(() {
+      _payeeCtrl.text = selected;
+    });
+  }
+
   String _formatDate(DateTime d) {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
@@ -565,9 +589,16 @@ class _ManualFormState extends State<_ManualForm> {
               ),
               const SizedBox(height: StreamSpacing.md),
               TextField(
+                key: const Key('movement_counterparty_field'),
                 controller: _payeeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Beneficiario (opzionale)',
+                decoration: InputDecoration(
+                  labelText: _counterpartyLabel(),
+                  suffixIcon: IconButton(
+                    key: const Key('movement_beneficiary_picker_button'),
+                    onPressed: _pickBeneficiary,
+                    icon: const Icon(Icons.people_outline),
+                    tooltip: 'Apri beneficiari',
+                  ),
                 ),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => FocusScope.of(context).unfocus(),

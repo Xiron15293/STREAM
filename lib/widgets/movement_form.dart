@@ -5,6 +5,7 @@ import '../models/category.dart';
 import '../models/movement.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import 'beneficiary_picker_sheet.dart';
 import 'calculator_amount_pad.dart';
 import 'category_subcategory_selector.dart';
 
@@ -184,6 +185,18 @@ class _MovementFormState extends State<MovementForm> {
     }
   }
 
+  Future<void> _pickBeneficiary() async {
+    final selected = await showBeneficiaryPickerSheet(
+      context,
+      widget.db,
+      initialQuery: _payeeCtrl.text,
+    );
+    if (!mounted || selected == null || selected.isEmpty) return;
+    setState(() {
+      _payeeCtrl.text = selected;
+    });
+  }
+
   String _formatDate(DateTime d) {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
@@ -308,9 +321,18 @@ class _MovementFormState extends State<MovementForm> {
                 ),
                 const SizedBox(height: StreamSpacing.md),
                 TextField(
+                  key: const Key('movement_counterparty_field'),
                   controller: _payeeCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Beneficiario (opzionale)',
+                  decoration: InputDecoration(
+                    labelText: _type == MovementType.income
+                        ? 'Pagatore / Fonte'
+                        : 'Beneficiario / Esercente',
+                    suffixIcon: IconButton(
+                      key: const Key('movement_beneficiary_picker_button'),
+                      onPressed: _pickBeneficiary,
+                      icon: const Icon(Icons.people_outline),
+                      tooltip: 'Apri beneficiari',
+                    ),
                   ),
                   textInputAction: TextInputAction.done,
                 ),

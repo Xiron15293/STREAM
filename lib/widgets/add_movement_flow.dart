@@ -8,6 +8,7 @@ import '../models/movement.dart';
 import '../models/subcategory.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
+import 'beneficiary_picker_sheet.dart';
 import 'calculator_amount_pad.dart';
 import 'movement_calculator_pad.dart';
 
@@ -124,18 +125,15 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   List<Account> get _activeAccounts =>
       widget.db.accounts.where((a) => !a.archived).toList();
 
-  List<Category> get _categories => widget.db.categories
-      .where((c) => c.type == _type && !c.archived)
-      .toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  List<Category> get _categories =>
+      widget.db.categories.where((c) => c.type == _type && !c.archived).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
 
-  Category? get _selectedCategory => widget.db.categories
-      .where((c) => c.id == _categoryId)
-      .firstOrNull;
+  Category? get _selectedCategory =>
+      widget.db.categories.where((c) => c.id == _categoryId).firstOrNull;
 
-  Subcategory? get _selectedSubcategory => widget.db.subcategories
-      .where((s) => s.id == _subcategoryId)
-      .firstOrNull;
+  Subcategory? get _selectedSubcategory =>
+      widget.db.subcategories.where((s) => s.id == _subcategoryId).firstOrNull;
 
   Account? get _selectedAccount =>
       widget.db.accounts.where((a) => a.id == _accountId).firstOrNull;
@@ -145,10 +143,11 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       .firstOrNull;
 
   List<Subcategory> _subcategoriesFor(String categoryId) {
-    final items = widget.db.subcategories
-        .where((s) => s.categoryId == categoryId && !s.archived)
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final items =
+        widget.db.subcategories
+            .where((s) => s.categoryId == categoryId && !s.archived)
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
     return items;
   }
 
@@ -161,8 +160,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       _searchCtrl.clear();
       _selectionError = null;
       if (_type == MovementType.transfer) {
-        _accountId ??=
-            _activeAccounts.isNotEmpty ? _activeAccounts.first.id : null;
+        _accountId ??= _activeAccounts.isNotEmpty
+            ? _activeAccounts.first.id
+            : null;
         _destinationAccountId ??= _activeAccounts.length > 1
             ? _activeAccounts[1].id
             : _accountId;
@@ -218,6 +218,18 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     });
   }
 
+  Future<void> _pickBeneficiary() async {
+    final selected = await showBeneficiaryPickerSheet(
+      context,
+      widget.db,
+      initialQuery: _counterpartyCtrl.text,
+    );
+    if (!mounted || selected == null || selected.isEmpty) return;
+    setState(() {
+      _counterpartyCtrl.text = selected;
+    });
+  }
+
   String _formattedAmount() {
     final text = _amountCtrl.text.trim();
     if (text.isEmpty) return _formatCurrency(0);
@@ -263,7 +275,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final selected = DateTime(_date.year, _date.month, _date.day);
-    final label = selected == today ? 'Oggi' : '${_date.day} ${monthNames[_date.month - 1]} ${_date.year}';
+    final label = selected == today
+        ? 'Oggi'
+        : '${_date.day} ${monthNames[_date.month - 1]} ${_date.year}';
     return '$label, ${_date.day} ${monthNames[_date.month - 1]} ${_date.year}';
   }
 
@@ -297,7 +311,11 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   List<Category> _frequentCategories() {
     final usage = <String, int>{};
     for (final movement in widget.db.movements.where((m) => m.type == _type)) {
-      usage.update(movement.categoryId, (value) => value + 1, ifAbsent: () => 1);
+      usage.update(
+        movement.categoryId,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      );
     }
     final ids = _categories.map((c) => c.id).toSet();
     final sorted = usage.entries.where((e) => ids.contains(e.key)).toList()
@@ -310,7 +328,10 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     final preferredNames = _type == MovementType.expense
         ? {'Casa', 'Spesa', 'Fumo', 'Auto'}
         : {'Stipendio', 'Pensione', 'Regalo', 'Rimborso'};
-    final matching = _categories.where((c) => preferredNames.contains(c.name)).take(4).toList();
+    final matching = _categories
+        .where((c) => preferredNames.contains(c.name))
+        .take(4)
+        .toList();
     return matching.isNotEmpty ? matching : _categories.take(4).toList();
   }
 
@@ -327,8 +348,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       }
     }
     final activeIds = _activeAccounts.map((a) => a.id).toSet();
-    final sorted = usage.entries.where((e) => activeIds.contains(e.key)).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sorted =
+        usage.entries.where((e) => activeIds.contains(e.key)).toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
     final frequent = sorted
         .map((entry) => _activeAccounts.firstWhere((a) => a.id == entry.key))
         .take(4)
@@ -348,8 +370,12 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       _amountCtrl.text.trim(),
       allowNegative: false,
     );
-    if (!amountResult.isValid || amountResult.value == null || amountResult.value! <= 0) {
-      setState(() => _selectionError = 'Inserisci un importo valido maggiore di zero');
+    if (!amountResult.isValid ||
+        amountResult.value == null ||
+        amountResult.value! <= 0) {
+      setState(
+        () => _selectionError = 'Inserisci un importo valido maggiore di zero',
+      );
       return;
     }
     final normalizedAmount = double.parse(
@@ -401,7 +427,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     }
 
     if (trimmedTitle.isEmpty || _categoryId == null || _accountId == null) {
-      setState(() => _selectionError = 'Completa selezioni e campi obbligatori');
+      setState(
+        () => _selectionError = 'Completa selezioni e campi obbligatori',
+      );
       return;
     }
 
@@ -492,7 +520,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
 
   Widget _buildCategoryStep() {
     final frequent = _frequentCategories();
-    final filtered = _categories.where((c) => _search.isEmpty || c.name.toLowerCase().contains(_search)).toList();
+    final filtered = _categories
+        .where((c) => _search.isEmpty || c.name.toLowerCase().contains(_search))
+        .toList();
     return SingleChildScrollView(
       key: const Key('add_movement_category_step'),
       child: Column(
@@ -534,7 +564,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
 
   Widget _buildSubcategoryStep() {
     final category = _selectedCategory;
-    final subcategories = category == null ? const <Subcategory>[] : _subcategoriesFor(category.id);
+    final subcategories = category == null
+        ? const <Subcategory>[]
+        : _subcategoriesFor(category.id);
     return SingleChildScrollView(
       key: const Key('add_movement_subcategory_step'),
       child: Column(
@@ -571,8 +603,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               ),
               tileColor: StreamColors.surfaceElevated,
               leading: _IconBubble(
-                color: sub.color ?? category?.color ?? StreamColors.primary.toARGB32(),
-                iconKey: sub.iconKey ?? category?.iconKey ?? StreamIconLibrary.defaultCategoryIcon,
+                color:
+                    sub.color ??
+                    category?.color ??
+                    StreamColors.primary.toARGB32(),
+                iconKey:
+                    sub.iconKey ??
+                    category?.iconKey ??
+                    StreamIconLibrary.defaultCategoryIcon,
               ),
               title: Text(sub.name),
               onTap: () => _selectSubcategory(sub.id),
@@ -626,14 +664,20 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           const SizedBox(height: StreamSpacing.lg),
           Text('Tutti i conti', style: StreamTypography.h3),
           const SizedBox(height: StreamSpacing.sm),
-          ..._activeAccounts.map((account) => _buildAccountTile(account, onTap: () => _selectAccount(account.id))),
+          ..._activeAccounts.map(
+            (account) => _buildAccountTile(
+              account,
+              onTap: () => _selectAccount(account.id),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildTransferAccountsStep() {
-    final invalid = _accountId != null &&
+    final invalid =
+        _accountId != null &&
         _destinationAccountId != null &&
         _accountId == _destinationAccountId;
     return SingleChildScrollView(
@@ -643,7 +687,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
         children: [
           Text('Trasferisci denaro', style: StreamTypography.h3),
           const SizedBox(height: StreamSpacing.md),
-          if (_selectedAccount != null || _selectedDestinationAccount != null) ...[
+          if (_selectedAccount != null ||
+              _selectedDestinationAccount != null) ...[
             Container(
               key: const Key('transfer_selection_summary'),
               padding: const EdgeInsets.all(StreamSpacing.md),
@@ -753,7 +798,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           const SizedBox(height: StreamSpacing.lg),
           FilledButton(
             key: const Key('transfer_continue_button'),
-            onPressed: invalid || _accountId == null || _destinationAccountId == null
+            onPressed:
+                invalid || _accountId == null || _destinationAccountId == null
                 ? null
                 : () => setState(() {
                     _selectionError = null;
@@ -786,17 +832,18 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                   _step = switch (_type) {
                     MovementType.transfer => _FlowStep.transferAccounts,
                     MovementType.income => _FlowStep.account,
-                    MovementType.expense => _selectedCategory != null &&
-                            _subcategoriesFor(_selectedCategory!.id).isNotEmpty
-                        ? _FlowStep.subcategory
-                        : _FlowStep.category,
+                    MovementType.expense =>
+                      _selectedCategory != null &&
+                              _subcategoriesFor(
+                                _selectedCategory!.id,
+                              ).isNotEmpty
+                          ? _FlowStep.subcategory
+                          : _FlowStep.category,
                   };
                 }),
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
               ),
-              Expanded(
-                child: Text(_titleLabel(), style: StreamTypography.h3),
-              ),
+              Expanded(child: Text(_titleLabel(), style: StreamTypography.h3)),
             ],
           ),
           const SizedBox(height: StreamSpacing.md),
@@ -834,6 +881,12 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             controller: _counterpartyCtrl,
             decoration: InputDecoration(
               labelText: _counterpartyLabel(),
+              suffixIcon: IconButton(
+                key: const Key('movement_beneficiary_picker_button'),
+                onPressed: _pickBeneficiary,
+                icon: const Icon(Icons.people_outline),
+                tooltip: 'Apri beneficiari',
+              ),
             ),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
@@ -860,10 +913,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             ),
           ),
           const SizedBox(height: StreamSpacing.md),
-          MovementCalculatorPad(
-            controller: _amountCtrl,
-            onDateTap: _pickDate,
-          ),
+          MovementCalculatorPad(controller: _amountCtrl, onDateTap: _pickDate),
           const SizedBox(height: StreamSpacing.sm),
           Text(
             _formatDateLabel(),
@@ -990,7 +1040,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     return _SelectionChip(
       widgetKey: Key('frequent_category_${category.id}'),
       label: category.name,
-      subtitle: _categoryTotal(category.id) > 0 ? _formatCurrency(_categoryTotal(category.id)) : null,
+      subtitle: _categoryTotal(category.id) > 0
+          ? _formatCurrency(_categoryTotal(category.id))
+          : null,
       icon: StreamIconLibrary.getIcon(category.iconKey),
       color: Color(category.color),
       selected: _categoryId == category.id,
@@ -1080,7 +1132,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
       child: Material(
-        color: selected ? StreamColors.primary.withValues(alpha: 0.08) : StreamColors.surfaceElevated,
+        color: selected
+            ? StreamColors.primary.withValues(alpha: 0.08)
+            : StreamColors.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.md),
         child: InkWell(
           key: Key('transfer_${scope}_option_${account.id}'),
@@ -1097,10 +1151,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             ),
             child: Row(
               children: [
-                _IconBubble(
-                  color: account.color,
-                  iconKey: account.iconKey,
-                ),
+                _IconBubble(color: account.color, iconKey: account.iconKey),
                 const SizedBox(width: StreamSpacing.md),
                 Expanded(
                   child: Column(
@@ -1137,10 +1188,7 @@ class _TransferSelectionSummary extends StatelessWidget {
   final String label;
   final Account? account;
 
-  const _TransferSelectionSummary({
-    required this.label,
-    required this.account,
-  });
+  const _TransferSelectionSummary({required this.label, required this.account});
 
   @override
   Widget build(BuildContext context) {
@@ -1159,7 +1207,8 @@ class _TransferSelectionSummary extends StatelessWidget {
           children: [
             _IconBubble(
               color: selectedAccount?.color ?? StreamColors.primary.toARGB32(),
-              iconKey: selectedAccount?.iconKey ??
+              iconKey:
+                  selectedAccount?.iconKey ??
                   StreamIconLibrary.defaultAccountIcon,
             ),
             const SizedBox(width: StreamSpacing.sm),
@@ -1308,8 +1357,11 @@ class _IconBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icon = iconData ??
-        StreamIconLibrary.getIcon(iconKey ?? StreamIconLibrary.defaultCategoryIcon);
+    final icon =
+        iconData ??
+        StreamIconLibrary.getIcon(
+          iconKey ?? StreamIconLibrary.defaultCategoryIcon,
+        );
     return Container(
       width: 34,
       height: 34,
