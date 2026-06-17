@@ -1,6 +1,6 @@
 # NEXT SESSION
 
-> Aggiornato: 2026-06-16
+> Aggiornato: 2026-06-18
 
 Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
@@ -9,6 +9,8 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Profili separati e isolamento DB sono attivi e verificati.
 - Il nuovo flow guidato `+ Movimento` è stabile per Entrata, Spesa e Trasferimento.
 - Il calculator pad è condiviso e l’importo si aggiorna in realtime.
+- Titolo, Note e Beneficiario hanno suggerimenti locali a chip, compatti e tappabili.
+- La valuta è configurabile da Impostazioni e il formatter condiviso aggiorna simboli e riepiloghi.
 - La schermata Movimenti usa la heatmap come vista utente principale per i periodi.
 - Le impostazioni heatmap espongono solo `Configura heatmap`.
 - Categorie e sottocategorie supportano safe edit e duplicate validation corretta.
@@ -42,3 +44,5 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Movimenti: form guidato con `AddMovementFlow`, `MovementCalculatorPad`, account/category selector, supporto transfer.
 - Heatmap: fallback legacy `list`, `calendar`, `listHeatmap`, `advancedHeatmap` verso heatmap; la UI utente non deve più esporre lista/calendario come vista predefinita.
 - Categorie: safe edit consentito anche con contenuti collegati; blocchi solo per azioni distruttive; duplicate validation su ID + namespace + nome normalizzato.
+- Suggerimenti movimento: i chip devono restare compatti, locali, deduplicati e non invasivi; Titolo/Note/Beneficiario condividono la stessa logica di base.
+- Valuta: il simbolo è un pref di visualizzazione, non una modifica DB/schema.

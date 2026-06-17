@@ -12,6 +12,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Shared `MovementCalculatorPad` con aggiornamento realtime dell’importo
   - Campi principali con conferma esplicita e `TextInputAction.done` dove appropriato
 
+- **Movement suggestion chips**
+  - Suggerimenti locali per Titolo, Note e Beneficiario
+  - Mostrati solo dopo almeno 2 caratteri, max 5 chip, deduplicati e non invasivi
+  - Tap su chip compila il campo senza auto-sostituzioni
+
+- **Currency preference**
+  - Valuta configurabile da Impostazioni
+  - Formatter condiviso per importi, riepiloghi e card
+
 - **Transfer UX dedicata**
   - Selezione separata di conto origine e conto destinazione
   - Fallback sicuro quando origine e destinazione coincidono
@@ -29,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Documentation refresh**
   - Aggiornati `README.md`, `docs/NEXT_SESSION.md`, `docs/HERMES_ROADMAP.md`
+  - Allineati anche `docs/STREAM_TECH_NOTES.md`, `docs/HERMES_QA_REPORT.md`, `docs/STREAM_FEATURE_BACKLOG.md` e `docs/STREAM_PRODUCT_ROADMAP.md` agli ultimi chip suggerimento e alla preferenza valuta
 
 - **Beneficiari manuali + proposta salvataggio da form movimento**
   - Tab Beneficiari con tasto `+` e dialog `Nuovo beneficiario` (nome, icona, colore)

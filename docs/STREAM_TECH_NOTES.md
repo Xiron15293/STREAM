@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog + beneficiari manuali auditati + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
+**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
 
 ## Stack
 
@@ -153,6 +153,44 @@ categoryId, type, amount, title NON influenzano
   - `Salva beneficiario` salva movimento + crea `BeneficiaryProfile`
   - `Annulla` non salva nulla
 - Import iFinance escluso: nessun dialog durante preview/commit
+
+### Movement text suggestions
+
+> Suggerimenti locali e compatti per Titolo, Note e Beneficiario nei form movimento.
+
+**File:** `lib/widgets/movement_text_suggestions.dart`
+**Uso:** `lib/widgets/add_movement_flow.dart`, `lib/widgets/movement_form.dart`, branch manuale legacy di `lib/widgets/movement_picker.dart`
+
+**Regole comuni**
+- Suggerimenti mostrati solo dopo almeno 2 caratteri
+- Lista limitata a 3-5 risultati visuali, con default 5
+- Deduplica per testo normalizzato (`trim + lowercase + spazi compressi`)
+- Valori vuoti e testo identico a quello già inserito esclusi
+- Tap su chip compila il campo e chiude la tastiera
+
+**Titolo / Note**
+- I suggerimenti sono costruiti a partire dai movimenti già presenti
+- Ordinamento per rilevanza, frequenza e attività più recente
+- Note usa la stessa UX compatta di Titolo per evitare tre pattern diversi
+
+**Beneficiario**
+- I suggerimenti combinano `beneficiaryProfiles` manuali e payee derivati dai movimenti
+- I profili manuali hanno peso maggiore rispetto ai payee grezzi
+- Le entry archiviate vengono escluse
+- I chip non fondono automaticamente nomi simili: suggeriscono soltanto
+
+### Currency preference / formatter
+
+> La valuta è una preferenza visuale globale, non una modifica allo schema dati.
+
+**File:** `lib/data/preferences_service.dart`, `lib/utils/currency_formatter.dart`, `lib/screens/settings_screen.dart`
+
+**Comportamento**
+- `AppCurrency` è persistita in `SharedPreferences`
+- `currencyNotifier` notifica le schermate che mostrano importi
+- `SettingsScreen` espone la card `Valuta` con picker dedicato
+- `formatMovementCurrency(...)` centralizza il rendering degli importi fuori dal campo di input
+- La scelta della valuta cambia solo il simbolo, non i valori memorizzati
 
 ### iFinance CSV import — transfer pairing hardening
 

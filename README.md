@@ -13,7 +13,8 @@ The app currently includes:
 - heatmap-based Movimenti views for the user-facing period navigation
 - configurable heatmap thresholds and colors from Settings and Movimenti
 - categories and subcategories with safe edit rules and duplicate validation
-- beneficiaries, quick movements, favorites, import/export, backup/restore, and archive navigation
+- beneficiaries with searchable suggestion chips in movement forms
+- quick movements, favorites, import/export, backup/restore, archive navigation, and app-wide currency preferences
 
 ## Main Modules
 
@@ -37,6 +38,8 @@ The app currently includes:
 - category and subcategory edit flows now allow safe edits even when linked content exists, while destructive actions remain blocked
 - duplicate validation now ignores the entity being edited and compares normalized names within the correct namespace
 - calculator/input handling was updated so amount updates and form confirmations are consistent
+- Titolo, Note e Beneficiario now expose compact suggestion chips in the movement forms and legacy picker
+- currency display is routed through a shared preference/formatter so the symbol can be changed from Settings without touching DB schema
 
 ## QA Status
 

@@ -59,6 +59,7 @@
 | — | Trasferimenti UI con origine/destinazione dedicate | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 | — | Heatmap settings, fallback legacy e Movimenti heatmap-first | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 | — | Categorie safe edit + duplicate validation | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
+| — | Movement suggestion chips + currency selector | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
 
 ## Approvate / Future (V0.9+)
 

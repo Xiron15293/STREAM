@@ -39,6 +39,7 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 6.15 | Delta — Beneficiari manuali + save proposal | ✅ COMPLETATO | 2026-06-14 | Tab Beneficiari con creazione `BeneficiaryProfile`, merge manuali+payee derivati, proposta salvataggio da form movimento, display metadata su `MovementCard`, backup/restore preservato, import iFinance senza dialog |
 | 6.16 | Delta — iFinance transfer pairing hardening | ✅ COMPLETATO | 2026-06-14 | Pairing per `data + importo assoluto`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = `0` nuovi movimenti |
 | 6.17 | Delta — Profili separati con isolamento dati reale | ✅ COMPLETATO | 2026-06-15 | Registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati, voce Profili mostrata solo se collegata |
+| 6.18 | Delta — Movement suggestion chips + currency selector | ✅ COMPLETATO | 2026-06-18 | Suggerimenti locali per Titolo, Note e Beneficiario; chip compatti tappabili; valuta configurabile da Impostazioni con formatter condiviso |
 | 6.11 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
 | 8 | Hermes V0.8 — Import CSV | ✅ COMPLETATO (parziale) | TBD | Import CSV 1Money completato in V0.7.0 |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |

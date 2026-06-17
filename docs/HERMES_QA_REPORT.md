@@ -4,6 +4,34 @@
 
 ---
 
+## Delta — Suggerimenti movimento + valuta globale ✅
+
+### Cosa è cambiato
+1. **Suggerimenti Titolo / Note / Beneficiario**
+   - Chip locali, compatti e tappabili
+   - Mostrati solo dopo almeno 2 caratteri
+   - Limite visuale 3-5 suggerimenti, default 5
+   - Deduplica per testo normalizzato e filtro del testo già scritto
+   - Nessuna auto-applicazione: il tap compila il campo e chiude la tastiera
+
+2. **Beneficiario allineato alla stessa UX**
+   - Il campo Beneficiario/Esercente/Pagatore/Fonte usa la stessa logica di suggerimento locale
+   - I profili manuali e i payee derivati convivono senza fondersi automaticamente
+   - I suggerimenti restano solo una proposta, non una regola di merge
+
+3. **Valuta globale**
+   - La valuta è selezionabile da Impostazioni
+   - Il formatter condiviso aggiorna gli importi senza toccare DB/schema
+   - Il simbolo cambia a livello UI, non a livello dati
+
+### Verifica locale
+- Il flow movimento resta verde con i nuovi suggerimenti
+- Il picker beneficiari continua a funzionare con la ricerca locale
+- La suite test completa resta verde al momento dell’ultimo check (`881 passed, 1 skipped`)
+- Nessun commit/push
+
+---
+
 ## Delta — Beneficiari manuali + proposta salvataggio ✅
 
 ### Cosa è cambiato

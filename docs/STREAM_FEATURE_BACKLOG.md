@@ -58,6 +58,7 @@
 | F48 | Beneficiari manuali + save proposal — tab Beneficiari con creazione `BeneficiaryProfile`, merge profili+payee derivati, proposta `No/Salva/Annulla` da form movimento, display metadata su `MovementCard`, backup/restore preservato, iFinance senza dialog | delta | 2026-06-14 |
 | F49 | iFinance import transfer pairing hardening — riconoscimento transfer esteso, pairing per `data + importo assoluto`, matching univoco con `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = `0` nuovi movimenti | delta | 2026-06-14 |
 | F50 | Profili separati con isolamento dati reale — registry profili persistito, DB SQLite dedicato per profilo, `MainScaffold` keyed per `activeProfileId`, reset/beneficiari/iFinance isolati, voce Profili visibile solo con callback reale | delta | 2026-06-15 |
+| F51 | Movement suggestion chips + currency selector — chip locali per Titolo/Note/Beneficiario, max 5, tap-to-fill, valuta configurabile da Impostazioni con formatter condiviso | delta | 2026-06-18 |
 
 ---
 
