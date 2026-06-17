@@ -76,7 +76,7 @@ class MovementCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(StreamRadius.md),
-          onTap: onTap,
+          onTap: onTap ?? onEdit,
           child: Padding(
             padding: const EdgeInsets.all(StreamSpacing.md),
             child: Column(

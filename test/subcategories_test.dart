@@ -991,7 +991,7 @@ void main() {
 
         expect(
           find.descendant(
-            of: find.byKey(const Key('movement_category_subcategory_field')),
+            of: find.byKey(const Key('add_movement_details_step')),
             matching: find.byIcon(StreamIconLibrary.getIcon('car')),
           ),
           findsWidgets,

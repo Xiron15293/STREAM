@@ -400,12 +400,16 @@ void main() {
 
       await tester.tap(find.text('Apri'));
       await tester.pumpAndSettle();
+      expect(find.text('Modifica movimento'), findsOneWidget);
+      expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
+      expect(find.text('10,00 €'), findsWidgets);
       await _replaceAmountWithPad(tester, ['1', '0', '+', '7']);
-      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Aggiorna'));
-      await tester.tap(find.widgetWithText(FilledButton, 'Aggiorna'));
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
       await tester.pumpAndSettle();
 
       expect(db.movements.single.amount, 17);
+      expect(db.movements.single.title, 'Da modificare');
     });
 
     testWidgets('saldo iniziale conto con calculator pad', (tester) async {
@@ -500,16 +504,22 @@ Future<void> _replaceAmountWithPad(
   WidgetTester tester,
   List<String> keys,
 ) async {
-  await tester.tap(find.widgetWithText(TextField, 'Importo (€)').last);
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('calculator_clear')));
-  await tester.pump();
-  for (final key in keys) {
-    await tester.tap(find.byKey(Key('calculator_key_$key')));
-    await tester.pump();
+  final scrollable = find.byType(Scrollable).last;
+  final backspace = find.byKey(const Key('movement_pad_backspace'));
+  for (var i = 0; i < 5; i++) {
+    await tester.scrollUntilVisible(backspace, 200, scrollable: scrollable);
+    await tester.pumpAndSettle();
+    await tester.tap(backspace);
+    await tester.pumpAndSettle();
   }
-  await tester.tap(find.byKey(const Key('calculator_done')));
-  await tester.pumpAndSettle();
+  for (final key in keys) {
+    final mapped = key == '.' ? ',' : key;
+    final finder = find.byKey(Key('movement_pad_$mapped'));
+    await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
 }
 
 Future<void> _saveMovement(WidgetTester tester) async {

@@ -6,8 +6,10 @@ import 'package:stream_app/data/database.dart';
 import 'package:stream_app/main.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
+import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/services/backup_service.dart';
 import 'package:stream_app/widgets/movement_calculator_pad.dart';
+import 'package:stream_app/widgets/movement_picker.dart';
 
 void main() {
   SharedPreferences.setMockInitialValues({});
@@ -91,8 +93,16 @@ void main() {
       expect(find.byKey(const Key('transfer_destination_chip_acc_2')), findsNothing);
     });
 
-    testWidgets('selezione categoria spesa apre form spesa', (tester) async {
+    testWidgets('selezione categoria spesa apre form spesa e chip conto funziona', (tester) async {
       final db = AppDatabase();
+      await db.addAccount(
+        Account(
+          id: 'acc_2',
+          name: 'Contanti',
+          type: AccountType.cash,
+          createdAt: DateTime(2026, 6, 15),
+        ),
+      );
       await db.createSubcategory('exp_2', 'Affitto');
       final subId = db.getSubcategoriesForCategory('exp_2').single.id;
       await _pumpApp(tester, db);
@@ -103,6 +113,14 @@ void main() {
       await _tapVisible(tester, find.byKey(Key('subcategory_option_$subId')));
       expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
       expect(find.text('Nuova spesa'), findsOneWidget);
+
+      await _tapVisible(tester, find.text('Da conto').last);
+      expect(find.byKey(const Key('add_movement_account_step')), findsOneWidget);
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('account_option_acc_2')),
+      );
+      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
     });
 
     testWidgets('selezione categoria entrata + conto apre form entrata', (tester) async {
@@ -153,7 +171,7 @@ void main() {
       await _tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
 
       expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
-      expect(find.text('Nuovo trasferimento'), findsOneWidget);
+      expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
     });
 
     testWidgets('origine e destinazione uguali bloccano il trasferimento', (tester) async {
@@ -351,6 +369,56 @@ void main() {
       expect(db.movements.single.amount, 15);
       expect(db.movements.single.accountId, defaultAccountId);
       expect(db.movements.single.destinationAccountId, 'acc_2');
+    });
+
+    testWidgets('modifica movimento usa il flow guidato e salva sullo stesso record', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      final movement = Movement(
+        id: 'm_edit',
+        title: 'Spesa iniziale',
+        amount: 10,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 15),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        createdAt: DateTime(2026, 6, 15),
+      );
+      await db.addMovement(movement);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MovementPicker(db: db, prefill: movement),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Modifica movimento'), findsOneWidget);
+      expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
+      expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
+      expect(_amountDisplayText(tester), '10,00 €');
+
+      await tester.enterText(
+        find.byKey(const Key('movement_title_field')),
+        'Spesa aggiornata',
+      );
+      for (var i = 0; i < 5; i++) {
+        await _tapPadKey(tester, 'movement_pad_backspace');
+      }
+      await _tapPadKey(tester, 'movement_pad_2');
+      await _tapPadKey(tester, 'movement_pad_5');
+
+      expect(_amountDisplayText(tester), '25,00 €');
+      await _tapVisible(tester, find.byKey(const Key('movement_submit_button')));
+
+      expect(db.movements, hasLength(1));
+      expect(db.movements.single.id, 'm_edit');
+      expect(db.movements.single.title, 'Spesa aggiornata');
+      expect(db.movements.single.amount, 25);
+      expect(db.movements.single.type, MovementType.expense);
     });
   });
 

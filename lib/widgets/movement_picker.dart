@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element_parameter
+
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
@@ -231,22 +233,14 @@ class _MovementPickerState extends State<MovementPicker> {
   Widget _buildContent() {
     switch (_mode) {
       case AddMode.manuale:
-        return widget.prefill != null
-            ? _ManualForm(
-                db: widget.db,
-                prefill: widget.prefill,
-                categoryPreFill: widget.categoryPreFill,
-                accountPreFill: widget.accountPreFill,
-                initialType: widget.initialType,
-                onSaved: () => Navigator.of(context).pop(),
-              )
-            : AddMovementFlow(
-                db: widget.db,
-                categoryPreFill: widget.categoryPreFill,
-                accountPreFill: widget.accountPreFill,
-                initialType: widget.initialType,
-                onSaved: () => Navigator.of(context).pop(),
-              );
+        return AddMovementFlow(
+          db: widget.db,
+          prefill: widget.prefill,
+          categoryPreFill: widget.categoryPreFill,
+          accountPreFill: widget.accountPreFill,
+          initialType: widget.initialType,
+          onSaved: () => Navigator.of(context).pop(),
+        );
       case AddMode.rapidi:
         return _QuickPanel(
           db: widget.db,

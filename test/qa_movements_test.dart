@@ -11,6 +11,7 @@ import 'package:stream_app/models/quick_movement.dart';
 import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/widgets/grouped_movements_list.dart';
+import 'package:stream_app/widgets/movement_card.dart';
 import 'helpers/calculator_test_helpers.dart';
 
 /// Helper to create AppDatabase and pump a full app for widget tests
@@ -1865,6 +1866,24 @@ void main() {
     expect(find.text('Duplica'), findsOneWidget);
     expect(find.text('Salva preferito'), findsOneWidget);
     expect(find.text('Elimina'), findsOneWidget);
+  });
+
+  testWidgets('80a. Tap sulla card movimento apre la modifica', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await saveMovement(tester, title: 'EditTap', amount: '25');
+    await tester.tap(find.text('Archivio'));
+    await tester.pumpAndSettle();
+
+    final card = find.byType(MovementCard).first;
+    await tester.ensureVisible(card);
+    await tester.pumpAndSettle();
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modifica movimento'), findsOneWidget);
+    expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
   });
 
   testWidgets('81. Nessuna regressione — note visibili/nascoste', (

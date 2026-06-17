@@ -4,6 +4,7 @@ import '../data/database.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
 import '../models/category.dart';
+import '../models/movement.dart';
 import '../models/subcategory.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
@@ -14,6 +15,7 @@ enum _FlowStep { category, subcategory, account, transferAccounts, details }
 
 class AddMovementFlow extends StatefulWidget {
   final AppDatabase db;
+  final Movement? prefill;
   final String? categoryPreFill;
   final String? accountPreFill;
   final MovementType? initialType;
@@ -22,6 +24,7 @@ class AddMovementFlow extends StatefulWidget {
   const AddMovementFlow({
     super.key,
     required this.db,
+    this.prefill,
     this.categoryPreFill,
     this.accountPreFill,
     this.initialType,
@@ -49,6 +52,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   String? _destinationAccountId;
   DateTime _date = DateTime.now();
   String? _selectionError;
+  bool get _isEditing => widget.prefill != null;
 
   void _handleAmountChanged() {
     if (mounted) setState(() {});
@@ -57,9 +61,23 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType ?? MovementType.expense;
-    _categoryId = widget.categoryPreFill;
-    _accountId = widget.accountPreFill;
+    final p = widget.prefill;
+    if (p != null) {
+      _type = p.type;
+      _titleCtrl.text = p.title;
+      _counterpartyCtrl.text = p.payee ?? '';
+      _noteCtrl.text = p.note ?? '';
+      _amountCtrl.text = p.amount.toStringAsFixed(2);
+      _categoryId = p.categoryId.isEmpty ? null : p.categoryId;
+      _subcategoryId = p.subcategoryId;
+      _accountId = p.accountId;
+      _destinationAccountId = p.destinationAccountId;
+      _date = p.date;
+    } else {
+      _type = widget.initialType ?? MovementType.expense;
+      _categoryId = widget.categoryPreFill;
+      _accountId = widget.accountPreFill;
+    }
     _syncInitialState();
     _searchCtrl.addListener(() {
       setState(() => _search = _searchCtrl.text.trim().toLowerCase());
@@ -182,9 +200,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     setState(() {
       _accountId = accountId;
       _selectionError = null;
-      if (_type == MovementType.income) {
-        _step = _FlowStep.details;
-      }
+      _step = _FlowStep.details;
     });
   }
 
@@ -263,13 +279,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   String _titleLabel() {
+    final prefix = _isEditing ? 'Modifica' : 'Nuova';
     switch (_type) {
       case MovementType.income:
-        return 'Nuova entrata';
+        return '$prefix entrata';
       case MovementType.expense:
-        return 'Nuova spesa';
+        return '$prefix spesa';
       case MovementType.transfer:
-        return 'Nuovo trasferimento';
+        return '$prefix trasferimento';
     }
   }
 
@@ -350,16 +367,34 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
         });
         return;
       }
-      await widget.db.createMovementFromTemplate(
-        title: trimmedTitle,
-        amount: normalizedAmount,
-        type: MovementType.transfer,
-        date: _date,
-        categoryId: '',
-        accountId: _accountId,
-        destinationAccountId: _destinationAccountId,
-        note: note,
-      );
+      if (_isEditing) {
+        await widget.db.updateMovement(
+          widget.prefill!.copyWith(
+            title: trimmedTitle.isEmpty ? widget.prefill!.title : trimmedTitle,
+            amount: normalizedAmount,
+            type: MovementType.transfer,
+            date: _date,
+            categoryId: '',
+            subcategoryId: null,
+            accountId: _accountId!,
+            destinationAccountId: _destinationAccountId,
+            note: note,
+            payee: null,
+            updatedAt: DateTime.now(),
+          ),
+        );
+      } else {
+        await widget.db.createMovementFromTemplate(
+          title: trimmedTitle,
+          amount: normalizedAmount,
+          type: MovementType.transfer,
+          date: _date,
+          categoryId: '',
+          accountId: _accountId,
+          destinationAccountId: _destinationAccountId,
+          note: note,
+        );
+      }
       if (!mounted) return;
       widget.onSaved();
       return;
@@ -376,17 +411,34 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       return;
     }
 
-    await widget.db.createMovementFromTemplate(
-      title: trimmedTitle,
-      amount: normalizedAmount,
-      type: _type,
-      date: _date,
-      categoryId: _categoryId!,
-      subcategoryId: _subcategoryId,
-      accountId: _accountId,
-      note: note,
-      payee: payee.isEmpty ? null : payee,
-    );
+    if (_isEditing) {
+      await widget.db.updateMovement(
+        widget.prefill!.copyWith(
+          title: trimmedTitle,
+          amount: normalizedAmount,
+          type: _type,
+          date: _date,
+          categoryId: _categoryId!,
+          subcategoryId: _subcategoryId,
+          accountId: _accountId!,
+          note: note,
+          payee: payee.isEmpty ? null : payee,
+          updatedAt: DateTime.now(),
+        ),
+      );
+    } else {
+      await widget.db.createMovementFromTemplate(
+        title: trimmedTitle,
+        amount: normalizedAmount,
+        type: _type,
+        date: _date,
+        categoryId: _categoryId!,
+        subcategoryId: _subcategoryId,
+        accountId: _accountId,
+        note: note,
+        payee: payee.isEmpty ? null : payee,
+      );
+    }
     if (payeeDecision == SaveBeneficiaryDecision.saveBeneficiary &&
         payee.isNotEmpty) {
       await widget.db.createManualBeneficiaryProfile(payee);
@@ -397,39 +449,44 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SegmentedButton<MovementType>(
-          segments: const [
-            ButtonSegment(
-              value: MovementType.income,
-              label: Text('Entrata'),
+    return ListenableBuilder(
+      listenable: widget.db,
+      builder: (context, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SegmentedButton<MovementType>(
+              segments: const [
+                ButtonSegment(
+                  value: MovementType.income,
+                  label: Text('Entrata'),
+                ),
+                ButtonSegment(
+                  value: MovementType.expense,
+                  label: Text('Spesa'),
+                ),
+                ButtonSegment(
+                  value: MovementType.transfer,
+                  label: Text('Trasferimento'),
+                ),
+              ],
+              selected: {_type},
+              onSelectionChanged: (set) => _changeType(set.first),
             ),
-            ButtonSegment(
-              value: MovementType.expense,
-              label: Text('Spesa'),
-            ),
-            ButtonSegment(
-              value: MovementType.transfer,
-              label: Text('Trasferimento'),
+            const SizedBox(height: StreamSpacing.md),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: switch (_step) {
+                _FlowStep.category => _buildCategoryStep(),
+                _FlowStep.subcategory => _buildSubcategoryStep(),
+                _FlowStep.account => _buildAccountStep(),
+                _FlowStep.transferAccounts => _buildTransferAccountsStep(),
+                _FlowStep.details => _buildDetailsStep(),
+              },
             ),
           ],
-          selected: {_type},
-          onSelectionChanged: (set) => _changeType(set.first),
-        ),
-        const SizedBox(height: StreamSpacing.md),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: switch (_step) {
-            _FlowStep.category => _buildCategoryStep(),
-            _FlowStep.subcategory => _buildSubcategoryStep(),
-            _FlowStep.account => _buildAccountStep(),
-            _FlowStep.transferAccounts => _buildTransferAccountsStep(),
-            _FlowStep.details => _buildDetailsStep(),
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -541,7 +598,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               ),
               Expanded(
                 child: Text(
-                  'Scegli conto di destinazione',
+                  _type == MovementType.income
+                      ? 'Scegli conto di destinazione'
+                      : 'Scegli conto di origine',
                   style: StreamTypography.h3,
                 ),
               ),
@@ -897,11 +956,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           color: _selectedAccount == null
               ? StreamColors.primary
               : Color(_selectedAccount!.color),
-          onTap: () => setState(() {
-            _step = _type == MovementType.income
-                ? _FlowStep.account
-                : _FlowStep.details;
-          }),
+          onTap: () => setState(() => _step = _FlowStep.account),
         ),
         _SelectorPill(
           label: 'Categoria',
