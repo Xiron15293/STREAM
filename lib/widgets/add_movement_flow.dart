@@ -11,6 +11,7 @@ import '../util/beneficiary_helpers.dart';
 import 'beneficiary_picker_sheet.dart';
 import 'calculator_amount_pad.dart';
 import 'movement_calculator_pad.dart';
+import 'movement_text_suggestions.dart';
 
 enum _FlowStep { category, subcategory, account, transferAccounts, details }
 
@@ -864,6 +865,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
+          MovementTextSuggestions(
+            db: widget.db,
+            controller: _titleCtrl,
+            field: MovementTextSuggestionField.title,
+            type: _type,
+            categoryId: _categoryId,
+            beneficiary: _counterpartyCtrl.text,
+          ),
           const SizedBox(height: StreamSpacing.md),
           TextField(
             key: const Key('movement_counterparty_field'),
@@ -878,6 +887,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               ),
             ),
             textInputAction: TextInputAction.done,
+            onChanged: (_) => setState(() {}),
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
           ),
           const SizedBox(height: StreamSpacing.md),
@@ -888,6 +898,15 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             decoration: const InputDecoration(labelText: 'Note'),
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          ),
+          MovementTextSuggestions(
+            db: widget.db,
+            controller: _noteCtrl,
+            field: MovementTextSuggestionField.note,
+            type: _type,
+            categoryId: _categoryId,
+            beneficiary: _counterpartyCtrl.text,
+            limit: 4,
           ),
           const SizedBox(height: StreamSpacing.md),
           InkWell(

@@ -8,6 +8,7 @@ import '../util/beneficiary_helpers.dart';
 import 'beneficiary_picker_sheet.dart';
 import 'calculator_amount_pad.dart';
 import 'category_subcategory_selector.dart';
+import 'movement_text_suggestions.dart';
 
 class MovementForm extends StatefulWidget {
   final AppDatabase db;
@@ -291,6 +292,15 @@ class _MovementFormState extends State<MovementForm> {
                 controller: _titleCtrl,
                 decoration: const InputDecoration(labelText: 'Titolo'),
                 textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
+              ),
+              MovementTextSuggestions(
+                db: widget.db,
+                controller: _titleCtrl,
+                field: MovementTextSuggestionField.title,
+                type: _type,
+                categoryId: _selectedCategoryId,
+                beneficiary: _payeeCtrl.text,
               ),
               const SizedBox(height: StreamSpacing.md),
               CalculatorAmountField(
@@ -337,6 +347,7 @@ class _MovementFormState extends State<MovementForm> {
                     ),
                   ),
                   textInputAction: TextInputAction.done,
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: StreamSpacing.md),
               ],
@@ -419,7 +430,17 @@ class _MovementFormState extends State<MovementForm> {
                   labelText: 'Nota (opzionale)',
                 ),
                 textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
                 maxLines: 2,
+              ),
+              MovementTextSuggestions(
+                db: widget.db,
+                controller: _noteCtrl,
+                field: MovementTextSuggestionField.note,
+                type: _type,
+                categoryId: _selectedCategoryId,
+                beneficiary: _payeeCtrl.text,
+                limit: 4,
               ),
               const SizedBox(height: StreamSpacing.lg),
               FilledButton(

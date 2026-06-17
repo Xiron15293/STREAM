@@ -10,6 +10,7 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/services/backup_service.dart';
 import 'package:stream_app/widgets/movement_calculator_pad.dart';
 import 'package:stream_app/widgets/movement_picker.dart';
+import 'package:stream_app/widgets/movement_text_suggestions.dart';
 
 void main() {
   SharedPreferences.setMockInitialValues({});
@@ -383,6 +384,294 @@ void main() {
 
       expect(find.text('$dateText, $dateText'), findsNothing);
       expect(find.textContaining(dateText), findsWidgets);
+    });
+
+    testWidgets(
+      'titolo mostra suggerimenti dopo 2 caratteri e tap compila il campo',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createMovementFromTemplate(
+          title: 'Rimborso',
+          amount: 12,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 10),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+        );
+        await db.createMovementFromTemplate(
+          title: 'Ferrari Taxi',
+          amount: 30,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 11),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+        );
+        await db.createMovementFromTemplate(
+          title: 'Rimborso benzina',
+          amount: 8,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 12),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+        );
+
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        expect(
+          find.byKey(const Key('movement_title_suggestion_0')),
+          findsNothing,
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('movement_title_field')),
+          'ri',
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('movement_title_suggestion_0')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('movement_title_suggestion_1')),
+          findsOneWidget,
+        );
+
+        final suggestionChip = tester.widget<ActionChip>(
+          find.byKey(const Key('movement_title_suggestion_0')),
+        );
+        final expectedTitle = (suggestionChip.label as Text).data!;
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('movement_title_suggestion_0')),
+        );
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('movement_title_field')))
+              .controller!
+              .text,
+          expectedTitle,
+        );
+      },
+    );
+
+    testWidgets('titolo non mostra suggerimenti prima di 2 caratteri', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await db.createMovementFromTemplate(
+        title: 'Rimborso',
+        amount: 12,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 10),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+      );
+
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      await tester.enterText(
+        find.byKey(const Key('movement_title_field')),
+        'r',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('movement_title_suggestion_0')),
+        findsNothing,
+      );
+    });
+
+    test('titolo deduplicato e startsWith prima di contains', () async {
+      final db = AppDatabase();
+      await db.createMovementFromTemplate(
+        title: 'Rimborso',
+        amount: 12,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 10),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+      );
+      await db.createMovementFromTemplate(
+        title: 'Rimborso ',
+        amount: 14,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 11),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+      );
+      await db.createMovementFromTemplate(
+        title: 'Ferrari Rimborso',
+        amount: 18,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 12),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+      );
+
+      final suggestions = buildMovementTextSuggestions(
+        db: db,
+        query: 'ri',
+        field: MovementTextSuggestionField.title,
+        type: MovementType.expense,
+        categoryId: 'exp_1',
+      );
+
+      expect(suggestions, hasLength(2));
+      expect(suggestions.first.text, 'Rimborso');
+      expect(suggestions.first.startsWithQuery, isTrue);
+      expect(suggestions.last.containsQuery, isTrue);
+      expect(
+        suggestions.map((s) => s.text).toList(),
+        contains('Ferrari Rimborso'),
+      );
+    });
+
+    testWidgets(
+      'note mostra suggerimenti dopo 2 caratteri e tap compila il campo',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createMovementFromTemplate(
+          title: 'Pasto',
+          amount: 12,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 10),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+          note: 'rimborso',
+        );
+        await db.createMovementFromTemplate(
+          title: 'Benzina',
+          amount: 30,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 11),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+          note: 'rimborso benzina',
+        );
+        await db.createMovementFromTemplate(
+          title: 'Vuoto',
+          amount: 1,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 12),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+          note: '',
+        );
+
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('movement_note_field')),
+          'ri',
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('movement_note_suggestion_0')),
+          findsOneWidget,
+        );
+        final suggestionChip = tester.widget<ActionChip>(
+          find.byKey(const Key('movement_note_suggestion_0')),
+        );
+        final expectedNote = (suggestionChip.label as Text).data!;
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('movement_note_suggestion_0')),
+        );
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('movement_note_field')))
+              .controller!
+              .text,
+          expectedNote,
+        );
+      },
+    );
+
+    test('note vuote non vengono suggerite', () async {
+      final db = AppDatabase();
+      await db.createMovementFromTemplate(
+        title: 'Vuoto',
+        amount: 1,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 12),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        note: '',
+      );
+
+      final suggestions = buildMovementTextSuggestions(
+        db: db,
+        query: 'ri',
+        field: MovementTextSuggestionField.note,
+        type: MovementType.expense,
+        categoryId: 'exp_1',
+      );
+
+      expect(suggestions, isEmpty);
+    });
+
+    testWidgets('suggerimenti non bloccano il salvataggio movimento', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await db.createMovementFromTemplate(
+        title: 'Rimborso',
+        amount: 12,
+        type: MovementType.expense,
+        date: DateTime(2026, 6, 10),
+        categoryId: 'exp_1',
+        accountId: defaultAccountId,
+        note: 'rimborso',
+      );
+
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      await tester.enterText(
+        find.byKey(const Key('movement_title_field')),
+        'ri',
+      );
+      await tester.pumpAndSettle();
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_title_suggestion_0')),
+      );
+
+      await tester.enterText(
+        find.byKey(const Key('movement_note_field')),
+        'ri',
+      );
+      await tester.pumpAndSettle();
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_note_suggestion_0')),
+      );
+
+      await _tapPadKey(tester, 'movement_pad_1');
+      await _tapPadKey(tester, 'movement_pad_0');
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_submit_button')),
+      );
+
+      expect(db.movements, hasLength(2));
+      expect(db.movements.last.title, 'Rimborso');
+      expect(db.movements.last.note, 'rimborso');
     });
 
     testWidgets('calculator pad nel flow aggiorna l importo in tempo reale', (
