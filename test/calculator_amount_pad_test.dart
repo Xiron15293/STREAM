@@ -90,6 +90,36 @@ void main() {
       expect(tester.testTextInput.isVisible, isFalse);
     });
 
+    testWidgets(
+      'stato iniziale mostra zero e il primo tap sostituisce lo zero',
+      (tester) async {
+        final controller = TextEditingController();
+        await _pumpAmountField(tester, controller);
+
+        await _openPad(tester);
+        expect(find.text('0'), findsWidgets);
+
+        await tester.tap(find.byKey(const Key('calculator_key_5')));
+        await tester.pumpAndSettle();
+
+        expect(controller.text, '5');
+        expect(find.text('05'), findsNothing);
+      },
+    );
+
+    testWidgets('tap 5 poi 0 produce 50', (tester) async {
+      final controller = TextEditingController();
+      await _pumpAmountField(tester, controller);
+
+      await _openPad(tester);
+      await tester.tap(find.byKey(const Key('calculator_key_5')));
+      await tester.tap(find.byKey(const Key('calculator_key_0')));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, '50');
+      expect(find.text('0,50'), findsNothing);
+    });
+
     testWidgets('il campo e readOnly e non richiede tastiera nativa', (
       tester,
     ) async {

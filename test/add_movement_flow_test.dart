@@ -21,7 +21,10 @@ void main() {
 
       await _openAddMovement(tester);
 
-      expect(find.byKey(const Key('add_movement_category_step')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add_movement_category_step')),
+        findsOneWidget,
+      );
       expect(find.text('Spesa'), findsWidgets);
       expect(find.text('Entrata'), findsWidgets);
       expect(find.text('Trasferimento'), findsWidgets);
@@ -42,7 +45,10 @@ void main() {
 
       await tester.tap(find.text('Trasferimento').last);
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add_movement_transfer_step')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Spesa mostra categorie spesa', (tester) async {
@@ -84,46 +90,75 @@ void main() {
       await tester.tap(find.text('Trasferimento').last);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add_movement_transfer_step')),
+        findsOneWidget,
+      );
       expect(find.text('Conto origine'), findsOneWidget);
       expect(find.text('Conto destinazione'), findsOneWidget);
       expect(find.byKey(const Key('transfer_origin_list')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_destination_list')), findsOneWidget);
+      expect(
+        find.byKey(const Key('transfer_destination_list')),
+        findsOneWidget,
+      );
       expect(find.text('Tutte le categorie'), findsNothing);
-      expect(find.byKey(const Key('transfer_destination_chip_acc_2')), findsNothing);
+      expect(
+        find.byKey(const Key('transfer_destination_chip_acc_2')),
+        findsNothing,
+      );
     });
 
-    testWidgets('selezione categoria spesa apre form spesa e chip conto funziona', (tester) async {
-      final db = AppDatabase();
-      await db.addAccount(
-        Account(
-          id: 'acc_2',
-          name: 'Contanti',
-          type: AccountType.cash,
-          createdAt: DateTime(2026, 6, 15),
-        ),
-      );
-      await db.createSubcategory('exp_2', 'Affitto');
-      final subId = db.getSubcategoriesForCategory('exp_2').single.id;
-      await _pumpApp(tester, db);
-      await _openAddMovement(tester);
+    testWidgets(
+      'selezione categoria spesa apre form spesa e chip conto funziona',
+      (tester) async {
+        final db = AppDatabase();
+        await db.addAccount(
+          Account(
+            id: 'acc_2',
+            name: 'Contanti',
+            type: AccountType.cash,
+            createdAt: DateTime(2026, 6, 15),
+          ),
+        );
+        await db.createSubcategory('exp_2', 'Affitto');
+        final subId = db.getSubcategoriesForCategory('exp_2').single.id;
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
 
-      await _tapVisible(tester, find.byKey(const Key('category_option_exp_2')));
-      expect(find.byKey(const Key('add_movement_subcategory_step')), findsOneWidget);
-      await _tapVisible(tester, find.byKey(Key('subcategory_option_$subId')));
-      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
-      expect(find.text('Nuova spesa'), findsOneWidget);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_2')),
+        );
+        expect(
+          find.byKey(const Key('add_movement_subcategory_step')),
+          findsOneWidget,
+        );
+        await _tapVisible(tester, find.byKey(Key('subcategory_option_$subId')));
+        expect(
+          find.byKey(const Key('add_movement_details_step')),
+          findsOneWidget,
+        );
+        expect(find.text('Nuova spesa'), findsOneWidget);
 
-      await _tapVisible(tester, find.text('Da conto').last);
-      expect(find.byKey(const Key('add_movement_account_step')), findsOneWidget);
-      await _tapVisible(
-        tester,
-        find.byKey(const Key('account_option_acc_2')),
-      );
-      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
-    });
+        await _tapVisible(tester, find.text('Da conto').last);
+        expect(
+          find.byKey(const Key('add_movement_account_step')),
+          findsOneWidget,
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('account_option_acc_2')),
+        );
+        expect(
+          find.byKey(const Key('add_movement_details_step')),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('selezione categoria entrata + conto apre form entrata', (tester) async {
+    testWidgets('selezione categoria entrata + conto apre form entrata', (
+      tester,
+    ) async {
       final db = AppDatabase();
       await db.addAccount(
         Account(
@@ -139,42 +174,59 @@ void main() {
       await tester.tap(find.text('Entrata').last);
       await tester.pumpAndSettle();
       await _tapVisible(tester, find.byKey(const Key('category_option_inc_1')));
-      await _tapVisible(tester, find.byKey(const Key('income_account_chip_acc_2')));
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('income_account_chip_acc_2')),
+      );
 
-      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+      expect(
+        find.byKey(const Key('add_movement_details_step')),
+        findsOneWidget,
+      );
       expect(find.text('Nuova entrata'), findsOneWidget);
     });
 
-    testWidgets('selezione origine/destinazione trasferimento apre form trasferimento', (tester) async {
-      final db = AppDatabase();
-      await db.addAccount(
-        Account(
-          id: 'acc_2',
-          name: 'Contanti',
-          type: AccountType.cash,
-          createdAt: DateTime(2026, 6, 15),
-        ),
-      );
-      await _pumpApp(tester, db);
-      await _openAddMovement(tester);
+    testWidgets(
+      'selezione origine/destinazione trasferimento apre form trasferimento',
+      (tester) async {
+        final db = AppDatabase();
+        await db.addAccount(
+          Account(
+            id: 'acc_2',
+            name: 'Contanti',
+            type: AccountType.cash,
+            createdAt: DateTime(2026, 6, 15),
+          ),
+        );
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
 
-      await tester.tap(find.text('Trasferimento').last);
-      await tester.pumpAndSettle();
-      await _tapVisible(
-        tester,
-        find.byKey(const Key('transfer_origin_option_acc_default')),
-      );
-      await _tapVisible(
-        tester,
-        find.byKey(const Key('transfer_destination_option_acc_2')),
-      );
-      await _tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
+        await tester.tap(find.text('Trasferimento').last);
+        await tester.pumpAndSettle();
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('transfer_origin_option_acc_default')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('transfer_destination_option_acc_2')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('transfer_continue_button')),
+        );
 
-      expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
-      expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
-    });
+        expect(
+          find.byKey(const Key('add_movement_details_step')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
+      },
+    );
 
-    testWidgets('origine e destinazione uguali bloccano il trasferimento', (tester) async {
+    testWidgets('origine e destinazione uguali bloccano il trasferimento', (
+      tester,
+    ) async {
       final db = AppDatabase();
       await _pumpApp(tester, db);
       await _openAddMovement(tester);
@@ -192,55 +244,89 @@ void main() {
 
       expect(find.byKey(const Key('transfer_continue_button')), findsOneWidget);
       expect(
-        tester.widget<FilledButton>(find.byKey(const Key('transfer_continue_button'))).onPressed,
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('transfer_continue_button')),
+            )
+            .onPressed,
         isNull,
       );
-      expect(find.byKey(const Key('transfer_same_account_error')), findsOneWidget);
+      expect(
+        find.byKey(const Key('transfer_same_account_error')),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('liste trasferimento mostrano tutti i conti attivi senza duplicare la destinazione', (tester) async {
-      final db = AppDatabase();
-      await db.addAccount(
-        Account(
-          id: 'acc_2',
-          name: 'Revolut',
-          type: AccountType.bank,
-          createdAt: DateTime(2026, 6, 15),
-        ),
-      );
-      await db.addAccount(
-        Account(
-          id: 'acc_3',
-          name: 'Contanti',
-          type: AccountType.cash,
-          createdAt: DateTime(2026, 6, 15),
-        ),
-      );
-      await _pumpApp(tester, db);
-      await _openAddMovement(tester);
+    testWidgets(
+      'liste trasferimento mostrano tutti i conti attivi senza duplicare la destinazione',
+      (tester) async {
+        final db = AppDatabase();
+        await db.addAccount(
+          Account(
+            id: 'acc_2',
+            name: 'Revolut',
+            type: AccountType.bank,
+            createdAt: DateTime(2026, 6, 15),
+          ),
+        );
+        await db.addAccount(
+          Account(
+            id: 'acc_3',
+            name: 'Contanti',
+            type: AccountType.cash,
+            createdAt: DateTime(2026, 6, 15),
+          ),
+        );
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
 
-      await tester.tap(find.text('Trasferimento').last);
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Trasferimento').last);
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('transfer_origin_list')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_destination_list')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_origin_option_acc_default')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_origin_option_acc_2')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_origin_option_acc_3')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_destination_option_acc_default')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_destination_option_acc_2')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_destination_option_acc_3')), findsOneWidget);
-      expect(find.byKey(const Key('transfer_destination_chip_acc_default')), findsNothing);
-      expect(find.text('I tuoi conti'), findsNothing);
-    });
+        expect(find.byKey(const Key('transfer_origin_list')), findsOneWidget);
+        expect(
+          find.byKey(const Key('transfer_destination_list')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_origin_option_acc_default')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_origin_option_acc_2')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_origin_option_acc_3')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_destination_option_acc_default')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_destination_option_acc_2')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_destination_option_acc_3')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('transfer_destination_chip_acc_default')),
+          findsNothing,
+        );
+        expect(find.text('I tuoi conti'), findsNothing);
+      },
+    );
 
-    testWidgets('calculator pad mostra + - * / e backspace funziona', (tester) async {
+    testWidgets('calculator pad mostra + - * / e backspace funziona', (
+      tester,
+    ) async {
       final controller = TextEditingController();
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: MovementCalculatorPad(controller: controller),
-          ),
+          home: Scaffold(body: MovementCalculatorPad(controller: controller)),
         ),
       );
       await tester.pumpAndSettle();
@@ -272,6 +358,33 @@ void main() {
       expect(find.text('OK'), findsWidgets);
     });
 
+    testWidgets('data singola non viene duplicata nel testo', (tester) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      final now = DateTime.now();
+      final monthNames = [
+        'gennaio',
+        'febbraio',
+        'marzo',
+        'aprile',
+        'maggio',
+        'giugno',
+        'luglio',
+        'agosto',
+        'settembre',
+        'ottobre',
+        'novembre',
+        'dicembre',
+      ];
+      final dateText = '${now.day} ${monthNames[now.month - 1]} ${now.year}';
+
+      expect(find.text('$dateText, $dateText'), findsNothing);
+      expect(find.textContaining(dateText), findsWidgets);
+    });
+
     testWidgets('calculator pad nel flow aggiorna l importo in tempo reale', (
       tester,
     ) async {
@@ -289,11 +402,58 @@ void main() {
       await _tapVisible(tester, find.byKey(const Key('movement_pad_2')));
       expect(_amountDisplayText(tester), '12,00 €');
 
-      await _tapVisible(tester, find.byKey(const Key('movement_pad_backspace')));
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_pad_backspace')),
+      );
       expect(_amountDisplayText(tester), '1,00 €');
 
       await _tapVisible(tester, find.byKey(const Key('movement_pad_00')));
       expect(_amountDisplayText(tester), '100,00 €');
+    });
+
+    testWidgets('importo iniziale parte da zero senza raw duplicate sotto', (
+      tester,
+    ) async {
+      final db = AppDatabase();
+      await _pumpApp(tester, db);
+      await _openAddMovement(tester);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      expect(_amountDisplayText(tester), '0,00 €');
+    });
+
+    testWidgets('tap 5 da zero sostituisce lo zero', (tester) async {
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: MovementCalculatorPad(controller: controller)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('movement_pad_5')));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, '5');
+      expect(find.text('05'), findsNothing);
+    });
+
+    testWidgets('tap 5 poi 0 produce 50 non 0,50', (tester) async {
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: MovementCalculatorPad(controller: controller)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('movement_pad_5')));
+      await tester.tap(find.byKey(const Key('movement_pad_0')));
+      await tester.pumpAndSettle();
+
+      expect(controller.text, '50');
+      expect(find.text('050'), findsNothing);
     });
 
     testWidgets('salvataggio movimento usa l importo mostrato', (tester) async {
@@ -316,7 +476,10 @@ void main() {
       await _tapPadKey(tester, 'movement_pad_5');
 
       expect(_amountDisplayText(tester), '15,00 €');
-      await _tapVisible(tester, find.byKey(const Key('movement_submit_button')));
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_submit_button')),
+      );
 
       expect(db.movements, hasLength(1));
       expect(db.movements.single.amount, 15);
@@ -346,7 +509,10 @@ void main() {
         tester,
         find.byKey(const Key('transfer_destination_option_acc_2')),
       );
-      await _tapVisible(tester, find.byKey(const Key('transfer_continue_button')));
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('transfer_continue_button')),
+      );
 
       await _tapVisible(tester, find.byKey(const Key('movement_title_field')));
       await tester.enterText(
@@ -362,7 +528,10 @@ void main() {
       await _tapPadKey(tester, 'movement_pad_5');
 
       expect(_amountDisplayText(tester), '15,00 €');
-      await _tapVisible(tester, find.byKey(const Key('movement_submit_button')));
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_submit_button')),
+      );
 
       expect(db.movements, hasLength(1));
       expect(db.movements.single.type, MovementType.transfer);
@@ -371,55 +540,62 @@ void main() {
       expect(db.movements.single.destinationAccountId, 'acc_2');
     });
 
-    testWidgets('modifica movimento usa il flow guidato e salva sullo stesso record', (
-      tester,
-    ) async {
-      final db = AppDatabase();
-      final movement = Movement(
-        id: 'm_edit',
-        title: 'Spesa iniziale',
-        amount: 10,
-        type: MovementType.expense,
-        date: DateTime(2026, 6, 15),
-        categoryId: 'exp_1',
-        accountId: defaultAccountId,
-        createdAt: DateTime(2026, 6, 15),
-      );
-      await db.addMovement(movement);
+    testWidgets(
+      'modifica movimento usa il flow guidato e salva sullo stesso record',
+      (tester) async {
+        final db = AppDatabase();
+        final movement = Movement(
+          id: 'm_edit',
+          title: 'Spesa iniziale',
+          amount: 10,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 15),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+          createdAt: DateTime(2026, 6, 15),
+        );
+        await db.addMovement(movement);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: MovementPicker(db: db, prefill: movement),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: MovementPicker(db: db, prefill: movement),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Modifica movimento'), findsOneWidget);
-      expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
-      expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
-      expect(_amountDisplayText(tester), '10,00 €');
+        expect(find.text('Modifica movimento'), findsOneWidget);
+        expect(find.byKey(const Key('movement_title_field')), findsOneWidget);
+        expect(
+          find.byKey(const Key('movement_amount_display')),
+          findsOneWidget,
+        );
+        expect(_amountDisplayText(tester), '10,00 €');
 
-      await tester.enterText(
-        find.byKey(const Key('movement_title_field')),
-        'Spesa aggiornata',
-      );
-      for (var i = 0; i < 5; i++) {
-        await _tapPadKey(tester, 'movement_pad_backspace');
-      }
-      await _tapPadKey(tester, 'movement_pad_2');
-      await _tapPadKey(tester, 'movement_pad_5');
+        await tester.enterText(
+          find.byKey(const Key('movement_title_field')),
+          'Spesa aggiornata',
+        );
+        for (var i = 0; i < 5; i++) {
+          await _tapPadKey(tester, 'movement_pad_backspace');
+        }
+        await _tapPadKey(tester, 'movement_pad_2');
+        await _tapPadKey(tester, 'movement_pad_5');
 
-      expect(_amountDisplayText(tester), '25,00 €');
-      await _tapVisible(tester, find.byKey(const Key('movement_submit_button')));
+        expect(_amountDisplayText(tester), '25,00 €');
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('movement_submit_button')),
+        );
 
-      expect(db.movements, hasLength(1));
-      expect(db.movements.single.id, 'm_edit');
-      expect(db.movements.single.title, 'Spesa aggiornata');
-      expect(db.movements.single.amount, 25);
-      expect(db.movements.single.type, MovementType.expense);
-    });
+        expect(db.movements, hasLength(1));
+        expect(db.movements.single.id, 'm_edit');
+        expect(db.movements.single.title, 'Spesa aggiornata');
+        expect(db.movements.single.amount, 25);
+        expect(db.movements.single.type, MovementType.expense);
+      },
+    );
   });
 
   group('AddMovementFlow logic', () {
@@ -461,7 +637,10 @@ void main() {
       );
 
       expect(db.movements.single.type, MovementType.expense);
-      expect(db.getAccountBalance(db.getAccount(defaultAccountId)), before - 25);
+      expect(
+        db.getAccountBalance(db.getAccount(defaultAccountId)),
+        before - 25,
+      );
     });
 
     test('trasferimento muove saldi e lascia patrimonio invariato', () async {
@@ -475,7 +654,9 @@ void main() {
         ),
       );
 
-      final beforeOrigin = db.getAccountBalance(db.getAccount(defaultAccountId));
+      final beforeOrigin = db.getAccountBalance(
+        db.getAccount(defaultAccountId),
+      );
       final beforeDestination = db.getAccountBalance(db.getAccount('acc_2'));
       final beforeTotal = db.totalAccountsBalance;
 
@@ -490,8 +671,14 @@ void main() {
       );
 
       expect(db.movements.single.type, MovementType.transfer);
-      expect(db.getAccountBalance(db.getAccount(defaultAccountId)), beforeOrigin - 40);
-      expect(db.getAccountBalance(db.getAccount('acc_2')), beforeDestination + 40);
+      expect(
+        db.getAccountBalance(db.getAccount(defaultAccountId)),
+        beforeOrigin - 40,
+      );
+      expect(
+        db.getAccountBalance(db.getAccount('acc_2')),
+        beforeDestination + 40,
+      );
       expect(db.totalAccountsBalance, beforeTotal);
       expect(db.totalIncome, 0);
       expect(db.totalExpenses, 0);
@@ -539,24 +726,24 @@ Future<void> _openAddMovement(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-  Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
-    await tester.ensureVisible(finder);
-    await tester.pumpAndSettle();
-    await tester.tap(finder, warnIfMissed: false);
-    await tester.pumpAndSettle();
-  }
+Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder, warnIfMissed: false);
+  await tester.pumpAndSettle();
+}
 
-  Future<void> _tapPadKey(WidgetTester tester, String key) async {
-    final finder = find.byKey(Key(key));
-    final scrollable = find.byType(Scrollable).last;
-    await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
-    await tester.pumpAndSettle();
-    await tester.tap(finder);
-    await tester.pumpAndSettle();
-  }
+Future<void> _tapPadKey(WidgetTester tester, String key) async {
+  final finder = find.byKey(Key(key));
+  final scrollable = find.byType(Scrollable).last;
+  await tester.scrollUntilVisible(finder, 200, scrollable: scrollable);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
 
-  String _amountDisplayText(WidgetTester tester) {
-    return tester.widget<Text>(
-      find.byKey(const Key('movement_amount_display')),
-    ).data!;
-  }
+String _amountDisplayText(WidgetTester tester) {
+  return tester
+      .widget<Text>(find.byKey(const Key('movement_amount_display')))
+      .data!;
+}

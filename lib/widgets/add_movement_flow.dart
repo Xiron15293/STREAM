@@ -68,7 +68,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       _titleCtrl.text = p.title;
       _counterpartyCtrl.text = p.payee ?? '';
       _noteCtrl.text = p.note ?? '';
-      _amountCtrl.text = p.amount.toStringAsFixed(2);
+      _amountCtrl.text = formatAmountExpressionValue(p.amount);
       _categoryId = p.categoryId.isEmpty ? null : p.categoryId;
       _subcategoryId = p.subcategoryId;
       _accountId = p.accountId;
@@ -275,10 +275,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final selected = DateTime(_date.year, _date.month, _date.day);
-    final label = selected == today
-        ? 'Oggi'
-        : '${_date.day} ${monthNames[_date.month - 1]} ${_date.year}';
-    return '$label, ${_date.day} ${monthNames[_date.month - 1]} ${_date.year}';
+    final dateText =
+        '${_date.day} ${monthNames[_date.month - 1]} ${_date.year}';
+    return selected == today ? 'Oggi, $dateText' : dateText;
   }
 
   String _counterpartyLabel() {
@@ -857,16 +856,6 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               color: StreamColors.primary,
             ),
           ),
-          if (_amountCtrl.text.isNotEmpty) ...[
-            const SizedBox(height: StreamSpacing.xs),
-            Text(
-              _amountCtrl.text,
-              textAlign: TextAlign.center,
-              style: StreamTypography.caption.copyWith(
-                color: StreamColors.textSecondary,
-              ),
-            ),
-          ],
           const SizedBox(height: StreamSpacing.lg),
           TextField(
             key: const Key('movement_title_field'),

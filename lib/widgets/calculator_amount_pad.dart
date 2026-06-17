@@ -210,7 +210,13 @@ class _CalculatorAmountPadState extends State<CalculatorAmountPad> {
 
   void _append(String value) {
     setState(() => _error = null);
-    _write('${widget.controller.text}$value');
+    final current = widget.controller.text;
+    final isDigit = RegExp(r'^\d+$').hasMatch(value);
+    if (current == '0' && isDigit) {
+      _write(value);
+      return;
+    }
+    _write('$current$value');
   }
 
   void _backspace() {

@@ -299,7 +299,7 @@ class _ManualFormState extends State<_ManualForm> {
     final p = widget.prefill;
     _titleCtrl = TextEditingController(text: p?.title ?? '');
     _amountCtrl = TextEditingController(
-      text: p != null ? p.amount.toString() : '',
+      text: p != null ? formatAmountExpressionValue(p.amount) : '',
     );
     _noteCtrl = TextEditingController(text: p?.note ?? '');
     _payeeCtrl = TextEditingController(text: p?.payee ?? '');
@@ -489,7 +489,9 @@ class _ManualFormState extends State<_ManualForm> {
   }
 
   String _formatDate(DateTime d) {
-    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    final day = d.day.toString().padLeft(2, '0');
+    final month = d.month.toString().padLeft(2, '0');
+    return '$day/$month/${d.year}';
   }
 
   @override

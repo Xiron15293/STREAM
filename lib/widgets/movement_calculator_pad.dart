@@ -36,7 +36,13 @@ class _MovementCalculatorPadState extends State<MovementCalculatorPad> {
 
   void _append(String value) {
     setState(() => _error = null);
-    _write('${widget.controller.text}$value');
+    final current = widget.controller.text;
+    final isDigit = RegExp(r'^\d+$').hasMatch(value);
+    if (current == '0' && isDigit) {
+      _write(value);
+      return;
+    }
+    _write('$current$value');
   }
 
   void _backspace() {
@@ -139,11 +145,7 @@ class _MovementCalculatorPadState extends State<MovementCalculatorPad> {
             onTap: () async => _applyPercent(),
             tinted: true,
           ),
-          _PadSpec.text(
-            '+',
-            operator: true,
-            tinted: true,
-          ),
+          _PadSpec.text('+', operator: true, tinted: true),
         ]),
       ],
     );
@@ -234,11 +236,6 @@ class _PadSpec {
     required Future<void> Function()? onTap,
     bool tinted = false,
   }) {
-    return _PadSpec._(
-      key: key,
-      icon: icon,
-      onTap: onTap,
-      tinted: tinted,
-    );
+    return _PadSpec._(key: key, icon: icon, onTap: onTap, tinted: tinted);
   }
 }
