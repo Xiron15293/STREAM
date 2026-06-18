@@ -9,6 +9,19 @@
 **Data audit:** 2026-06-18  
 **Stato:** Hermes candidate for closure / Hermes QA green
 
+### Executive summary
+- 44 file test Dart/Flutter
+- 912 test/casi dichiarati
+- 911 test verdi nel run finale
+- 1 skipped
+- 1.641 scenari data-driven
+- 7.475 controlli/logiche reali documentati
+- 8 blocchi funzionali coperti
+- P0: 0 nuovi
+- P1: 0 nuovi
+- P2: 0 nuovi
+- P3: solo info analyzer preesistenti
+
 ### Copertura
 - `test/qa_audit_matrix_test.dart`
 - `test/qa_stress_test.dart`
@@ -19,6 +32,10 @@
 - Normalizzazione beneficiari
 - TimeFilter e range
 - Formatter valuta
+- Calculator amount input
+- Movimenti e trasferimenti
+- Isolamento profili SQLite
+- Visual fit / viewport / testi lunghi
 - Stress QA e extensive QA già esistenti
 
 ### Risultati
@@ -26,7 +43,7 @@
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
 - `flutter test`: ok
-- Suite finale: `910` test verdi
+- Suite finale: `911` test verdi, `1` skipped
 
 ### Severità
 - P0 nuovi: `0`
@@ -38,6 +55,23 @@
 - Gli info analyzer preesistenti restano aperti e non bloccanti
 - La QA automatizzata non sostituisce un test manuale completo su device fisico
 - Le euristiche dei suggerimenti possono avere falsi positivi/negativi non critici
+
+### Coverage matrix
+
+| Area | Scenari | Controlli per scenario | Totale controlli | Stato |
+|---|---:|---:|---:|---|
+| Suggerimenti Titolo / Note / Beneficiario | 600 | 4-5 | 2,600 | passed |
+| TimeFilter / range | 250 | 5-8 | 1,790 | passed |
+| Formatter valuta | 400 | 4 | 1,600 | passed |
+| Calculator amount input | 300 | 4 | 1,200 | passed |
+| Movimenti / trasferimenti | 30 | 6 | 180 | passed |
+| Isolamento profili SQLite | 1 | 6 | 6 | passed |
+| Visual fit / viewport / testi lunghi | 60 | 1-3 | 99 | passed |
+| Stress / extensive QA già esistenti | 300+ | suite esistente | coperto | passed |
+
+### Final state
+
+Hermes Extended QA Audit completato con `1.641` scenari data-driven e `7.475` controlli/logiche reali documentati. Suite finale verde: `911` passed, `1` skipped. Nessun nuovo P0/P1/P2 emerso nei flussi coperti.
 
 ---
 

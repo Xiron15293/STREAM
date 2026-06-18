@@ -9,6 +9,7 @@
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`
 - Full suite finale: **verde**
 - Stato finale: **Hermes candidate for closure / Hermes QA green**
+- Executive summary: `44` file test, `912` test/casi dichiarati, `911` passati, `1` skipped, `1.641` scenari, `7.475` controlli/logiche
 
 ## Conteggio reale
 
@@ -63,7 +64,7 @@
 - `flutter analyze`: ok, nessun errore nuovo, solo info preesistenti
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
-- `flutter test`: ok
+- `flutter test`: ok (`911` passed, `1` skipped)
 
 ## Limiti dell’audit
 

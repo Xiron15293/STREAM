@@ -14,8 +14,8 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - La schermata Movimenti usa la heatmap come vista utente principale per i periodi.
 - Le impostazioni heatmap espongono solo `Configura heatmap`.
 - Categorie e sottocategorie supportano safe edit e duplicate validation corretta.
-- Hermes Extended QA Audit completato: `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`910` test).
-- Nessun nuovo P0/P1 trovato nel perimetro dell’audit finale.
+- Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`911` passati, `1` skipped).
+- Hermes QA green: nessun nuovo P0/P1/P2 trovato nel perimetro dell’audit finale.
 
 ## Prossimo Sprint Consigliato
 

@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Hermes Extended QA Audit**
   - Aggiunta matrice QA data-driven `test/qa_audit_matrix_test.dart`
   - Copertura deterministica su suggerimenti, beneficiari, TimeFilter/range e formatter valuta
-  - Audit finale verde con `910` test passati nella suite completa
+  - Audit finale verde con `911` test passati e `1` skipped nella suite completa
+  - `1.641` scenari e `7.475` controlli/logiche documentati nel report 6000+
 
 - **Guided `+ Movimento` flow**
   - Flow step-based per Entrata, Spesa e Trasferimento

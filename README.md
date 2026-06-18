@@ -44,8 +44,8 @@ The app currently includes:
 ## QA Status
 
 - `flutter analyze`: clean from errors, with only pre-existing info-level notes in the project
-- `flutter test`: full suite green (`910` tests on the latest run)
-- Hermes Extended QA Audit: data-driven matrix, stress/extensive checks, and full suite all passed
+- `flutter test`: full suite green (`911` tests on the latest run, `1` skipped)
+- Hermes Extended QA Audit: `1.641` scenari data-driven, `7.475` controlli/logiche reali, suite finale verde, nessun nuovo P0/P1/P2
 
 ## Useful Commands
 
