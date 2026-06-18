@@ -4,6 +4,43 @@
 
 ---
 
+## Hermes Extended QA Audit
+
+**Data audit:** 2026-06-18  
+**Stato:** Hermes candidate for closure / Hermes QA green
+
+### Copertura
+- `test/qa_audit_matrix_test.dart`
+- `test/qa_stress_test.dart`
+- `test/qa_extensive_test.dart`
+
+### Aree coperte
+- Suggerimenti Titolo / Note / Beneficiario
+- Normalizzazione beneficiari
+- TimeFilter e range
+- Formatter valuta
+- Stress QA e extensive QA già esistenti
+
+### Risultati
+- `flutter analyze`: ok, nessun errore nuovo, solo info preesistenti
+- `flutter test test/qa_audit_matrix_test.dart`: ok
+- `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
+- `flutter test`: ok
+- Suite finale: `910` test verdi
+
+### Severità
+- P0 nuovi: `0`
+- P1 nuovi: `0`
+- P2 app-level confermati: `0` nel perimetro di questo audit
+- P3 / tech debt: info analyzer preesistenti
+
+### Rischi residui
+- Gli info analyzer preesistenti restano aperti e non bloccanti
+- La QA automatizzata non sostituisce un test manuale completo su device fisico
+- Le euristiche dei suggerimenti possono avere falsi positivi/negativi non critici
+
+---
+
 ## Delta — Suggerimenti movimento + valuta globale ✅
 
 ### Cosa è cambiato

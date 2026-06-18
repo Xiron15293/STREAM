@@ -60,6 +60,7 @@
 | — | Heatmap settings, fallback legacy e Movimenti heatmap-first | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 | — | Categorie safe edit + duplicate validation | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 | — | Movement suggestion chips + currency selector | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
+| — | Hermes Extended QA Audit | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
 
 ## Approvate / Future (V0.9+)
 
@@ -87,6 +88,7 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **V0.9.0e** | **Beneficiari (✅) — creazione `BeneficiaryProfile`, merge manuali+payee derivati, proposta salvataggio da form movimento, display metadata su MovementCard, dettaglio tappabile, backup/restore, DB v12, payee raw preservato, audit finale chiuso** |
 | **Delta** | **iFinance transfer pairing hardening (✅) — pairing per `data + importo`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** |
 | **Delta** | **Profili separati (✅) — registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** |
+| **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`910` test)** |
 | **V0.9.0** | **Notes & Tags** |
 | **V0.9.0** | **Movement edit normalization / unified movement editor (📋) — normalizzazione edit movimento, apertura coerente da Dashboard/Movimenti/Archivio, chip conto cliccabile, campi confermabili** |
 | **V0.9.1** | **Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard** |

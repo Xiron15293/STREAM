@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Hermes Extended QA Audit**
+  - Aggiunta matrice QA data-driven `test/qa_audit_matrix_test.dart`
+  - Copertura deterministica su suggerimenti, beneficiari, TimeFilter/range e formatter valuta
+  - Audit finale verde con `910` test passati nella suite completa
+
 - **Guided `+ Movimento` flow**
   - Flow step-based per Entrata, Spesa e Trasferimento
   - Shared `MovementCalculatorPad` con aggiornamento realtime dell’importo
