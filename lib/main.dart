@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'data/database.dart';
 import 'data/sqlite_service.dart';
 import 'models/profile.dart';
+import 'screens/charts_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/archive_screen.dart';
 import 'screens/profiles_screen.dart';
@@ -167,6 +168,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     final screens = [
       DashboardScreen(db: widget.db),
       ArchiveScreen(db: widget.db),
+      ChartsScreen(db: widget.db),
       SettingsScreen(
         db: widget.db,
         onManageProfiles: widget.onManageProfiles,
@@ -201,6 +203,13 @@ class _MainScaffoldState extends State<MainScaffold> {
                 child: Icon(Icons.folder),
               ),
               label: 'Archivio',
+            ),
+            BottomNavigationBarItem(
+              icon: KeyedSubtree(
+                key: Key('bottom_nav_charts'),
+                child: Icon(Icons.bar_chart),
+              ),
+              label: 'Grafici',
             ),
             BottomNavigationBarItem(
               icon: KeyedSubtree(
