@@ -32,7 +32,7 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 6.7 | Hermes V0.8.7 — Heatmap Settings | ✅ COMPLETATO | TBD | Soglie/colori heatmap configurabili, preview, restore defaults, SharedPreferences only |
 | 6.8 | Hermes V0.8.8 — Subcategories Foundation | ✅ COMPLETATO | TBD | Subcategory entity, DB v9, subcategory_id nullable, backup/restore, UI gestione, fix UX |
 | 6.9 | Hermes V0.8.9 — Category Conversion & Suggested UX Polish | ✅ COMPLETATO | TBD | Fix crash categorie, categorie modificali, conversione manuale, suggeriti espandibili |
-| 6.10 | Hermes V0.9.0 — Notes & Tags | 📋 PRIORITARIA | TBD | Campo notes, tag multi-selezione, filtro per tag |
+| 6.10 | Hermes V0.9.0 — Beneficiary detail direct edit entry + manual QA closure | 📋 PRIORITARIA | TBD | Valutare entry point edit nel dettaglio Beneficiari e chiudere il delta manual QA residuo |
 | 6.12 | Hermes V0.8.10 — Period Views Premium (perfezionamento) | ✅ COMPLETATO | 2026-06-14 | Tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, blocchi semestrali range, GroupedMovementsList panel mode, DayHeader Oggi/Ieri, ListenableBuilder categorie, fix propagazione colore/icona (condizione null), refresh immediato UI madre→sottocategorie |
 | 6.13 | Hermes V0.8.10b — Universal Movement Actions + Duplicate Date Choice | ✅ COMPLETATO | 2026-06-13 | Azioni movimento universali in ogni vista, dashboard sheet reattivo, duplica con scelta data (Oggi/Domani/Ieri/Scegli data/Annulla) |
 | 6.14 | Delta — Date più chiare + Dialog propagazione stile categoria | ✅ COMPLETATO | 2026-06-13 | `TimeFilter.customRange` label con anno, `DayHeader` mese+anno, dialog propagazione con checkbox sottocategorie selezionabili |
@@ -40,6 +40,8 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 | 6.16 | Delta — iFinance transfer pairing hardening | ✅ COMPLETATO | 2026-06-14 | Pairing per `data + importo assoluto`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = `0` nuovi movimenti |
 | 6.17 | Delta — Profili separati con isolamento dati reale | ✅ COMPLETATO | 2026-06-15 | Registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati, voce Profili mostrata solo se collegata |
 | 6.18 | Delta — Movement suggestion chips + currency selector | ✅ COMPLETATO | 2026-06-18 | Suggerimenti locali per Titolo, Note e Beneficiario; chip compatti tappabili; valuta configurabile da Impostazioni con formatter condiviso |
+| 6.19 | Delta — Hermes closure stabilization | ✅ COMPLETATO | 2026-06-19 | Azioni movimento centralizzate, tap breve modifica, long-press/tre puntini sullo stesso sheet, header compatto add/edit, sticky amount, restore conti, delete categoria con riassegnazione sicura |
+| 6.20 | Hermes V0.9.1 — Notes & Tags | 📋 APPROVATA | TBD | Campo notes, tag multi-selezione, filtro per tag |
 | 6.11 | Hermes V0.6.8 — Calendar Heatmap | 💡 IDEA | TBD | Intensità colore, filtro categoria, navigazione |
 | 8 | Hermes V0.8 — Import CSV | ✅ COMPLETATO (parziale) | TBD | Import CSV 1Money completato in V0.7.0 |
 | 9 | Hermes V0.9 — Scenari | 💡 IDEA | TBD | Proiezioni what-if, pianificazione |
@@ -65,6 +67,13 @@ Niente ads, niente cloud forzato, niente abbonamenti per funzioni base.
 - Beta testing su Android via APK diretto
 - Beta testing su iPhone via TestFlight (richiede Apple Developer $99/anno)
 - Ogni versione deve passare: flutter analyze ✅ → flutter test ✅ → build ✅ → install device ✅
+
+## Stato prodotto attuale
+
+- Hermes è in stato `closure candidate / QA stabilized`.
+- Il core prodotto attuale include flow movimento guidato per add/edit, trasferimenti dedicati, suggerimenti locali focus-aware, valuta globale UI-only, profili isolati e restore per archiviati.
+- Le superfici con riepilogo/heatmap mantengono la raggiungibilità della lista movimenti e le azioni `MovementCard` dove la card è usata.
+- Limitazione corrente da non mascherare nei materiali prodotto: il dettaglio Beneficiari non espone ancora un accesso diretto all’edit movimento.
 
 ## Future features
 

@@ -58,15 +58,16 @@
 | F48 | Beneficiari manuali + save proposal — tab Beneficiari con creazione `BeneficiaryProfile`, merge profili+payee derivati, proposta `No/Salva/Annulla` da form movimento, display metadata su `MovementCard`, backup/restore preservato, iFinance senza dialog | delta | 2026-06-14 |
 | F49 | iFinance import transfer pairing hardening — riconoscimento transfer esteso, pairing per `data + importo assoluto`, matching univoco con `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = `0` nuovi movimenti | delta | 2026-06-14 |
 | F50 | Profili separati con isolamento dati reale — registry profili persistito, DB SQLite dedicato per profilo, `MainScaffold` keyed per `activeProfileId`, reset/beneficiari/iFinance isolati, voce Profili visibile solo con callback reale | delta | 2026-06-15 |
-| F51 | Movement suggestion chips + currency selector — chip locali per Titolo/Note/Beneficiario, max 5, tap-to-fill, valuta configurabile da Impostazioni con formatter condiviso | delta | 2026-06-18 |
+| F51 | Movement suggestion chips + currency selector — chip locali per Titolo/Note/Beneficiario, max 5, focus-aware, tap-to-replace, valuta configurabile da Impostazioni con formatter condiviso | delta | 2026-06-18 |
+| F52 | Hermes closure stabilization — azioni movimento centralizzate, tap breve modifica, long-press/tre puntini sullo stesso sheet, add/edit movement header compatto + sticky amount, restore conti, delete categoria con riassegnazione sicura | delta | 2026-06-19 |
 
 ---
 
 ## Priorità prossime
 
-1. V0.9.0 — Notes & Tags
-2. V0.9.1 — Dashboard recalcolo + tabella editor
-3. V0.9.2 — Export/Backup
+1. V0.9.0 — Beneficiary detail direct edit entry + manual QA closure
+2. V0.9.1 — Notes & Tags
+3. V0.9.2 — Dashboard recalcolo + tabella editor
 4. Subcategories Analytics (Budget/Actual/Scenari)
 
 ---
@@ -179,13 +180,30 @@
 
 ---
 
-### F41 — V0.9.1 Dashboard recalcolo + tabella editor 🔄 IN VALUTAZIONE
+### F52 — Hermes closure stabilization ✅ COMPLETATA
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Chiusura del perimetro Hermes su UX movimenti e safety: azioni centralizzate, add/edit flow rifinito, restore conti, delete categoria con riassegnazione |
+| **Versione candidata** | delta |
+| **Stato** | ✅ COMPLETATA |
+
+**Sotto-feature:**
+1. `MovementCard` con tap breve = modifica
+2. Long-press e tre puntini allineati sullo stesso `showMovementActionsSheet`
+3. `AddMovementFlow` con header top compatto, `X` e conferma sempre raggiungibili
+4. Sticky amount sincronizzato allo stesso controller durante lo scroll
+5. `restoreAccount()` esposto nell’UI dei conti archiviati
+6. Delete categoria con movimenti: archiviazione o riassegnazione verso categoria valida dello stesso tipo
+7. Pulizia `subcategoryId` incompatibili e operazione transazionale lato SQLite
+
+### F41 — V0.9.2 Dashboard recalcolo + tabella editor 🔄 IN VALUTAZIONE
 
 | Campo | Valore |
 |-------|--------|
 | **Descrizione** | Recalcolo KPI dashboard, tabella editor per modifiche rapide |
 | **Priorità** | Media |
-| **Versione candidata** | V0.9.1 |
+| **Versione candidata** | V0.9.2 |
 | **Stato** | 🔄 IN VALUTAZIONE |
 
 ---

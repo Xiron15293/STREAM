@@ -60,14 +60,15 @@
 | — | Heatmap settings, fallback legacy e Movimenti heatmap-first | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 | — | Categorie safe edit + duplicate validation | ✅ COMPLETATO / STABILIZZATO | 2026-06-16 |
 | — | Movement suggestion chips + currency selector | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
+| — | Movement actions + add/edit flow polish + restore/reassign hardening | ✅ COMPLETATO / STABILIZZATO | 2026-06-19 |
 | — | Hermes Extended QA Audit | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
-| — | Hermes QA 6000+ closure candidate | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
+| — | Hermes QA 6000+ closure candidate | ✅ COMPLETATO / QA STABILIZED | 2026-06-19 |
 
 ## Approvate / Future (V0.9+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.9.0 | Movement edit normalization / unified movement editor | 📋 PRIORITARIA |
+| V0.9.0 | Beneficiary detail direct edit entry + residual manual QA closure | 📋 PRIORITARIA |
 | V0.9.1 | Notes & Tags | 📋 APPROVATA |
 | V0.9.2 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
 | V0.9.3 | Subcategories Analytics (Budget/Actual/Scenari) | 💡 IDEA |
@@ -89,9 +90,9 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **V0.9.0e** | **Beneficiari (✅) — creazione `BeneficiaryProfile`, merge manuali+payee derivati, proposta salvataggio da form movimento, display metadata su MovementCard, dettaglio tappabile, backup/restore, DB v12, payee raw preservato, audit finale chiuso** |
 | **Delta** | **iFinance transfer pairing hardening (✅) — pairing per `data + importo`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** |
 | **Delta** | **Profili separati (✅) — registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** |
-| **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`910` test)** |
-| **V0.9.0** | **Notes & Tags** |
-| **V0.9.0** | **Movement edit normalization / unified movement editor (📋) — normalizzazione edit movimento, apertura coerente da Dashboard/Movimenti/Archivio, chip conto cliccabile, campi confermabili** |
+| **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`911 passed`, `1 skipped`)** |
+| **Delta** | **Hermes closure stabilization (✅) — azioni movimento centralizzate, tap breve modifica, long-press/tre puntini sullo stesso sheet, header compatto add/edit, sticky amount, restore conti, delete categoria con riassegnazione sicura** |
+| **V0.9.0** | **Beneficiary detail direct edit entry + manual QA closure (📋) — eventuale apertura edit direttamente dal dettaglio Beneficiari, oggi non presente nel codice attuale** |
 | **V0.9.1** | **Notes & Tags (📋) — campo notes, tag multi-selezione su movimento, filtro per tag in dashboard** |
 | **V0.9.2** | **Dashboard recalcolo + tabella editor (📋) — recalcolo KPI, tabella modificabile** |
 | V0.9.2 | Export/Backup (💡) |
@@ -102,6 +103,14 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | V1.0+ | Cloud Sync (💡) — backup premium, multi-dispositivo |
 | V1.0+ | Scenari (💡) — proiezioni what-if, pianificazione |
 | V1.0+ | Athena Foundation (💡) — Budget, AI categorization, insight |
+
+## Stato Hermes
+
+- Hermes è in stato **closure candidate / QA stabilized**.
+- Full suite dichiarata verde: `44` file test, `912` casi dichiarati, `911` passed, `1` skipped.
+- Nessun nuovo P0/P1/P2 emerso nell’Hermes Extended QA Audit.
+- Residui dichiarabili: manual QA su device reale e info analyzer preesistenti.
+- Limitazione corrente esplicita: il dettaglio Beneficiari mostra i movimenti ma non passa ancora callback `onEdit` diretta alla lista.
 
 ---
 

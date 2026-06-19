@@ -10,22 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Hermes Extended QA Audit**
   - Aggiunta matrice QA data-driven `test/qa_audit_matrix_test.dart`
   - Copertura deterministica su suggerimenti, beneficiari, TimeFilter/range e formatter valuta
-  - Audit finale verde con `911` test passati e `1` skipped nella suite completa
+  - Audit finale verde con `44` file test, `912` casi dichiarati, `911` passati e `1` skipped nella suite completa
   - `1.641` scenari e `7.475` controlli/logiche documentati nel report 6000+
 
 - **Guided `+ Movimento` flow**
   - Flow step-based per Entrata, Spesa e Trasferimento
-  - Shared `MovementCalculatorPad` con aggiornamento realtime dell’importo
+  - Shared `MovementCalculatorPad` con aggiornamento realtime dell’importo e sticky amount compatto durante lo scroll
+  - Header compatto con `X` e check sempre accessibili sia in add sia in edit prefill
   - Campi principali con conferma esplicita e `TextInputAction.done` dove appropriato
 
 - **Movement suggestion chips**
   - Suggerimenti locali per Titolo, Note e Beneficiario
-  - Mostrati solo dopo almeno 2 caratteri, max 5 chip, deduplicati e non invasivi
-  - Tap su chip compila il campo senza auto-sostituzioni
+  - Mostrati solo dopo almeno 2 caratteri, max 5 chip, deduplicati e focus-aware
+  - Tap su chip sostituisce il campo corrente, non concatena, e i suggerimenti tornano al refocus
 
 - **Currency preference**
   - Valuta configurabile da Impostazioni
   - Formatter condiviso per importi, riepiloghi e card
+  - Nessuna conversione reale dei valori, solo formattazione UI
+
+- **Unified movement actions**
+  - Tap breve sulla card = modifica
+  - Tap lungo e tre puntini aprono lo stesso sheet azioni centralizzato
+  - Azioni esposte dal menu condiviso: modifica, duplica, salva preferito, salva rapido, elimina
+
+- **Archive / restore hardening**
+  - I conti archiviati ora hanno `Ripristina`
+  - Categorie e sottocategorie archiviate mantengono `Ripristina`
+  - Ripristino preserva icona, colore e movimenti collegati
 
 - **Transfer UX dedicata**
   - Selezione separata di conto origine e conto destinazione
@@ -68,6 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - La schermata Movimenti non espone più la vista lista/calendario come default utente
   - Le preferenze legacy `list`, `calendar`, `listHeatmap`, `advancedHeatmap` confluiscono in heatmap
   - Le impostazioni mostrano solo `Configura heatmap`
+  - Le superfici con riepilogo sopra e movimenti sotto restano scrollabili e non bloccano la lista movimenti
 
 - **Heatmap settings consolidati**
   - Soglie e colori configurabili con preview e restore default
@@ -77,6 +90,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Modifiche innocue restano consentite anche con contenuti collegati
   - Eliminazione e conversioni/merge rischiosi restano bloccati quando lascerebbero orfani
   - Il controllo duplicati ignora l’entità corrente in modifica
+  - Se una categoria con movimenti viene eliminata dal flow dedicato, l’utente può archiviare o riassegnare i movimenti verso una categoria valida dello stesso tipo
 
 - **Bugfix critico iFinance import — transfer pairing e import normali**
   - `IFinanceCsvRow.isLikelyTransfer()` riconosce i transfer usando `title`, `payee`, `labels`, `categoryRaw`, `categoryParent`
@@ -253,6 +267,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Calculator/input handling**
   - L’importo nel flow movimento si aggiorna in realtime su numeri, operatori, backspace e `00`
   - I campi principali confermano con `done` o con il pulsante di salvataggio del form
+  - Nessuna regressione sui casi `0` / `0,00`
 
 - **Duplicate validation**
   - Evitato il falso duplicato quando si salva la stessa categoria/sottocategoria già aperta in modifica
@@ -260,7 +275,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Category edit and delete safety**
   - Safe edit su categorie con movimenti collegati
-  - Delete bloccato se esistono contenuti collegati
+  - Delete con movimenti collegati gestito tramite archiviazione o riassegnazione transazionale lato DB/app state
+  - Pulizia `subcategoryId` incompatibili per evitare riferimenti orfani
 
 - **iFinance import: pairing transfer corretto e ambiguità ridotte**
   - Fix al pairing che prima lasciava importare solo una piccola parte dei movimenti quando molti transfer entravano nello stesso giorno

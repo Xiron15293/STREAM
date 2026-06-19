@@ -2,7 +2,7 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** V0.8.10b + refresh immediato madre→sottocategorie + date chiare + propagazione dialog + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
+**Stato:** Hermes closure candidate / QA stabilized + movement actions sheet centralizzato + add/edit movement flow polish + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
 
 ## Stack
 
@@ -117,6 +117,33 @@ categoryId, type, amount, title NON influenzano
 
 **Sostituisce 3 implementazioni separate**:
 
+### Movement actions sheet / universal edit entry
+
+> Le azioni movimento sono centralizzate in un bottom sheet condiviso.
+
+**File:** `lib/widgets/movement_actions_sheet.dart`, `lib/widgets/movement_card.dart`
+
+**Regole correnti**
+- `MovementCard.onTap` usa `onEdit ?? onTap`, quindi il tap breve porta alla modifica nelle viste che passano `onEdit`
+- `MovementCard.onLongPress` apre `showMovementActionsSheet(...)` con lo stesso set di callback
+- `MovementCardPopupMenu` richiama lo stesso `showMovementActionsSheet(...)`, quindi long-press e tre puntini sono allineati
+- Azioni oggi esposte dal foglio condiviso:
+  - `Modifica`
+  - `Duplica`
+  - `Salva preferito`
+  - `Salva rapido`
+  - `Elimina`
+
+**Copertura**
+- Movimenti / Archivio tramite `MovementViewRenderer` e `GroupedMovementsList`
+- Dashboard category detail sheet
+- Account detail sheet
+- Category detail sheet
+- Heatmap / riepiloghi che renderizzano movimenti via `MovementCard`
+
+**Limitazione esplicita**
+- `BeneficiariesScreen` dettaglio usa `GroupedMovementsList` senza callback `onEdit`: i movimenti si vedono, ma non hanno ancora entry point diretto all’editor da quel punto
+
 ### BeneficiaryProfile / payee resolution
 
 > I beneficiari manuali sono metadata persistiti separati dai movimenti.
@@ -166,7 +193,9 @@ categoryId, type, amount, title NON influenzano
 - Lista limitata a 3-5 risultati visuali, con default 5
 - Deduplica per testo normalizzato (`trim + lowercase + spazi compressi`)
 - Valori vuoti e testo identico a quello già inserito esclusi
-- Tap su chip compila il campo e chiude la tastiera
+- Tap su chip sostituisce il campo corrente e chiude la tastiera
+- I chip vengono mostrati solo quando il relativo `FocusNode` ha focus
+- Dopo una selezione spariscono; tornano al refocus del campo
 
 **Titolo / Note**
 - I suggerimenti sono costruiti a partire dai movimenti già presenti
@@ -178,6 +207,26 @@ categoryId, type, amount, title NON influenzano
 - I profili manuali hanno peso maggiore rispetto ai payee grezzi
 - Le entry archiviate vengono escluse
 - I chip non fondono automaticamente nomi simili: suggeriscono soltanto
+- I duplicati esatti vengono deduplicati tramite normalizzazione
+
+### Add/Edit Movement flow
+
+> `AddMovementFlow` è il percorso guidato corrente per creazione e modifica con prefill.
+
+**File:** `lib/widgets/add_movement_flow.dart`, `lib/widgets/movement_picker.dart`
+
+**Struttura**
+- Step: categoria → sottocategoria → conto / conti transfer → dettagli
+- `MovementPicker` delega ad `AddMovementFlow` per il branch guidato
+- `prefill` abilita il percorso edit senza cambiare il motore del form
+
+**Polish attuale**
+- Header compatto top con indietro, `X`, e conferma sempre visibili
+- Il submit top usa `_submit()` come il bottone finale: nessun doppio percorso logico
+- `_amountCtrl` è condiviso tra display principale, validation ed eventuale sticky compact amount
+- `_showStickyAmount` si attiva su scroll verticale del dettaglio e mostra un riepilogo compatto sincronizzato
+- Validazione amount via `AmountExpressionEvaluator` con normalizzazione a 2 decimali
+- Nessuna conversione valuta nel form: la preferenza globale cambia solo la formattazione UI
 
 ### Currency preference / formatter
 
@@ -190,7 +239,7 @@ categoryId, type, amount, title NON influenzano
 - `currencyNotifier` notifica le schermate che mostrano importi
 - `SettingsScreen` espone la card `Valuta` con picker dedicato
 - `formatMovementCurrency(...)` centralizza il rendering degli importi fuori dal campo di input
-- La scelta della valuta cambia solo il simbolo, non i valori memorizzati
+- La scelta della valuta cambia solo il simbolo/formattazione, non i valori memorizzati
 
 ### iFinance CSV import — transfer pairing hardening
 
@@ -291,6 +340,18 @@ categoryId, type, amount, title NON influenzano
 - beneficiari separati per profilo
 - import iFinance separato per profilo
 - `BackupScreen` e `Importa CSV iFinance` restano accessibili anche senza callback profili
+
+### Archive / restore / category delete safety
+
+**Conti**
+- `AppDatabase.archiveAccount()` e `restoreAccount()` aggiornano RAM + SQLite preservando `iconKey`, `color`, `createdAt`
+- `SQLiteService.restoreAccount()` esiste e fa flip di `archived = 0`
+
+**Categorie / sottocategorie**
+- Archive/restore mantiene icona, colore e relazioni esistenti
+- `reassignMovementsAndDeleteCategory(...)` accetta solo target non archiviato e dello stesso `MovementType`
+- La riassegnazione pulisce `subcategoryId` a `null` per evitare riferimenti orfani
+- Il branch SQLite usa `transaction(...)` per update movimenti + delete sottocategorie + delete categoria
 
 | File | Prima (V0.6.1) | Dopo (V0.6.2) |
 |------|----------------|----------------|

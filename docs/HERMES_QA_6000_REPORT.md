@@ -66,6 +66,17 @@
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
 - `flutter test`: ok (`911` passed, `1` skipped)
 
+## Note funzionali consolidate
+
+- `MovementCard` usa tap breve per modifica e long-press/tre puntini per lo stesso sheet azioni centralizzato.
+- `AddMovementFlow` mantiene `X` e conferma top sempre accessibili, con importo sticky compatto sincronizzato allo stesso controller.
+- I suggerimenti Titolo/Note/Beneficiario sono locali, deduplicati, focus-aware, visibili da 2 caratteri e sostituiscono il valore del campo al tap.
+- Il picker Beneficiari legacy resta disponibile; i suggerimenti beneficiario nel flow movimento non fondono automaticamente nomi simili.
+- La valuta globale è solo una preferenza di formattazione UI.
+- `restoreAccount()` è presente e i conti archiviati espongono `Ripristina`.
+- `reassignMovementsAndDeleteCategory(...)` esegue la riassegnazione e la delete categoria in transazione, azzerando eventuali `subcategory_id` incompatibili.
+- Limitazione corrente: il dettaglio Beneficiari mostra i movimenti ma non espone ancora un entry point diretto all’edit movimento.
+
 ## Limiti dell’audit
 
 - La QA automatizzata non sostituisce il test manuale completo su device fisico

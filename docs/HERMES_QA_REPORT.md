@@ -28,6 +28,8 @@
 - `test/qa_extensive_test.dart`
 
 ### Aree coperte
+- Azioni movimento universalizzate tramite `MovementCard` e sheet centralizzato
+- Add/Edit Movement flow con header top compatto e sticky amount
 - Suggerimenti Titolo / Note / Beneficiario
 - Normalizzazione beneficiari
 - TimeFilter e range
@@ -45,6 +47,17 @@
 - `flutter test`: ok
 - Suite finale: `911` test verdi, `1` skipped
 
+### Verifiche funzionali documentate
+- `MovementCard`: tap breve apre modifica; tap lungo e tre puntini aprono lo stesso `showMovementActionsSheet`
+- Menu azioni centralizzato: modifica, duplica, salva preferito, salva rapido, elimina
+- `AddMovementFlow`: header top con close/confirm sempre visibili, importo sticky compatto dopo scroll, controller importo condiviso tra display principale e sticky summary
+- Suggerimenti Titolo/Note/Beneficiario: compaiono dopo 2 caratteri, sono deduplicati e focus-aware; il tap sostituisce il campo e i chip tornano al refocus
+- Beneficiario picker legacy: invariato e ancora funzionante; i suggerimenti beneficiario si aggiungono al flow movimento senza fondere automaticamente nomi simili
+- Valuta globale: preferenza da Impostazioni e formatter condiviso applicato a card/riepiloghi/schermate senza conversione reale dei valori
+- Conti archiviati: `Ripristina` disponibile e preservazione metadata
+- Categorie con movimenti collegati: eliminazione gestita tramite archiviazione o riassegnazione verso categoria valida dello stesso tipo, con pulizia sicura delle sottocategorie incompatibili
+- Schermate con riepilogo/heatmap sopra e lista movimenti sotto: la lista resta raggiungibile via scroll e mantiene i callback `MovementCard`
+
 ### Severità
 - P0 nuovi: `0`
 - P1 nuovi: `0`
@@ -55,6 +68,7 @@
 - Gli info analyzer preesistenti restano aperti e non bloccanti
 - La QA automatizzata non sostituisce un test manuale completo su device fisico
 - Le euristiche dei suggerimenti possono avere falsi positivi/negativi non critici
+- Il dettaglio Beneficiari usa `GroupedMovementsList` senza callback `onEdit`: direct edit movement entry non applicabile nel codice attuale
 
 ### Coverage matrix
 
