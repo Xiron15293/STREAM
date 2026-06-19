@@ -8,12 +8,14 @@ class TimeFilterBar extends StatelessWidget {
   final TimeFilter activeFilter;
   final ValueChanged<TimeFilter> onChanged;
   final ValueChanged<DateTime>? onDatePicked;
+  final String? customRangeLabel;
 
   const TimeFilterBar({
     super.key,
     required this.activeFilter,
     required this.onChanged,
     this.onDatePicked,
+    this.customRangeLabel,
   });
 
   void _onModeChanged(TimeFilterMode mode, BuildContext context) {
@@ -95,14 +97,14 @@ class TimeFilterBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           SegmentedButton<TimeFilterMode>(
-            segments: const [
-              ButtonSegment(value: TimeFilterMode.day, label: Text('Giorno')),
-              ButtonSegment(value: TimeFilterMode.week, label: Text('Sett.')),
-              ButtonSegment(value: TimeFilterMode.month, label: Text('Mese')),
-              ButtonSegment(value: TimeFilterMode.year, label: Text('Anno')),
+            segments: [
+              const ButtonSegment(value: TimeFilterMode.day, label: Text('Giorno')),
+              const ButtonSegment(value: TimeFilterMode.week, label: Text('Sett.')),
+              const ButtonSegment(value: TimeFilterMode.month, label: Text('Mese')),
+              const ButtonSegment(value: TimeFilterMode.year, label: Text('Anno')),
               ButtonSegment(
                 value: TimeFilterMode.customRange,
-                label: Text('Intervallo'),
+                label: Text(customRangeLabel ?? 'Intervallo'),
               ),
             ],
             selected: {activeFilter.mode},

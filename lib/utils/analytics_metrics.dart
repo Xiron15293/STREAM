@@ -43,6 +43,15 @@ const _chartColors = [
   Color(0xFF00C7BE),
 ];
 
+List<MapEntry<String, double>> _maybeAddAltro(
+  List<MapEntry<String, double>> sorted,
+  List<MapEntry<String, double>> top,
+) {
+  if (sorted.length <= top.length) return sorted;
+  final other = sorted.skip(top.length).fold<double>(0.0, (s, e) => s + e.value);
+  return [...top, MapEntry('Altro', other)];
+}
+
 List<DateTime> _daysInRange(DateTime start, DateTime end) {
   final days = <DateTime>[];
   var d = DateTime(start.year, start.month, start.day);
@@ -178,10 +187,11 @@ List<ChartSeries> buildTopSpendingDays(List<Movement> movements, TimeFilter filt
   final sorted = byDay.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
   final top = sorted.take(7).toList();
   if (top.isEmpty) return [];
+  final entries = _maybeAddAltro(sorted, top);
   return [
     ChartSeries(
       label: 'Spesa',
-      points: top
+      points: entries
           .asMap()
           .entries
           .map((e) => ChartPoint(
@@ -210,12 +220,13 @@ List<ChartSeries> buildCategoryTopSeries(
     byCategory[name] = (byCategory[name] ?? 0.0) + m.amount;
   }
   final sorted = byCategory.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-  final top = sorted.take(8).toList();
+  final top = sorted.take(7).toList();
   if (top.isEmpty) return [];
+  final entries = _maybeAddAltro(sorted, top);
   return [
     ChartSeries(
       label: typeFilter == MovementType.income ? 'Entrate' : 'Spese',
-      points: top
+      points: entries
           .asMap()
           .entries
           .map((e) => ChartPoint(
@@ -364,12 +375,13 @@ List<ChartSeries> buildBeneficiaryTopSeries(
     byPayee[m.payee!] = (byPayee[m.payee!] ?? 0.0) + m.amount;
   }
   final sorted = byPayee.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-  final top = sorted.take(8).toList();
+  final top = sorted.take(7).toList();
   if (top.isEmpty) return [];
+  final entries = _maybeAddAltro(sorted, top);
   return [
     ChartSeries(
       label: 'Importo',
-      points: top
+      points: entries
           .asMap()
           .entries
           .map((e) => ChartPoint(
@@ -394,17 +406,19 @@ List<ChartSeries> buildBeneficiaryFrequencySeries(
     byPayee[m.payee!] = (byPayee[m.payee!] ?? 0) + 1;
   }
   final sorted = byPayee.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-  final top = sorted.take(8).toList();
+  final top = sorted.take(7).toList();
   if (top.isEmpty) return [];
+  final entries = _maybeAddAltro(sorted.map((e) => MapEntry(e.key, e.value.toDouble())).toList(),
+      top.map((e) => MapEntry(e.key, e.value.toDouble())).toList());
   return [
     ChartSeries(
       label: 'Frequenza',
-      points: top
+      points: entries
           .asMap()
           .entries
           .map((e) => ChartPoint(
                 label: e.value.key,
-                value: e.value.value.toDouble(),
+                value: e.value.value,
                 color: _chartColors[e.key % _chartColors.length],
               ))
           .toList(),
