@@ -387,6 +387,99 @@ void main() {
     });
 
     testWidgets(
+      'importo sticky compatto compare dopo scroll e segue l input live',
+      (tester) async {
+        final db = AppDatabase();
+        await _pumpMovementPickerSheet(tester, db);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
+        expect(find.byKey(const Key('movement_amount_sticky')), findsNothing);
+
+        await tester.drag(
+          find.byKey(const Key('add_movement_details_step')),
+          const Offset(0, -700),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('movement_amount_sticky')), findsOneWidget);
+        expect(find.text('0 €'), findsWidgets);
+
+        await _tapPadKey(tester, 'movement_pad_5');
+        await _tapPadKey(tester, 'movement_pad_0');
+        await tester.pumpAndSettle();
+
+        expect(_amountDisplayText(tester), '50');
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('movement_amount_sticky')),
+            matching: find.text('50 €'),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'viewport piccoli e medi non generano overflow con sticky e chip ancora tappabili',
+      (tester) async {
+        Future<void> runForSize(Size size) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+
+          final db = AppDatabase();
+          await db.createMovementFromTemplate(
+            title: 'Rimborso taxi',
+            amount: 12,
+            type: MovementType.expense,
+            date: DateTime(2026, 6, 10),
+            categoryId: 'exp_1',
+            accountId: defaultAccountId,
+          );
+          await _pumpMovementPickerSheet(tester, db);
+          await _tapVisible(
+            tester,
+            find.byKey(const Key('category_option_exp_1')),
+          );
+        await tester.drag(
+          find.byKey(const Key('add_movement_details_step')).last,
+          const Offset(0, -650),
+        );
+          await tester.pumpAndSettle();
+
+          await tester.enterText(
+            find.byKey(const Key('movement_title_field')).last,
+            'ri',
+          );
+          await tester.pumpAndSettle();
+          await _tapVisible(
+            tester,
+            find.byKey(const Key('movement_title_suggestion_0')),
+          );
+
+          expect(find.byKey(const Key('movement_amount_sticky')), findsOneWidget);
+          expect(tester.takeException(), isNull);
+
+          await _tapVisible(
+            tester,
+            find.byKey(const Key('movement_cancel_button')),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await runForSize(const Size(320, 568));
+        await runForSize(const Size(390, 844));
+      },
+    );
+
+    testWidgets(
       'titolo mostra suggerimenti dopo 2 caratteri e tap compila il campo',
       (tester) async {
         final db = AppDatabase();
@@ -1109,6 +1202,24 @@ void main() {
 
 Future<void> _pumpApp(WidgetTester tester, AppDatabase db) async {
   await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpMovementPickerSheet(
+  WidgetTester tester,
+  AppDatabase db,
+) async {
+  await tester.pumpWidget(
+    const MaterialApp(home: Scaffold(body: SizedBox.shrink())),
+  );
+  final context = tester.element(find.byType(Scaffold));
+  // ignore: unawaited_futures
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => MovementPicker(db: db),
+  );
+  await tester.pump();
   await tester.pumpAndSettle();
 }
 

@@ -44,6 +44,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   final _noteCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
   final _searchCtrl = TextEditingController();
+  final _detailsScrollCtrl = ScrollController();
   final _evaluator = const AmountExpressionEvaluator();
 
   MovementType _type = MovementType.expense;
@@ -55,10 +56,18 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   String? _destinationAccountId;
   DateTime _date = DateTime.now();
   String? _selectionError;
+  bool _showStickyAmount = false;
   bool get _isEditing => widget.prefill != null;
 
   void _handleAmountChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _handleDetailsScroll() {
+    final shouldShow = _detailsScrollCtrl.hasClients &&
+        _detailsScrollCtrl.offset > 120;
+    if (!mounted || shouldShow == _showStickyAmount) return;
+    setState(() => _showStickyAmount = shouldShow);
   }
 
   @override
@@ -86,16 +95,19 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
       setState(() => _search = _searchCtrl.text.trim().toLowerCase());
     });
     _amountCtrl.addListener(_handleAmountChanged);
+    _detailsScrollCtrl.addListener(_handleDetailsScroll);
   }
 
   @override
   void dispose() {
     _amountCtrl.removeListener(_handleAmountChanged);
+    _detailsScrollCtrl.removeListener(_handleDetailsScroll);
     _titleCtrl.dispose();
     _counterpartyCtrl.dispose();
     _noteCtrl.dispose();
     _amountCtrl.dispose();
     _searchCtrl.dispose();
+    _detailsScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -801,145 +813,216 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildDetailsStep() {
-    return SingleChildScrollView(
-      key: const Key('add_movement_details_step'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : MediaQuery.sizeOf(context).height * 0.85;
+        return SizedBox(
+          height: height,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IconButton(
-                onPressed: () => setState(() {
-                  _selectionError = null;
-                  _step = switch (_type) {
-                    MovementType.transfer => _FlowStep.transferAccounts,
-                    MovementType.income => _FlowStep.account,
-                    MovementType.expense =>
-                      _selectedCategory != null &&
-                              _subcategoriesFor(
-                                _selectedCategory!.id,
-                              ).isNotEmpty
-                          ? _FlowStep.subcategory
-                          : _FlowStep.category,
-                  };
-                }),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _showStickyAmount
+                    ? SafeArea(
+                        top: true,
+                        bottom: false,
+                        child: Container(
+                          key: const Key('movement_amount_sticky'),
+                          margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StreamSpacing.md,
+                            vertical: StreamSpacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: StreamColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(StreamRadius.md),
+                            boxShadow: const [
+                              BoxShadow(
+                                blurRadius: 16,
+                                offset: Offset(0, 6),
+                                color: Color(0x22000000),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Importo', style: StreamTypography.caption),
+                              Text(
+                                '${_amountDisplayText()} €',
+                                style: StreamTypography.bodyBold.copyWith(
+                                  color: StreamColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-              Expanded(child: Text(_titleLabel(), style: StreamTypography.h3)),
+              Expanded(
+                child: SingleChildScrollView(
+                  key: const Key('add_movement_details_step'),
+                  controller: _detailsScrollCtrl,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => setState(() {
+                              _selectionError = null;
+                              _step = switch (_type) {
+                                MovementType.transfer =>
+                                  _FlowStep.transferAccounts,
+                                MovementType.income => _FlowStep.account,
+                                MovementType.expense =>
+                                  _selectedCategory != null &&
+                                          _subcategoriesFor(
+                                            _selectedCategory!.id,
+                                          ).isNotEmpty
+                                      ? _FlowStep.subcategory
+                                      : _FlowStep.category,
+                              };
+                              _showStickyAmount = false;
+                            }),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 18,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(_titleLabel(), style: StreamTypography.h3),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      _buildTopSelectors(),
+                      const SizedBox(height: StreamSpacing.lg),
+                      Text(
+                        _amountDisplayText(),
+                        key: const Key('movement_amount_display'),
+                        textAlign: TextAlign.center,
+                        style: StreamTypography.amountLarge.copyWith(
+                          color: StreamColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: StreamSpacing.lg),
+                      TextField(
+                        key: const Key('movement_title_field'),
+                        controller: _titleCtrl,
+                        decoration: const InputDecoration(labelText: 'Titolo'),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                      ),
+                      MovementTextSuggestions(
+                        db: widget.db,
+                        controller: _titleCtrl,
+                        field: MovementTextSuggestionField.title,
+                        type: _type,
+                        categoryId: _categoryId,
+                        beneficiary: _counterpartyCtrl.text,
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      TextField(
+                        key: const Key('movement_counterparty_field'),
+                        controller: _counterpartyCtrl,
+                        decoration: InputDecoration(
+                          labelText: _counterpartyLabel(),
+                          suffixIcon: IconButton(
+                            key: const Key('movement_beneficiary_picker_button'),
+                            onPressed: _pickBeneficiary,
+                            icon: const Icon(Icons.people_outline),
+                            tooltip: 'Apri beneficiari',
+                          ),
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                      ),
+                      MovementBeneficiarySuggestions(
+                        db: widget.db,
+                        controller: _counterpartyCtrl,
+                        limit: 5,
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      TextField(
+                        key: const Key('movement_note_field'),
+                        controller: _noteCtrl,
+                        maxLines: 2,
+                        decoration: const InputDecoration(labelText: 'Note'),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                      ),
+                      MovementTextSuggestions(
+                        db: widget.db,
+                        controller: _noteCtrl,
+                        field: MovementTextSuggestionField.note,
+                        type: _type,
+                        categoryId: _categoryId,
+                        beneficiary: _counterpartyCtrl.text,
+                        limit: 4,
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      InkWell(
+                        key: const Key('movement_date_field'),
+                        onTap: _pickDate,
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Data',
+                            suffixIcon: Icon(
+                              Icons.calendar_today_outlined,
+                              size: 18,
+                            ),
+                          ),
+                          child: Text(_formatDateLabel()),
+                        ),
+                      ),
+                      const SizedBox(height: StreamSpacing.md),
+                      MovementCalculatorPad(
+                        controller: _amountCtrl,
+                        onDateTap: _pickDate,
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      Text(
+                        _formatDateLabel(),
+                        textAlign: TextAlign.center,
+                        style: StreamTypography.bodyBold.copyWith(
+                          color: StreamColors.primary,
+                        ),
+                      ),
+                      if (_selectionError != null) ...[
+                        const SizedBox(height: StreamSpacing.md),
+                        Text(
+                          _selectionError!,
+                          style: StreamTypography.caption.copyWith(
+                            color: StreamColors.expense,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: StreamSpacing.lg),
+                      FilledButton(
+                        key: const Key('movement_submit_button'),
+                        onPressed: _submit,
+                        child: Text(_submitLabel()),
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      OutlinedButton(
+                        key: const Key('movement_cancel_button'),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancella'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: StreamSpacing.md),
-          _buildTopSelectors(),
-          const SizedBox(height: StreamSpacing.lg),
-          Text(
-            _amountDisplayText(),
-            key: const Key('movement_amount_display'),
-            textAlign: TextAlign.center,
-            style: StreamTypography.amountLarge.copyWith(
-              color: StreamColors.primary,
-            ),
-          ),
-          const SizedBox(height: StreamSpacing.lg),
-          TextField(
-            key: const Key('movement_title_field'),
-            controller: _titleCtrl,
-            decoration: const InputDecoration(labelText: 'Titolo'),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-          ),
-          MovementTextSuggestions(
-            db: widget.db,
-            controller: _titleCtrl,
-            field: MovementTextSuggestionField.title,
-            type: _type,
-            categoryId: _categoryId,
-            beneficiary: _counterpartyCtrl.text,
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          TextField(
-            key: const Key('movement_counterparty_field'),
-            controller: _counterpartyCtrl,
-            decoration: InputDecoration(
-              labelText: _counterpartyLabel(),
-              suffixIcon: IconButton(
-                key: const Key('movement_beneficiary_picker_button'),
-                onPressed: _pickBeneficiary,
-                icon: const Icon(Icons.people_outline),
-                tooltip: 'Apri beneficiari',
-              ),
-            ),
-            textInputAction: TextInputAction.done,
-            onChanged: (_) => setState(() {}),
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-          ),
-          MovementBeneficiarySuggestions(
-            db: widget.db,
-            controller: _counterpartyCtrl,
-            limit: 5,
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          TextField(
-            key: const Key('movement_note_field'),
-            controller: _noteCtrl,
-            maxLines: 2,
-            decoration: const InputDecoration(labelText: 'Note'),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-          ),
-          MovementTextSuggestions(
-            db: widget.db,
-            controller: _noteCtrl,
-            field: MovementTextSuggestionField.note,
-            type: _type,
-            categoryId: _categoryId,
-            beneficiary: _counterpartyCtrl.text,
-            limit: 4,
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          InkWell(
-            key: const Key('movement_date_field'),
-            onTap: _pickDate,
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Data',
-                suffixIcon: Icon(Icons.calendar_today_outlined, size: 18),
-              ),
-              child: Text(_formatDateLabel()),
-            ),
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          MovementCalculatorPad(controller: _amountCtrl, onDateTap: _pickDate),
-          const SizedBox(height: StreamSpacing.sm),
-          Text(
-            _formatDateLabel(),
-            textAlign: TextAlign.center,
-            style: StreamTypography.bodyBold.copyWith(
-              color: StreamColors.primary,
-            ),
-          ),
-          if (_selectionError != null) ...[
-            const SizedBox(height: StreamSpacing.md),
-            Text(
-              _selectionError!,
-              style: StreamTypography.caption.copyWith(
-                color: StreamColors.expense,
-              ),
-            ),
-          ],
-          const SizedBox(height: StreamSpacing.lg),
-          FilledButton(
-            key: const Key('movement_submit_button'),
-            onPressed: _submit,
-            child: Text(_submitLabel()),
-          ),
-          const SizedBox(height: StreamSpacing.sm),
-          OutlinedButton(
-            key: const Key('movement_cancel_button'),
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancella'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

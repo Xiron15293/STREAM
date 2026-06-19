@@ -200,15 +200,18 @@ class _MovementPickerState extends State<MovementPicker> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _mode == AddMode.manuale
-                    ? (widget.prefill != null
-                          ? 'Modifica movimento'
-                          : 'Nuovo movimento')
-                    : _mode == AddMode.rapidi
-                    ? 'Movimenti rapidi'
-                    : 'Preferiti',
-                style: StreamTypography.h3,
+              Expanded(
+                child: Text(
+                  _mode == AddMode.manuale
+                      ? (widget.prefill != null
+                            ? 'Modifica movimento'
+                            : 'Nuovo movimento')
+                      : _mode == AddMode.rapidi
+                      ? 'Movimenti rapidi'
+                      : 'Preferiti',
+                  style: StreamTypography.h3,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.close),
