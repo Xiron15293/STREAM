@@ -132,6 +132,191 @@ void _showConvertReport(BuildContext context, CategoryConversionReport report) {
   );
 }
 
+Future<void> _showDeleteCategoryDialog(
+  BuildContext context,
+  AppDatabase db,
+  Category category,
+  VoidCallback onChanged,
+) async {
+  final movementCount = db.categoryMovementCount(category.id);
+  final quickCount = db.categoryHasQuickMovements(category.id) ? 1 : 0;
+  final favoriteCount = db.categoryHasFavoriteMovements(category.id) ? 1 : 0;
+  final subcategoryCount = db.getSubcategoriesForCategory(category.id).length;
+  final linkedContent = _describeCategoryLinkedContent(db, category);
+
+  if (linkedContent.isEmpty) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminare categoria?'),
+        content: Text(
+          'La categoria "${category.name}" sarà eliminata definitivamente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () {
+              db.deleteCategory(category.id);
+              onChanged();
+              Navigator.pop(ctx);
+            },
+            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
+
+  final destinationOptions =
+      db.categories
+          .where(
+            (candidate) =>
+                candidate.type == category.type &&
+                !candidate.archived &&
+                candidate.id != category.id,
+          )
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+  final canReassignAndDelete =
+      movementCount > 0 &&
+      quickCount == 0 &&
+      favoriteCount == 0 &&
+      destinationOptions.isNotEmpty;
+  var destinationCategoryId = destinationOptions.isNotEmpty
+      ? destinationOptions.first.id
+      : null;
+
+  await showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (context, setState) {
+        final reassignBlockedReason = quickCount > 0 || favoriteCount > 0
+            ? 'La riassegnazione elimina la categoria solo quando non ci sono rapidi o preferiti collegati.'
+            : destinationOptions.isEmpty
+            ? 'Serve almeno un\'altra categoria attiva dello stesso tipo come destinazione.'
+            : null;
+
+        return AlertDialog(
+          title: Text(
+            movementCount > 0
+                ? 'Categoria con movimenti collegati'
+                : 'Impossibile eliminare',
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'La categoria "${category.name}" contiene elementi collegati '
+                  '($linkedContent).',
+                ),
+                if (movementCount > 0) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Puoi archiviarla oppure riassegnare i movimenti a un\'altra categoria prima di eliminarla.',
+                  ),
+                ],
+                if (subcategoryCount > 0) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Le sottocategorie collegate verranno rimosse e i movimenti passeranno senza sottocategoria se non compatibile.',
+                    style: StreamTypography.caption.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+                ],
+                if (canReassignAndDelete) ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    key: const Key('category_delete_reassign_target'),
+                    initialValue: destinationCategoryId,
+                    decoration: const InputDecoration(
+                      labelText: 'Categoria destinazione',
+                    ),
+                    items: destinationOptions
+                        .map(
+                          (candidate) => DropdownMenuItem(
+                            value: candidate.id,
+                            child: Text(candidate.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) =>
+                        setState(() => destinationCategoryId = value),
+                  ),
+                ] else if (movementCount > 0 &&
+                    reassignBlockedReason != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    reassignBlockedReason,
+                    style: StreamTypography.caption.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Archiviala o sposta/elimina prima gli elementi collegati.',
+                    style: StreamTypography.caption.copyWith(
+                      color: StreamColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
+            if (!category.archived)
+              TextButton(
+                onPressed: () async {
+                  await db.archiveCategory(category.id);
+                  onChanged();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: const Text('Archivia categoria'),
+              ),
+            if (canReassignAndDelete)
+              FilledButton(
+                key: const Key('category_delete_reassign_confirm'),
+                onPressed: destinationCategoryId == null
+                    ? null
+                    : () async {
+                        final success = await db
+                            .reassignMovementsAndDeleteCategory(
+                              sourceCategoryId: category.id,
+                              targetCategoryId: destinationCategoryId!,
+                            );
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        if (success) {
+                          onChanged();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Riassegnazione non completata.'),
+                            ),
+                          );
+                        }
+                      },
+                child: const Text('Riassegna movimenti ed elimina'),
+              ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
 Widget _reportRow(String label, String value) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 2),
@@ -1818,53 +2003,7 @@ class _CleanListTile extends StatelessWidget {
   }
 
   void _tryDelete(BuildContext context) {
-    final linkedContent = _describeCategoryLinkedContent(db, category);
-    if (linkedContent.isNotEmpty) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Impossibile eliminare'),
-          content: Text(
-            'La categoria "${category.name}" contiene elementi collegati '
-            '($linkedContent).\n\n'
-            'Archiviala o sposta/elimina prima gli elementi collegati.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Eliminare categoria?'),
-          content: Text(
-            'La categoria "${category.name}" sarà eliminata definitivamente.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annulla'),
-            ),
-            TextButton(
-              onPressed: () {
-                db.deleteCategory(category.id);
-                onChanged();
-                Navigator.pop(ctx);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: StreamColors.expense,
-              ),
-              child: const Text('Elimina'),
-            ),
-          ],
-        ),
-      );
-    }
+    _showDeleteCategoryDialog(context, db, category, onChanged);
   }
 }
 
@@ -1984,53 +2123,7 @@ class _GroupedListTile extends StatelessWidget {
   }
 
   void _tryDelete(BuildContext context) {
-    final linkedContent = _describeCategoryLinkedContent(db, category);
-    if (linkedContent.isNotEmpty) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Impossibile eliminare'),
-          content: Text(
-            'La categoria "${category.name}" contiene elementi collegati '
-            '($linkedContent).\n\n'
-            'Archiviala o sposta/elimina prima gli elementi collegati.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Eliminare categoria?'),
-          content: Text(
-            'La categoria "${category.name}" sarà eliminata definitivamente.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annulla'),
-            ),
-            TextButton(
-              onPressed: () {
-                db.deleteCategory(category.id);
-                onChanged();
-                Navigator.pop(ctx);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: StreamColors.expense,
-              ),
-              child: const Text('Elimina'),
-            ),
-          ],
-        ),
-      );
-    }
+    _showDeleteCategoryDialog(context, db, category, onChanged);
   }
 }
 
@@ -2200,53 +2293,7 @@ class _StreamCardGridTile extends StatelessWidget {
   }
 
   void _tryDelete(BuildContext context) {
-    final linkedContent = _describeCategoryLinkedContent(db, category);
-    if (linkedContent.isNotEmpty) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Impossibile eliminare'),
-          content: Text(
-            'La categoria "${category.name}" contiene elementi collegati '
-            '($linkedContent).\n\n'
-            'Archiviala o sposta/elimina prima gli elementi collegati.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Eliminare categoria?'),
-          content: Text(
-            'La categoria "${category.name}" sarà eliminata definitivamente.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annulla'),
-            ),
-            TextButton(
-              onPressed: () {
-                db.deleteCategory(category.id);
-                onChanged();
-                Navigator.pop(ctx);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: StreamColors.expense,
-              ),
-              child: const Text('Elimina'),
-            ),
-          ],
-        ),
-      );
-    }
+    _showDeleteCategoryDialog(context, db, category, onChanged);
   }
 }
 

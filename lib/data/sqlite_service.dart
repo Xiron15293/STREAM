@@ -88,8 +88,12 @@ class SQLiteService {
         updated_at TEXT NOT NULL
       )
     ''');
-    await db.execute('CREATE INDEX idx_subcategories_category_id ON subcategories(category_id)');
-    await db.execute('CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)');
+    await db.execute(
+      'CREATE INDEX idx_subcategories_category_id ON subcategories(category_id)',
+    );
+    await db.execute(
+      'CREATE UNIQUE INDEX idx_subcategories_unique ON subcategories(category_id, name)',
+    );
 
     await db.execute('''
       CREATE TABLE quick_movements (
@@ -147,7 +151,9 @@ class SQLiteService {
         updated_at TEXT
       )
     ''');
-    await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiary_key ON beneficiary_profiles(key)');
+    await db.execute(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiary_key ON beneficiary_profiles(key)',
+    );
 
     await _insertDefaultAccount(db);
   }
@@ -168,7 +174,8 @@ class SQLiteService {
       await _insertDefaultAccount(db);
       try {
         await db.execute(
-            "ALTER TABLE movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
+          "ALTER TABLE movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'",
+        );
       } catch (e) {
         debugPrint('Migration V2 add account_id to movements error: $e');
       }
@@ -176,36 +183,43 @@ class SQLiteService {
     if (oldVersion < 3) {
       try {
         await db.execute(
-            "ALTER TABLE quick_movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
+          "ALTER TABLE quick_movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'",
+        );
       } catch (e) {
         debugPrint('Migration V3 add account_id to quick_movements error: $e');
       }
       try {
         await db.execute(
-            "ALTER TABLE favorite_movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'");
+          "ALTER TABLE favorite_movements ADD COLUMN account_id TEXT NOT NULL DEFAULT '$defaultAccountId'",
+        );
       } catch (e) {
-        debugPrint('Migration V3 add account_id to favorite_movements error: $e');
+        debugPrint(
+          'Migration V3 add account_id to favorite_movements error: $e',
+        );
       }
     }
     if (oldVersion < 4) {
       try {
         await db.execute(
-            "ALTER TABLE categories ADD COLUMN icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultCategoryIcon}'");
+          "ALTER TABLE categories ADD COLUMN icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultCategoryIcon}'",
+        );
       } catch (e) {
         debugPrint('Migration V4 add icon_key to categories error: $e');
       }
       try {
         await db.execute(
-            "ALTER TABLE accounts ADD COLUMN icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultAccountIcon}'");
+          "ALTER TABLE accounts ADD COLUMN icon_key TEXT NOT NULL DEFAULT '${StreamIconLibrary.defaultAccountIcon}'",
+        );
       } catch (e) {
         debugPrint('Migration V4 add icon_key to accounts error: $e');
       }
     }
     if (oldVersion < 5) {
       try {
-        await db.execute(
-            "ALTER TABLE accounts ADD COLUMN color INTEGER");
-        await db.update('accounts', {'color': StreamColorPalette.getDefault()}, where: 'color IS NULL');
+        await db.execute("ALTER TABLE accounts ADD COLUMN color INTEGER");
+        await db.update('accounts', {
+          'color': StreamColorPalette.getDefault(),
+        }, where: 'color IS NULL');
       } catch (e) {
         debugPrint('Migration V5 add color to accounts error: $e');
       }
@@ -279,12 +293,16 @@ class SQLiteService {
         )
       ''');
       try {
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories(category_id)');
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories(category_id)',
+        );
       } catch (e) {
         debugPrint('Migration V9 create index error: $e');
       }
       try {
-        await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_subcategories_unique ON subcategories(category_id, name)');
+        await db.execute(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_subcategories_unique ON subcategories(category_id, name)',
+        );
       } catch (e) {
         debugPrint('Migration V9 create unique index error: $e');
       }
@@ -349,7 +367,9 @@ class SQLiteService {
         )
       ''');
       try {
-        await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiary_key ON beneficiary_profiles(key)');
+        await db.execute(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_beneficiary_key ON beneficiary_profiles(key)',
+        );
       } catch (e) {
         debugPrint('Migration V12 create index error: $e');
       }
@@ -370,39 +390,39 @@ class SQLiteService {
   }
 
   List<QuickMovement> _defaultQuickMovements() => [
-        const QuickMovement(
-          id: 'qm_1',
-          title: 'Caffè',
-          amount: 1.50,
-          type: MovementType.expense,
-          categoryId: 'exp_4',
-          accountId: defaultAccountId,
-        ),
-        const QuickMovement(
-          id: 'qm_2',
-          title: 'Benzina',
-          amount: 50.0,
-          type: MovementType.expense,
-          categoryId: 'exp_3',
-          accountId: defaultAccountId,
-        ),
-        const QuickMovement(
-          id: 'qm_3',
-          title: 'Spesa',
-          amount: 80.0,
-          type: MovementType.expense,
-          categoryId: 'exp_1',
-          accountId: defaultAccountId,
-        ),
-        const QuickMovement(
-          id: 'qm_4',
-          title: 'Stipendio',
-          amount: 2500.0,
-          type: MovementType.income,
-          categoryId: 'inc_1',
-          accountId: defaultAccountId,
-        ),
-      ];
+    const QuickMovement(
+      id: 'qm_1',
+      title: 'Caffè',
+      amount: 1.50,
+      type: MovementType.expense,
+      categoryId: 'exp_4',
+      accountId: defaultAccountId,
+    ),
+    const QuickMovement(
+      id: 'qm_2',
+      title: 'Benzina',
+      amount: 50.0,
+      type: MovementType.expense,
+      categoryId: 'exp_3',
+      accountId: defaultAccountId,
+    ),
+    const QuickMovement(
+      id: 'qm_3',
+      title: 'Spesa',
+      amount: 80.0,
+      type: MovementType.expense,
+      categoryId: 'exp_1',
+      accountId: defaultAccountId,
+    ),
+    const QuickMovement(
+      id: 'qm_4',
+      title: 'Stipendio',
+      amount: 2500.0,
+      type: MovementType.income,
+      categoryId: 'inc_1',
+      accountId: defaultAccountId,
+    ),
+  ];
 
   Future<void> resetAllData() async {
     final db = _database;
@@ -449,8 +469,11 @@ class SQLiteService {
 
   Future<void> insertMovement(Movement m) async {
     final db = _database;
-    await db.insert('movements', _movementToMap(m),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'movements',
+      _movementToMap(m),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> deleteMovement(String id) async {
@@ -460,28 +483,32 @@ class SQLiteService {
 
   Future<void> updateMovement(Movement m) async {
     final db = _database;
-    await db.update('movements', _movementToMap(m),
-        where: 'id = ?', whereArgs: [m.id]);
+    await db.update(
+      'movements',
+      _movementToMap(m),
+      where: 'id = ?',
+      whereArgs: [m.id],
+    );
   }
 
   String _toDateOnly(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Map<String, dynamic> _movementToMap(Movement m) => {
-        'id': m.id,
-        'title': m.title,
-        'amount': m.amount,
-        'type': m.type.name,
-        'category_id': m.categoryId,
-        'subcategory_id': m.subcategoryId,
-        'account_id': m.accountId,
-        'destination_account_id': m.destinationAccountId,
-        'date': _toDateOnly(m.date),
-        'note': m.note,
-        'payee': m.payee,
-        'created_at': m.createdAt.toIso8601String(),
-        'updated_at': m.updatedAt.toIso8601String(),
-      };
+    'id': m.id,
+    'title': m.title,
+    'amount': m.amount,
+    'type': m.type.name,
+    'category_id': m.categoryId,
+    'subcategory_id': m.subcategoryId,
+    'account_id': m.accountId,
+    'destination_account_id': m.destinationAccountId,
+    'date': _toDateOnly(m.date),
+    'note': m.note,
+    'payee': m.payee,
+    'created_at': m.createdAt.toIso8601String(),
+    'updated_at': m.updatedAt.toIso8601String(),
+  };
 
   static DateTime _parseDateSafe(dynamic value, {required DateTime fallback}) {
     if (value is! String || value.isEmpty) return fallback;
@@ -491,35 +518,47 @@ class SQLiteService {
   }
 
   Movement _movementFromMap(Map<String, dynamic> map) => Movement(
-        id: map['id'] as String,
-        title: map['title'] as String,
-        amount: (map['amount'] as num).toDouble(),
-        type: MovementType.values.byName(map['type'] as String),
-        categoryId: map['category_id'] as String,
-        subcategoryId: map['subcategory_id'] as String?,
-        accountId: map['account_id'] as String? ?? defaultAccountId,
-        destinationAccountId: map['destination_account_id'] as String?,
-        date: _parseDateSafe(map['date'], fallback: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1))),
-        note: map['note'] as String?,
-        payee: map['payee'] as String?,
-        createdAt: _parseDateSafe(map['created_at'], fallback: DateTime(2020, 1, 1)),
-        updatedAt: _parseDateSafe(map['updated_at'], fallback: DateTime(2020, 1, 1)),
-      );
+    id: map['id'] as String,
+    title: map['title'] as String,
+    amount: (map['amount'] as num).toDouble(),
+    type: MovementType.values.byName(map['type'] as String),
+    categoryId: map['category_id'] as String,
+    subcategoryId: map['subcategory_id'] as String?,
+    accountId: map['account_id'] as String? ?? defaultAccountId,
+    destinationAccountId: map['destination_account_id'] as String?,
+    date: _parseDateSafe(
+      map['date'],
+      fallback: _parseDateSafe(
+        map['created_at'],
+        fallback: DateTime(2020, 1, 1),
+      ),
+    ),
+    note: map['note'] as String?,
+    payee: map['payee'] as String?,
+    createdAt: _parseDateSafe(
+      map['created_at'],
+      fallback: DateTime(2020, 1, 1),
+    ),
+    updatedAt: _parseDateSafe(
+      map['updated_at'],
+      fallback: DateTime(2020, 1, 1),
+    ),
+  );
 
   // ── Categories ──
 
   Future<int> getCategoriesCount() async {
     final db = _database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as cnt FROM categories');
+    final result = await db.rawQuery('SELECT COUNT(*) as cnt FROM categories');
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
   Future<int> getMovementCountByCategory(String categoryId) async {
     final db = _database;
     final result = await db.rawQuery(
-        'SELECT COUNT(*) as cnt FROM movements WHERE category_id = ?',
-        [categoryId]);
+      'SELECT COUNT(*) as cnt FROM movements WHERE category_id = ?',
+      [categoryId],
+    );
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
@@ -531,8 +570,11 @@ class SQLiteService {
 
   Future<void> insertCategory(Category c) async {
     final db = _database;
-    await db.insert('categories', _categoryToMap(c),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'categories',
+      _categoryToMap(c),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateCategory(Category c) async {
@@ -573,13 +615,14 @@ class SQLiteService {
   }
 
   Category _categoryFromMap(Map<String, dynamic> map) => Category(
-        id: map['id'] as String,
-        name: map['name'] as String,
-        type: MovementType.values.byName(map['type'] as String),
-        color: map['color'] as int,
-        iconKey: map['icon_key'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
-        archived: (map['archived'] as int) == 1,
-      );
+    id: map['id'] as String,
+    name: map['name'] as String,
+    type: MovementType.values.byName(map['type'] as String),
+    color: map['color'] as int,
+    iconKey:
+        map['icon_key'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
+    archived: (map['archived'] as int) == 1,
+  );
 
   // ── Subcategories ──
 
@@ -589,17 +632,25 @@ class SQLiteService {
     return rows.map(_subcategoryFromMap).toList();
   }
 
-  Future<List<Subcategory>> loadSubcategoriesForCategory(String categoryId) async {
+  Future<List<Subcategory>> loadSubcategoriesForCategory(
+    String categoryId,
+  ) async {
     final db = _database;
-    final rows = await db.query('subcategories',
-        where: 'category_id = ?', whereArgs: [categoryId]);
+    final rows = await db.query(
+      'subcategories',
+      where: 'category_id = ?',
+      whereArgs: [categoryId],
+    );
     return rows.map(_subcategoryFromMap).toList();
   }
 
   Future<void> insertSubcategory(Subcategory s) async {
     final db = _database;
-    await db.insert('subcategories', _subcategoryToMap(s),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'subcategories',
+      _subcategoryToMap(s),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateSubcategory(Subcategory s) async {
@@ -622,17 +673,23 @@ class SQLiteService {
   Future<void> archiveSubcategory(String id) async {
     final db = _database;
     final now = DateTime.now().toIso8601String();
-    await db.update('subcategories',
-        {'archived': 1, 'updated_at': now},
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'subcategories',
+      {'archived': 1, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> restoreSubcategory(String id) async {
     final db = _database;
     final now = DateTime.now().toIso8601String();
-    await db.update('subcategories',
-        {'archived': 0, 'updated_at': now},
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'subcategories',
+      {'archived': 0, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> deleteSubcategory(String id) async {
@@ -672,15 +729,15 @@ class SQLiteService {
   }
 
   Subcategory _subcategoryFromMap(Map<String, dynamic> map) => Subcategory(
-        id: map['id'] as String,
-        categoryId: map['category_id'] as String,
-        name: map['name'] as String,
-        iconKey: map['icon_key'] as String?,
-        color: map['color'] as int?,
-        archived: (map['archived'] as int) == 1,
-        createdAt: DateTime.parse(map['created_at'] as String),
-        updatedAt: DateTime.parse(map['updated_at'] as String),
-      );
+    id: map['id'] as String,
+    categoryId: map['category_id'] as String,
+    name: map['name'] as String,
+    iconKey: map['icon_key'] as String?,
+    color: map['color'] as int?,
+    archived: (map['archived'] as int) == 1,
+    createdAt: DateTime.parse(map['created_at'] as String),
+    updatedAt: DateTime.parse(map['updated_at'] as String),
+  );
 
   // ── Quick Movements ──
 
@@ -692,14 +749,21 @@ class SQLiteService {
 
   Future<void> insertQuickMovement(QuickMovement qm) async {
     final db = _database;
-    await db.insert('quick_movements', _quickMovementToMap(qm),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'quick_movements',
+      _quickMovementToMap(qm),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateQuickMovement(String id, QuickMovement qm) async {
     final db = _database;
-    await db.update('quick_movements', _quickMovementToMap(qm),
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'quick_movements',
+      _quickMovementToMap(qm),
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> deleteQuickMovement(String id) async {
@@ -745,8 +809,11 @@ class SQLiteService {
 
   Future<void> insertFavoriteMovement(FavoriteMovement fm) async {
     final db = _database;
-    await db.insert('favorite_movements', _favoriteMovementToMap(fm),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'favorite_movements',
+      _favoriteMovementToMap(fm),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateFavoriteMovement(FavoriteMovement fm) async {
@@ -796,8 +863,7 @@ class SQLiteService {
 
   Future<int> getAccountsCount() async {
     final db = _database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as cnt FROM accounts');
+    final result = await db.rawQuery('SELECT COUNT(*) as cnt FROM accounts');
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
@@ -809,22 +875,69 @@ class SQLiteService {
 
   Future<void> insertAccount(Account a) async {
     final db = _database;
-    await db.insert('accounts', _accountToMap(a),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'accounts',
+      _accountToMap(a),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateAccount(String id, Account a) async {
     final db = _database;
-    await db.update('accounts', _accountToMap(a),
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'accounts',
+      _accountToMap(a),
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> archiveAccount(String id) async {
     final db = _database;
     final now = DateTime.now().toIso8601String();
-    await db.update('accounts',
-        {'archived': 1, 'updated_at': now},
-        where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'accounts',
+      {'archived': 1, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> restoreAccount(String id) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.update(
+      'accounts',
+      {'archived': 0, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> reassignMovementsAndDeleteCategory({
+    required String sourceCategoryId,
+    required String targetCategoryId,
+  }) async {
+    final db = _database;
+    final now = DateTime.now().toIso8601String();
+    await db.transaction((txn) async {
+      await txn.rawUpdate(
+        'UPDATE movements '
+        'SET category_id = ?, subcategory_id = NULL, updated_at = ? '
+        'WHERE category_id = ?',
+        [targetCategoryId, now, sourceCategoryId],
+      );
+      await txn.delete(
+        'subcategories',
+        where: 'category_id = ?',
+        whereArgs: [sourceCategoryId],
+      );
+      await txn.delete(
+        'categories',
+        where: 'id = ?',
+        whereArgs: [sourceCategoryId],
+      );
+    });
   }
 
   Map<String, dynamic> _accountToMap(Account a) {
@@ -843,16 +956,16 @@ class SQLiteService {
   }
 
   Account _accountFromMap(Map<String, dynamic> map) => Account(
-        id: map['id'] as String,
-        name: map['name'] as String,
-        type: AccountType.values.byName(map['type'] as String),
-        initialBalance: (map['initial_balance'] as num?)?.toDouble() ?? 0.0,
-        iconKey: map['icon_key'] as String? ?? StreamIconLibrary.defaultAccountIcon,
-        color: map['color'] as int? ?? StreamColorPalette.getDefault(),
-        archived: (map['archived'] as int) == 1,
-        createdAt: DateTime.parse(map['created_at'] as String),
-        updatedAt: DateTime.parse(map['updated_at'] as String),
-      );
+    id: map['id'] as String,
+    name: map['name'] as String,
+    type: AccountType.values.byName(map['type'] as String),
+    initialBalance: (map['initial_balance'] as num?)?.toDouble() ?? 0.0,
+    iconKey: map['icon_key'] as String? ?? StreamIconLibrary.defaultAccountIcon,
+    color: map['color'] as int? ?? StreamColorPalette.getDefault(),
+    archived: (map['archived'] as int) == 1,
+    createdAt: DateTime.parse(map['created_at'] as String),
+    updatedAt: DateTime.parse(map['updated_at'] as String),
+  );
 
   // ── Beneficiary Profiles ──
 
@@ -864,8 +977,11 @@ class SQLiteService {
 
   Future<void> insertBeneficiaryProfile(BeneficiaryProfile bp) async {
     final db = _database;
-    await db.insert('beneficiary_profiles', _beneficiaryProfileToMap(bp),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'beneficiary_profiles',
+      _beneficiaryProfileToMap(bp),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> updateBeneficiaryProfile(BeneficiaryProfile bp) async {
@@ -910,11 +1026,14 @@ class SQLiteService {
         id: map['id'] as String,
         key: map['key'] as String,
         displayName: map['display_name'] as String,
-        iconKey: map['icon_key'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
+        iconKey:
+            map['icon_key'] as String? ?? StreamIconLibrary.defaultCategoryIcon,
         color: map['color'] as int? ?? StreamColorPalette.getDefault(),
         archived: (map['archived'] as int) == 1,
         createdAt: DateTime.parse(map['created_at'] as String),
-        updatedAt: map['updated_at'] != null ? DateTime.parse(map['updated_at'] as String) : null,
+        updatedAt: map['updated_at'] != null
+            ? DateTime.parse(map['updated_at'] as String)
+            : null,
       );
 
   // ── Delete all (for reset/test) ──

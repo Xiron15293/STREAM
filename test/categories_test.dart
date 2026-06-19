@@ -389,6 +389,56 @@ void main() {
         false,
       );
     });
+
+    test(
+      '21. riassegna movimenti e elimina categoria pulendo le sottocategorie',
+      () async {
+        final db = AppDatabase();
+        await db.addCategory(
+          'Origine Delete',
+          MovementType.expense,
+          0xFF123456,
+        );
+        await db.addCategory(
+          'Destinazione Delete',
+          MovementType.expense,
+          0xFF654321,
+        );
+        final source = db.categories.firstWhere(
+          (c) => c.name == 'Origine Delete',
+        );
+        final target = db.categories.firstWhere(
+          (c) => c.name == 'Destinazione Delete',
+        );
+        await db.createSubcategory(source.id, 'Vecchia sub');
+        final oldSub = db.getSubcategoriesForCategory(source.id).single;
+
+        await db.addMovement(
+          Movement(
+            id: 'reassign_mov_1',
+            title: 'Spesa da spostare',
+            amount: 25,
+            type: MovementType.expense,
+            date: DateTime.now(),
+            categoryId: source.id,
+            subcategoryId: oldSub.id,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+        final success = await db.reassignMovementsAndDeleteCategory(
+          sourceCategoryId: source.id,
+          targetCategoryId: target.id,
+        );
+
+        expect(success, true);
+        expect(db.categories.any((c) => c.id == source.id), false);
+        expect(db.getSubcategoriesForCategory(source.id), isEmpty);
+        final moved = db.movements.firstWhere((m) => m.id == 'reassign_mov_1');
+        expect(moved.categoryId, target.id);
+        expect(moved.subcategoryId, isNull);
+      },
+    );
   });
 
   group('Categories — SQLite persistence', () {

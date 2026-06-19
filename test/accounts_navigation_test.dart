@@ -238,6 +238,39 @@ void main() {
     expect(find.text('Categoria Archiviata'), findsOneWidget);
   });
 
+  testWidgets('conto archiviato mostra e applica Ripristina', (
+    WidgetTester tester,
+  ) async {
+    final db = AppDatabase();
+    await db.addAccount(
+      Account(
+        id: 'acc_restore',
+        name: 'Conto Da Ripristinare',
+        type: AccountType.bank,
+        createdAt: DateTime(2026, 6, 1),
+      ),
+    );
+    await db.archiveAccount('acc_restore');
+
+    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpAndSettle();
+
+    await openAccountSheet(tester, 'acc_restore');
+    expect(
+      find.byKey(const Key('account_sheet_restore_action')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('account_sheet_restore_action')));
+    await tester.pumpAndSettle();
+
+    expect(
+      db.accounts.firstWhere((account) => account.id == 'acc_restore').archived,
+      false,
+    );
+    expect(find.text('Attivo'), findsOneWidget);
+  });
+
   testWidgets(
     'Tocca conto apre movimenti del conto e mostra riepilogo filtrato',
     (WidgetTester tester) async {

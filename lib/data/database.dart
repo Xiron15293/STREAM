@@ -422,6 +422,10 @@ class AppDatabase extends ChangeNotifier {
     return _movements.any((m) => m.categoryId == categoryId);
   }
 
+  int categoryMovementCount(String categoryId) {
+    return _movements.where((m) => m.categoryId == categoryId).length;
+  }
+
   String _normalizeName(String value) => value.trim().toLowerCase();
 
   bool categoryNameExists(
@@ -841,6 +845,75 @@ class AppDatabase extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     notifyListeners();
+  }
+
+  Future<void> restoreAccount(String id) async {
+    final index = _accounts.indexWhere((a) => a.id == id);
+    if (index < 0) return;
+    if (_sqlite != null) {
+      try {
+        await _sqlite.restoreAccount(id);
+      } catch (_) {
+        return;
+      }
+    }
+    _accounts[index] = Account(
+      id: _accounts[index].id,
+      name: _accounts[index].name,
+      type: _accounts[index].type,
+      initialBalance: _accounts[index].initialBalance,
+      iconKey: _accounts[index].iconKey,
+      color: _accounts[index].color,
+      archived: false,
+      createdAt: _accounts[index].createdAt,
+      updatedAt: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  Future<bool> reassignMovementsAndDeleteCategory({
+    required String sourceCategoryId,
+    required String targetCategoryId,
+  }) async {
+    if (sourceCategoryId == targetCategoryId) return false;
+    final sourceIndex = _categories.indexWhere((c) => c.id == sourceCategoryId);
+    final target = _categories
+        .where((c) => c.id == targetCategoryId)
+        .firstOrNull;
+    if (sourceIndex < 0 || target == null || target.archived) return false;
+
+    final source = _categories[sourceIndex];
+    if (source.type != target.type) return false;
+    if (categoryHasQuickMovements(sourceCategoryId) ||
+        categoryHasFavoriteMovements(sourceCategoryId)) {
+      return false;
+    }
+
+    if (_sqlite != null) {
+      try {
+        await _sqlite.reassignMovementsAndDeleteCategory(
+          sourceCategoryId: sourceCategoryId,
+          targetCategoryId: targetCategoryId,
+        );
+      } catch (_) {
+        return false;
+      }
+    }
+
+    final now = DateTime.now();
+    for (int i = 0; i < _movements.length; i++) {
+      final movement = _movements[i];
+      if (movement.categoryId != sourceCategoryId) continue;
+      _movements[i] = movement.copyWith(
+        categoryId: targetCategoryId,
+        subcategoryId: null,
+        updatedAt: now,
+      );
+    }
+    _subcategories.removeWhere((s) => s.categoryId == sourceCategoryId);
+    _categories.removeAt(sourceIndex);
+    notifyListeners();
+    return true;
   }
 
   Future<void> updateAccount(

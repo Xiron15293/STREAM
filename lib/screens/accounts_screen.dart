@@ -83,6 +83,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       onTap: () => _showAccountMovements(context, db, a),
                       onEdit: () => _showAddEditDialog(context, db, account: a),
                       onArchive: () => db.archiveAccount(a.id),
+                      onRestore: () => db.restoreAccount(a.id),
                     ),
                   ),
                   if (archived.isNotEmpty) ...[
@@ -101,11 +102,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         allMovements: db.movements,
                         filter: _filter,
                         onTap: () => _showAccountMovements(context, db, a),
-                        onEdit: () => _showAddEditDialog(
-                          context,
-                          db,
-                          account: a,
-                        ),
+                        onEdit: () =>
+                            _showAddEditDialog(context, db, account: a),
+                        onRestore: () => db.restoreAccount(a.id),
                       ),
                     ),
                   ],
@@ -427,6 +426,7 @@ class _AccountCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onArchive;
+  final VoidCallback? onRestore;
   final AppDatabase db;
   final Account account;
   final List<Movement> periodMovements;
@@ -438,6 +438,7 @@ class _AccountCard extends StatelessWidget {
     required this.onTap,
     this.onEdit,
     this.onArchive,
+    this.onRestore,
     required this.db,
     required this.account,
     required this.periodMovements,
@@ -558,33 +559,39 @@ class _AccountCard extends StatelessWidget {
                             color: StreamColors.textMuted,
                           ),
                         ),
-                        if (!account.archived) ...[
-                          const SizedBox(height: 2),
-                          PopupMenuButton<String>(
-                            onSelected: (v) {
-                              if (v == 'edit') {
-                                onEdit?.call();
-                              } else if (v == 'archive') {
-                                onArchive?.call();
-                              }
-                            },
-                            icon: Icon(
-                              Icons.more_horiz,
-                              size: 18,
-                              color: StreamColors.textMuted,
+                        const SizedBox(height: 2),
+                        PopupMenuButton<String>(
+                          onSelected: (v) {
+                            if (v == 'edit') {
+                              onEdit?.call();
+                            } else if (v == 'archive') {
+                              onArchive?.call();
+                            } else if (v == 'restore') {
+                              onRestore?.call();
+                            }
+                          },
+                          icon: Icon(
+                            Icons.more_horiz,
+                            size: 18,
+                            color: StreamColors.textMuted,
+                          ),
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Modifica'),
                             ),
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Modifica'),
-                              ),
+                            if (!account.archived)
                               const PopupMenuItem(
                                 value: 'archive',
                                 child: Text('Archivia'),
                               ),
-                            ],
-                          ),
-                        ],
+                            if (account.archived)
+                              const PopupMenuItem(
+                                value: 'restore',
+                                child: Text('Ripristina'),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -813,6 +820,12 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _restoreAccount() async {
+    if (!_account.archived) return;
+    await widget.db.restoreAccount(_account.id);
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -990,6 +1003,13 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                         label: 'Archivia',
                         onPressed: _archiveAccount,
                       ),
+                    if (account.archived)
+                      _SheetActionButton(
+                        key: const Key('account_sheet_restore_action'),
+                        icon: Icons.unarchive_outlined,
+                        label: 'Ripristina',
+                        onPressed: _restoreAccount,
+                      ),
                   ],
                 ),
                 const SizedBox(height: StreamSpacing.md),
@@ -1011,21 +1031,18 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                           onEdit: (m) => showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
-                            builder: (_) => MovementPicker(
-                              db: widget.db,
-                              prefill: m,
-                            ),
+                            builder: (_) =>
+                                MovementPicker(db: widget.db, prefill: m),
                           ),
                           onDuplicate: (m) async {
                             final date = await showDuplicateDateSheet(context);
-                            if (date != null) widget.db.duplicateMovement(m, date: date);
+                            if (date != null)
+                              widget.db.duplicateMovement(m, date: date);
                           },
                           onSaveAsFavorite: (m) =>
                               widget.db.saveMovementAsFavorite(m),
-                          onAddQuick: (m) =>
-                              widget.db.saveMovementAsQuick(m),
-                          onDelete: (m) =>
-                              widget.db.deleteMovement(m.id),
+                          onAddQuick: (m) => widget.db.saveMovementAsQuick(m),
+                          onDelete: (m) => widget.db.deleteMovement(m.id),
                         )
                       : Center(
                           child: Text(
