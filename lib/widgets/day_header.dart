@@ -10,10 +10,28 @@ class DayHeader extends StatelessWidget {
 
   const DayHeader({super.key, required this.group, this.filterType});
 
-  static const _weekdays = ['LUNEDÌ', 'MARTEDÌ', 'MERCOLEDÌ', 'GIOVEDÌ', 'VENERDÌ', 'SABATO', 'DOMENICA'];
+  static const _weekdays = [
+    'LUNEDÌ',
+    'MARTEDÌ',
+    'MERCOLEDÌ',
+    'GIOVEDÌ',
+    'VENERDÌ',
+    'SABATO',
+    'DOMENICA',
+  ];
   static const _monthNames = [
-    'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+    'gennaio',
+    'febbraio',
+    'marzo',
+    'aprile',
+    'maggio',
+    'giugno',
+    'luglio',
+    'agosto',
+    'settembre',
+    'ottobre',
+    'novembre',
+    'dicembre',
   ];
 
   String get _weekdayLabel => _weekdays[group.date.weekday - 1];
@@ -38,30 +56,77 @@ class DayHeader extends StatelessWidget {
     if (filterType == MovementType.expense) {
       return Row(
         children: [
-          Text('Uscite: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-          Text(_format(group.totalExpenses), style: StreamTypography.captionBold.copyWith(color: StreamColors.expense)),
+          Text(
+            'Uscite: ',
+            style: StreamTypography.caption.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+          Text(
+            _format(group.totalExpenses),
+            style: StreamTypography.captionBold.copyWith(
+              color: StreamColors.expense,
+            ),
+          ),
         ],
       );
     }
     if (filterType == MovementType.income) {
       return Row(
         children: [
-          Text('Entrate: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-          Text(_format(group.totalIncome), style: StreamTypography.captionBold.copyWith(color: StreamColors.income)),
+          Text(
+            'Entrate: ',
+            style: StreamTypography.caption.copyWith(
+              color: StreamColors.textSecondary,
+            ),
+          ),
+          Text(
+            _format(group.totalIncome),
+            style: StreamTypography.captionBold.copyWith(
+              color: StreamColors.income,
+            ),
+          ),
         ],
       );
     }
     return Row(
       children: [
-        Text('Entrate: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-        Text(_format(group.totalIncome), style: StreamTypography.captionBold.copyWith(color: StreamColors.income)),
+        Text(
+          'Entrate: ',
+          style: StreamTypography.caption.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+        ),
+        Text(
+          _format(group.totalIncome),
+          style: StreamTypography.captionBold.copyWith(
+            color: StreamColors.income,
+          ),
+        ),
         const SizedBox(width: StreamSpacing.md),
-        Text('Uscite: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-        Text(_format(group.totalExpenses), style: StreamTypography.captionBold.copyWith(color: StreamColors.expense)),
+        Text(
+          'Uscite: ',
+          style: StreamTypography.caption.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+        ),
+        Text(
+          _format(group.totalExpenses),
+          style: StreamTypography.captionBold.copyWith(
+            color: StreamColors.expense,
+          ),
+        ),
         const SizedBox(width: StreamSpacing.md),
-        Text('Saldo: ', style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary)),
-        Text('${_balancePrefix()}${_format(group.balance)}',
-          style: StreamTypography.captionBold.copyWith(color: _balanceColor())),
+        Text(
+          'Saldo: ',
+          style: StreamTypography.caption.copyWith(
+            color: StreamColors.textSecondary,
+          ),
+        ),
+        Text(
+          '${_balancePrefix()}${_format(group.balance)}',
+          style: StreamTypography.captionBold.copyWith(color: _balanceColor()),
+        ),
       ],
     );
   }
@@ -80,58 +145,79 @@ class DayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = _dayLabel();
     return Padding(
-      padding: const EdgeInsets.only(top: StreamSpacing.md, bottom: StreamSpacing.sm),
+      padding: const EdgeInsets.only(
+        top: StreamSpacing.md,
+        bottom: StreamSpacing.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(_dayNumber, style: const TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w700,
-                color: StreamColors.textPrimary,
-                height: 1.0,
-              )),
+              Text(
+                _dayNumber,
+                style: const TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w700,
+                  color: StreamColors.textPrimary,
+                  height: 1.0,
+                ),
+              ),
               const SizedBox(width: StreamSpacing.sm),
-               Padding(
-                padding: const EdgeInsets.only(bottom: 3),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_weekdayLabel, style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: StreamColors.textSecondary,
-                      letterSpacing: 1.5,
-                    )),
-                    const SizedBox(height: 1),
-                    Text(
-                      '${_monthNames[group.date.month - 1]} ${group.date.year}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: StreamColors.textMuted,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 3),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _weekdayLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: StreamColors.textSecondary,
+                          letterSpacing: 1.5,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 1),
+                      Text(
+                        '${_monthNames[group.date.month - 1]} ${group.date.year}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: StreamColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               if (label != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 3, left: 6),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: StreamColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(label, style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: StreamColors.primary,
-                      letterSpacing: 1,
-                    )),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: StreamColors.primary,
+                        letterSpacing: 1,
+                      ),
+                    ),
                   ),
                 ),
               const Spacer(),

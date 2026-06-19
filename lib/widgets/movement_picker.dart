@@ -186,52 +186,59 @@ class _MovementPickerState extends State<MovementPicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: StreamSpacing.lg,
-        right: StreamSpacing.lg,
-        top: StreamSpacing.lg,
-        bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  _mode == AddMode.manuale
-                      ? (widget.prefill != null
-                            ? 'Modifica movimento'
-                            : 'Nuovo movimento')
-                      : _mode == AddMode.rapidi
-                      ? 'Movimenti rapidi'
-                      : 'Preferiti',
-                  style: StreamTypography.h3,
-                  overflow: TextOverflow.ellipsis,
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: StreamSpacing.lg,
+          right: StreamSpacing.lg,
+          top: StreamSpacing.lg,
+          bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    _mode == AddMode.manuale
+                        ? (widget.prefill != null
+                              ? 'Modifica movimento'
+                              : 'Nuovo movimento')
+                        : _mode == AddMode.rapidi
+                        ? 'Movimenti rapidi'
+                        : 'Preferiti',
+                    style: StreamTypography.h3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: StreamSpacing.md),
-          SegmentedButton<AddMode>(
-            segments: const [
-              ButtonSegment(value: AddMode.manuale, label: Text('Manuale')),
-              ButtonSegment(value: AddMode.rapidi, label: Text('Rapidi')),
-              ButtonSegment(value: AddMode.preferiti, label: Text('Preferiti')),
-            ],
-            selected: {_mode},
-            onSelectionChanged: (set) => setState(() => _mode = set.first),
-          ),
-          const SizedBox(height: StreamSpacing.lg),
-          Flexible(child: SingleChildScrollView(child: _buildContent())),
-        ],
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: StreamSpacing.md),
+            SegmentedButton<AddMode>(
+              segments: const [
+                ButtonSegment(value: AddMode.manuale, label: Text('Manuale')),
+                ButtonSegment(value: AddMode.rapidi, label: Text('Rapidi')),
+                ButtonSegment(
+                  value: AddMode.preferiti,
+                  label: Text('Preferiti'),
+                ),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (set) => setState(() => _mode = set.first),
+            ),
+            const SizedBox(height: StreamSpacing.lg),
+            Flexible(child: SingleChildScrollView(child: _buildContent())),
+          ],
+        ),
       ),
     );
   }

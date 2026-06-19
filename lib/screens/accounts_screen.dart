@@ -541,58 +541,65 @@ class _AccountCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          _formatMoney(periodEndBalance),
-                          key: const Key('account_current_balance'),
-                          style: StreamTypography.amount.copyWith(
-                            color: periodEndBalance >= 0
-                                ? StreamColors.income
-                                : StreamColors.expense,
-                          ),
-                        ),
-                        Text(
-                          _balanceLabel(filter),
-                          style: StreamTypography.micro.copyWith(
-                            color: StreamColors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        PopupMenuButton<String>(
-                          onSelected: (v) {
-                            if (v == 'edit') {
-                              onEdit?.call();
-                            } else if (v == 'archive') {
-                              onArchive?.call();
-                            } else if (v == 'restore') {
-                              onRestore?.call();
-                            }
-                          },
-                          icon: Icon(
-                            Icons.more_horiz,
-                            size: 18,
-                            color: StreamColors.textMuted,
-                          ),
-                          itemBuilder: (_) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Modifica'),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 104),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatMoney(periodEndBalance),
+                            key: const Key('account_current_balance'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: StreamTypography.amount.copyWith(
+                              color: periodEndBalance >= 0
+                                  ? StreamColors.income
+                                  : StreamColors.expense,
                             ),
-                            if (!account.archived)
+                          ),
+                          Text(
+                            _balanceLabel(filter),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: StreamTypography.micro.copyWith(
+                              color: StreamColors.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          PopupMenuButton<String>(
+                            onSelected: (v) {
+                              if (v == 'edit') {
+                                onEdit?.call();
+                              } else if (v == 'archive') {
+                                onArchive?.call();
+                              } else if (v == 'restore') {
+                                onRestore?.call();
+                              }
+                            },
+                            icon: Icon(
+                              Icons.more_horiz,
+                              size: 18,
+                              color: StreamColors.textMuted,
+                            ),
+                            itemBuilder: (_) => [
                               const PopupMenuItem(
-                                value: 'archive',
-                                child: Text('Archivia'),
+                                value: 'edit',
+                                child: Text('Modifica'),
                               ),
-                            if (account.archived)
-                              const PopupMenuItem(
-                                value: 'restore',
-                                child: Text('Ripristina'),
-                              ),
-                          ],
-                        ),
-                      ],
+                              if (!account.archived)
+                                const PopupMenuItem(
+                                  value: 'archive',
+                                  child: Text('Archivia'),
+                                ),
+                              if (account.archived)
+                                const PopupMenuItem(
+                                  value: 'restore',
+                                  child: Text('Ripristina'),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

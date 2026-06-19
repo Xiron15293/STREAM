@@ -254,6 +254,10 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     return formatAmountInputDisplay(_amountCtrl.text);
   }
 
+  String _currentCurrencySymbol() {
+    return currencySymbolForCurrentPreference();
+  }
+
   String _formatCurrency(double value) {
     return formatMovementCurrency(value);
   }
@@ -835,46 +839,40 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildDetailsHeader(),
+              const SizedBox(height: StreamSpacing.sm),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
                 child: _showStickyAmount
-                    ? SafeArea(
-                        top: true,
-                        bottom: false,
-                        child: Container(
-                          key: const Key('movement_amount_sticky'),
-                          margin: const EdgeInsets.only(
-                            bottom: StreamSpacing.sm,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: StreamSpacing.md,
-                            vertical: StreamSpacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: StreamColors.surfaceElevated,
-                            borderRadius: BorderRadius.circular(
-                              StreamRadius.md,
+                    ? Container(
+                        key: const Key('movement_amount_sticky'),
+                        margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: StreamSpacing.md,
+                          vertical: StreamSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: StreamColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(StreamRadius.md),
+                          boxShadow: const [
+                            BoxShadow(
+                              blurRadius: 16,
+                              offset: Offset(0, 6),
+                              color: Color(0x22000000),
                             ),
-                            boxShadow: const [
-                              BoxShadow(
-                                blurRadius: 16,
-                                offset: Offset(0, 6),
-                                color: Color(0x22000000),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Importo', style: StreamTypography.caption),
+                            Text(
+                              '${_amountDisplayText()} ${_currentCurrencySymbol()}',
+                              style: StreamTypography.bodyBold.copyWith(
+                                color: StreamColors.primary,
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Importo', style: StreamTypography.caption),
-                              Text(
-                                '${_amountDisplayText()} €',
-                                style: StreamTypography.bodyBold.copyWith(
-                                  color: StreamColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       )
                     : const SizedBox.shrink(),
@@ -886,7 +884,6 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildDetailsHeader(),
                       const SizedBox(height: StreamSpacing.md),
                       _buildTopSelectors(),
                       const SizedBox(height: StreamSpacing.lg),
@@ -1018,57 +1015,55 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildDetailsHeader() {
-    return SafeArea(
-      bottom: false,
-      child: Row(
-        children: [
-          IconButton(
-            key: const Key('movement_back_button'),
-            onPressed: () => setState(() {
-              _selectionError = null;
-              _step = switch (_type) {
-                MovementType.transfer => _FlowStep.transferAccounts,
-                MovementType.income => _FlowStep.account,
-                MovementType.expense =>
-                  _selectedCategory != null &&
-                          _subcategoriesFor(_selectedCategory!.id).isNotEmpty
-                      ? _FlowStep.subcategory
-                      : _FlowStep.category,
-              };
-              _showStickyAmount = false;
-            }),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-            tooltip: 'Indietro',
+    return Row(
+      key: const Key('movement_details_header'),
+      children: [
+        IconButton(
+          key: const Key('movement_back_button'),
+          onPressed: () => setState(() {
+            _selectionError = null;
+            _step = switch (_type) {
+              MovementType.transfer => _FlowStep.transferAccounts,
+              MovementType.income => _FlowStep.account,
+              MovementType.expense =>
+                _selectedCategory != null &&
+                        _subcategoriesFor(_selectedCategory!.id).isNotEmpty
+                    ? _FlowStep.subcategory
+                    : _FlowStep.category,
+            };
+            _showStickyAmount = false;
+          }),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          tooltip: 'Indietro',
+        ),
+        Expanded(
+          child: Text(
+            _titleLabel(),
+            style: StreamTypography.h3,
+            overflow: TextOverflow.ellipsis,
           ),
-          Expanded(
-            child: Text(
-              _titleLabel(),
-              style: StreamTypography.h3,
-              overflow: TextOverflow.ellipsis,
+        ),
+        Tooltip(
+          message: 'Chiudi',
+          child: IconButton(
+            key: const Key('movement_close_top_button'),
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close),
+          ),
+        ),
+        Tooltip(
+          message: _submitTooltip(),
+          child: IconButton.filled(
+            key: const Key('movement_submit_top_button'),
+            onPressed: _submit,
+            icon: Icon(
+              _type == MovementType.transfer
+                  ? Icons.compare_arrows_rounded
+                  : Icons.check_rounded,
             ),
           ),
-          Tooltip(
-            message: 'Chiudi',
-            child: IconButton(
-              key: const Key('movement_close_top_button'),
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close),
-            ),
-          ),
-          Tooltip(
-            message: _submitTooltip(),
-            child: IconButton.filled(
-              key: const Key('movement_submit_top_button'),
-              onPressed: _submit,
-              icon: Icon(
-                _type == MovementType.transfer
-                    ? Icons.compare_arrows_rounded
-                    : Icons.check_rounded,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

@@ -85,22 +85,22 @@ class MovementViewRenderer extends StatelessWidget {
         children: [
           if (timeFilter.mode == TimeFilterMode.year ||
               timeFilter.mode == TimeFilterMode.week)
-              PeriodHeatmapCard(
-                timeFilter: timeFilter,
-                movements: movements,
-                selectedDay: selectedDay,
-                selectedPeriodDay: selectedPeriodDay,
-                onDaySelected: onDaySelected,
-                onClearSelectedDay: onClearSelectedDay,
-                compactHeader: true,
-                categories: db.categories,
-                subcategories: db.subcategories,
-                db: db,
-                onEdit: onEdit,
-                onDuplicate: onDuplicate,
-                onSaveAsFavorite: onSaveAsFavorite,
-                onAddQuick: onAddQuick,
-                onDelete: onDelete,
+            PeriodHeatmapCard(
+              timeFilter: timeFilter,
+              movements: movements,
+              selectedDay: selectedDay,
+              selectedPeriodDay: selectedPeriodDay,
+              onDaySelected: onDaySelected,
+              onClearSelectedDay: onClearSelectedDay,
+              compactHeader: true,
+              categories: db.categories,
+              subcategories: db.subcategories,
+              db: db,
+              onEdit: onEdit,
+              onDuplicate: onDuplicate,
+              onSaveAsFavorite: onSaveAsFavorite,
+              onAddQuick: onAddQuick,
+              onDelete: onDelete,
               footerAction: OutlinedButton.icon(
                 key: const Key('movements_card_configure_heatmap_button'),
                 onPressed: () {
@@ -155,7 +155,8 @@ class MovementViewRenderer extends StatelessWidget {
     );
   }
 
-  Widget _buildPanelMode(BuildContext context, {
+  Widget _buildPanelMode(
+    BuildContext context, {
     required Key layoutKey,
     bool includeTypeFilters = false,
   }) {
@@ -277,10 +278,14 @@ class _MovementPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveMovements = selectedPeriodDay != null
-        ? movements.where((m) =>
-            m.date.year == selectedPeriodDay!.year &&
-            m.date.month == selectedPeriodDay!.month &&
-            m.date.day == selectedPeriodDay!.day).toList()
+        ? movements
+              .where(
+                (m) =>
+                    m.date.year == selectedPeriodDay!.year &&
+                    m.date.month == selectedPeriodDay!.month &&
+                    m.date.day == selectedPeriodDay!.day,
+              )
+              .toList()
         : movements;
 
     return Container(
@@ -325,20 +330,27 @@ class _MovementPanel extends StatelessWidget {
     return Padding(
       key: const Key('advanced_heatmap_kpi_panel'),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _dayFilterChip('Tutti', null, 'day_filter_all'),
-          const SizedBox(width: 4),
-          _dayFilterChip('Entrate', MovementType.income, 'day_filter_income'),
-          const SizedBox(width: 4),
-          _dayFilterChip('Uscite', MovementType.expense, 'day_filter_expense'),
-          const SizedBox(width: 4),
-          _dayFilterChip(
-            'Transfer',
-            MovementType.transfer,
-            'day_filter_transfer',
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _dayFilterChip('Tutti', null, 'day_filter_all'),
+            const SizedBox(width: 4),
+            _dayFilterChip('Entrate', MovementType.income, 'day_filter_income'),
+            const SizedBox(width: 4),
+            _dayFilterChip(
+              'Uscite',
+              MovementType.expense,
+              'day_filter_expense',
+            ),
+            const SizedBox(width: 4),
+            _dayFilterChip(
+              'Transfer',
+              MovementType.transfer,
+              'day_filter_transfer',
+            ),
+          ],
+        ),
       ),
     );
   }

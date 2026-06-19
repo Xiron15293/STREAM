@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stream_app/data/database.dart';
+import 'package:stream_app/data/preferences_service.dart';
 import 'package:stream_app/main.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
@@ -14,6 +15,14 @@ import 'package:stream_app/widgets/movement_text_suggestions.dart';
 
 void main() {
   SharedPreferences.setMockInitialValues({});
+
+  setUp(() {
+    PreferencesService.currencyNotifier.value = AppCurrency.eur;
+  });
+
+  tearDown(() {
+    PreferencesService.currencyNotifier.value = AppCurrency.eur;
+  });
 
   group('AddMovementFlow UI', () {
     testWidgets('tap su + Movimento apre flow guidato', (tester) async {
@@ -425,6 +434,167 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'sticky amount usa la valuta globale selezionata senza cambiare il valore',
+      (tester) async {
+        PreferencesService.currencyNotifier.value = AppCurrency.chf;
+        final db = AppDatabase();
+        await _pumpMovementPickerSheet(tester, db);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        await tester.drag(
+          find.byKey(const Key('add_movement_details_step')),
+          const Offset(0, -700),
+        );
+        await tester.pumpAndSettle();
+
+        await _tapPadKey(tester, 'movement_pad_5');
+        await _tapPadKey(tester, 'movement_pad_0');
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('movement_amount_sticky')),
+            matching: find.text('50 CHF'),
+          ),
+          findsOneWidget,
+        );
+        expect(_amountDisplayText(tester), '50');
+      },
+    );
+
+    testWidgets(
+      'X e check restano nel header locale del flow e non al top globale',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final db = AppDatabase();
+        await _pumpMovementPickerSheet(tester, db);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        final globalCloseTop = tester
+            .getTopLeft(find.byIcon(Icons.close).first)
+            .dy;
+        final localHeaderTop = tester
+            .getTopLeft(find.byKey(const Key('movement_details_header')))
+            .dy;
+        final localCloseTop = tester
+            .getTopLeft(find.byKey(const Key('movement_close_top_button')))
+            .dy;
+        final localSubmitTop = tester
+            .getTopLeft(find.byKey(const Key('movement_submit_top_button')))
+            .dy;
+
+        expect(localHeaderTop, greaterThan(globalCloseTop));
+        expect(localCloseTop, greaterThan(globalCloseTop));
+        expect(localSubmitTop, greaterThan(globalCloseTop));
+      },
+    );
+
+    testWidgets(
+      'header locale resta accessibile dopo scroll e allineato allo sticky amount',
+      (tester) async {
+        final db = AppDatabase();
+        await _pumpMovementPickerSheet(tester, db);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        final headerTopBefore = tester
+            .getTopLeft(find.byKey(const Key('movement_details_header')))
+            .dy;
+
+        await tester.drag(
+          find.byKey(const Key('add_movement_details_step')),
+          const Offset(0, -700),
+        );
+        await tester.pumpAndSettle();
+
+        final headerRect = tester.getRect(
+          find.byKey(const Key('movement_details_header')),
+        );
+        final stickyRect = tester.getRect(
+          find.byKey(const Key('movement_amount_sticky')),
+        );
+
+        expect(
+          tester
+              .getTopLeft(find.byKey(const Key('movement_details_header')))
+              .dy,
+          headerTopBefore,
+        );
+        expect(stickyRect.top, greaterThanOrEqualTo(headerRect.bottom));
+      },
+    );
+
+    testWidgets('tap X chiude il flow dettaglio locale', (tester) async {
+      final db = AppDatabase();
+      await _pumpMovementPickerSheet(tester, db);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_close_top_button')),
+      );
+
+      expect(find.byType(MovementPicker), findsNothing);
+    });
+
+    testWidgets('tap check salva dal header locale', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final db = AppDatabase();
+      await _pumpMovementPickerSheet(tester, db);
+      await _tapVisible(tester, find.byKey(const Key('category_option_exp_1')));
+
+      await tester.enterText(
+        find.byKey(const Key('movement_title_field')),
+        'Pranzo',
+      );
+      await tester.pumpAndSettle();
+      final amountPadTwo = find.byKey(const Key('movement_pad_2'));
+      final detailsScrollable = find
+          .descendant(
+            of: find.byKey(const Key('add_movement_details_step')),
+            matching: find.byType(Scrollable),
+          )
+          .last;
+      await tester.scrollUntilVisible(
+        amountPadTwo,
+        200,
+        scrollable: detailsScrollable,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(amountPadTwo, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('movement_submit_top_button')),
+      );
+
+      expect(db.movements, hasLength(1));
+      expect(db.movements.single.title, 'Pranzo');
+      expect(db.movements.single.amount, 2);
+    });
 
     testWidgets(
       'viewport piccoli e medi non generano overflow con sticky e chip ancora tappabili',

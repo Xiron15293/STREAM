@@ -176,10 +176,7 @@ class _BalanceHero extends StatelessWidget {
           ),
           const SizedBox(height: StreamSpacing.xs),
           Text(
-            formatMovementCurrency(
-              accountsBalance,
-              showPositiveSign: true,
-            ),
+            formatMovementCurrency(accountsBalance, showPositiveSign: true),
             style: StreamTypography.display.copyWith(
               color: accountsBalance >= 0
                   ? StreamColors.income
@@ -229,22 +226,21 @@ class _AccountBalancePill extends StatelessWidget {
         color: StreamColors.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.full),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: StreamSpacing.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Icon(
             StreamIconLibrary.getAccountIcon(account.iconKey),
             size: 14,
             color: Color(account.color),
           ),
-          const SizedBox(width: StreamSpacing.xs),
           Text(
             account.name,
             style: StreamTypography.caption.copyWith(
               color: StreamColors.textSecondary,
             ),
           ),
-          const SizedBox(width: StreamSpacing.xs),
           Text(
             formatMovementCurrency(balance, showPositiveSign: true),
             style: StreamTypography.captionBold.copyWith(
@@ -535,8 +531,7 @@ class _KpiGrid extends StatelessWidget {
             Expanded(
               child: _KpiCard(
                 label: 'Saldo',
-                value:
-                    formatMovementCurrency(balance, showPositiveSign: true),
+                value: formatMovementCurrency(balance, showPositiveSign: true),
                 color: balance >= 0
                     ? StreamColors.income
                     : StreamColors.expense,
@@ -725,7 +720,9 @@ class _CategoryDetailSheet extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             color: color,
-                            borderRadius: BorderRadius.circular(StreamRadius.sm),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.sm,
+                            ),
                           ),
                           child: Icon(iconData, color: Colors.white, size: 20),
                         ),
@@ -788,14 +785,15 @@ class _CategoryDetailSheet extends StatelessWidget {
                             onEdit: (m) => showModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
-                              builder: (_) => MovementPicker(
-                                db: db,
-                                prefill: m,
-                              ),
+                              builder: (_) =>
+                                  MovementPicker(db: db, prefill: m),
                             ),
                             onDuplicate: (m) async {
-                              final date = await showDuplicateDateSheet(context);
-                              if (date != null) db.duplicateMovement(m, date: date);
+                              final date = await showDuplicateDateSheet(
+                                context,
+                              );
+                              if (date != null)
+                                db.duplicateMovement(m, date: date);
                             },
                             onSaveAsFavorite: (m) =>
                                 db.saveMovementAsFavorite(m),

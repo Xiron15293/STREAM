@@ -337,9 +337,7 @@ void main() {
       expect(find.textContaining('+2500.00 \$'), findsOneWidget);
     });
 
-    testWidgets('long press apre il pannello azioni condiviso', (
-      tester,
-    ) async {
+    testWidgets('long press apre il pannello azioni condiviso', (tester) async {
       await tester.pumpWidget(
         wrapWithTheme(
           MovementCard(
@@ -360,9 +358,40 @@ void main() {
 
       expect(find.text('Azioni movimento'), findsOneWidget);
       expect(find.byKey(const Key('movement_action_edit')), findsOneWidget);
-      expect(find.byKey(const Key('movement_action_duplicate')), findsOneWidget);
+      expect(
+        find.byKey(const Key('movement_action_duplicate')),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('movement_action_delete')), findsOneWidget);
     });
+
+    testWidgets(
+      'tap tre puntini apre lo stesso pannello azioni senza aprire anche edit',
+      (tester) async {
+        var editCount = 0;
+        await tester.pumpWidget(
+          wrapWithTheme(
+            MovementCard(
+              movement: incomeMovement,
+              category: category,
+              account: account,
+              onEdit: () => editCount++,
+              onDuplicate: () {},
+              onSaveAsFavorite: () {},
+              onAddQuick: () {},
+              onDelete: () {},
+            ),
+          ),
+        );
+
+        await tester.tap(find.byKey(const Key('movement_card_action')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Azioni movimento'), findsOneWidget);
+        expect(find.byKey(const Key('movement_action_edit')), findsOneWidget);
+        expect(editCount, 0);
+      },
+    );
 
     testWidgets('popup menu assente senza callback', (tester) async {
       await tester.pumpWidget(

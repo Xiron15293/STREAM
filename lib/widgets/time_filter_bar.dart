@@ -112,34 +112,37 @@ class TimeFilterBar extends StatelessWidget {
             showSelectedIcon: false,
           ),
           const SizedBox(height: StreamSpacing.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () => onChanged(activeFilter.previous()),
-                tooltip: 'Precedente',
-              ),
-              GestureDetector(
-                onTap: () => _pickDate(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: StreamColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(StreamRadius.md),
-                  ),
-                  child: Text(activeFilter.label, style: StreamTypography.h3),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: () => onChanged(activeFilter.previous()),
+                  tooltip: 'Precedente',
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: () => onChanged(activeFilter.next()),
-                tooltip: 'Successivo',
-              ),
-            ],
+                GestureDetector(
+                  onTap: () => _pickDate(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: StreamColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(StreamRadius.md),
+                    ),
+                    child: Text(activeFilter.label, style: StreamTypography.h3),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: () => onChanged(activeFilter.next()),
+                  tooltip: 'Successivo',
+                ),
+              ],
+            ),
           ),
         ],
       ),

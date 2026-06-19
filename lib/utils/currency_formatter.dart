@@ -1,11 +1,8 @@
 import '../data/preferences_service.dart';
 
-String formatMovementCurrency(
-  double value, {
-  bool showPositiveSign = false,
-}) {
+String formatMovementCurrency(double value, {bool showPositiveSign = false}) {
   final currency = PreferencesService.currencyNotifier.value;
-  final symbol = _currencySymbol(currency);
+  final symbol = currencySymbolFor(currency);
   final sign = value < 0
       ? '-'
       : showPositiveSign
@@ -14,7 +11,11 @@ String formatMovementCurrency(
   return '$sign${value.abs().toStringAsFixed(2)} $symbol';
 }
 
-String _currencySymbol(AppCurrency currency) {
+String currencySymbolForCurrentPreference() {
+  return currencySymbolFor(PreferencesService.currencyNotifier.value);
+}
+
+String currencySymbolFor(AppCurrency currency) {
   return switch (currency) {
     AppCurrency.eur => '€',
     AppCurrency.usd => r'$',
