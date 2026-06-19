@@ -10,7 +10,6 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/accounts_screen.dart';
-import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
 DateTime _monthDay(DateTime base, int day) =>
@@ -66,21 +65,6 @@ Future<void> scrollToCategory(WidgetTester tester, String categoryId) async {
     Key('category_card_$categoryId'),
     skipOffstage: false,
   );
-  final scrollable = find
-      .descendant(
-        of: find.byType(CategoriesScreen),
-        matching: find.byType(Scrollable),
-      )
-      .first;
-
-  try {
-    await tester.scrollUntilVisible(target, 200, scrollable: scrollable);
-  } catch (_) {
-    for (var i = 0; i < 8 && !tester.any(target); i++) {
-      await tester.drag(scrollable, const Offset(0, -320));
-      await tester.pumpAndSettle();
-    }
-  }
 
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();
@@ -210,15 +194,16 @@ void main() {
       contains(2),
     );
 
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('categories_archived_section')),
-      200,
-      scrollable: find
-          .descendant(
-            of: find.byType(CategoriesScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
+    final categoriesList = find.byKey(
+      const Key('categories_layout_clean_list'),
+    );
+    await tester.ensureVisible(categoriesList);
+    await tester.pumpAndSettle();
+    await tester.drag(categoriesList, const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('categories_archived_section'), skipOffstage: false),
     );
     await tester.pumpAndSettle();
     expect(
