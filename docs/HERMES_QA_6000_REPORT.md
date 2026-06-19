@@ -9,15 +9,16 @@
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`
 - Full suite finale: **verde**
 - Stato finale: **Hermes candidate for closure / Hermes QA green**
-- Executive summary: `44` file test, `912` test/casi dichiarati, `911` passati, `1` skipped, `1.641` scenari, `7.475` controlli/logiche
+- Executive summary: `44+` file test, `948` test/casi dichiarati, `948` passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
+- V0.10 Grafici Tab + V0.10.1 Chart Readability: **20** nuovi test (11 metriche pure, 6 integrazione UI, 3 navigazione bottom nav)
 
 ## Conteggio reale
 
 ### Test Dart / Flutter presenti
 
-- File test nel progetto: **44**
-- Test case Dart/Flutter dichiarati nei test: **912**
-- Test case Flutter/Dart passati nel run finale: **911**
+- File test nel progetto: **44+** (+1 file charts_test.dart)
+- Test case Dart/Flutter dichiarati nei test: **948**
+- Test case Flutter/Dart passati nel run finale: **948**
 
 ### Matrix QA estesa
 

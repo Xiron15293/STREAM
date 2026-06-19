@@ -10,13 +10,14 @@
 **Stato:** Hermes candidate for closure / Hermes QA green
 
 ### Executive summary
-- 44 file test Dart/Flutter
-- 912 test/casi dichiarati
-- 911 test verdi nel run finale
-- 1 skipped
-- 1.641 scenari data-driven
-- 7.475 controlli/logiche reali documentati
-- 8 blocchi funzionali coperti
+- 44+ file test Dart/Flutter
+- 948 test/casi dichiarati
+- 948 test verdi nel run finale
+- 1 skipped (preesistente)
+- 1.641+ scenari data-driven
+- 7.475+ controlli/logiche reali documentati
+- 8+ blocchi funzionali coperti
+- V0.10 Grafici Tab aggiunta: 20 nuovi test (11 metriche pure, 6 integrazione UI, 3 navigazione)
 - P0: 0 nuovi
 - P1: 0 nuovi
 - P2: 0 nuovi

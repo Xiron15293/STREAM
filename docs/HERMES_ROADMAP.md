@@ -63,8 +63,10 @@
 | — | Movement actions + add/edit flow polish + restore/reassign hardening | ✅ COMPLETATO / STABILIZZATO | 2026-06-19 |
 | — | Hermes Extended QA Audit | ✅ COMPLETATO / STABILIZZATO | 2026-06-18 |
 | — | Hermes QA 6000+ closure candidate | ✅ COMPLETATO / QA STABILIZED | 2026-06-19 |
+| V0.10 | Grafici Tab — Analytics Hub (4 sezioni, metriche pure, fl_chart) | ✅ COMPLETATO | 2026-06-19 |
+| V0.10.1 | Chart Readability Fix (barre orizzontali, valori precisi, label leggibili, chip/pill scrollabili) | ✅ COMPLETATO | 2026-06-19 |
 
-## Approvate / Future (V0.9+)
+## Approvate / Future (V0.11+)
 
 | Versione | Nome | Stato |
 |----------|------|-------|

@@ -20,7 +20,7 @@ The app currently includes:
 ## Main Modules
 
 - `lib/screens/`
-  - app screens for Dashboard, Movimenti, Categorie, Conti, Archivio, Beneficiari, Impostazioni, Backup
+  - app screens for Dashboard, Movimenti, Categorie, Conti, Archivio, Grafici, Beneficiari, Impostazioni, Backup
 - `lib/widgets/`
   - reusable UI for movement forms, calculator pad, heatmap cards, category selectors, account selectors, and cards
 - `lib/data/`

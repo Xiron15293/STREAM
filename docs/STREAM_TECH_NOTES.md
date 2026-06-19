@@ -51,6 +51,33 @@
 - **Raw SQL**: sqflite con query raw invece di Drift ORM (dipendeenza drift presente ma non usata). Scelta per controllo totale e debugging trasparente
 - **MovementCard unico**: le schermate operative usano `lib/widgets/movement_card.dart` per renderizzare un movimento. La Dashboard ora mostra KPI e spese per categoria, non una lista movimenti. Dettaglio completo nella sezione "MovementCard Widget" sotto.
 
+## Charts Architecture (V0.10 — Grafici Tab)
+
+**File chiave:**
+
+| File | Ruolo |
+|------|-------|
+| `lib/screens/charts_screen.dart` | Main screen con 4 sezioni (chip scrollabili) + TimeFilter |
+| `lib/utils/analytics_metrics.dart` | 10 funzioni pure che producono `ChartPoint/ChartSeries/DonutSlice` |
+| `lib/widgets/charts/stream_chart_card.dart` | Card wrapper contenitore |
+| `lib/widgets/charts/stream_bar_chart.dart` | Bar chart verticale (fl_chart) per dati temporali |
+| `lib/widgets/charts/stream_donut_chart.dart` | Donut chart (fl_chart) per distribuzione tipo |
+| `lib/widgets/charts/stream_horizontal_bar_chart.dart` | Bar chart orizzontale custom (Row/Container/FractionallySizedBox) per dati categorici |
+| `lib/widgets/charts/chart_empty_state.dart` | Empty state widget |
+| `test/charts_test.dart` | 20 test (11 metriche pure + 6 integrazione + 3 navigazione) |
+
+**Libreria esterna:** `fl_chart: ^0.70.2` per barre verticali e donut.
+
+**Grafici orizzontali custom:** `StreamHorizontalBarChart` usa `Row` + `Stack` + `Container` (nessuna dipendenza da fl_chart). Supporta label sinistra con ellissi, barra proporzionale, valore formattato a destra, secondary value e legenda multi-serie.
+
+**Top N + Altro:** ogni funzione categorica prende le prime 7 entries; se ci sono più entries, aggrega il resto in "Altro" con `_maybeAddAltro()`.
+
+**Transfer handling:** trasferimenti esclusi da income/expense in aggregazioni categorie e beneficiari. Trattati come neutri nella distribuzione tipo movimento. Conti: flussi separati.
+
+**TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
+
+**CurrencyFormatter:** i valori precisi su barre usano `formatMovementCurrency()` dalla valuta globale.
+
 ## MovementCard Widget
 
 > Widget unico per renderizzare movimenti in tutta l'app. Sostituisce 4 classi private duplicate (~376 righe eliminate).

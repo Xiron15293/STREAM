@@ -7,6 +7,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.10 Grafici Tab — Analytics Hub**
+  - Nuova tab bassa "Grafici" tra Archivio e Impostazioni
+  - Ordine bottom navigation: Dashboard | Archivio | Grafici | Impostazioni
+  - `lib/screens/charts_screen.dart` — 4 sezioni (Movimenti, Categorie, Conti, Beneficiari) con selettore a chip scrollabili
+  - `lib/utils/analytics_metrics.dart` — 10 funzioni pure per metriche grafici (cashflow, conteggio, distribuzione, top N)
+  - `lib/widgets/charts/` — card, bar chart (fl_chart), donut chart, horizontal bar chart (custom), empty state
+  - TimeFilterBar globale per periodo, rispetta valuta corrente
+  - Transfer gestiti coerentemente coi KPI (esclusi da income/expense, neutri in aggregazioni)
+  - Top N + Altro per categorie, beneficiari e top spending days (max 7 + aggregazione)
+  - Test: 20 nuovi test in `test/charts_test.dart`
+
+- **V0.10.1 Chart Readability Fix**
+  - Selettore sezioni convertito da `SegmentedButton` a chip/pill orizzontali scrollabili (no più testo a capo)
+  - Tutti i grafici categorici convertiti a barre orizzontali con label a sinistra e valore preciso a destra
+  - Barre orizzontali custom (`StreamHorizontalBarChart`) con supporto secondary series e legenda
+  - Label lunghe con ellissi sull'asse sinistro, mai sovrapposte
+  - Valore preciso sempre visibile su ogni barra (non solo tooltip)
+  - Legenda aggiunta per grafici multi-serie (cashflow entrate/uscite, flussi per conto)
+  - Label "Range" per filtro custom period solo nella tab Grafici (via `customRangeLabel`)
+  - Top N + Altro applicato a tutte le sezioni categoriche (categorie, beneficiari, top spending days)
 - **Hermes Extended QA Audit**
   - Aggiunta matrice QA data-driven `test/qa_audit_matrix_test.dart`
   - Copertura deterministica su suggerimenti, beneficiari, TimeFilter/range e formatter valuta

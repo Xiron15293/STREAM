@@ -22,12 +22,26 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`911` passati, `1` skipped).
 - Hermes QA green / closure candidate: nessun nuovo P0/P1/P2 trovato nel perimetro dell’audit finale.
 
+## Stato Attuale — V0.10 + V0.10.1
+
+- La tab "Grafici" è stata aggiunta tra Archivio e Impostazioni.
+- ChartsScreen ha 4 sezioni (Movimenti, Categorie, Conti, Beneficiari) con chip/pill orizzontali scrollabili.
+- I grafici categorici sono tutti orizzontali con label a sinistra e valore preciso a destra.
+- `StreamHorizontalBarChart` supporta label, valore, secondaryValue, legenda, ellissi.
+- I grafici temporali (cashflow, conteggio per giorno) restano verticali con `fl_chart`.
+- `TimeFilterBar` rispetta il periodo globale; nella tab Grafici usa "Range" invece di "Intervallo".
+- Top N + Altro applicato a top spending days, categorie, e beneficiari.
+- 948 test totali, tutti verdi.
+
 ## Prossimo Sprint Consigliato
 
-1. Eseguire solo QA manuale residua su device reale per i flussi più sensibili Hermes prima di aprire nuovo scope prodotto.
-2. Valutare se aggiungere un entry point diretto all’edit movimento nel dettaglio Beneficiari: oggi la lista usa `GroupedMovementsList` senza callback `onEdit`.
-3. Eventualmente rifinire piccoli allineamenti UX residui del flow movimento, ma senza riaprire regressioni sui controller condivisi.
-4. Se parte un nuovo sprint funzionale, trattare Hermes come chiusura candidata già stabilizzata e aprire scope separato.
+1. **V0.11 — Theme, KPI & Chart Style System**
+   - Palette temi grafici (ChartPalette) per personalizzazione colore
+   - Stili KPI card (compact, expanded, trend indicator)
+   - Eventuale export report in PDF/CSV
+   - Budget charts futuri (nessuna UI Budget ora, solo predisposizione architetturale come già fatto)
+2. QA manuale su device reale per i flussi più sensibili
+3. Valutare treemap categorie se non già implementata in dashboard
 
 ## Regole Git
 
