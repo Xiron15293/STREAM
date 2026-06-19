@@ -151,11 +151,7 @@ List<MovementBeneficiarySuggestion> buildMovementBeneficiarySuggestions({
   final currentKey = normalizeMovementText(currentValue ?? '');
   final stats = <String, _MovementBeneficiarySuggestionStats>{};
 
-  void consider(
-    String candidate,
-    DateTime activity, {
-    int weight = 1,
-  }) {
+  void consider(String candidate, DateTime activity, {int weight = 1}) {
     final cleaned = candidate.trim();
     if (cleaned.isEmpty) return;
 
@@ -395,6 +391,7 @@ class _MovementBeneficiarySuggestionStats {
 class MovementTextSuggestions extends StatelessWidget {
   final AppDatabase db;
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final MovementTextSuggestionField field;
   final MovementType type;
   final String? categoryId;
@@ -406,6 +403,7 @@ class MovementTextSuggestions extends StatelessWidget {
     super.key,
     required this.db,
     required this.controller,
+    this.focusNode,
     required this.field,
     required this.type,
     this.categoryId,
@@ -416,9 +414,14 @@ class MovementTextSuggestions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mergedListenable = Listenable.merge([controller, focusNode]);
     return ListenableBuilder(
-      listenable: controller,
+      listenable: mergedListenable,
       builder: (context, _) {
+        if (focusNode != null && !focusNode!.hasFocus) {
+          return const SizedBox.shrink();
+        }
+
         final suggestions = buildMovementTextSuggestions(
           db: db,
           query: controller.text,
@@ -485,6 +488,7 @@ class MovementTextSuggestions extends StatelessWidget {
 class MovementBeneficiarySuggestions extends StatelessWidget {
   final AppDatabase db;
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final int limit;
   final ValueChanged<String>? onSelected;
 
@@ -492,15 +496,21 @@ class MovementBeneficiarySuggestions extends StatelessWidget {
     super.key,
     required this.db,
     required this.controller,
+    this.focusNode,
     this.limit = 5,
     this.onSelected,
   });
 
   @override
   Widget build(BuildContext context) {
+    final mergedListenable = Listenable.merge([controller, focusNode]);
     return ListenableBuilder(
-      listenable: controller,
+      listenable: mergedListenable,
       builder: (context, _) {
+        if (focusNode != null && !focusNode!.hasFocus) {
+          return const SizedBox.shrink();
+        }
+
         final suggestions = buildMovementBeneficiarySuggestions(
           db: db,
           query: controller.text,

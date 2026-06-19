@@ -44,6 +44,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   final _noteCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
   final _searchCtrl = TextEditingController();
+  final _titleFocusNode = FocusNode();
+  final _counterpartyFocusNode = FocusNode();
+  final _noteFocusNode = FocusNode();
   final _detailsScrollCtrl = ScrollController();
   final _evaluator = const AmountExpressionEvaluator();
 
@@ -64,8 +67,8 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   void _handleDetailsScroll() {
-    final shouldShow = _detailsScrollCtrl.hasClients &&
-        _detailsScrollCtrl.offset > 120;
+    final shouldShow =
+        _detailsScrollCtrl.hasClients && _detailsScrollCtrl.offset > 120;
     if (!mounted || shouldShow == _showStickyAmount) return;
     setState(() => _showStickyAmount = shouldShow);
   }
@@ -107,6 +110,9 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     _noteCtrl.dispose();
     _amountCtrl.dispose();
     _searchCtrl.dispose();
+    _titleFocusNode.dispose();
+    _counterpartyFocusNode.dispose();
+    _noteFocusNode.dispose();
     _detailsScrollCtrl.dispose();
     super.dispose();
   }
@@ -300,6 +306,12 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
 
   String _submitLabel() {
     return _type == MovementType.transfer ? 'Trasferisci' : 'Salva';
+  }
+
+  String _submitTooltip() {
+    return _type == MovementType.transfer
+        ? 'Conferma trasferimento'
+        : 'Salva movimento';
   }
 
   List<Category> _frequentCategories() {
@@ -831,14 +843,18 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                         bottom: false,
                         child: Container(
                           key: const Key('movement_amount_sticky'),
-                          margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                          margin: const EdgeInsets.only(
+                            bottom: StreamSpacing.sm,
+                          ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: StreamSpacing.md,
                             vertical: StreamSpacing.sm,
                           ),
                           decoration: BoxDecoration(
                             color: StreamColors.surfaceElevated,
-                            borderRadius: BorderRadius.circular(StreamRadius.md),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.md,
+                            ),
                             boxShadow: const [
                               BoxShadow(
                                 blurRadius: 16,
@@ -870,35 +886,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => setState(() {
-                              _selectionError = null;
-                              _step = switch (_type) {
-                                MovementType.transfer =>
-                                  _FlowStep.transferAccounts,
-                                MovementType.income => _FlowStep.account,
-                                MovementType.expense =>
-                                  _selectedCategory != null &&
-                                          _subcategoriesFor(
-                                            _selectedCategory!.id,
-                                          ).isNotEmpty
-                                      ? _FlowStep.subcategory
-                                      : _FlowStep.category,
-                              };
-                              _showStickyAmount = false;
-                            }),
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              size: 18,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(_titleLabel(), style: StreamTypography.h3),
-                          ),
-                        ],
-                      ),
+                      _buildDetailsHeader(),
                       const SizedBox(height: StreamSpacing.md),
                       _buildTopSelectors(),
                       const SizedBox(height: StreamSpacing.lg),
@@ -914,6 +902,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       TextField(
                         key: const Key('movement_title_field'),
                         controller: _titleCtrl,
+                        focusNode: _titleFocusNode,
                         decoration: const InputDecoration(labelText: 'Titolo'),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => FocusScope.of(context).unfocus(),
@@ -921,6 +910,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       MovementTextSuggestions(
                         db: widget.db,
                         controller: _titleCtrl,
+                        focusNode: _titleFocusNode,
                         field: MovementTextSuggestionField.title,
                         type: _type,
                         categoryId: _categoryId,
@@ -930,10 +920,13 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       TextField(
                         key: const Key('movement_counterparty_field'),
                         controller: _counterpartyCtrl,
+                        focusNode: _counterpartyFocusNode,
                         decoration: InputDecoration(
                           labelText: _counterpartyLabel(),
                           suffixIcon: IconButton(
-                            key: const Key('movement_beneficiary_picker_button'),
+                            key: const Key(
+                              'movement_beneficiary_picker_button',
+                            ),
                             onPressed: _pickBeneficiary,
                             icon: const Icon(Icons.people_outline),
                             tooltip: 'Apri beneficiari',
@@ -946,12 +939,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       MovementBeneficiarySuggestions(
                         db: widget.db,
                         controller: _counterpartyCtrl,
+                        focusNode: _counterpartyFocusNode,
                         limit: 5,
                       ),
                       const SizedBox(height: StreamSpacing.md),
                       TextField(
                         key: const Key('movement_note_field'),
                         controller: _noteCtrl,
+                        focusNode: _noteFocusNode,
                         maxLines: 2,
                         decoration: const InputDecoration(labelText: 'Note'),
                         textInputAction: TextInputAction.done,
@@ -960,6 +955,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       MovementTextSuggestions(
                         db: widget.db,
                         controller: _noteCtrl,
+                        focusNode: _noteFocusNode,
                         field: MovementTextSuggestionField.note,
                         type: _type,
                         categoryId: _categoryId,
@@ -1009,12 +1005,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                         onPressed: _submit,
                         child: Text(_submitLabel()),
                       ),
-                      const SizedBox(height: StreamSpacing.sm),
-                      OutlinedButton(
-                        key: const Key('movement_cancel_button'),
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancella'),
-                      ),
+                      const SizedBox(height: StreamSpacing.md),
                     ],
                   ),
                 ),
@@ -1023,6 +1014,61 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDetailsHeader() {
+    return SafeArea(
+      bottom: false,
+      child: Row(
+        children: [
+          IconButton(
+            key: const Key('movement_back_button'),
+            onPressed: () => setState(() {
+              _selectionError = null;
+              _step = switch (_type) {
+                MovementType.transfer => _FlowStep.transferAccounts,
+                MovementType.income => _FlowStep.account,
+                MovementType.expense =>
+                  _selectedCategory != null &&
+                          _subcategoriesFor(_selectedCategory!.id).isNotEmpty
+                      ? _FlowStep.subcategory
+                      : _FlowStep.category,
+              };
+              _showStickyAmount = false;
+            }),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            tooltip: 'Indietro',
+          ),
+          Expanded(
+            child: Text(
+              _titleLabel(),
+              style: StreamTypography.h3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Tooltip(
+            message: 'Chiudi',
+            child: IconButton(
+              key: const Key('movement_close_top_button'),
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+            ),
+          ),
+          Tooltip(
+            message: _submitTooltip(),
+            child: IconButton.filled(
+              key: const Key('movement_submit_top_button'),
+              onPressed: _submit,
+              icon: Icon(
+                _type == MovementType.transfer
+                    ? Icons.compare_arrows_rounded
+                    : Icons.check_rounded,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

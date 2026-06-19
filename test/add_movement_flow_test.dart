@@ -396,7 +396,10 @@ void main() {
           find.byKey(const Key('category_option_exp_1')),
         );
 
-        expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
+        expect(
+          find.byKey(const Key('movement_amount_display')),
+          findsOneWidget,
+        );
         expect(find.byKey(const Key('movement_amount_sticky')), findsNothing);
 
         await tester.drag(
@@ -448,10 +451,10 @@ void main() {
             tester,
             find.byKey(const Key('category_option_exp_1')),
           );
-        await tester.drag(
-          find.byKey(const Key('add_movement_details_step')).last,
-          const Offset(0, -650),
-        );
+          await tester.drag(
+            find.byKey(const Key('add_movement_details_step')).last,
+            const Offset(0, -650),
+          );
           await tester.pumpAndSettle();
 
           await tester.enterText(
@@ -464,12 +467,19 @@ void main() {
             find.byKey(const Key('movement_title_suggestion_0')),
           );
 
-          expect(find.byKey(const Key('movement_amount_sticky')), findsOneWidget);
+          expect(
+            find.byKey(const Key('movement_amount_sticky')),
+            findsOneWidget,
+          );
           expect(tester.takeException(), isNull);
 
+          expect(
+            find.byKey(const Key('movement_submit_top_button')),
+            findsOneWidget,
+          );
           await _tapVisible(
             tester,
-            find.byKey(const Key('movement_cancel_button')),
+            find.byKey(const Key('movement_close_top_button')),
           );
           await tester.pumpAndSettle();
         }
@@ -581,6 +591,57 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets(
+      'i suggerimenti seguono solo il campo attivo e si nascondono cambiando focus',
+      (tester) async {
+        final db = AppDatabase();
+        await db.createMovementFromTemplate(
+          title: 'Rimborso taxi',
+          amount: 12,
+          type: MovementType.expense,
+          date: DateTime(2026, 6, 10),
+          categoryId: 'exp_1',
+          accountId: defaultAccountId,
+          payee: 'Mario Rossi',
+          note: 'Pranzo lavoro',
+        );
+
+        await _pumpApp(tester, db);
+        await _openAddMovement(tester);
+        await _tapVisible(
+          tester,
+          find.byKey(const Key('category_option_exp_1')),
+        );
+
+        await tester.tap(find.byKey(const Key('movement_title_field')));
+        await tester.enterText(
+          find.byKey(const Key('movement_title_field')),
+          'ri',
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('movement_title_suggestion_0')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byKey(const Key('movement_counterparty_field')));
+        await tester.enterText(
+          find.byKey(const Key('movement_counterparty_field')),
+          'ma',
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const Key('movement_title_suggestion_0')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('movement_beneficiary_suggestion_0')),
+          findsOneWidget,
+        );
+      },
+    );
 
     test('titolo deduplicato e startsWith prima di contains', () async {
       final db = AppDatabase();
