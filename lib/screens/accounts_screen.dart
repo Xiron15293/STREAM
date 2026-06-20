@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
@@ -242,7 +243,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       Text(
                         'Saldo attuale',
                         style: StreamTypography.caption.copyWith(
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                         ),
                       ),
                       const SizedBox(height: StreamSpacing.xs),
@@ -285,7 +286,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     Text(
                       'Icona',
                       style: StreamTypography.caption.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                     ),
                     GestureDetector(
@@ -313,7 +314,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             Icon(
                               StreamIconLibrary.getAccountIcon(selectedIconKey),
                               size: 20,
-                              color: Colors.white,
+                              color: StreamSurfaceTokens.onAccent(
+                                Color(selectedColor),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -452,6 +455,7 @@ class _AccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, muted: account.archived);
     final accountPeriodMovements = periodMovements
         .where(
           (m) =>
@@ -495,11 +499,13 @@ class _AccountCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(StreamSpacing.lg),
             decoration: BoxDecoration(
-              color: account.archived
-                  ? p.surfaceElevated.withValues(alpha: 0.5)
-                  : p.surface,
+              color: surface.background,
               borderRadius: BorderRadius.circular(StreamRadius.md),
-              border: Border.all(color: p.divider),
+              border: Border.all(
+                color: surface.border,
+                width: surface.borderWidth,
+              ),
+              boxShadow: surface.shadows,
             ),
             child: Column(
               children: [
@@ -518,7 +524,9 @@ class _AccountCard extends StatelessWidget {
                         iconData,
                         color: account.archived
                             ? p.textMuted
-                            : Color(account.color),
+                            : StreamSurfaceTokens.onAccent(
+                                Color(account.color).withValues(alpha: 0.92),
+                              ),
                         size: 22,
                       ),
                     ),
@@ -532,7 +540,7 @@ class _AccountCard extends StatelessWidget {
                             style: account.archived
                                 ? StreamTypography.bodyBold.copyWith(
                                     decoration: TextDecoration.lineThrough,
-                                    color: StreamColors.textSecondary,
+                                    color: p.textSecondary,
                                   )
                                 : StreamTypography.bodyBold,
                           ),
@@ -540,7 +548,7 @@ class _AccountCard extends StatelessWidget {
                           Text(
                             AccountsScreen._typeLabels[account.type] ?? '',
                             style: StreamTypography.caption.copyWith(
-                              color: StreamColors.textSecondary,
+                              color: p.textSecondary,
                             ),
                           ),
                         ],
@@ -558,8 +566,8 @@ class _AccountCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: StreamTypography.amount.copyWith(
                               color: periodEndBalance >= 0
-                                  ? StreamColors.income
-                                  : StreamColors.expense,
+                                  ? p.income
+                                  : p.expense,
                             ),
                           ),
                           Text(
@@ -567,7 +575,7 @@ class _AccountCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: StreamTypography.micro.copyWith(
-                              color: StreamColors.textMuted,
+                              color: p.textMuted,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -584,7 +592,7 @@ class _AccountCard extends StatelessWidget {
                             icon: Icon(
                               Icons.more_horiz,
                               size: 18,
-                              color: StreamColors.textMuted,
+                              color: p.textMuted,
                             ),
                             itemBuilder: (_) => [
                               const PopupMenuItem(
@@ -659,6 +667,7 @@ class _AccountPeriodSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Wrap(
       key: const Key('account_period_summary'),
       spacing: StreamSpacing.sm,
@@ -668,37 +677,37 @@ class _AccountPeriodSummary extends StatelessWidget {
           key: const Key('account_period_income'),
           label: 'Entrate',
           value: _formatMoney(income),
-          color: StreamColors.income,
+          color: p.income,
         ),
         _PeriodMetric(
           key: const Key('account_period_expense'),
           label: 'Uscite',
           value: _formatMoney(expenses),
-          color: StreamColors.expense,
+          color: p.expense,
         ),
         _PeriodMetric(
           key: const Key('account_period_transfer_net'),
           label: 'Trasf.',
           value: _formatMoney(transfersNet),
-          color: transfersNet >= 0 ? StreamColors.income : StreamColors.expense,
+          color: transfersNet >= 0 ? p.income : p.expense,
         ),
         _PeriodMetric(
           key: const Key('account_period_movement_count'),
           label: 'Movimenti',
           value: '$movementCount',
-          color: StreamColors.textPrimary,
+          color: p.textPrimary,
         ),
         _PeriodMetric(
           key: const Key('account_period_start_balance'),
           label: 'Saldo ini.',
           value: _formatMoney(startBalance),
-          color: startBalance >= 0 ? StreamColors.income : StreamColors.expense,
+          color: startBalance >= 0 ? p.income : p.expense,
         ),
         _PeriodMetric(
           key: const Key('account_period_end_balance'),
           label: 'Saldo fine',
           value: _formatMoney(endBalance),
-          color: endBalance >= 0 ? StreamColors.income : StreamColors.expense,
+          color: endBalance >= 0 ? p.income : p.expense,
         ),
       ],
     );
@@ -723,6 +732,8 @@ class _PeriodMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     return Container(
       width: 92,
       padding: const EdgeInsets.symmetric(
@@ -730,8 +741,9 @@ class _PeriodMetric extends StatelessWidget {
         vertical: StreamSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: StreamColors.surfaceElevated,
+        color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.sm),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -740,9 +752,7 @@ class _PeriodMetric extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.micro.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: 2),
           Text(
@@ -840,6 +850,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
@@ -885,7 +896,9 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                         ),
                         child: Icon(
                           StreamIconLibrary.getAccountIcon(account.iconKey),
-                          color: Color(account.color),
+                          color: StreamSurfaceTokens.onAccent(
+                            Color(account.color).withValues(alpha: 0.92),
+                          ),
                           size: 22,
                         ),
                       ),
@@ -897,7 +910,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                             Text(
                               'Movimenti del conto',
                               style: StreamTypography.captionBold.copyWith(
-                                color: StreamColors.textSecondary,
+                                color: p.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -910,7 +923,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                             Text(
                               account.archived ? 'Archiviato' : 'Attivo',
                               style: StreamTypography.caption.copyWith(
-                                color: StreamColors.textSecondary,
+                                color: p.textSecondary,
                               ),
                             ),
                           ],
@@ -925,63 +938,68 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                   ),
                 ),
                 const SizedBox(height: StreamSpacing.md),
-                KeyedSubtree(
-                  key: const Key('account_sheet_period_summary'),
-                  child: Wrap(
-                    spacing: StreamSpacing.sm,
-                    runSpacing: StreamSpacing.sm,
-                    children: [
-                      KeyedSubtree(
-                        key: const Key('account_movements_current_balance'),
-                        child: _StatChip(
-                          label: _balanceLabel(_filter),
-                          value: _formatMoney(periodEndBalance),
-                          key: const Key('account_sheet_balance_as_of'),
-                        ),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: SingleChildScrollView(
+                    child: KeyedSubtree(
+                      key: const Key('account_sheet_period_summary'),
+                      child: Wrap(
+                        spacing: StreamSpacing.sm,
+                        runSpacing: StreamSpacing.sm,
+                        children: [
+                          KeyedSubtree(
+                            key: const Key('account_movements_current_balance'),
+                            child: _StatChip(
+                              label: _balanceLabel(_filter),
+                              value: _formatMoney(periodEndBalance),
+                              key: const Key('account_sheet_balance_as_of'),
+                            ),
+                          ),
+                          _StatChip(
+                            label: 'Saldo iniziale',
+                            value: _formatMoney(account.initialBalance),
+                            key: const Key('account_movements_initial_balance'),
+                          ),
+                          KeyedSubtree(
+                            key: const Key('account_movements_income'),
+                            child: _StatChip(
+                              label: 'Entrate periodo',
+                              value: _formatMoney(_filteredIncome),
+                              key: const Key('account_sheet_income'),
+                            ),
+                          ),
+                          KeyedSubtree(
+                            key: const Key('account_movements_expenses'),
+                            child: _StatChip(
+                              label: 'Uscite periodo',
+                              value: _formatMoney(_filteredExpenses),
+                              key: const Key('account_sheet_expense'),
+                            ),
+                          ),
+                          KeyedSubtree(
+                            key: const Key('account_movements_transfers'),
+                            child: _StatChip(
+                              label: 'Trasferimenti netti',
+                              value: _formatMoney(_filteredTransfersNet),
+                              key: const Key('account_sheet_transfer_net'),
+                            ),
+                          ),
+                          _StatChip(
+                            label: 'Saldo inizio periodo',
+                            value: _formatMoney(periodStartBalance),
+                            key: const Key('account_movements_start_balance'),
+                          ),
+                          KeyedSubtree(
+                            key: const Key('account_movements_count'),
+                            child: _StatChip(
+                              label: 'Movimenti',
+                              value: '${movements.length}',
+                              key: const Key('account_sheet_movement_count'),
+                            ),
+                          ),
+                        ],
                       ),
-                      _StatChip(
-                        label: 'Saldo iniziale',
-                        value: _formatMoney(account.initialBalance),
-                        key: const Key('account_movements_initial_balance'),
-                      ),
-                      KeyedSubtree(
-                        key: const Key('account_movements_income'),
-                        child: _StatChip(
-                          label: 'Entrate periodo',
-                          value: _formatMoney(_filteredIncome),
-                          key: const Key('account_sheet_income'),
-                        ),
-                      ),
-                      KeyedSubtree(
-                        key: const Key('account_movements_expenses'),
-                        child: _StatChip(
-                          label: 'Uscite periodo',
-                          value: _formatMoney(_filteredExpenses),
-                          key: const Key('account_sheet_expense'),
-                        ),
-                      ),
-                      KeyedSubtree(
-                        key: const Key('account_movements_transfers'),
-                        child: _StatChip(
-                          label: 'Trasferimenti netti',
-                          value: _formatMoney(_filteredTransfersNet),
-                          key: const Key('account_sheet_transfer_net'),
-                        ),
-                      ),
-                      _StatChip(
-                        label: 'Saldo inizio periodo',
-                        value: _formatMoney(periodStartBalance),
-                        key: const Key('account_movements_start_balance'),
-                      ),
-                      KeyedSubtree(
-                        key: const Key('account_movements_count'),
-                        child: _StatChip(
-                          label: 'Movimenti',
-                          value: '${movements.length}',
-                          key: const Key('account_sheet_movement_count'),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: StreamSpacing.md),
@@ -1061,7 +1079,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                           child: Text(
                             'Nessun movimento in questo periodo',
                             style: StreamTypography.body.copyWith(
-                              color: StreamColors.textSecondary,
+                              color: p.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -1123,21 +1141,22 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     return Container(
       width: 160,
       padding: const EdgeInsets.all(StreamSpacing.md),
       decoration: BoxDecoration(
-        color: StreamColors.surfaceElevated,
+        color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.md),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.micro.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: StreamSpacing.xs),
           Text(value, style: StreamTypography.bodyBold),

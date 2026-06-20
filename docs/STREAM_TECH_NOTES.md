@@ -4,6 +4,16 @@
 
 **Stato:** Hermes closure candidate / QA stabilized + movement actions sheet centralizzato + add/edit movement flow polish + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
 
+## Update 2026-06-20 — V0.11h Theme Adaptive Cards and Charts
+
+- Aggiunto `lib/design/stream_surface_tokens.dart` come strato condiviso per `card(...)` e `onAccent(...)`
+- `StreamThemePalette` ora espone detector di identità tema per abilitare adattamenti visuali mirati senza hardcode nei widget
+- `StreamChartPalette.forTheme()` differenzia palette, griglie e legenda per Forest, Midnight, Minimal Sand e High Contrast
+- Le superfici utente di Conti, Beneficiari, Categorie, MovementCard e chart widgets usano `context.$palette` / `StreamSurfaceTokens`
+- `AccountsScreen` interactive sheet evita overflow verticali mantenendo fissi azioni e filtro tempo
+- Nessuna logica dati cambiata: invariati DB/schema, backup/restore, import/export, analytics e formule KPI
+- Stato analyzer locale: nessun errore nuovo; restano info storici in `categories_screen.dart`, `backup_screen.dart`, `database.dart`
+
 ## Stack
 
 | Layer | Tecnologia | Versione |

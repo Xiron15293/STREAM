@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../design/stream_icon_library.dart';
 import '../models/beneficiary_profile.dart';
 import '../models/category.dart';
@@ -49,6 +51,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
+        final p = context.$palette;
         final allEntries = _buildEntries();
         final query = BeneficiaryProfile.normalizeKey(_searchCtrl.text);
         final filtered = query.isEmpty
@@ -63,7 +66,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
 
         return Container(
           decoration: BoxDecoration(
-            color: StreamColors.canvas,
+            color: p.canvas,
             borderRadius: widget.pickerMode
                 ? const BorderRadius.vertical(
                     top: Radius.circular(StreamRadius.xl),
@@ -127,7 +130,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                         'beneficiary_section_${section.letter}',
                                       ),
                                       style: StreamTypography.caption.copyWith(
-                                        color: StreamColors.textSecondary,
+                                        color: p.textSecondary,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -211,6 +214,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
 
   Widget _buildHeader(BuildContext context) {
     if (!widget.pickerMode) return const SizedBox.shrink();
+    final p = context.$palette;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         StreamSpacing.lg,
@@ -223,7 +227,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
           Expanded(
             child: Text(
               'Beneficiari',
-              style: StreamTypography.h3,
+              style: StreamTypography.h3.copyWith(color: p.textPrimary),
               textAlign: TextAlign.center,
             ),
           ),
@@ -339,6 +343,9 @@ class _BeneficiaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p);
+    final iconBg = Color(entry.color);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -347,8 +354,13 @@ class _BeneficiaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(StreamRadius.lg),
         child: Container(
           decoration: BoxDecoration(
-            color: StreamColors.surface,
+            color: surface.background,
             borderRadius: BorderRadius.circular(StreamRadius.lg),
+            border: Border.all(
+              color: surface.border,
+              width: surface.borderWidth,
+            ),
+            boxShadow: surface.shadows,
           ),
           child: Padding(
             padding: const EdgeInsets.all(StreamSpacing.md),
@@ -358,12 +370,12 @@ class _BeneficiaryCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Color(entry.color),
+                    color: iconBg,
                     borderRadius: BorderRadius.circular(StreamRadius.md),
                   ),
                   child: Icon(
                     StreamIconLibrary.getIcon(entry.iconKey),
-                    color: Colors.white,
+                    color: StreamSurfaceTokens.onAccent(iconBg),
                   ),
                 ),
                 const SizedBox(width: StreamSpacing.md),
@@ -376,7 +388,7 @@ class _BeneficiaryCard extends StatelessWidget {
                       Text(
                         '${entry.movementCount} movimenti',
                         style: StreamTypography.caption.copyWith(
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                         ),
                       ),
                       const SizedBox(height: StreamSpacing.xs),
@@ -404,9 +416,7 @@ class _BeneficiaryCard extends StatelessWidget {
                 const SizedBox(width: StreamSpacing.sm),
                 Icon(
                   selectable ? Icons.check_circle_outline : Icons.chevron_right,
-                  color: selectable
-                      ? StreamColors.primary
-                      : StreamColors.textMuted,
+                  color: selectable ? p.primary : p.textMuted,
                 ),
               ],
             ),
@@ -436,10 +446,11 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
       maxChildSize: 0.9,
       expand: false,
       builder: (context, scrollController) {
+        final p = context.$palette;
         return Container(
           key: const Key('beneficiary_detail_sheet'),
           decoration: BoxDecoration(
-            color: StreamColors.canvas,
+            color: p.canvas,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(StreamRadius.xl),
             ),
@@ -464,7 +475,7 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
                     width: 32,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: StreamColors.textMuted,
+                      color: p.textMuted,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -483,7 +494,9 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
                           ),
                           child: Icon(
                             StreamIconLibrary.getIcon(entry.iconKey),
-                            color: Colors.white,
+                            color: StreamSurfaceTokens.onAccent(
+                              Color(entry.color),
+                            ),
                             size: 20,
                           ),
                         ),
@@ -500,7 +513,7 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
                               Text(
                                 '${entry.movementCount} movimenti',
                                 style: StreamTypography.caption.copyWith(
-                                  color: StreamColors.textSecondary,
+                                  color: p.textSecondary,
                                 ),
                               ),
                             ],
@@ -509,7 +522,7 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: StreamColors.divider),
+                  Divider(height: 1, color: p.divider),
                   Expanded(
                     child: beneficiaryMovements.isEmpty
                         ? Center(
@@ -518,7 +531,7 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
                               child: Text(
                                 'Nessun movimento collegato a questo beneficiario',
                                 style: StreamTypography.body.copyWith(
-                                  color: StreamColors.textSecondary,
+                                  color: p.textSecondary,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -592,20 +605,21 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: StreamSpacing.sm,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: StreamColors.surfaceElevated,
+        color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.full),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
       ),
       child: Text(
         '$label $value',
-        style: StreamTypography.caption.copyWith(
-          color: StreamColors.textSecondary,
-        ),
+        style: StreamTypography.caption.copyWith(color: p.textSecondary),
       ),
     );
   }
@@ -618,6 +632,7 @@ class _BeneficiariesEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(StreamSpacing.xl),
@@ -625,9 +640,7 @@ class _BeneficiariesEmptyState extends StatelessWidget {
           hasQuery
               ? 'Nessun beneficiario trovato'
               : 'Nessun beneficiario disponibile',
-          style: StreamTypography.body.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.body.copyWith(color: p.textSecondary),
           textAlign: TextAlign.center,
         ),
       ),

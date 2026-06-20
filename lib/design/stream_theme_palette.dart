@@ -10,12 +10,18 @@ enum StreamThemeId {
 
   String get label {
     switch (this) {
-      case StreamThemeId.streamClassic: return 'Stream Classic';
-      case StreamThemeId.forest: return 'Forest';
-      case StreamThemeId.midnight: return 'Midnight';
-      case StreamThemeId.aurora: return 'Aurora';
-      case StreamThemeId.minimalSand: return 'Minimal Sand';
-      case StreamThemeId.highContrast: return 'High Contrast';
+      case StreamThemeId.streamClassic:
+        return 'Stream Classic';
+      case StreamThemeId.forest:
+        return 'Forest';
+      case StreamThemeId.midnight:
+        return 'Midnight';
+      case StreamThemeId.aurora:
+        return 'Aurora';
+      case StreamThemeId.minimalSand:
+        return 'Minimal Sand';
+      case StreamThemeId.highContrast:
+        return 'High Contrast';
     }
   }
 
@@ -62,6 +68,15 @@ class StreamThemePalette {
 
   Brightness get brightness =>
       canvas.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark;
+
+  bool get isClassicTheme => canvas.toARGB32() == _classic.canvas.toARGB32();
+  bool get isForestTheme => canvas.toARGB32() == _forest.canvas.toARGB32();
+  bool get isMidnightTheme => canvas.toARGB32() == _midnight.canvas.toARGB32();
+  bool get isAuroraTheme => canvas.toARGB32() == _aurora.canvas.toARGB32();
+  bool get isMinimalSandTheme =>
+      canvas.toARGB32() == _minimalSand.canvas.toARGB32();
+  bool get isHighContrastTheme =>
+      canvas.toARGB32() == _highContrast.canvas.toARGB32();
 
   static const _classic = StreamThemePalette(
     canvas: Color(0xFF0C0E12),
@@ -169,12 +184,18 @@ class StreamThemePalette {
 
   static StreamThemePalette of(StreamThemeId id) {
     switch (id) {
-      case StreamThemeId.streamClassic: return _classic;
-      case StreamThemeId.forest: return _forest;
-      case StreamThemeId.midnight: return _midnight;
-      case StreamThemeId.aurora: return _aurora;
-      case StreamThemeId.minimalSand: return _minimalSand;
-      case StreamThemeId.highContrast: return _highContrast;
+      case StreamThemeId.streamClassic:
+        return _classic;
+      case StreamThemeId.forest:
+        return _forest;
+      case StreamThemeId.midnight:
+        return _midnight;
+      case StreamThemeId.aurora:
+        return _aurora;
+      case StreamThemeId.minimalSand:
+        return _minimalSand;
+      case StreamThemeId.highContrast:
+        return _highContrast;
     }
   }
 }

@@ -40,6 +40,7 @@ class StreamHorizontalBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final cp = context.$chart;
     if (bars.isEmpty) return const SizedBox.shrink();
     if (bars.every(
       (b) =>
@@ -74,7 +75,7 @@ class StreamHorizontalBarChart extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     legendLabel1!,
-                    style: TextStyle(fontSize: 11, color: p.textSecondary),
+                    style: TextStyle(fontSize: 11, color: cp.legendTextColor),
                   ),
                   const SizedBox(width: 16),
                 ],
@@ -84,7 +85,7 @@ class StreamHorizontalBarChart extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     legendLabel2!,
-                    style: TextStyle(fontSize: 11, color: p.textSecondary),
+                    style: TextStyle(fontSize: 11, color: cp.legendTextColor),
                   ),
                 ],
               ],
@@ -179,6 +180,18 @@ class _SingleHorizontalBar extends StatelessWidget {
                   height: barHeight,
                   child: Stack(
                     children: [
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: palette.surfaceElevated.withValues(
+                              alpha: palette.brightness == Brightness.light
+                                  ? 0.55
+                                  : 0.82,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
                       if (secondaryValue != null && secondaryColor != null)
                         Positioned(
                           left: 0,

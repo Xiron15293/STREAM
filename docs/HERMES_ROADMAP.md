@@ -38,6 +38,7 @@
 | V0.6.4 | UX Movimenti Rapidi/Preferiti — Data Picker | ✅ COMPLETATO | 2026-06-08 |
 | V0.7.0 | Import CSV 1Money + Saldo Iniziale + Archivio Navigabile | ✅ COMPLETATO | 2026-06-09 |
 | V0.7.1 | QA Reset Stabilizzato | ✅ COMPLETATO | 2026-06-09 |
+| V0.11h | Theme Adaptive Cards and Charts | ✅ COMPLETATO | 2026-06-20 |
 | V0.8.0 | Calculator Pad | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.1 | Categories Layout Modes | ✅ COMPLETATO | 2026-06-10 |
 | V0.8.2 | Financial KPI Corrections | ✅ COMPLETATO | 2026-06-10 |

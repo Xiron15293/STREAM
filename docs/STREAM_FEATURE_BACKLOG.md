@@ -38,6 +38,7 @@
 | F15 | Archivio Filtrato per Data | V0.5.5 | 2026-06-07 |
 | F16 | Dashboard Filtrata per Periodo | V0.5.6 | 2026-06-07 |
 | — | MovementCard unico (refactor architetturale) | V0.5.6 | 2026-06-07 |
+| — | V0.11h Theme Adaptive Cards and Charts | V0.11h | 2026-06-20 |
 | — | Backup & Restore in Impostazioni | V0.5.6 | 2026-06-08 |
 | — | Build release Android fix (file_picker + KGP) | V0.5.6 | 2026-06-08 |
 | — | Backup export condivisibile (share sheet) | V0.5.6 | 2026-06-08 |

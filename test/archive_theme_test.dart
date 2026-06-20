@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stream_app/data/database.dart';
 import 'package:stream_app/data/preferences_service.dart';
+import 'package:stream_app/design/stream_surface_tokens.dart';
 import 'package:stream_app/design/stream_theme_palette.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
@@ -99,6 +100,7 @@ void main() {
 
   testWidgets('MovementCard uses theme surface and border', (tester) async {
     final palette = StreamThemePalette.of(StreamThemeId.highContrast);
+    final surface = StreamSurfaceTokens.card(palette);
     final now = DateTime(2026, 6, 20);
     await pumpTheme(
       tester,
@@ -142,8 +144,8 @@ void main() {
           .first,
     );
     final decoration = container.decoration as BoxDecoration;
-    expect(decoration.color, palette.surface);
-    expect((decoration.border! as Border).top.color, palette.divider);
+    expect(decoration.color, surface.background);
+    expect((decoration.border! as Border).top.color, surface.border);
   });
 
   testWidgets('DayHeader remains readable in High Contrast', (tester) async {

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/subcategory.dart';
@@ -37,6 +39,7 @@ void _showConvertDialog(
   showDialog(
     context: context,
     builder: (ctx) {
+      final p = ctx.$palette;
       final trimmed = category.name.trim();
       final parenOpen = trimmed.lastIndexOf('(');
       if (parenOpen < 1) return const SizedBox.shrink();
@@ -58,7 +61,7 @@ void _showConvertDialog(
             const SizedBox(height: 12),
             Text(
               'Questa operazione non può essere annullata.',
-              style: TextStyle(fontSize: 12, color: StreamColors.textSecondary),
+              style: TextStyle(fontSize: 12, color: p.textSecondary),
             ),
           ],
         ),
@@ -147,27 +150,30 @@ Future<void> _showDeleteCategoryDialog(
   if (linkedContent.isEmpty) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminare categoria?'),
-        content: Text(
-          'La categoria "${category.name}" sarà eliminata definitivamente.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
+      builder: (ctx) {
+        final p = ctx.$palette;
+        return AlertDialog(
+          title: const Text('Eliminare categoria?'),
+          content: Text(
+            'La categoria "${category.name}" sarà eliminata definitivamente.',
           ),
-          TextButton(
-            onPressed: () {
-              db.deleteCategory(category.id);
-              onChanged();
-              Navigator.pop(ctx);
-            },
-            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () {
+                db.deleteCategory(category.id);
+                onChanged();
+                Navigator.pop(ctx);
+              },
+              style: TextButton.styleFrom(foregroundColor: p.expense),
+              child: const Text('Elimina'),
+            ),
+          ],
+        );
+      },
     );
     return;
   }
@@ -1343,7 +1349,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Scaffold(
+      backgroundColor: p.canvas,
       appBar: AppBar(title: const Text('Categorie')),
       body: ListenableBuilder(
         listenable: widget.db,
@@ -1431,7 +1439,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     int movementCount,
   ) {
     final isIncome = _selectedType == MovementType.income;
-    final typeColor = isIncome ? StreamColors.income : StreamColors.expense;
+    final p = context.$palette;
+    final typeColor = isIncome ? p.income : p.expense;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     final typeLabel = isIncome ? 'Entrate' : 'Uscite';
 
     return Padding(
@@ -1442,8 +1452,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: StreamColors.surface,
+          color: surface.background,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: surface.border, width: surface.borderWidth),
+          boxShadow: surface.shadows,
         ),
         child: Row(
           children: [
@@ -1477,9 +1489,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   Text(
                     '$movementCount ${movementCount == 1 ? 'movimento' : 'movimenti'} nel periodo',
                     key: const Key('categories_period_movement_count'),
-                    style: StreamTypography.micro.copyWith(
-                      color: StreamColors.textMuted,
-                    ),
+                    style: StreamTypography.micro.copyWith(color: p.textMuted),
                   ),
                 ],
               ),
@@ -1491,16 +1501,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   '$activeCount ${activeCount == 1 ? 'attiva' : 'attive'}',
                   key: const Key('categories_summary_active_count'),
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
                 if (archivedCount > 0)
                   Text(
                     '$archivedCount ${archivedCount == 1 ? 'archiviata' : 'archiviate'}',
                     key: const Key('categories_summary_archived_count'),
-                    style: StreamTypography.micro.copyWith(
-                      color: StreamColors.textMuted,
-                    ),
+                    style: StreamTypography.micro.copyWith(color: p.textMuted),
                   ),
               ],
             ),
@@ -1533,6 +1541,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   Widget _buildCleanList(List<Category> active, List<Category> archived) {
+    final p = context.$palette;
     return ListView(
       key: const Key('categories_layout_clean_list'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
@@ -1557,7 +1566,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Text(
                 'Archiviate (${archived.length})',
                 style: StreamTypography.captionBold.copyWith(
-                  color: StreamColors.textSecondary,
+                  color: p.textSecondary,
                 ),
               ),
             ),
@@ -1580,9 +1589,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             child: Center(
               child: Text(
                 'Nessuna categoria',
-                style: StreamTypography.body.copyWith(
-                  color: StreamColors.textSecondary,
-                ),
+                style: StreamTypography.body.copyWith(color: p.textSecondary),
               ),
             ),
           ),
@@ -1595,6 +1602,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     List<Category> archived,
     List<Movement> periodTypeMovements,
   ) {
+    final p = context.$palette;
+    final groupedSurface = StreamSurfaceTokens.card(p, elevated: true);
     final sorted = List<Category>.from(active)
       ..sort((a, b) {
         final countA = _categoryPeriodMovements(a, periodTypeMovements).length;
@@ -1614,8 +1623,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             key: const Key('categories_top_group'),
             child: Container(
               decoration: BoxDecoration(
-                color: StreamColors.surfaceElevated,
+                color: groupedSurface.background,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: groupedSurface.border,
+                  width: groupedSurface.borderWidth,
+                ),
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -1628,7 +1641,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           ? 'TOP ENTRATE'
                           : 'TOP USCITE',
                       style: StreamTypography.captionBold.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                         letterSpacing: 1.0,
                       ),
                     ),
@@ -1682,9 +1695,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             child: Center(
               child: Text(
                 'Nessuna categoria',
-                style: StreamTypography.body.copyWith(
-                  color: StreamColors.textSecondary,
-                ),
+                style: StreamTypography.body.copyWith(color: p.textSecondary),
               ),
             ),
           ),
@@ -1698,10 +1709,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     required int count,
     required List<Category> items,
   }) {
+    final p = context.$palette;
+    final groupedSurface = StreamSurfaceTokens.card(p, elevated: true);
     return KeyedSubtree(
       key: Key(keyValue),
       child: Material(
-        color: StreamColors.surfaceElevated,
+        color: groupedSurface.background,
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         type: MaterialType.card,
@@ -1711,7 +1724,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           title: Text(
             '$title ($count)',
             style: StreamTypography.captionBold.copyWith(
-              color: StreamColors.textSecondary,
+              color: p.textSecondary,
               letterSpacing: 1.0,
             ),
           ),
@@ -1893,6 +1906,7 @@ class _CleanListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = StreamIconLibrary.getIcon(category.iconKey);
+    final p = context.$palette;
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Material(
@@ -1911,7 +1925,11 @@ class _CleanListTile extends StatelessWidget {
                     color: Color(category.color),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(iconData, color: Colors.white, size: 16),
+                  child: Icon(
+                    iconData,
+                    color: StreamSurfaceTokens.onAccent(Color(category.color)),
+                    size: 16,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1920,7 +1938,7 @@ class _CleanListTile extends StatelessWidget {
                     style: category.archived
                         ? StreamTypography.body.copyWith(
                             decoration: TextDecoration.lineThrough,
-                            color: StreamColors.textSecondary,
+                            color: p.textSecondary,
                           )
                         : StreamTypography.body,
                   ),
@@ -1955,11 +1973,7 @@ class _CleanListTile extends StatelessWidget {
                         break;
                     }
                   },
-                  icon: Icon(
-                    Icons.more_horiz,
-                    size: 18,
-                    color: StreamColors.textMuted,
-                  ),
+                  icon: Icon(Icons.more_horiz, size: 18, color: p.textMuted),
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: 'edit', child: Text('Modifica')),
                     if (!category.archived &&
@@ -1989,7 +2003,7 @@ class _CleanListTile extends StatelessWidget {
                       value: 'delete',
                       child: Text(
                         'Elimina',
-                        style: TextStyle(color: StreamColors.expense),
+                        style: TextStyle(color: p.expense),
                       ),
                     ),
                   ],
@@ -2026,6 +2040,7 @@ class _GroupedListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = StreamIconLibrary.getIcon(category.iconKey);
+    final p = context.$palette;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -2039,7 +2054,11 @@ class _GroupedListTile extends StatelessWidget {
                 color: Color(category.color),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(iconData, color: Colors.white, size: 18),
+              child: Icon(
+                iconData,
+                color: StreamSurfaceTokens.onAccent(Color(category.color)),
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -2048,7 +2067,7 @@ class _GroupedListTile extends StatelessWidget {
                 style: category.archived
                     ? StreamTypography.body.copyWith(
                         decoration: TextDecoration.lineThrough,
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       )
                     : StreamTypography.body,
               ),
@@ -2078,11 +2097,7 @@ class _GroupedListTile extends StatelessWidget {
                     break;
                 }
               },
-              icon: Icon(
-                Icons.more_horiz,
-                size: 18,
-                color: StreamColors.textMuted,
-              ),
+              icon: Icon(Icons.more_horiz, size: 18, color: p.textMuted),
               itemBuilder: (_) => [
                 const PopupMenuItem(value: 'edit', child: Text('Modifica')),
                 if (!category.archived && _isConvertibleCategory(category.name))
@@ -2109,10 +2124,7 @@ class _GroupedListTile extends StatelessWidget {
                   ),
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text(
-                    'Elimina',
-                    style: TextStyle(color: StreamColors.expense),
-                  ),
+                  child: Text('Elimina', style: TextStyle(color: p.expense)),
                 ),
               ],
             ),
@@ -2150,6 +2162,8 @@ class _StreamCardGridTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = StreamIconLibrary.getIcon(category.iconKey);
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     final formattedTotal = formatMovementCurrency(
       totalAmount,
       showPositiveSign: true,
@@ -2162,9 +2176,13 @@ class _StreamCardGridTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: StreamColors.surface,
+            color: surface.background,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: StreamColors.surfaceElevated, width: 1.5),
+            border: Border.all(
+              color: surface.border,
+              width: surface.borderWidth,
+            ),
+            boxShadow: surface.shadows,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2179,7 +2197,13 @@ class _StreamCardGridTile extends StatelessWidget {
                       color: Color(category.color),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(iconData, color: Colors.white, size: 22),
+                    child: Icon(
+                      iconData,
+                      color: StreamSurfaceTokens.onAccent(
+                        Color(category.color),
+                      ),
+                      size: 22,
+                    ),
                   ),
                   const Spacer(),
                   PopupMenuButton<String>(
@@ -2212,11 +2236,7 @@ class _StreamCardGridTile extends StatelessWidget {
                           break;
                       }
                     },
-                    icon: Icon(
-                      Icons.more_horiz,
-                      size: 18,
-                      color: StreamColors.textMuted,
-                    ),
+                    icon: Icon(Icons.more_horiz, size: 18, color: p.textMuted),
                     itemBuilder: (_) => [
                       const PopupMenuItem(
                         value: 'edit',
@@ -2249,7 +2269,7 @@ class _StreamCardGridTile extends StatelessWidget {
                         value: 'delete',
                         child: Text(
                           'Elimina',
-                          style: TextStyle(color: StreamColors.expense),
+                          style: TextStyle(color: p.expense),
                         ),
                       ),
                     ],
@@ -2264,7 +2284,7 @@ class _StreamCardGridTile extends StatelessWidget {
                 style: category.archived
                     ? StreamTypography.bodyBold.copyWith(
                         decoration: TextDecoration.lineThrough,
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       )
                     : StreamTypography.bodyBold,
               ),
@@ -2273,7 +2293,7 @@ class _StreamCardGridTile extends StatelessWidget {
                 formattedTotal,
                 style: StreamTypography.amount.copyWith(
                   fontSize: 16,
-                  color: StreamColors.textPrimary,
+                  color: p.textPrimary,
                 ),
               ),
               const SizedBox(height: 2),
@@ -2281,9 +2301,7 @@ class _StreamCardGridTile extends StatelessWidget {
                 movementCount == 1
                     ? '$movementCount movimento'
                     : '$movementCount movimenti',
-                style: StreamTypography.micro.copyWith(
-                  color: StreamColors.textMuted,
-                ),
+                style: StreamTypography.micro.copyWith(color: p.textMuted),
               ),
             ],
           ),

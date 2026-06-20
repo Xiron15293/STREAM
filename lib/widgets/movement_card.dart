@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
@@ -52,6 +53,7 @@ class MovementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p);
     final isTransfer = movement.type == MovementType.transfer;
     final resolvedSelection = category == null
         ? null
@@ -74,9 +76,10 @@ class MovementCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: p.surface,
+        color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(color: p.divider),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
+        boxShadow: surface.shadows,
       ),
       child: Material(
         color: Colors.transparent,
@@ -112,7 +115,17 @@ class MovementCard extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(StreamRadius.sm),
                       ),
-                      child: Icon(iconData, color: Colors.white, size: 16),
+                      child: Icon(
+                        iconData,
+                        color: StreamSurfaceTokens.onAccent(
+                          Color(
+                            resolvedSelection?.color ??
+                                category?.color ??
+                                0xFF636366,
+                          ),
+                        ),
+                        size: 16,
+                      ),
                     ),
                     const SizedBox(width: StreamSpacing.md),
                     Expanded(

@@ -4,6 +4,10 @@
 
 ## Sintesi
 
+- Delta 2026-06-20: V0.11h confermata con superfici/card/chart theme-adaptive, full suite finale **1026 passati / 1 skipped**
+- Regressione emersa durante full suite su `AccountsScreen` interactive sheet risolta senza toccare logica dati
+- Analyzer locale invariato: solo info storici, nessun errore nuovo
+
 - Target 6000 raggiunto: **sì**
 - Matrice QA deterministica aggiunta: `test/qa_audit_matrix_test.dart`
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`

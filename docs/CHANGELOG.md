@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11h — Theme Adaptive Cards and Charts**
+  - Nuovo helper `StreamSurfaceTokens` per superfici, bordi, shadow e foreground leggibile su badge/accent
+  - `StreamThemePalette` espone detector tema (`classic`, `forest`, `midnight`, `aurora`, `minimalSand`, `highContrast`) usati per adattamento visuale
+  - `StreamChartPalette.forTheme()` differenzia chiaramente Forest, Midnight, Minimal Sand e High Contrast
+  - Card e widget tematizzati in `ChartsScreen`, `MovementCard`, `MovementViewRenderer`, `AccountsScreen`, `BeneficiariesScreen`, `CategoriesScreen`, `StreamChartCard`, `StreamHorizontalBarChart`, `StreamDonutChart`
+  - Sheet conto reso robusto su viewport piccoli: riepilogo scorrevole, azioni e filtro sempre accessibili
+  - 4 nuovi test: `test/movement_card_theme_test.dart`, `test/categories_theme_test.dart`, `test/accounts_theme_test.dart`, `test/beneficiaries_theme_test.dart`
+  - Test aggiornati: `test/charts_theme_test.dart`, `test/archive_theme_test.dart`, `test/accounts_navigation_test.dart`
+  - Nessuna modifica a DB/schema/migrazioni, backup/restore/import/export o calcoli analytics/KPI
+
 - **V0.11f — Theme Coverage for Archive, Charts Shell and KPI Hero**
   - Archivio shell tematizzata con `context.$palette.canvas` in `ArchiveScreen`
   - `MovementsScreen`, `MovementCard`, `MovementViewRenderer`, `DayHeader`, `MovementActionsSheet` migrati a palette dinamica per superfici, testi, divider, icone e azioni distruttive

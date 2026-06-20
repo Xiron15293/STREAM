@@ -6,6 +6,12 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11h completata: card, summary chip e grafici reagiscono al tema corrente con differenze visive reali tra Classic, Forest, Minimal Sand e High Contrast.
+- `AccountsScreen`, `BeneficiariesScreen`, `CategoriesScreen`, `MovementCard`, `ChartsScreen` e chart widgets usano superfici derivate da palette invece di superfici statiche.
+- `AccountsScreen` interactive sheet non va in overflow su viewport stretti: il riepilogo alto scorre, mentre azioni e filtro periodo restano cliccabili.
+- QA locale aggiornata: `flutter test` full suite verde con `1026` passati e `1` skipped; `flutter analyze` resta info-only per warning storici soprattutto in `categories_screen.dart`.
+- Residuo principale tema: `lib/screens/categories_screen.dart` mantiene ancora `49` occorrenze `StreamColors` in flow secondari/dialog legacy, da chiudere in sprint dedicato.
+
 - Profili separati e isolamento DB sono attivi e verificati.
 - Il flow guidato `+ Movimento` copre creazione e modifica con prefill per Entrata, Spesa e Trasferimento.
 - Header compatto con `X` e check è sempre accessibile; `Fatto/Annulla` non dipendono più dal fondo dello scroll.
@@ -37,6 +43,12 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - **V0.11g**: donut outside labels + leader lines, chart visibility preferences (registry, hiddenChartIds, settings sheet)
 - **V0.11g-fix3**: sectionsSpace alignment (2° gap tra slice ora considerato), collision avoidance, pure layout function
 - **1022 test totali**, tutti verdi
+
+## Focus consigliato
+
+1. Chiudere i residui `StreamColors` in `categories_screen.dart`
+2. Estendere lo stesso approccio theme-adaptive alle schermate legacy ancora fuori perimetro
+3. Pulire gli analyzer info storici in `categories_screen.dart`, `backup_screen.dart`, `database.dart`
 
 ## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
 

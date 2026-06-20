@@ -6,6 +6,13 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-20 — V0.11h
+- Theme-adaptive cards/charts verificati su Conti, Beneficiari, Categorie, Movimenti e Grafici
+- Regressione individuata e corretta nel foglio interattivo Conti su viewport piccoli
+- `flutter test`: **1026 passati / 1 skipped**
+- `flutter analyze`: nessun errore nuovo, solo info preesistenti
+- Residuo noto: `categories_screen.dart` conserva ancora `49` `StreamColors` in flow secondari fuori chiusura sprint
+
 **Data audit:** 2026-06-18  
 **Stato:** Hermes candidate for closure / Hermes QA green
 

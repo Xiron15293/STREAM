@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/time_filter.dart';
@@ -19,33 +20,110 @@ class ChartDefinition {
   final String title;
   final String section;
 
-  const ChartDefinition({required this.id, required this.title, required this.section});
+  const ChartDefinition({
+    required this.id,
+    required this.title,
+    required this.section,
+  });
 }
 
 const List<ChartDefinition> chartRegistry = [
-  ChartDefinition(id: 'movements_cashflow', title: 'Entrate / Uscite nel tempo', section: 'movements'),
-  ChartDefinition(id: 'movements_daily_count', title: 'Movimenti per giorno', section: 'movements'),
-  ChartDefinition(id: 'movements_type_distribution', title: 'Distribuzione tipo movimento', section: 'movements'),
-  ChartDefinition(id: 'movements_top_spending_days', title: 'Top giorni di spesa', section: 'movements'),
-  ChartDefinition(id: 'movements_weekday_costs', title: 'Giorni della settimana più costosi', section: 'movements'),
-  ChartDefinition(id: 'movements_avg_daily_spend', title: 'Spesa media giornaliera', section: 'movements'),
-  ChartDefinition(id: 'categories_top', title: 'Top spese per categoria', section: 'categories'),
-  ChartDefinition(id: 'categories_composition', title: 'Composizione categorie', section: 'categories'),
-  ChartDefinition(id: 'categories_delta_vs_previous', title: 'Categorie in crescita / calo', section: 'categories'),
-  ChartDefinition(id: 'accounts_balance', title: 'Saldo per conto', section: 'accounts'),
-  ChartDefinition(id: 'accounts_balance_share', title: 'Quota saldo per conto', section: 'accounts'),
-  ChartDefinition(id: 'accounts_flows', title: 'Flussi per conto', section: 'accounts'),
-  ChartDefinition(id: 'accounts_outflow', title: 'Conti più usati per uscite', section: 'accounts'),
-  ChartDefinition(id: 'accounts_inflow', title: 'Conti più usati per entrate', section: 'accounts'),
-  ChartDefinition(id: 'accounts_activity', title: 'Attività per conto', section: 'accounts'),
-  ChartDefinition(id: 'beneficiaries_top_amount', title: 'Top beneficiari per importo', section: 'beneficiaries'),
-  ChartDefinition(id: 'beneficiaries_frequency', title: 'Frequenza beneficiari', section: 'beneficiaries'),
-  ChartDefinition(id: 'beneficiaries_average', title: 'Valore medio per beneficiario', section: 'beneficiaries'),
+  ChartDefinition(
+    id: 'movements_cashflow',
+    title: 'Entrate / Uscite nel tempo',
+    section: 'movements',
+  ),
+  ChartDefinition(
+    id: 'movements_daily_count',
+    title: 'Movimenti per giorno',
+    section: 'movements',
+  ),
+  ChartDefinition(
+    id: 'movements_type_distribution',
+    title: 'Distribuzione tipo movimento',
+    section: 'movements',
+  ),
+  ChartDefinition(
+    id: 'movements_top_spending_days',
+    title: 'Top giorni di spesa',
+    section: 'movements',
+  ),
+  ChartDefinition(
+    id: 'movements_weekday_costs',
+    title: 'Giorni della settimana più costosi',
+    section: 'movements',
+  ),
+  ChartDefinition(
+    id: 'movements_avg_daily_spend',
+    title: 'Spesa media giornaliera',
+    section: 'movements',
+  ),
+  ChartDefinition(
+    id: 'categories_top',
+    title: 'Top spese per categoria',
+    section: 'categories',
+  ),
+  ChartDefinition(
+    id: 'categories_composition',
+    title: 'Composizione categorie',
+    section: 'categories',
+  ),
+  ChartDefinition(
+    id: 'categories_delta_vs_previous',
+    title: 'Categorie in crescita / calo',
+    section: 'categories',
+  ),
+  ChartDefinition(
+    id: 'accounts_balance',
+    title: 'Saldo per conto',
+    section: 'accounts',
+  ),
+  ChartDefinition(
+    id: 'accounts_balance_share',
+    title: 'Quota saldo per conto',
+    section: 'accounts',
+  ),
+  ChartDefinition(
+    id: 'accounts_flows',
+    title: 'Flussi per conto',
+    section: 'accounts',
+  ),
+  ChartDefinition(
+    id: 'accounts_outflow',
+    title: 'Conti più usati per uscite',
+    section: 'accounts',
+  ),
+  ChartDefinition(
+    id: 'accounts_inflow',
+    title: 'Conti più usati per entrate',
+    section: 'accounts',
+  ),
+  ChartDefinition(
+    id: 'accounts_activity',
+    title: 'Attività per conto',
+    section: 'accounts',
+  ),
+  ChartDefinition(
+    id: 'beneficiaries_top_amount',
+    title: 'Top beneficiari per importo',
+    section: 'beneficiaries',
+  ),
+  ChartDefinition(
+    id: 'beneficiaries_frequency',
+    title: 'Frequenza beneficiari',
+    section: 'beneficiaries',
+  ),
+  ChartDefinition(
+    id: 'beneficiaries_average',
+    title: 'Valore medio per beneficiario',
+    section: 'beneficiaries',
+  ),
 ];
 
 bool _chartIsVisible(String id) => PreferencesService.isChartVisible(id);
-List<ChartDefinition> _visibleChartsFor(String section) =>
-    chartRegistry.where((c) => c.section == section && _chartIsVisible(c.id)).toList();
+List<ChartDefinition> _visibleChartsFor(String section) => chartRegistry
+    .where((c) => c.section == section && _chartIsVisible(c.id))
+    .toList();
 
 enum _ChartSection { movements, categories, accounts, beneficiaries }
 
@@ -174,14 +252,18 @@ class _ChartsScreenState extends State<ChartsScreen> {
           Icon(
             icon,
             size: 16,
-            color: selected ? Colors.white : p.textSecondary,
+            color: selected
+                ? StreamSurfaceTokens.onAccent(p.primary)
+                : p.textSecondary,
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               fontSize: 13,
-              color: selected ? Colors.white : p.textSecondary,
+              color: selected
+                  ? StreamSurfaceTokens.onAccent(p.primary)
+                  : p.textSecondary,
             ),
           ),
         ],
@@ -218,7 +300,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return GestureDetector(
       onTap: () => _showChartSettings(context),
       child: const ChartEmptyState(
-        message: 'Nessun grafico attivo in questa sezione.\nTocca per aprire le impostazioni grafici.',
+        message:
+            'Nessun grafico attivo in questa sezione.\nTocca per aprire le impostazioni grafici.',
       ),
     );
   }
@@ -608,7 +691,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(StreamRadius.xl),
+        ),
       ),
       builder: (ctx) => _ChartVisibilitySheet(
         onChanged: () {
@@ -704,14 +789,21 @@ class _ChartVisibilitySheetState extends State<_ChartVisibilitySheet> {
         children: [
           Center(
             child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: p.textMuted, borderRadius: BorderRadius.circular(2)),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: p.textMuted,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 16),
           Text('Impostazioni grafici', style: StreamTypography.h3),
           const SizedBox(height: 4),
-          Text('Mostra o nascondi i singoli grafici.', style: StreamTypography.caption.copyWith(color: p.textSecondary)),
+          Text(
+            'Mostra o nascondi i singoli grafici.',
+            style: StreamTypography.caption.copyWith(color: p.textSecondary),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -734,23 +826,39 @@ class _ChartVisibilitySheetState extends State<_ChartVisibilitySheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: _sections.expand((section) {
-                  final charts = chartRegistry.where((c) => c.section == section.$1).toList();
+                  final charts = chartRegistry
+                      .where((c) => c.section == section.$1)
+                      .toList();
                   return [
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 4),
-                      child: Text(section.$2, style: StreamTypography.captionBold.copyWith(color: p.textSecondary)),
+                      child: Text(
+                        section.$2,
+                        style: StreamTypography.captionBold.copyWith(
+                          color: p.textSecondary,
+                        ),
+                      ),
                     ),
-                    ...charts.map((chart) => SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(chart.title, style: TextStyle(fontSize: 13, color: p.textPrimary)),
-                      value: !_hidden.contains(chart.id),
-                      onChanged: (v) => setState(() {
-                        if (v) { _hidden.remove(chart.id); } else { _hidden.add(chart.id); }
-                        PreferencesService.setChartVisible(chart.id, v);
-                        widget.onChanged();
-                      }),
-                      dense: true,
-                    )),
+                    ...charts.map(
+                      (chart) => SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          chart.title,
+                          style: TextStyle(fontSize: 13, color: p.textPrimary),
+                        ),
+                        value: !_hidden.contains(chart.id),
+                        onChanged: (v) => setState(() {
+                          if (v) {
+                            _hidden.remove(chart.id);
+                          } else {
+                            _hidden.add(chart.id);
+                          }
+                          PreferencesService.setChartVisible(chart.id, v);
+                          widget.onChanged();
+                        }),
+                        dense: true,
+                      ),
+                    ),
                   ];
                 }).toList(),
               ),

@@ -30,13 +30,24 @@ class StreamDonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final cp = context.$chart;
     if (slices.isEmpty) {
-      return Center(child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)));
+      return Center(
+        child: Text(
+          'Nessun dato',
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
+        ),
+      );
     }
 
     final total = slices.fold<double>(0.0, (s, sl) => s + sl.value);
     if (total == 0) {
-      return Center(child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)));
+      return Center(
+        child: Text(
+          'Nessun dato',
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
+        ),
+      );
     }
 
     final spent = slices.where((s) => s.value > 0).toList();
@@ -60,12 +71,16 @@ class StreamDonutChart extends StatelessWidget {
               children: [
                 PieChart(
                   PieChartData(
-                    sections: sliceData.map((s) => PieChartSectionData(
-                      value: s.value,
-                      color: s.color,
-                      radius: outerRadius,
-                      title: '',
-                    )).toList(),
+                    sections: sliceData
+                        .map(
+                          (s) => PieChartSectionData(
+                            value: s.value,
+                            color: s.color,
+                            radius: outerRadius,
+                            title: '',
+                          ),
+                        )
+                        .toList(),
                     centerSpaceRadius: centerRadius,
                     sectionsSpace: _sectionsSpaceDeg,
                     startDegreeOffset: _donutStartDegreeOffset,
@@ -75,11 +90,20 @@ class StreamDonutChart extends StatelessWidget {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(formatMovementCurrency(total, showPositiveSign: false),
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: p.textPrimary),
-                      overflow: TextOverflow.ellipsis, maxLines: 1,
+                    Text(
+                      formatMovementCurrency(total, showPositiveSign: false),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: p.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    Text('Totale', style: TextStyle(fontSize: 8, color: p.textSecondary)),
+                    Text(
+                      'Totale',
+                      style: TextStyle(fontSize: 8, color: cp.legendTextColor),
+                    ),
                   ],
                 ),
                 CustomPaint(
@@ -89,8 +113,8 @@ class StreamDonutChart extends StatelessWidget {
                     center: const Offset(90, 90),
                     outerRadius: outerRadius,
                     labelDistance: labelDistance,
-                    dotColor: p.textSecondary,
-                    lineColor: p.textSecondary.withValues(alpha: 0.4),
+                    dotColor: cp.legendTextColor,
+                    lineColor: cp.axisTextColor.withValues(alpha: 0.5),
                     labelColor: p.textPrimary,
                   ),
                 ),
@@ -142,14 +166,16 @@ List<_SliceGeometry> _computeSliceData(List<DonutSlice> slices, double total) {
   for (int i = 0; i < slices.length; i++) {
     final s = slices[i];
     final sweep = (s.value / total) * 2 * math.pi;
-    result.add(_SliceGeometry(
-      label: s.label,
-      value: s.value,
-      color: s.color,
-      percent: s.value / total * 100,
-      sweepRad: sweep,
-      midAngleRad: currentRad + sweep / 2,
-    ));
+    result.add(
+      _SliceGeometry(
+        label: s.label,
+        value: s.value,
+        color: s.color,
+        percent: s.value / total * 100,
+        sweepRad: sweep,
+        midAngleRad: currentRad + sweep / 2,
+      ),
+    );
     currentRad += sweep + (i < slices.length - 1 ? _sectionsSpaceRad : 0);
   }
   return result;
@@ -166,6 +192,7 @@ class _LegendColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = palette;
+    final cp = context.$chart;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,24 +204,36 @@ class _LegendColumn extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(width: 8, height: 8,
-                    decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2)),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: s.color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(s.label,
-                      style: TextStyle(fontSize: 10, color: p.textSecondary),
+                    child: Text(
+                      s.label,
+                      style: TextStyle(fontSize: 10, color: cp.legendTextColor),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text('${s.percent.toStringAsFixed(1)}%',
-                    style: TextStyle(fontSize: 10, color: p.textPrimary, fontWeight: FontWeight.w600),
+                  Text(
+                    '${s.percent.toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: p.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 12),
-                child: Text(formatMovementCurrency(s.value, showPositiveSign: false),
+                child: Text(
+                  formatMovementCurrency(s.value, showPositiveSign: false),
                   style: TextStyle(fontSize: 9, color: p.textMuted),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -254,7 +293,8 @@ List<_LabelLayout> _layoutLabels({
     final show = s.percent >= _minExternalLabelPercent;
     final dx = math.cos(s.midAngleRad);
     final dy = math.sin(s.midAngleRad);
-    final dotPos = center + Offset(dx * (outerRadius + 2), dy * (outerRadius + 2));
+    final dotPos =
+        center + Offset(dx * (outerRadius + 2), dy * (outerRadius + 2));
     final lineEnd = center + Offset(dx * labelDistance, dy * labelDistance);
     // Label horizontal position: right-aligned on left side, left-aligned on right side
     const pad = 4.0;
@@ -262,21 +302,25 @@ List<_LabelLayout> _layoutLabels({
         ? Offset(lineEnd.dx + pad, lineEnd.dy)
         : Offset(lineEnd.dx - pad, lineEnd.dy);
 
-    results.add(_LabelLayout(
-      text: '${s.percent.toStringAsFixed(0)}%',
-      color: s.color,
-      midAngleRad: s.midAngleRad,
-      dotPos: dotPos,
-      lineEnd: lineEnd,
-      labelOffset: labelOffset,
-      show: show,
-    ));
+    results.add(
+      _LabelLayout(
+        text: '${s.percent.toStringAsFixed(0)}%',
+        color: s.color,
+        midAngleRad: s.midAngleRad,
+        dotPos: dotPos,
+        lineEnd: lineEnd,
+        labelOffset: labelOffset,
+        show: show,
+      ),
+    );
   }
 
   // Collision avoidance: enforce vertical gap within each side group
-    void spaceGroup(List<int> indices) {
+  void spaceGroup(List<int> indices) {
     if (indices.length <= 1) return;
-    indices.sort((a, b) => results[a].labelOffset.dy.compareTo(results[b].labelOffset.dy));
+    indices.sort(
+      (a, b) => results[a].labelOffset.dy.compareTo(results[b].labelOffset.dy),
+    );
     for (int j = 1; j < indices.length; j++) {
       final prev = indices[j - 1];
       final curr = indices[j];
@@ -364,23 +408,27 @@ class _LeaderLinePainter extends CustomPainter {
 
       // leader line: from dot to horizontal break, then to label
       final isRight = math.cos(l.midAngleRad) >= 0;
-      final breakX = isRight
-          ? l.labelOffset.dx - 4
-          : l.labelOffset.dx + 4;
+      final breakX = isRight ? l.labelOffset.dx - 4 : l.labelOffset.dx + 4;
       final midY = l.labelOffset.dy;
       canvas.drawLine(l.dotPos, Offset(breakX, midY), linePaint);
 
       // render text
-      final textSpan = TextSpan(text: l.text, style: TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        color: labelColor,
-      ));
+      final textSpan = TextSpan(
+        text: l.text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: labelColor,
+        ),
+      );
       final tp = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
       tp.layout();
       final finalOffset = isRight
           ? Offset(l.labelOffset.dx, l.labelOffset.dy - tp.height / 2)
-          : Offset(l.labelOffset.dx - tp.width, l.labelOffset.dy - tp.height / 2);
+          : Offset(
+              l.labelOffset.dx - tp.width,
+              l.labelOffset.dy - tp.height / 2,
+            );
       tp.paint(canvas, finalOffset);
     }
   }
