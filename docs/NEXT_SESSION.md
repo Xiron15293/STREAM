@@ -22,16 +22,20 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`911` passati, `1` skipped).
 - Hermes QA green / closure candidate: nessun nuovo P0/P1/P2 trovato nel perimetro dell’audit finale.
 
-## Stato Attuale — V0.10 + V0.10.1
+## Stato Attuale — V0.10 + V0.10.1 + V0.10.1c
 
 - La tab "Grafici" è stata aggiunta tra Archivio e Impostazioni.
 - ChartsScreen ha 4 sezioni (Movimenti, Categorie, Conti, Beneficiari) con chip/pill orizzontali scrollabili.
-- I grafici categorici sono tutti orizzontali con label a sinistra e valore preciso a destra.
-- `StreamHorizontalBarChart` supporta label, valore, secondaryValue, legenda, ellissi.
-- I grafici temporali (cashflow, conteggio per giorno) restano verticali con `fl_chart`.
-- `TimeFilterBar` rispetta il periodo globale; nella tab Grafici usa "Range" invece di "Intervallo".
-- Top N + Altro applicato a top spending days, categorie, e beneficiari.
-- 948 test totali, tutti verdi.
+- **Donut charts**: composizione categorie, distribuzione tipo movimento, top beneficiari (importo), frequenza beneficiari, giorni settimana più costosi, quota saldo conto. Ogni donut ha legenda + percentuale + valore + totale centrale.
+- **Barre orizzontali**: top categorie, saldo/flussi/attività conti, conti uscite/entrate, top giorni spesa, delta categorie vs periodo precedente, media beneficiario.
+- **Barre verticali (fl_chart)**: cashflow nel tempo, movimenti per giorno.
+- Scroll UX: tutti i touch fl_chart disabilitati e nessun `ListView.builder` interno, il drag verticale scrolla la tab Grafici.
+- Nuove metriche: weekday cost, avg daily spend, category delta, account outflow/inflow, beneficiary average, quota saldo.
+- 7 nuove funzioni pure in `analytics_metrics.dart`.
+- TimeFilterBar rispetta il periodo globale; nella tab Grafici usa "Range".
+- Top N + Altro applicato ovunque.
+- Budget non implementato, resta futuro (struttura predisposta).
+- 960 test totali, tutti verdi.
 
 ## Prossimo Sprint Consigliato
 

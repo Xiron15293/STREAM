@@ -11,13 +11,14 @@
 
 ### Executive summary
 - 44+ file test Dart/Flutter
-- 948 test/casi dichiarati
-- 948 test verdi nel run finale
+- 960 test/casi dichiarati
+- 960 test verdi nel run finale
 - 1 skipped (preesistente)
 - 1.641+ scenari data-driven
 - 7.475+ controlli/logiche reali documentati
 - 8+ blocchi funzionali coperti
-- V0.10 Grafici Tab aggiunta: 20 nuovi test (11 metriche pure, 6 integrazione UI, 3 navigazione)
+- V0.10 Grafici Tab: 20 test (11 metriche pure, 6 integrazione UI, 3 navigazione)
+- V0.10.1c: +12 nuovi test (7 metriche pure, 3 integrazione, 2 composizione/ui)
 - P0: 0 nuovi
 - P1: 0 nuovi
 - P2: 0 nuovi

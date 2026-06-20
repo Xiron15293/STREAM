@@ -27,6 +27,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Legenda aggiunta per grafici multi-serie (cashflow entrate/uscite, flussi per conto)
   - Label "Range" per filtro custom period solo nella tab Grafici (via `customRangeLabel`)
   - Top N + Altro applicato a tutte le sezioni categoriche (categorie, beneficiari, top spending days)
+
+- **V0.10.1c — Donut Charts + Extra Analytics + Chart Scroll UX**
+  - `Composizione categorie` convertita da barre orizzontali a donut chart con legenda, percentuali, valori precisi e totale centrale
+  - `Top beneficiari per importo` convertito da barre orizzontali a donut chart con legenda e percentuali
+  - `Frequenza beneficiari` convertito da barre orizzontali a donut chart con legenda, percentuali e conteggi
+  - Donut chart: aggiunto totale centrale, legenda con percentuale + valore, `PieTouchData(enabled: false)` per scroll
+  - Bar chart verticale: `BarTouchData(enabled: false)` per scroll (tooltip disabilitati, valori già visibili)
+  - `StreamHorizontalBarChart`: rimosso `ListView.builder` interno (uso `Column` diretto), nessun blocco scroll verticale
+  - Nuove metriche pure in `analytics_metrics.dart`: `buildWeekdayCostBreakdown`, `buildAvgDailySpend`, `buildCategoryDeltaVsPreviousPeriod`, `buildAccountOutflowSeries`, `buildAccountInflowSeries`, `buildBeneficiaryAverageSeries`, `buildQuotaSaldoSeries`
+  - Nuovi grafici nelle sezioni:
+    - **Movimenti**: `Giorni della settimana più costosi` (donut), `Spesa media giornaliera` (card)
+    - **Categorie**: `Categorie in crescita/calo vs periodo precedente` (barre orizzontali)
+    - **Conti**: `Quota saldo per conto` (donut), `Conti più usati per uscite` (barre), `Conti più usati per entrate` (barre)
+    - **Beneficiari**: `Valore medio per beneficiario` (barre orizzontali)
+  - 12 nuovi test in `test/charts_test.dart` per le nuove metriche
+  - Budget non implementato, Budget resta futuro
 - **Hermes Extended QA Audit**
   - Aggiunta matrice QA data-driven `test/qa_audit_matrix_test.dart`
   - Copertura deterministica su suggerimenti, beneficiari, TimeFilter/range e formatter valuta

@@ -65,6 +65,7 @@
 | — | Hermes QA 6000+ closure candidate | ✅ COMPLETATO / QA STABILIZED | 2026-06-19 |
 | V0.10 | Grafici Tab — Analytics Hub (4 sezioni, metriche pure, fl_chart) | ✅ COMPLETATO | 2026-06-19 |
 | V0.10.1 | Chart Readability Fix (barre orizzontali, valori precisi, label leggibili, chip/pill scrollabili) | ✅ COMPLETATO | 2026-06-19 |
+| V0.10.1c | Donut Charts + Extra Analytics + Chart Scroll UX | ✅ COMPLETATO | 2026-06-20 |
 
 ## Approvate / Future (V0.11+)
 

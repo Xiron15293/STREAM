@@ -50,6 +50,7 @@
 | F39 | V0.8.7 Heatmap Settings — soglie/colori configurabili | V0.8.7 | 2026-06-11 |
 | F40 | V0.10 Grafici Tab — Analytics Hub | V0.10 | 2026-06-19 |
 | F41 | V0.10.1 Chart Readability — barre orizzontali, valori precisi, label leggibili | V0.10.1 | 2026-06-19 |
+| F42 | V0.10.1c Donut Charts + Extra Analytics + Scroll UX | V0.10.1c | 2026-06-20 |
 | F40 | V0.8.8 Subcategories Foundation — subcategory entity, DB v9, UI | V0.8.8 | 2026-06-12 |
 | F42 | V0.8.9 Category Conversion & Suggested UX Polish — fix crash categorie, conversione manuale, suggeriti espandibili | V0.8.9 | 2026-06-14 |
 | F43 | V0.8.10 Period Views Premium — filtro settimana, card giorno premium, tap giorno seleziona dentro periodo (Week/Month/Year/Range restano in modalità, solo Day cambia), expense breakdown, range premium (blocchi semestrali), chip giorno + reset contestuale per mode, _selectedPeriodDay generalizzato, formatEuro, raggruppamento giorno panel mode, DayHeader Oggi/Ieri/count | V0.8.10 | 2026-06-14 |

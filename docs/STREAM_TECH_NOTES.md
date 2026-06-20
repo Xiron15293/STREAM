@@ -74,6 +74,25 @@
 
 **Transfer handling:** trasferimenti esclusi da income/expense in aggregazioni categorie e beneficiari. Trattati come neutri nella distribuzione tipo movimento. Conti: flussi separati.
 
+**Chart type rules (V0.10.1c):**
+- **Donut**: composizione categorie, distribuzione tipo movimento, top beneficiari (importo), frequenza beneficiari, giorni settimana più costosi, quota saldo conto. Mostra legenda con nome + percentuale + valore, totale centrale.
+- **Barre orizzontali**: ranking, classifiche, confronto nomi lunghi (top categorie, saldo/flussi/attività conti, conti uscite/entrate, top giorni spesa, delta categorie, media beneficiario). Label sinistra (ellissi), barra proporzionale, valore a destra.
+- **Barre verticali (fl_chart)**: dati temporali (cashflow nel tempo, movimenti per giorno). Touch disabilitato per scroll page.
+- **Scroll UX**: tutti i grafici hanno touch disabilitato (`BarTouchData(enabled: false)`, `PieTouchData(enabled: false)`) in modo che il drag verticale scrolli la tab Grafici anziché il grafico. Nessun `ListView.builder` interno nei widget grafici.
+
+**Nuove metriche pure (V0.10.1c):**
+| Funzione | Descrizione |
+|---|---|
+| `buildWeekdayCostBreakdown` | Donut spesa per giorno settimana (Lun-Dom) |
+| `buildAvgDailySpend` | Spesa media giornaliera = totale uscite / giorni periodo |
+| `buildCategoryDeltaVsPreviousPeriod` | Delta categorie vs periodo precedente (in aumento/in calo) |
+| `buildAccountOutflowSeries` | Classifica conti per uscite |
+| `buildAccountInflowSeries` | Classifica conti per entrate |
+| `buildBeneficiaryAverageSeries` | Valore medio per beneficiario (totale / conteggio) |
+| `buildQuotaSaldoSeries` | Donut quota saldo (solo conti con saldo positivo) |
+
+**Budget:** non implementato. La struttura a sezioni di `ChartsScreen` permette aggiunta futura di una sezione Budget. Non ci sono UI, campi DB o testi Budget visibili.
+
 **TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
 
 **CurrencyFormatter:** i valori precisi su barre usano `formatMovementCurrency()` dalla valuta globale.
