@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
+import '../data/preferences_service.dart';
 import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/time_filter.dart';
+import '../theme.dart';
 import '../utils/analytics_metrics.dart';
 import '../utils/currency_formatter.dart';
 import '../widgets/charts/chart_empty_state.dart';
@@ -11,6 +13,39 @@ import '../widgets/charts/stream_chart_card.dart';
 import '../widgets/charts/stream_donut_chart.dart';
 import '../widgets/charts/stream_horizontal_bar_chart.dart';
 import '../widgets/time_filter_bar.dart';
+
+class ChartDefinition {
+  final String id;
+  final String title;
+  final String section;
+
+  const ChartDefinition({required this.id, required this.title, required this.section});
+}
+
+const List<ChartDefinition> chartRegistry = [
+  ChartDefinition(id: 'movements_cashflow', title: 'Entrate / Uscite nel tempo', section: 'movements'),
+  ChartDefinition(id: 'movements_daily_count', title: 'Movimenti per giorno', section: 'movements'),
+  ChartDefinition(id: 'movements_type_distribution', title: 'Distribuzione tipo movimento', section: 'movements'),
+  ChartDefinition(id: 'movements_top_spending_days', title: 'Top giorni di spesa', section: 'movements'),
+  ChartDefinition(id: 'movements_weekday_costs', title: 'Giorni della settimana più costosi', section: 'movements'),
+  ChartDefinition(id: 'movements_avg_daily_spend', title: 'Spesa media giornaliera', section: 'movements'),
+  ChartDefinition(id: 'categories_top', title: 'Top spese per categoria', section: 'categories'),
+  ChartDefinition(id: 'categories_composition', title: 'Composizione categorie', section: 'categories'),
+  ChartDefinition(id: 'categories_delta_vs_previous', title: 'Categorie in crescita / calo', section: 'categories'),
+  ChartDefinition(id: 'accounts_balance', title: 'Saldo per conto', section: 'accounts'),
+  ChartDefinition(id: 'accounts_balance_share', title: 'Quota saldo per conto', section: 'accounts'),
+  ChartDefinition(id: 'accounts_flows', title: 'Flussi per conto', section: 'accounts'),
+  ChartDefinition(id: 'accounts_outflow', title: 'Conti più usati per uscite', section: 'accounts'),
+  ChartDefinition(id: 'accounts_inflow', title: 'Conti più usati per entrate', section: 'accounts'),
+  ChartDefinition(id: 'accounts_activity', title: 'Attività per conto', section: 'accounts'),
+  ChartDefinition(id: 'beneficiaries_top_amount', title: 'Top beneficiari per importo', section: 'beneficiaries'),
+  ChartDefinition(id: 'beneficiaries_frequency', title: 'Frequenza beneficiari', section: 'beneficiaries'),
+  ChartDefinition(id: 'beneficiaries_average', title: 'Valore medio per beneficiario', section: 'beneficiaries'),
+];
+
+bool _chartIsVisible(String id) => PreferencesService.isChartVisible(id);
+List<ChartDefinition> _visibleChartsFor(String section) =>
+    chartRegistry.where((c) => c.section == section && _chartIsVisible(c.id)).toList();
 
 enum _ChartSection { movements, categories, accounts, beneficiaries }
 
@@ -40,7 +75,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final p = context.$palette;
     return Scaffold(
       backgroundColor: p.canvas,
-      appBar: AppBar(title: const Text('Grafici')),
+      appBar: AppBar(
+        title: const Text('Grafici'),
+        actions: [
+          IconButton(
+            key: const Key('charts_settings_button'),
+            icon: const Icon(Icons.tune),
+            onPressed: () => _showChartSettings(context),
+          ),
+        ],
+      ),
       body: ListenableBuilder(
         listenable: widget.db,
         builder: (context, _) {
@@ -170,9 +214,19 @@ class _ChartsScreenState extends State<ChartsScreen> {
   static String _fmtNoSign(double v) =>
       formatMovementCurrency(v, showPositiveSign: false);
 
+  Widget _noVisibleCharts() {
+    return GestureDetector(
+      onTap: () => _showChartSettings(context),
+      child: const ChartEmptyState(
+        message: 'Nessun grafico attivo in questa sezione.\nTocca per aprire le impostazioni grafici.',
+      ),
+    );
+  }
+
   Widget _buildMovementsSection() {
     final movements = widget.db.movements;
     final filtered = movements.filterByTime(_filter);
+    if (_visibleChartsFor('movements').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
       return const ChartEmptyState(
         message: 'Nessun movimento nel periodo selezionato',
@@ -257,6 +311,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final movements = widget.db.movements;
     final categories = widget.db.categories;
     final filtered = movements.filterByTime(_filter);
+    if (_visibleChartsFor('categories').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
       return const ChartEmptyState(
         message: 'Nessun movimento nel periodo selezionato',
@@ -347,6 +402,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final accounts = widget.db.accounts;
     final active = accounts.where((a) => !a.archived).toList();
     final filtered = movements.filterByTime(_filter);
+    if (_visibleChartsFor('accounts').isEmpty) return _noVisibleCharts();
     if (active.isEmpty) {
       return const ChartEmptyState(message: 'Nessun conto attivo');
     }
@@ -472,6 +528,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   Widget _buildBeneficiariesSection() {
     final movements = widget.db.movements;
     final filtered = movements.filterByTime(_filter);
+    if (_visibleChartsFor('beneficiaries').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
       return const ChartEmptyState(
         message: 'Nessun movimento nel periodo selezionato',
@@ -544,6 +601,23 @@ class _ChartsScreenState extends State<ChartsScreen> {
       ],
     );
   }
+
+  void _showChartSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+      ),
+      builder: (ctx) => _ChartVisibilitySheet(
+        onChanged: () {
+          setState(() {});
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
 }
 
 class _LegendRow extends StatelessWidget {
@@ -592,5 +666,108 @@ class _LegendRow extends StatelessWidget {
         Expanded(child: child),
       ],
     );
+  }
+}
+
+class _ChartVisibilitySheet extends StatefulWidget {
+  final VoidCallback onChanged;
+  const _ChartVisibilitySheet({required this.onChanged});
+
+  @override
+  State<_ChartVisibilitySheet> createState() => _ChartVisibilitySheetState();
+}
+
+class _ChartVisibilitySheetState extends State<_ChartVisibilitySheet> {
+  late Set<String> _hidden;
+
+  @override
+  void initState() {
+    super.initState();
+    _hidden = Set.from(PreferencesService.hiddenChartIdsNotifier.value);
+  }
+
+  static const _sections = [
+    ('movements', 'Movimenti'),
+    ('categories', 'Categorie'),
+    ('accounts', 'Conti'),
+    ('beneficiaries', 'Beneficiari'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(color: p.textMuted, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Impostazioni grafici', style: StreamTypography.h3),
+          const SizedBox(height: 4),
+          Text('Mostra o nascondi i singoli grafici.', style: StreamTypography.caption.copyWith(color: p.textSecondary)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              TextButton(
+                key: const Key('chart_visibility_show_all'),
+                onPressed: _showAll,
+                child: const Text('Mostra tutti'),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                key: const Key('chart_visibility_reset_defaults'),
+                onPressed: _resetDefaults,
+                child: const Text('Ripristina predefiniti'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _sections.expand((section) {
+                  final charts = chartRegistry.where((c) => c.section == section.$1).toList();
+                  return [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 4),
+                      child: Text(section.$2, style: StreamTypography.captionBold.copyWith(color: p.textSecondary)),
+                    ),
+                    ...charts.map((chart) => SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(chart.title, style: TextStyle(fontSize: 13, color: p.textPrimary)),
+                      value: !_hidden.contains(chart.id),
+                      onChanged: (v) => setState(() {
+                        if (v) { _hidden.remove(chart.id); } else { _hidden.add(chart.id); }
+                        PreferencesService.setChartVisible(chart.id, v);
+                        widget.onChanged();
+                      }),
+                      dense: true,
+                    )),
+                  ];
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAll() {
+    setState(() => _hidden.clear());
+    PreferencesService.saveHiddenChartIds({});
+    widget.onChanged();
+  }
+
+  void _resetDefaults() {
+    _showAll();
   }
 }

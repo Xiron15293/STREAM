@@ -93,6 +93,19 @@
 
 **Budget:** non implementato. La struttura a sezioni di `ChartsScreen` permette aggiunta futura di una sezione Budget. Non ci sono UI, campi DB o testi Budget visibili.
 
+**Chart registry e visibilità (V0.11g):**
+- `chartRegistry` in `charts_screen.dart` con ID stabili per ogni grafico
+- `PreferencesService.hiddenChartIdsNotifier` + `loadHiddenChartIds()`, `setChartVisible()`, `isChartVisible()`, `resetChartVisibility()`
+- `ChartsScreen`: icona `Icons.tune` → `_ChartVisibilitySheet` con SwitchListTile per sezione
+- Sezione senza grafici visibili → `_noVisibleCharts()` con empty state
+
+**Donut outside labels (V0.11g):**
+- Percentuali rimosse da `PieChartSectionData.title` (causavano sovrapposizione).
+- `_LeaderLinePainter` (CustomPainter): dot, leader line, e `TextPainter` per label esterna.
+- Label posizionata a destra della lineetta se lato destro, a sinistra se lato sinistro.
+- Soglia `_minExternalLabelPercent = 4%`: slice sotto 4% mostrano solo lineetta, percentuale solo in legenda.
+- Legenda a destra: dot + label + percentuale + valore. Totale centrale mantenuto.
+
 **TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
 
 **CurrencyFormatter:** i valori precisi su barre usano `formatMovementCurrency()` dalla valuta globale.

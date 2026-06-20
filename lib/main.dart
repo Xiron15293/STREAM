@@ -23,6 +23,7 @@ Future<void> main() async {
   await PreferencesService.loadThemeId();
   await PreferencesService.loadKpiStyleId();
   await PreferencesService.loadChartStyleId();
+  await PreferencesService.loadHiddenChartIds();
   runApp(ProfileAwareStreamApp(profileService: profileService));
 }
 

@@ -79,6 +79,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - 578 occorrenze totali `StreamColors` prima; ~520 restano in widget non prioritari (accounts_screen, categories_screen, backup, movimenti, heatmap, ecc.) — migrazione completa come follow-up
   - 979 test totali, tutti verdi
 
+- **V0.11g — Chart Readability and Chart Visibility Preferences**
+  - Donut chart: percentuali rimosse dall'interno delle fette (causavano sovrapposizione)
+  - Leader lines: `_LeaderLinePainter` (CustomPainter) disegna lineette dal bordo della fetta verso l'esterno
+  - Label percentuali esterne: `TextPainter` in `_LeaderLinePainter` renderizza la percentuale (es. "32%") alla fine di ogni leader line
+  - Allineamento: label a destra se coseno >= 0 (lato destro), label a sinistra se coseno < 0 (lato sinistro)
+  - Soglia `_minExternalLabelPercent` = 4%: slice sotto il 4% mostrano solo leader line, la percentuale solo in legenda
+  - Legenda laterale: mantiene nome + percentuale + valore formattato
+  - Chart registry: `chartRegistry` con ID stabili per ogni grafico
+  - `PreferencesService`: `hiddenChartIdsNotifier`, `setChartVisible()`, `isChartVisible()`, `resetChartVisibility()`, `loadHiddenChartIds()`
+  - `ChartsScreen`: icona `Icons.tune` in AppBar con key `charts_settings_button`
+  - `_ChartVisibilitySheet`: bottom sheet con `SwitchListTile` per ogni grafico, sezioni Movimenti/Categorie/Conti/Beneficiari, "Mostra tutti" e "Ripristina predefiniti"
+  - Filtraggio: se una sezione non ha grafici visibili, mostra `_noVisibleCharts()` con empty state tappabile
+  - Nessuna modifica DB, analytics/calcoli invariati
+
 - **V0.11d — Make KPI Styles Visibly Real**
   - `_KpiCard` riscritto con switch su `StreamKpiStyleId` per produrre differenze visive reali
   - `_KpiGrid` wrappato con `ValueListenableBuilder(kpiStyleNotifier)` per rebuild live senza cambiare tema

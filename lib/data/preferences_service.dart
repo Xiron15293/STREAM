@@ -201,6 +201,46 @@ class PreferencesService {
     chartStyleNotifier.value = value;
   }
 
+  static const _hiddenChartIdsKey = 'hidden_chart_ids';
+
+  static final hiddenChartIdsNotifier = ValueNotifier<Set<String>>({});
+
+  static Future<Set<String>> loadHiddenChartIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_hiddenChartIdsKey);
+    final result = list?.toSet() ?? <String>{};
+    hiddenChartIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveHiddenChartIds(Set<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_hiddenChartIdsKey, ids.toList());
+    hiddenChartIdsNotifier.value = ids;
+  }
+
+  static Future<void> setChartVisible(String chartId, bool visible) async {
+    final hidden = Set<String>.from(hiddenChartIdsNotifier.value);
+    if (visible) {
+      hidden.remove(chartId);
+    } else {
+      hidden.add(chartId);
+    }
+    await saveHiddenChartIds(hidden);
+  }
+
+  static bool isChartVisible(String chartId) {
+    return !hiddenChartIdsNotifier.value.contains(chartId);
+  }
+
+  static Future<void> resetChartVisibility() async {
+    await saveHiddenChartIds({});
+  }
+
+  static Future<void> restoreDefaultChartVisibility() async {
+    await resetChartVisibility();
+  }
+
   static Future<void> clearForReset() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_showNotesKey);
@@ -211,5 +251,6 @@ class PreferencesService {
     await prefs.remove(_themeIdKey);
     await prefs.remove(_kpiStyleKey);
     await prefs.remove(_chartStyleKey);
+    await prefs.remove(_hiddenChartIdsKey);
   }
 }

@@ -15,8 +15,9 @@
 - V0.11b Theme applied to widgets: widget grafici e Dashboard KPI migrati, helper fallback sicuro
 - V0.11c Real Chart Styles (applyStyle, StreamApp listener, 5 stili)
 - V0.11d Real KPI Styles (ValueListenableBuilder, _KpiCard switch, 6 stili)
+- V0.11g Chart Readability + Visibility Preferences (donut outside labels con leader lines + TextPainter + alignment + 4% threshold, chart registry, hiddenChartIds)
 
-**V0.11c V0.11d completati:** chart styles reali (applyStyle, 5 stili), KPI styles reali (ValueListenableBuilder, 6 stili), 990 test finali
+**V0.11c V0.11d V0.11g completati:** chart styles reali, KPI styles reali, chart readability + visibility, 1015 test finali
 
 ## Conteggio reale
 

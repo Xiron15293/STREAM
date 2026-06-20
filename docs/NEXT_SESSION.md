@@ -34,7 +34,8 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - **Chart styles reali**: V0.11c (automatic/soft/technical/highContrast/editorial con `applyStyle`)
 - **Chart palette effettiva** calcolata in `StreamTheme.build()` con chart style, ascoltata da `StreamApp`
 - **Budget non implementato**, resta futuro
-- **990 test totali**, tutti verdi
+- **V0.11g**: donut outside labels + leader lines, chart visibility preferences (registry, hiddenChartIds, settings sheet)
+- **1015 test totali**, tutti verdi
 
 ## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
 

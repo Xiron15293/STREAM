@@ -23,6 +23,7 @@
 - V0.11b Theme Applied: widget grafici migrati, Dashboard KPI migrata, helper context.streamTheme, fallback sicuro, 979 test invariati
 - V0.11c Real Chart Styles: chart_style effettivo in ThemeExtension, StreamApp ascolta chartStyleNotifier, 5 stili visibili (automatic/soft/technical/highContrast/editorial)
 - V0.11d Real KPI Styles: _KpiCard riscritto, ValueListenableBuilder in Dashboard, 6 KPI styles visibili (minimal/dense/glass/outline/solid/split), 990 test finali
+- V0.11g Chart Readability: donut outside labels (leader lines + TextPainter + left/right alignment + 4% threshold) + chart visibility preferences, 1015 test finali
 - P0: 0 nuovi
 - P1: 0 nuovi
 - P2: 0 nuovi

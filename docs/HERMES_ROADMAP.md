@@ -70,6 +70,7 @@
 | V0.11b | Apply Theme to Widgets + KPI + Charts | ✅ COMPLETATO | 2026-06-20 |
 | V0.11c | Real Chart Styles (soft/technical/highContrast/editorial) | ✅ COMPLETATO | 2026-06-20 |
 | V0.11d | Real KPI Styles (minimal/dense/glass/outline/solid/split) | ✅ COMPLETATO | 2026-06-20 |
+| V0.11g | Chart Readability + Visibility Preferences | ✅ COMPLETATO | 2026-06-20 |
 
 ## Approvate / Future (V0.11+)
 
