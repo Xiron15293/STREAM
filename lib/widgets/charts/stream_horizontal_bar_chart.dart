@@ -41,9 +41,15 @@ class StreamHorizontalBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.$palette;
     if (bars.isEmpty) return const SizedBox.shrink();
-    if (bars.every((b) => b.value == 0 && (b.secondaryValue == null || b.secondaryValue == 0))) {
+    if (bars.every(
+      (b) =>
+          b.value == 0 && (b.secondaryValue == null || b.secondaryValue == 0),
+    )) {
       return Center(
-        child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)),
+        child: Text(
+          'Nessun dato',
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
+        ),
       );
     }
 
@@ -64,15 +70,22 @@ class StreamHorizontalBarChart extends StatelessWidget {
             child: Row(
               children: [
                 if (legendLabel1 != null) ...[
-                  _legendDot(bars.isNotEmpty ? bars.first.barColor : StreamColors.primary),
+                  _legendDot(bars.isNotEmpty ? bars.first.barColor : p.primary),
                   const SizedBox(width: 4),
-                  Text(legendLabel1!, style: TextStyle(fontSize: 11, color: p.textSecondary)),
+                  Text(
+                    legendLabel1!,
+                    style: TextStyle(fontSize: 11, color: p.textSecondary),
+                  ),
                   const SizedBox(width: 16),
                 ],
-                if (legendLabel2 != null && bars.first.secondaryColor != null) ...[
+                if (legendLabel2 != null &&
+                    bars.first.secondaryColor != null) ...[
                   _legendDot(bars.first.secondaryColor!),
                   const SizedBox(width: 4),
-                  Text(legendLabel2!, style: TextStyle(fontSize: 11, color: p.textSecondary)),
+                  Text(
+                    legendLabel2!,
+                    style: TextStyle(fontSize: 11, color: p.textSecondary),
+                  ),
                 ],
               ],
             ),
@@ -103,8 +116,12 @@ class StreamHorizontalBarChart extends StatelessWidget {
 
   Widget _legendDot(Color color) {
     return Container(
-      width: 8, height: 8,
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
+      ),
     );
   }
 }
@@ -146,46 +163,66 @@ class _SingleHorizontalBar extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
+            child: Text(
+              label,
               style: TextStyle(fontSize: 11, color: palette.textSecondary),
-              overflow: TextOverflow.ellipsis, maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: LayoutBuilder(builder: (context, constraints) {
-              final barMaxWidth = constraints.maxWidth;
-              return SizedBox(
-                height: barHeight,
-                child: Stack(
-                  children: [
-                    if (secondaryValue != null && secondaryColor != null)
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final barMaxWidth = constraints.maxWidth;
+                return SizedBox(
+                  height: barHeight,
+                  child: Stack(
+                    children: [
+                      if (secondaryValue != null && secondaryColor != null)
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: barMaxWidth * secondaryPct.clamp(0.0, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: secondaryColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
                       Positioned(
-                        left: 0, top: 0, bottom: 0,
-                        width: barMaxWidth * secondaryPct.clamp(0.0, 1.0),
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: barMaxWidth * pct.clamp(0.0, 1.0),
                         child: Container(
-                          decoration: BoxDecoration(color: secondaryColor, borderRadius: BorderRadius.circular(4)),
+                          decoration: BoxDecoration(
+                            color: barColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
-                    Positioned(
-                      left: 0, top: 0, bottom: 0,
-                      width: barMaxWidth * pct.clamp(0.0, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(color: barColor, borderRadius: BorderRadius.circular(4)),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
           const SizedBox(width: 8),
           SizedBox(
             width: 80,
-            child: Text(formattedValue,
+            child: Text(
+              formattedValue,
               textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 11, color: palette.textPrimary, fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis, maxLines: 1,
+              style: TextStyle(
+                fontSize: 11,
+                color: palette.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],

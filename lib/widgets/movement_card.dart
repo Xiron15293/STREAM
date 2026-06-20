@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../design/stream_theme_extension.dart';
 import '../design/stream_icon_library.dart';
 import '../models/movement.dart';
 import '../models/beneficiary_profile.dart';
@@ -50,6 +51,7 @@ class MovementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final isTransfer = movement.type == MovementType.transfer;
     final resolvedSelection = category == null
         ? null
@@ -72,8 +74,9 @@ class MovementCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: StreamColors.surface,
+        color: p.surface,
         borderRadius: BorderRadius.circular(StreamRadius.md),
+        border: Border.all(color: p.divider),
       ),
       child: Material(
         color: Colors.transparent,
@@ -124,7 +127,7 @@ class MovementCard extends StatelessWidget {
                           if (isTransfer)
                             _MetadataRow(
                               icon: Icons.swap_horiz,
-                              iconColor: StreamColors.textMuted,
+                              iconColor: p.textMuted,
                               text:
                                   'Da ${account?.name ?? movement.accountId} → ${destinationAccount?.name ?? movement.destinationAccountId ?? defaultAccountId}',
                             )
@@ -139,7 +142,7 @@ class MovementCard extends StatelessWidget {
                           else
                             _MetadataRow(
                               icon: Icons.help_outline,
-                              iconColor: StreamColors.textMuted,
+                              iconColor: p.textMuted,
                               text: movement.categoryId,
                             ),
                           if (!isTransfer &&
@@ -156,7 +159,8 @@ class MovementCard extends StatelessWidget {
                                   beneficiaryColor ??
                                       StreamColorPalette.defaultColor,
                                 ),
-                                text: beneficiaryDisplayName ??
+                                text:
+                                    beneficiaryDisplayName ??
                                     movement.payee!.trim(),
                               ),
                             ),
@@ -177,7 +181,7 @@ class MovementCard extends StatelessWidget {
                               child: Text(
                                 _formatDate(movement.date),
                                 style: StreamTypography.caption.copyWith(
-                                  color: StreamColors.textSecondary,
+                                  color: p.textSecondary,
                                 ),
                               ),
                             ),
@@ -196,10 +200,10 @@ class MovementCard extends StatelessWidget {
                             ),
                       style: StreamTypography.amount.copyWith(
                         color: isTransfer
-                            ? StreamColors.textSecondary
+                            ? p.textSecondary
                             : movement.type == MovementType.expense
-                            ? StreamColors.expense
-                            : StreamColors.income,
+                            ? p.expense
+                            : p.income,
                       ),
                     ),
                     if (hasPopup) ...[
@@ -257,7 +261,7 @@ class _MetadataRow extends StatelessWidget {
             child: Text(
               text,
               style: StreamTypography.caption.copyWith(
-                color: StreamColors.textSecondary,
+                color: context.$palette.textSecondary,
               ),
             ),
           ),
@@ -278,12 +282,16 @@ class _NoteBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(StreamSpacing.sm),
       decoration: BoxDecoration(
-        color: StreamColors.surfaceElevated,
+        color: context.$palette.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.sm),
       ),
       child: Row(
         children: [
-          Icon(Icons.notes_rounded, size: 14, color: StreamColors.textMuted),
+          Icon(
+            Icons.notes_rounded,
+            size: 14,
+            color: context.$palette.textMuted,
+          ),
           const SizedBox(width: StreamSpacing.sm),
           Expanded(
             child: Text(
@@ -291,7 +299,7 @@ class _NoteBox extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: StreamTypography.caption.copyWith(
-                color: StreamColors.textSecondary,
+                color: context.$palette.textSecondary,
               ),
             ),
           ),
@@ -329,7 +337,7 @@ class MovementCardPopupMenu extends StatelessWidget {
         onAddQuick: onAddQuick,
         onDelete: onDelete,
       ),
-      icon: Icon(Icons.more_horiz, size: 20, color: StreamColors.textMuted),
+      icon: Icon(Icons.more_horiz, size: 20, color: context.$palette.textMuted),
     );
   }
 }

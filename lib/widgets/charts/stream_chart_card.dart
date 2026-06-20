@@ -23,6 +23,7 @@ class StreamChartCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: p.surface,
         borderRadius: BorderRadius.circular(StreamRadius.lg),
+        border: Border.all(color: p.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,10 +33,7 @@ class StreamChartCard extends StatelessWidget {
             style: StreamTypography.h3.copyWith(color: p.textPrimary),
           ),
           const SizedBox(height: StreamSpacing.md),
-          SizedBox(
-            height: height,
-            child: child,
-          ),
+          SizedBox(height: height, child: child),
         ],
       ),
     );

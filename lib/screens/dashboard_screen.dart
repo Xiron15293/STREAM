@@ -66,7 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<AppCurrency>(
       valueListenable: PreferencesService.currencyNotifier,
-      builder: (context, _, __) {
+      builder: (context, _, child) {
         return Scaffold(
           appBar: AppBar(title: const Text('STREAM')),
           body: ListenableBuilder(
@@ -158,59 +158,296 @@ class _BalanceHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(StreamSpacing.xl),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            StreamColors.primary.withValues(alpha: 0.2),
-            StreamColors.surface,
+    final p = context.$palette;
+    final kpiStyle = StreamKpiStyleId.fromString(
+      PreferencesService.kpiStyleNotifier.value,
+    );
+    final valueColor = accountsBalance >= 0 ? p.income : p.expense;
+    final isDense = kpiStyle == StreamKpiStyleId.dense;
+
+    Decoration decoration;
+    EdgeInsets padding;
+    TextStyle valueStyle;
+    Widget content;
+
+    switch (kpiStyle) {
+      case StreamKpiStyleId.dense:
+        padding = const EdgeInsets.symmetric(
+          horizontal: StreamSpacing.lg,
+          vertical: StreamSpacing.md,
+        );
+        valueStyle = StreamTypography.h1.copyWith(color: valueColor, height: 1);
+        decoration = BoxDecoration(
+          color: p.surfaceElevated,
+          borderRadius: BorderRadius.circular(StreamRadius.lg),
+          border: Border.all(color: p.divider),
+        );
+        content = Row(
+          key: const Key('dashboard_hero_kpi_style_dense'),
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: _HeroHeading(accountsBalance: accountsBalance)),
+            const SizedBox(width: StreamSpacing.md),
+            Flexible(
+              child: Text(
+                formatMovementCurrency(accountsBalance, showPositiveSign: true),
+                key: const Key('dashboard_hero_networth_value'),
+                textAlign: TextAlign.right,
+                style: valueStyle,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        );
+      case StreamKpiStyleId.glass:
+        padding = const EdgeInsets.all(StreamSpacing.xl);
+        valueStyle = StreamTypography.display.copyWith(color: valueColor);
+        decoration = BoxDecoration(
+          color: p.surfaceElevated.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(StreamRadius.xl),
+          border: Border.all(color: p.divider.withValues(alpha: 0.55)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              p.primary.withValues(alpha: 0.18),
+              p.surface.withValues(alpha: 0.9),
+            ],
+          ),
+        );
+        content = _HeroStacked(
+          accounts: accounts,
+          db: db,
+          valueStyle: valueStyle,
+          accountsBalance: accountsBalance,
+        );
+      case StreamKpiStyleId.outline:
+        padding = const EdgeInsets.all(StreamSpacing.xl);
+        valueStyle = StreamTypography.display.copyWith(color: valueColor);
+        decoration = BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(StreamRadius.xl),
+          border: Border.all(
+            color: p.primary.withValues(alpha: 0.55),
+            width: 1.4,
+          ),
+        );
+        content = _HeroStacked(
+          accounts: accounts,
+          db: db,
+          valueStyle: valueStyle,
+          accountsBalance: accountsBalance,
+        );
+      case StreamKpiStyleId.solid:
+        padding = const EdgeInsets.all(StreamSpacing.xl);
+        valueStyle = StreamTypography.display.copyWith(color: p.textPrimary);
+        decoration = BoxDecoration(
+          color: p.primary.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(StreamRadius.xl),
+        );
+        content = KeyedSubtree(
+          key: const Key('dashboard_hero_kpi_style_solid'),
+          child: _HeroStacked(
+            accounts: accounts,
+            db: db,
+            valueStyle: valueStyle,
+            accountsBalance: accountsBalance,
+            forcePrimaryForeground: true,
+          ),
+        );
+      case StreamKpiStyleId.split:
+        padding = const EdgeInsets.all(StreamSpacing.xl);
+        valueStyle = StreamTypography.amountLarge.copyWith(color: valueColor);
+        decoration = BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(StreamRadius.xl),
+          border: Border.all(color: p.divider),
+        );
+        content = _HeroSplit(
+          accounts: accounts,
+          db: db,
+          valueStyle: valueStyle,
+          accountsBalance: accountsBalance,
+        );
+      case StreamKpiStyleId.automatic:
+      case StreamKpiStyleId.minimal:
+        padding = const EdgeInsets.all(StreamSpacing.xl);
+        valueStyle = StreamTypography.amountLarge.copyWith(color: valueColor);
+        decoration = BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [p.primary.withValues(alpha: 0.18), p.surface],
+          ),
+          borderRadius: BorderRadius.circular(StreamRadius.xl),
+          border: Border.all(color: p.divider),
+        );
+        content = _HeroStacked(
+          accounts: accounts,
+          db: db,
+          valueStyle: valueStyle,
+          accountsBalance: accountsBalance,
+        );
+    }
+
+    return AnimatedContainer(
+      key: const Key('dashboard_hero_networth_card'),
+      duration: const Duration(milliseconds: 220),
+      padding: padding,
+      decoration: decoration,
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: isDense ? p.textPrimary : null),
+        child: content,
+      ),
+    );
+  }
+}
+
+class _HeroHeading extends StatelessWidget {
+  final double accountsBalance;
+
+  const _HeroHeading({required this.accountsBalance});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'PATRIMONIO',
+          style: StreamTypography.micro.copyWith(
+            color: p.textSecondary,
+            letterSpacing: 1.1,
+          ),
+        ),
+        const SizedBox(height: StreamSpacing.xs),
+        Text(
+          'Situazione attuale, non filtrata dal periodo',
+          style: StreamTypography.caption.copyWith(color: p.textMuted),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroStacked extends StatelessWidget {
+  final List<Account> accounts;
+  final AppDatabase db;
+  final TextStyle valueStyle;
+  final double accountsBalance;
+  final bool forcePrimaryForeground;
+
+  const _HeroStacked({
+    required this.accounts,
+    required this.db,
+    required this.valueStyle,
+    required this.accountsBalance,
+    this.forcePrimaryForeground = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    final titleColor = forcePrimaryForeground ? p.textPrimary : p.textSecondary;
+    final subtitleColor = forcePrimaryForeground
+        ? p.textPrimary.withValues(alpha: 0.78)
+        : p.textSecondary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PATRIMONIO',
+          style: StreamTypography.micro.copyWith(
+            color: titleColor,
+            letterSpacing: 1.1,
+          ),
+        ),
+        const SizedBox(height: StreamSpacing.sm),
+        Text(
+          formatMovementCurrency(accountsBalance, showPositiveSign: true),
+          key: const Key('dashboard_hero_networth_value'),
+          style: valueStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: StreamSpacing.sm),
+        Text(
+          'Situazione attuale, non filtrata dal periodo',
+          style: StreamTypography.caption.copyWith(color: subtitleColor),
+        ),
+        if (accounts.isNotEmpty) ...[
+          const SizedBox(height: StreamSpacing.md),
+          Wrap(
+            spacing: StreamSpacing.sm,
+            runSpacing: StreamSpacing.sm,
+            children: accounts.take(3).map((account) {
+              return _AccountBalancePill(
+                account: account,
+                balance: db.getAccountBalance(account),
+                emphasis: forcePrimaryForeground,
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _HeroSplit extends StatelessWidget {
+  final List<Account> accounts;
+  final AppDatabase db;
+  final TextStyle valueStyle;
+  final double accountsBalance;
+
+  const _HeroSplit({
+    required this.accounts,
+    required this.db,
+    required this.valueStyle,
+    required this.accountsBalance,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _HeroHeading(accountsBalance: accountsBalance)),
+            const SizedBox(width: StreamSpacing.md),
+            Icon(Icons.account_balance_wallet_outlined, color: p.primary),
           ],
         ),
-        borderRadius: BorderRadius.circular(StreamRadius.xl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'PATRIMONIO',
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+        const SizedBox(height: StreamSpacing.md),
+        Text(
+          formatMovementCurrency(accountsBalance, showPositiveSign: true),
+          key: const Key('dashboard_hero_networth_value'),
+          style: valueStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (accounts.isNotEmpty) ...[
+          const SizedBox(height: StreamSpacing.md),
+          Wrap(
+            spacing: StreamSpacing.sm,
+            runSpacing: StreamSpacing.sm,
+            children: accounts.take(3).map((account) {
+              return _AccountBalancePill(
+                account: account,
+                balance: db.getAccountBalance(account),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: StreamSpacing.xs),
-          Text(
-            formatMovementCurrency(accountsBalance, showPositiveSign: true),
-            style: StreamTypography.display.copyWith(
-              color: accountsBalance >= 0
-                  ? StreamColors.income
-                  : StreamColors.expense,
-            ),
-          ),
-          const SizedBox(height: StreamSpacing.sm),
-          Text(
-            'Situazione attuale, non filtrata dal periodo',
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textSecondary,
-            ),
-          ),
-          if (accounts.isNotEmpty) ...[
-            const SizedBox(height: StreamSpacing.md),
-            Wrap(
-              spacing: StreamSpacing.sm,
-              runSpacing: StreamSpacing.sm,
-              children: accounts.take(3).map((account) {
-                return _AccountBalancePill(
-                  account: account,
-                  balance: db.getAccountBalance(account),
-                );
-              }).toList(),
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
 }
@@ -218,18 +455,26 @@ class _BalanceHero extends StatelessWidget {
 class _AccountBalancePill extends StatelessWidget {
   final Account account;
   final double balance;
+  final bool emphasis;
 
-  const _AccountBalancePill({required this.account, required this.balance});
+  const _AccountBalancePill({
+    required this.account,
+    required this.balance,
+    this.emphasis = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: StreamSpacing.sm,
         vertical: StreamSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: StreamColors.surfaceElevated,
+        color: emphasis
+            ? p.textPrimary.withValues(alpha: 0.12)
+            : p.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.full),
       ),
       child: Wrap(
@@ -244,13 +489,13 @@ class _AccountBalancePill extends StatelessWidget {
           Text(
             account.name,
             style: StreamTypography.caption.copyWith(
-              color: StreamColors.textSecondary,
+              color: emphasis ? p.textPrimary : p.textSecondary,
             ),
           ),
           Text(
             formatMovementCurrency(balance, showPositiveSign: true),
             style: StreamTypography.captionBold.copyWith(
-              color: balance >= 0 ? StreamColors.income : StreamColors.expense,
+              color: balance >= 0 ? p.income : p.expense,
             ),
           ),
         ],
@@ -508,9 +753,14 @@ class _KpiGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final styleId = StreamKpiStyleId.fromString(
+      PreferencesService.kpiStyleNotifier.value,
+    );
+    final isDense = styleId == StreamKpiStyleId.dense;
     return Column(
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _KpiCard(
@@ -532,16 +782,15 @@ class _KpiGrid extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: StreamSpacing.sm),
+        SizedBox(height: isDense ? StreamSpacing.xs : StreamSpacing.sm),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _KpiCard(
                 label: 'Saldo',
                 value: formatMovementCurrency(balance, showPositiveSign: true),
-                color: balance >= 0
-                    ? p.income
-                    : p.expense,
+                color: balance >= 0 ? p.income : p.expense,
               ),
             ),
             const SizedBox(width: StreamSpacing.sm),
@@ -592,29 +841,41 @@ class _KpiCard extends StatelessWidget {
 
     switch (styleId) {
       case StreamKpiStyleId.dense:
-        pad = 6; labelSize = 9; valueSize = 13;
-        bgColor = p.surface;
-        border = null;
+        pad = 8;
+        labelSize = 8.5;
+        valueSize = 12;
+        bgColor = p.surfaceElevated;
+        border = Border.all(color: p.divider);
       case StreamKpiStyleId.outline:
-        pad = 12; labelSize = 11; valueSize = 15;
+        pad = 12;
+        labelSize = 11;
+        valueSize = 15;
         bgColor = p.surface;
         border = Border.all(color: p.primary.withValues(alpha: 0.4));
       case StreamKpiStyleId.solid:
-        pad = 12; labelSize = 11; valueSize = 15;
+        pad = 12;
+        labelSize = 11;
+        valueSize = 15;
         bgColor = color.withValues(alpha: 0.15);
         border = null;
       case StreamKpiStyleId.split:
-        pad = 12; labelSize = 11; valueSize = 15;
+        pad = 12;
+        labelSize = 11;
+        valueSize = 15;
         bgColor = p.surface;
         border = null;
       case StreamKpiStyleId.glass:
-        pad = 12; labelSize = 11; valueSize = 15;
+        pad = 12;
+        labelSize = 11;
+        valueSize = 15;
         bgColor = p.surfaceElevated.withValues(alpha: 0.7);
         border = Border.all(color: p.divider.withValues(alpha: 0.5));
       default: // automatic, minimal
-        pad = 12; labelSize = 11; valueSize = 15;
+        pad = 16;
+        labelSize = 11;
+        valueSize = 20;
         bgColor = p.surface;
-        border = null;
+        border = Border.all(color: p.divider);
     }
 
     return Container(
@@ -626,28 +887,109 @@ class _KpiCard extends StatelessWidget {
       ),
       child: styleId == StreamKpiStyleId.split
           ? _buildSplit(p)
-          : _buildCompact(p, labelSize, valueSize),
+          : styleId == StreamKpiStyleId.dense
+          ? _buildDense(p, labelSize, valueSize)
+          : _buildCompact(
+              p,
+              labelSize,
+              valueSize,
+              airy:
+                  styleId == StreamKpiStyleId.minimal ||
+                  styleId == StreamKpiStyleId.automatic,
+            ),
     );
   }
 
-  Widget _buildCompact(StreamThemePalette p, double labelSize, double valueSize) {
+  Widget _buildCompact(
+    StreamThemePalette p,
+    double labelSize,
+    double valueSize, {
+    bool airy = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(),
-          style: StreamTypography.micro.copyWith(fontSize: labelSize, color: p.textSecondary),
+        Text(
+          label.toUpperCase(),
+          style: StreamTypography.micro.copyWith(
+            fontSize: labelSize,
+            color: p.textSecondary,
+          ),
         ),
-        const SizedBox(height: StreamSpacing.xs),
-        Text(value,
-          style: StreamTypography.captionBold.copyWith(fontSize: valueSize, color: color),
+        SizedBox(height: airy ? StreamSpacing.sm : StreamSpacing.xs),
+        Text(
+          value,
+          style: StreamTypography.captionBold.copyWith(
+            fontSize: valueSize,
+            color: color,
+            height: airy ? 1.05 : 1.15,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
         if (subtitle != null)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(subtitle!,
-              style: StreamTypography.micro.copyWith(fontSize: labelSize - 1, color: p.textMuted),
-              maxLines: 2, overflow: TextOverflow.ellipsis,
+            padding: EdgeInsets.only(top: airy ? 8 : 4),
+            child: Text(
+              subtitle!,
+              style: StreamTypography.micro.copyWith(
+                fontSize: labelSize - 1,
+                color: p.textMuted,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDense(StreamThemePalette p, double labelSize, double valueSize) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label.toUpperCase(),
+                style: StreamTypography.micro.copyWith(
+                  fontSize: labelSize,
+                  color: p.textSecondary,
+                  letterSpacing: 0.8,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                value,
+                style: StreamTypography.captionBold.copyWith(
+                  fontSize: valueSize,
+                  color: color,
+                  height: 1.0,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              subtitle!,
+              style: StreamTypography.micro.copyWith(
+                fontSize: labelSize - 1,
+                color: p.textMuted,
+                height: 1.0,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
       ],
@@ -662,7 +1004,8 @@ class _KpiCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Text(label.toUpperCase(),
+              child: Text(
+                label.toUpperCase(),
                 style: StreamTypography.micro.copyWith(color: p.textSecondary),
               ),
             ),
@@ -673,17 +1016,23 @@ class _KpiCard extends StatelessWidget {
                 color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(value,
-                style: StreamTypography.captionBold.copyWith(color: color, fontSize: 13),
+              child: Text(
+                value,
+                style: StreamTypography.captionBold.copyWith(
+                  color: color,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 4),
-          Text(subtitle!,
+          Text(
+            subtitle!,
             style: StreamTypography.micro.copyWith(color: p.textMuted),
-            maxLines: 2, overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ],
@@ -715,11 +1064,13 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(icon, size: 48, color: p.textMuted),
           const SizedBox(height: StreamSpacing.md),
-          Text(message,
+          Text(
+            message,
             style: StreamTypography.bodyBold.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: StreamSpacing.xs),
-          Text(subtitle,
+          Text(
+            subtitle,
             style: StreamTypography.caption.copyWith(color: p.textMuted),
           ),
         ],
@@ -862,8 +1213,9 @@ class _CategoryDetailSheet extends StatelessWidget {
                               final date = await showDuplicateDateSheet(
                                 context,
                               );
-                              if (date != null)
+                              if (date != null) {
                                 db.duplicateMovement(m, date: date);
+                              }
                             },
                             onSaveAsFavorite: (m) =>
                                 db.saveMovementAsFavorite(m),

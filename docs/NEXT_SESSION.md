@@ -1,6 +1,6 @@
 # NEXT SESSION
 
-> Aggiornato: 2026-06-19
+> Aggiornato: 2026-06-20
 
 Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
@@ -36,9 +36,19 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - **Budget non implementato**, resta futuro
 - **990 test totali**, tutti verdi
 
+## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
+
+- `ArchiveScreen` ora applica il tema sulla shell principale; `MovementsScreen` usa `canvas` dinamico
+- `MovementCard`, `MovementViewRenderer`, `DayHeader`, `MovementActionsSheet` usano palette tema per superfici, testi, divider, icone e danger action
+- `ChartsScreen` usa shell e metric colors coerenti con il tema corrente
+- Hero `Patrimonio` è collegato allo stile KPI: `dense` è compatto, `minimal` è più arioso, `solid/outline/glass/split` hanno differenze visive reali
+- Verifica locale aggiornata: `flutter analyze` pulito sui file toccati; `flutter test` full suite **1015 pass / 1 skipped**
+- Residui `StreamColors` fuori scope sprint: `categories_screen.dart` (`77`), `accounts_screen.dart` (`24`), `dashboard_screen.dart` (`9`)
+- `Package.resolved` può comparire come deleted nel workspace iOS: non è stato corretto automaticamente in questa sessione
+
 ## Prossimo Sprint Consigliato
 
-1. **V0.12 — UI Polish / Migrazione StreamColors residui** (~520 occorrenze in accounts, categories, backup, heatmap, calendar, movement_card, day_header)
+1. **V0.12 — UI Polish / Migrazione StreamColors residui** con priorità su `categories_screen.dart`, residui `accounts_screen.dart` e residui `dashboard_screen.dart`
 2. Oppure **V0.12 — Budget Foundation** se decisione prodotto orientata a Budget
 3. QA manuale su device reale per flussi più sensibili
 

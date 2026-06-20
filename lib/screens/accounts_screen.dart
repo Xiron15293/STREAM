@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_theme_extension.dart';
 import '../design/stream_icon_library.dart';
 import '../models/account.dart';
 import '../models/category.dart';
@@ -46,8 +47,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<AppCurrency>(
       valueListenable: PreferencesService.currencyNotifier,
-      builder: (context, _, __) {
+      builder: (context, _, child) {
+        final p = context.$palette;
         return Scaffold(
+          backgroundColor: p.canvas,
           appBar: AppBar(title: const Text('Conti')),
           body: ListenableBuilder(
             listenable: widget.db,
@@ -145,6 +148,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
     AppDatabase db, {
     Account? account,
   }) {
+    final p = context.$palette;
     final nameController = TextEditingController(text: account?.name ?? '');
     final balanceController = TextEditingController(
       text: account?.initialBalance.toString() ?? '0',
@@ -175,7 +179,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 const SizedBox(height: StreamSpacing.lg),
                 DropdownButtonFormField<AccountType>(
                   initialValue: selectedType,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Tipo',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(
@@ -184,7 +188,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: StreamColors.surfaceElevated,
+                    fillColor: p.surfaceElevated,
                   ),
                   items: AccountType.values
                       .map(
@@ -210,7 +214,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   child: Text(
                     'Bilancio',
                     style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                 ),
@@ -229,7 +233,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   key: const Key('account_current_balance_section'),
                   padding: const EdgeInsets.all(StreamSpacing.md),
                   decoration: BoxDecoration(
-                    color: StreamColors.surfaceElevated,
+                    color: p.surfaceElevated,
                     borderRadius: BorderRadius.circular(StreamRadius.md),
                   ),
                   child: Column(
@@ -258,9 +262,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             ),
                             key: const Key('account_current_balance_value'),
                             style: StreamTypography.amount.copyWith(
-                              color: currentBalance >= 0
-                                  ? StreamColors.income
-                                  : StreamColors.expense,
+                              color: currentBalance >= 0 ? p.income : p.expense,
                             ),
                           );
                         },
@@ -270,7 +272,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         'Il saldo attuale viene calcolato automaticamente dai movimenti e dal saldo iniziale.',
                         key: const Key('account_balance_info_text'),
                         style: StreamTypography.caption.copyWith(
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                         ),
                       ),
                     ],
@@ -302,7 +304,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: StreamColors.surfaceElevated,
+                          color: p.surfaceElevated,
                           borderRadius: BorderRadius.circular(StreamRadius.md),
                         ),
                         child: Row(
@@ -324,7 +326,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                             Icon(
                               Icons.chevron_right,
                               size: 16,
-                              color: StreamColors.textMuted,
+                              color: p.textMuted,
                             ),
                           ],
                         ),
@@ -336,7 +338,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 Text(
                   'Colore',
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
                 const SizedBox(height: StreamSpacing.md),
@@ -415,9 +417,10 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Text(
       title,
-      style: StreamTypography.h3.copyWith(color: StreamColors.textSecondary),
+      style: StreamTypography.h3.copyWith(color: p.textSecondary),
     );
   }
 }
@@ -448,6 +451,7 @@ class _AccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final accountPeriodMovements = periodMovements
         .where(
           (m) =>
@@ -492,9 +496,10 @@ class _AccountCard extends StatelessWidget {
             padding: const EdgeInsets.all(StreamSpacing.lg),
             decoration: BoxDecoration(
               color: account.archived
-                  ? StreamColors.surfaceElevated.withValues(alpha: 0.5)
-                  : StreamColors.surface,
+                  ? p.surfaceElevated.withValues(alpha: 0.5)
+                  : p.surface,
               borderRadius: BorderRadius.circular(StreamRadius.md),
+              border: Border.all(color: p.divider),
             ),
             child: Column(
               children: [
@@ -512,7 +517,7 @@ class _AccountCard extends StatelessWidget {
                       child: Icon(
                         iconData,
                         color: account.archived
-                            ? StreamColors.textMuted
+                            ? p.textMuted
                             : Color(account.color),
                         size: 22,
                       ),
@@ -1043,8 +1048,9 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                           ),
                           onDuplicate: (m) async {
                             final date = await showDuplicateDateSheet(context);
-                            if (date != null)
+                            if (date != null) {
                               widget.db.duplicateMovement(m, date: date);
+                            }
                           },
                           onSaveAsFavorite: (m) =>
                               widget.db.saveMovementAsFavorite(m),

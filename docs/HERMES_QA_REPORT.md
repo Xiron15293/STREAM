@@ -2272,6 +2272,28 @@ flutter test --no-pub    → 625/625 All tests passed
 
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
+## V0.11f — Theme Coverage for Archive, Charts Shell and KPI Hero
+
+### Esito
+
+- `flutter analyze` mirato sui file toccati: **PASS**
+- Test nuovi: `test/kpi_hero_theme_test.dart`, `test/archive_theme_test.dart`, `test/charts_theme_test.dart` → **PASS**
+- Regressioni mirate: `settings_theme_test`, `heatmap_settings_test`, `charts_test`, `movement_card_test` → **PASS**
+- Full suite: **1015 pass, 1 skipped**
+
+### Note QA
+
+- Verificato che la shell Archivio cambi con il tema e che `MovementsScreen` erediti il background dinamico
+- Verificato che il hero `Patrimonio` cambi chiaramente tra `dense` e `minimal` senza alterare il valore mostrato
+- Verificato che `ChartsScreen` e le chart card usino superfici/bordi coerenti col tema
+- Nessuna regressione rilevata su navigazione Dashboard/Archivio/Grafici/Impostazioni
+- Nessuna regressione logica rilevata su backup/restore perché il perimetro applicativo non è stato modificato
+
+### Residui
+
+- Restano `StreamColors` fuori scope in `categories_screen.dart`, parti di `accounts_screen.dart` e alcuni punti di `dashboard_screen.dart`
+- Advanced chart style non implementato in questa patch
+
 - Nessuno skip aggiunto
 - Nessun commit/push eseguito
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_theme_extension.dart';
+import '../design/stream_theme_palette.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
@@ -75,6 +77,7 @@ class MovementViewRenderer extends StatelessWidget {
   }
 
   Widget _buildListMode(BuildContext context) {
+    final p = context.$palette;
     final previewMonth = timeFilter.mode == TimeFilterMode.day
         ? selectedDay ?? timeFilter.startDate
         : timeFilter.startDate;
@@ -117,10 +120,8 @@ class MovementViewRenderer extends StatelessWidget {
                     horizontal: StreamSpacing.lg,
                     vertical: StreamSpacing.md,
                   ),
-                  side: BorderSide(
-                    color: StreamColors.primary.withValues(alpha: 0.8),
-                  ),
-                  foregroundColor: StreamColors.primary,
+                  side: BorderSide(color: p.primary.withValues(alpha: 0.8)),
+                  foregroundColor: p.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(StreamRadius.md),
                   ),
@@ -160,6 +161,7 @@ class MovementViewRenderer extends StatelessWidget {
     required Key layoutKey,
     bool includeTypeFilters = false,
   }) {
+    final p = context.$palette;
     final displayedMovements = includeTypeFilters && dayFilter != null
         ? movements.where((movement) => movement.type == dayFilter).toList()
         : movements;
@@ -203,10 +205,8 @@ class MovementViewRenderer extends StatelessWidget {
                     horizontal: StreamSpacing.lg,
                     vertical: StreamSpacing.md,
                   ),
-                  side: BorderSide(
-                    color: StreamColors.primary.withValues(alpha: 0.8),
-                  ),
-                  foregroundColor: StreamColors.primary,
+                  side: BorderSide(color: p.primary.withValues(alpha: 0.8)),
+                  foregroundColor: p.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(StreamRadius.md),
                   ),
@@ -277,6 +277,7 @@ class _MovementPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final effectiveMovements = selectedPeriodDay != null
         ? movements
               .where(
@@ -291,17 +292,17 @@ class _MovementPanel extends StatelessWidget {
     return Container(
       key: const Key('day_movements_panel'),
       decoration: BoxDecoration(
-        color: StreamColors.surface,
+        color: p.surface,
         borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(color: StreamColors.divider),
+        border: Border.all(color: p.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (includeTypeFilters) ...[
             const SizedBox(height: StreamSpacing.sm),
-            _buildDayFilterChips(),
-            const Divider(height: 1, color: StreamColors.divider),
+            _buildDayFilterChips(p),
+            Divider(height: 1, color: p.divider),
           ],
           effectiveMovements.isEmpty
               ? Padding(
@@ -314,7 +315,7 @@ class _MovementPanel extends StatelessWidget {
                           ? 'Nessun movimento in questo periodo'
                           : 'Nessun movimento per questo filtro',
                       style: StreamTypography.body.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -326,7 +327,7 @@ class _MovementPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildDayFilterChips() {
+  Widget _buildDayFilterChips(StreamThemePalette p) {
     return Padding(
       key: const Key('advanced_heatmap_kpi_panel'),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -334,17 +335,24 @@ class _MovementPanel extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _dayFilterChip('Tutti', null, 'day_filter_all'),
-            const SizedBox(width: 4),
-            _dayFilterChip('Entrate', MovementType.income, 'day_filter_income'),
+            _dayFilterChip(p, 'Tutti', null, 'day_filter_all'),
             const SizedBox(width: 4),
             _dayFilterChip(
+              p,
+              'Entrate',
+              MovementType.income,
+              'day_filter_income',
+            ),
+            const SizedBox(width: 4),
+            _dayFilterChip(
+              p,
               'Uscite',
               MovementType.expense,
               'day_filter_expense',
             ),
             const SizedBox(width: 4),
             _dayFilterChip(
+              p,
               'Transfer',
               MovementType.transfer,
               'day_filter_transfer',
@@ -355,7 +363,12 @@ class _MovementPanel extends StatelessWidget {
     );
   }
 
-  Widget _dayFilterChip(String label, MovementType? type, String keyName) {
+  Widget _dayFilterChip(
+    StreamThemePalette p,
+    String label,
+    MovementType? type,
+    String keyName,
+  ) {
     final selected = dayFilter == type;
     return GestureDetector(
       onTap: () => onDayFilterChanged?.call(type),
@@ -363,13 +376,13 @@ class _MovementPanel extends StatelessWidget {
         key: Key(keyName),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: selected ? StreamColors.primary : StreamColors.surfaceElevated,
+          color: selected ? p.primary : p.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           label,
           style: StreamTypography.micro.copyWith(
-            color: selected ? Colors.white : StreamColors.textSecondary,
+            color: selected ? Colors.white : p.textSecondary,
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design/stream_theme_extension.dart';
 import '../theme.dart';
 
 Future<void> showMovementActionsSheet(
@@ -10,6 +11,7 @@ Future<void> showMovementActionsSheet(
   VoidCallback? onAddQuick,
   VoidCallback? onDelete,
 }) async {
+  final p = context.$palette;
   final hasActions =
       onEdit != null ||
       onDuplicate != null ||
@@ -40,9 +42,7 @@ Future<void> showMovementActionsSheet(
               ),
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: StreamColors.expense,
-                ),
+                style: TextButton.styleFrom(foregroundColor: p.expense),
                 child: const Text('Elimina'),
               ),
             ],
@@ -63,7 +63,10 @@ Future<void> showMovementActionsSheet(
         return ListTile(
           key: key,
           leading: Icon(icon, color: color),
-          title: Text(label, style: color == null ? null : TextStyle(color: color)),
+          title: Text(
+            label,
+            style: color == null ? null : TextStyle(color: color),
+          ),
           onTap: () => closeAndRun(onTap),
         );
       }
@@ -78,25 +81,29 @@ Future<void> showMovementActionsSheet(
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: StreamColors.divider,
+                  color: p.divider,
                   borderRadius: BorderRadius.circular(StreamRadius.full),
                 ),
               ),
               const SizedBox(height: StreamSpacing.md),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: StreamSpacing.lg),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StreamSpacing.lg,
+                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         'Azioni movimento',
-                        style: StreamTypography.h3,
+                        style: StreamTypography.h3.copyWith(
+                          color: p.textPrimary,
+                        ),
                       ),
                     ),
                     IconButton(
                       key: const Key('movement_actions_close'),
                       onPressed: () => Navigator.of(sheetContext).pop(),
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close, color: p.textMuted),
                     ),
                   ],
                 ),
@@ -134,7 +141,7 @@ Future<void> showMovementActionsSheet(
                   key: const Key('movement_action_delete'),
                   icon: Icons.delete_outline,
                   label: 'Elimina',
-                  color: StreamColors.expense,
+                  color: p.expense,
                   onTap: () async => confirmDelete(),
                 ),
               const SizedBox(height: StreamSpacing.lg),

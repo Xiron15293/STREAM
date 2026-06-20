@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
@@ -72,6 +73,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }
 
   void _showSettings(BuildContext context) {
+    final p = context.$palette;
     showModalBottomSheet(
       context: context,
       builder: (_) => StatefulBuilder(
@@ -89,9 +91,12 @@ class _MovementsScreenState extends State<MovementsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Impostazioni lista', style: StreamTypography.h3),
+                  Text(
+                    'Impostazioni lista',
+                    style: StreamTypography.h3.copyWith(color: p.textPrimary),
+                  ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: p.textMuted),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -118,15 +123,14 @@ class _MovementsScreenState extends State<MovementsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Scaffold(
+      backgroundColor: p.canvas,
       appBar: AppBar(
         title: const Text('Movimenti'),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.tune,
-              color: _showNotes ? StreamColors.primary : StreamColors.textMuted,
-            ),
+            icon: Icon(Icons.tune, color: _showNotes ? p.primary : p.textMuted),
             tooltip: 'Impostazioni lista',
             onPressed: () => _showSettings(context),
           ),
@@ -151,10 +155,12 @@ class _MovementsScreenState extends State<MovementsScreen> {
 
           Widget body;
           if (allMovements.isEmpty) {
-            body = _buildEmptyAll();
+            body = _buildEmptyAll(context);
           } else {
             if (searchFilteredMovements.isEmpty) {
-              body = hasQuery ? _buildEmptySearch() : _buildEmptyPeriod();
+              body = hasQuery
+                  ? _buildEmptySearch(context)
+                  : _buildEmptyPeriod(context);
             } else {
               body = MovementViewRenderer(
                 viewMode: viewMode,
@@ -375,36 +381,32 @@ class _MovementsScreenState extends State<MovementsScreen> {
     );
   }
 
-  Widget _buildEmptyAll() {
+  Widget _buildEmptyAll(BuildContext context) {
+    final p = context.$palette;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 64,
-            color: StreamColors.textMuted,
-          ),
+          Icon(Icons.receipt_long_outlined, size: 64, color: p.textMuted),
           const SizedBox(height: StreamSpacing.lg),
           const Text('Nessun movimento', style: StreamTypography.h2),
           const SizedBox(height: StreamSpacing.sm),
           Text(
             'Tocca + per aggiungerne uno',
-            style: StreamTypography.body.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.body.copyWith(color: p.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyPeriod() {
+  Widget _buildEmptyPeriod(BuildContext context) {
+    final p = context.$palette;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.event_busy, size: 64, color: StreamColors.textMuted),
+          Icon(Icons.event_busy, size: 64, color: p.textMuted),
           const SizedBox(height: StreamSpacing.lg),
           const Text(
             'Nessun movimento in questo periodo',
@@ -413,29 +415,26 @@ class _MovementsScreenState extends State<MovementsScreen> {
           const SizedBox(height: StreamSpacing.sm),
           Text(
             'Prova a cambiare periodo',
-            style: StreamTypography.body.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.body.copyWith(color: p.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptySearch() {
+  Widget _buildEmptySearch(BuildContext context) {
+    final p = context.$palette;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off, size: 64, color: StreamColors.textMuted),
+          Icon(Icons.search_off, size: 64, color: p.textMuted),
           const SizedBox(height: StreamSpacing.lg),
           const Text('Nessun risultato', style: StreamTypography.h2),
           const SizedBox(height: StreamSpacing.sm),
           Text(
             'Prova con un termine diverso o cambia periodo',
-            style: StreamTypography.body.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.body.copyWith(color: p.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/daily_group.dart';
 import '../theme.dart';
@@ -37,10 +38,11 @@ class DayHeader extends StatelessWidget {
   String get _weekdayLabel => _weekdays[group.date.weekday - 1];
   String get _dayNumber => group.date.day.toString().padLeft(2, '0');
 
-  Color _balanceColor() {
-    if (group.balance > 0) return StreamColors.income;
-    if (group.balance < 0) return StreamColors.expense;
-    return StreamColors.textSecondary;
+  Color _balanceColor(BuildContext context) {
+    final p = context.$palette;
+    if (group.balance > 0) return p.income;
+    if (group.balance < 0) return p.expense;
+    return p.textSecondary;
   }
 
   String _format(double value) {
@@ -52,21 +54,18 @@ class DayHeader extends StatelessWidget {
     return '';
   }
 
-  Widget _buildSummaryRow() {
+  Widget _buildSummaryRowWithPalette(BuildContext context) {
+    final p = context.$palette;
     if (filterType == MovementType.expense) {
       return Row(
         children: [
           Text(
             'Uscite: ',
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.caption.copyWith(color: p.textSecondary),
           ),
           Text(
             _format(group.totalExpenses),
-            style: StreamTypography.captionBold.copyWith(
-              color: StreamColors.expense,
-            ),
+            style: StreamTypography.captionBold.copyWith(color: p.expense),
           ),
         ],
       );
@@ -76,15 +75,11 @@ class DayHeader extends StatelessWidget {
         children: [
           Text(
             'Entrate: ',
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.caption.copyWith(color: p.textSecondary),
           ),
           Text(
             _format(group.totalIncome),
-            style: StreamTypography.captionBold.copyWith(
-              color: StreamColors.income,
-            ),
+            style: StreamTypography.captionBold.copyWith(color: p.income),
           ),
         ],
       );
@@ -93,39 +88,31 @@ class DayHeader extends StatelessWidget {
       children: [
         Text(
           'Entrate: ',
-          style: StreamTypography.caption.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
         ),
         Text(
           _format(group.totalIncome),
-          style: StreamTypography.captionBold.copyWith(
-            color: StreamColors.income,
-          ),
+          style: StreamTypography.captionBold.copyWith(color: p.income),
         ),
         const SizedBox(width: StreamSpacing.md),
         Text(
           'Uscite: ',
-          style: StreamTypography.caption.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
         ),
         Text(
           _format(group.totalExpenses),
-          style: StreamTypography.captionBold.copyWith(
-            color: StreamColors.expense,
-          ),
+          style: StreamTypography.captionBold.copyWith(color: p.expense),
         ),
         const SizedBox(width: StreamSpacing.md),
         Text(
           'Saldo: ',
-          style: StreamTypography.caption.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
         ),
         Text(
           '${_balancePrefix()}${_format(group.balance)}',
-          style: StreamTypography.captionBold.copyWith(color: _balanceColor()),
+          style: StreamTypography.captionBold.copyWith(
+            color: _balanceColor(context),
+          ),
         ),
       ],
     );
@@ -143,6 +130,7 @@ class DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final label = _dayLabel();
     return Padding(
       padding: const EdgeInsets.only(
@@ -157,10 +145,10 @@ class DayHeader extends StatelessWidget {
             children: [
               Text(
                 _dayNumber,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
-                  color: StreamColors.textPrimary,
+                  color: p.textPrimary,
                   height: 1.0,
                 ),
               ),
@@ -175,10 +163,10 @@ class DayHeader extends StatelessWidget {
                         _weekdayLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                           letterSpacing: 1.5,
                         ),
                       ),
@@ -187,10 +175,10 @@ class DayHeader extends StatelessWidget {
                         '${_monthNames[group.date.month - 1]} ${group.date.year}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
-                          color: StreamColors.textMuted,
+                          color: p.textMuted,
                         ),
                       ),
                     ],
@@ -206,15 +194,15 @@ class DayHeader extends StatelessWidget {
                       vertical: 1,
                     ),
                     decoration: BoxDecoration(
-                      color: StreamColors.primary.withValues(alpha: 0.15),
+                      color: p.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: StreamColors.primary,
+                        color: p.primary,
                         letterSpacing: 1,
                       ),
                     ),
@@ -225,10 +213,10 @@ class DayHeader extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
                   '${group.movements.length} ${group.movements.length == 1 ? 'movimento' : 'movimenti'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: StreamColors.textMuted,
+                    color: p.textMuted,
                   ),
                 ),
               ),
@@ -238,10 +226,10 @@ class DayHeader extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: _buildSummaryRow(),
+            child: _buildSummaryRowWithPalette(context),
           ),
           const SizedBox(height: StreamSpacing.sm),
-          Divider(color: StreamColors.divider, height: 1),
+          Divider(color: p.divider, height: 1),
         ],
       ),
     );

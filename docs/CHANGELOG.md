@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11f — Theme Coverage for Archive, Charts Shell and KPI Hero**
+  - Archivio shell tematizzata con `context.$palette.canvas` in `ArchiveScreen`
+  - `MovementsScreen`, `MovementCard`, `MovementViewRenderer`, `DayHeader`, `MovementActionsSheet` migrati a palette dinamica per superfici, testi, divider, icone e azioni distruttive
+  - `ChartsScreen` shell tematizzata; metriche e legenda usano colori palette per entrate/uscite
+  - `StreamChartCard` mantiene superficie/bordo coerenti col tema; `StreamHorizontalBarChart` rimuove il fallback statico residuo
+  - Hero `Patrimonio` collegato a `KPI style` con varianti visive reali per `minimal`, `dense`, `glass`, `outline`, `solid`, `split`
+  - 3 nuovi test: `test/kpi_hero_theme_test.dart`, `test/archive_theme_test.dart`, `test/charts_theme_test.dart`
+  - Nessuna modifica a formule KPI, backup/restore, import/export o schema dati
+
 - **V0.10 Grafici Tab — Analytics Hub**
   - Nuova tab bassa "Grafici" tra Archivio e Impostazioni
   - Ordine bottom navigation: Dashboard | Archivio | Grafici | Impostazioni
