@@ -77,14 +77,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('settings_heatmap_configure_tile'), skipOffstage: false),
+    );
+    await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('settings_heatmap_configure_tile')),
       findsOneWidget,
     );
-    await tester.ensureVisible(
-      find.byKey(const Key('settings_heatmap_configure_tile')),
-    );
-    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('settings_heatmap_configure_tile')),
       warnIfMissed: false,

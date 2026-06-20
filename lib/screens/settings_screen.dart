@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_kpi_style.dart';
+import '../design/stream_theme_extension.dart';
 import '../design/stream_theme_palette.dart';
 import '../services/backup_service.dart';
 import '../theme.dart';
@@ -25,242 +26,145 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.$palette;
+
     return Scaffold(
+      backgroundColor: palette.canvas,
       appBar: AppBar(title: const Text('Impostazioni')),
       body: ListView(
         padding: const EdgeInsets.all(StreamSpacing.lg),
         children: [
-          Card(
-            color: StreamColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(StreamSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Backup & Restore', style: StreamTypography.h3),
-                  const SizedBox(height: StreamSpacing.sm),
-                  Text(
-                    'Gestisci esportazione e ripristino dei dati del dispositivo.',
-                    style: StreamTypography.body.copyWith(
-                      color: StreamColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: StreamSpacing.md),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.backup_outlined,
-                      color: StreamColors.primary,
-                    ),
-                    title: const Text('Backup & Restore'),
-                    subtitle: const Text(
-                      'Apri la schermata di esportazione e ripristino',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => BackupScreen(db: db)),
-                      );
-                    },
-                  ),
-                  const Divider(height: StreamSpacing.lg),
-                  _placeholderTile(
-                    icon: Icons.file_download_outlined,
-                    title: 'Import',
-                    subtitle: 'Presto disponibile',
-                  ),
-                  _placeholderTile(
-                    icon: Icons.file_upload_outlined,
-                    title: 'Export',
-                    subtitle: 'Presto disponibile',
-                  ),
-                  _placeholderTile(
-                    icon: Icons.tune_outlined,
-                    title: 'Preferenze',
-                    subtitle: 'Presto disponibile',
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.info_outline,
-                      color: StreamColors.primary,
-                    ),
-                    title: const Text('Info app'),
-                    subtitle: const Text('Versione e dettagli dell\'app'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _showInfo(context),
-                  ),
-                ],
-              ),
+          _SettingsSectionCard(
+            key: const Key('settings_backup_section'),
+            title: 'Backup & Restore',
+            description:
+                'Gestisci esportazione e ripristino dei dati del dispositivo.',
+            child: Column(
+              children: [
+                _SettingsTile(
+                  key: const Key('settings_backup_restore_tile'),
+                  icon: Icons.backup_outlined,
+                  iconColor: palette.primary,
+                  title: 'Backup & Restore',
+                  subtitle: 'Apri la schermata di esportazione e ripristino',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => BackupScreen(db: db)),
+                    );
+                  },
+                ),
+                _SettingsDivider(palette: palette),
+                _placeholderTile(
+                  context: context,
+                  icon: Icons.file_download_outlined,
+                  title: 'Import',
+                  subtitle: 'Presto disponibile',
+                ),
+                _placeholderTile(
+                  context: context,
+                  icon: Icons.file_upload_outlined,
+                  title: 'Export',
+                  subtitle: 'Presto disponibile',
+                ),
+                _placeholderTile(
+                  context: context,
+                  icon: Icons.tune_outlined,
+                  title: 'Preferenze',
+                  subtitle: 'Presto disponibile',
+                ),
+                _SettingsDivider(palette: palette),
+                _SettingsTile(
+                  key: const Key('settings_info_tile'),
+                  icon: Icons.info_outline,
+                  iconColor: palette.primary,
+                  title: 'Info app',
+                  subtitle: 'Versione e dettagli dell\'app',
+                  onTap: () => _showInfo(context),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: StreamSpacing.lg),
-          Card(
+          _SettingsSectionCard(
             key: const Key('settings_heatmap_card'),
-            color: StreamColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(StreamSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Movimenti', style: StreamTypography.h3),
-                  const SizedBox(height: StreamSpacing.sm),
-                  Text(
-                    'Configura soglie e colori della heatmap Movimenti.',
-                    style: StreamTypography.body.copyWith(
-                      color: StreamColors.textSecondary,
-                    ),
+            title: 'Movimenti',
+            description: 'Configura soglie e colori della heatmap Movimenti.',
+            child: _SettingsTile(
+              key: const Key('settings_heatmap_configure_tile'),
+              icon: Icons.grid_view_rounded,
+              iconColor: palette.primary,
+              title: 'Configura heatmap',
+              subtitle: 'Apri impostazioni soglie e colori',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const HeatmapSettingsScreen(),
                   ),
-                  const SizedBox(height: StreamSpacing.md),
-                  ListTile(
-                    key: const Key('settings_heatmap_configure_tile'),
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.grid_view_rounded,
-                      color: StreamColors.primary,
-                    ),
-                    title: const Text('Configura heatmap'),
-                    subtitle: const Text('Apri impostazioni soglie e colori'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const HeatmapSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
           const SizedBox(height: StreamSpacing.lg),
-          Card(
+          _SettingsSectionCard(
             key: const Key('settings_currency_card'),
-            color: StreamColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(StreamSpacing.lg),
-              child: ValueListenableBuilder<AppCurrency>(
-                valueListenable: PreferencesService.currencyNotifier,
-                builder: (context, currency, _) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Valuta', style: StreamTypography.h3),
-                      const SizedBox(height: StreamSpacing.sm),
-                      Text(
-                        'Scegli il simbolo usato per mostrare gli importi.',
-                        style: StreamTypography.body.copyWith(
-                          color: StreamColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: StreamSpacing.md),
-                      ListTile(
-                        key: const Key('settings_currency_tile'),
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          Icons.payments_outlined,
-                          color: StreamColors.primary,
-                        ),
-                        title: const Text('Valuta'),
-                        subtitle: Text(_currencyLabel(currency)),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _showCurrencyPicker(context),
-                      ),
-                    ],
-                  );
-                },
-              ),
+            title: 'Valuta',
+            description: 'Scegli il simbolo usato per mostrare gli importi.',
+            child: ValueListenableBuilder<AppCurrency>(
+              valueListenable: PreferencesService.currencyNotifier,
+              builder: (context, currency, _) {
+                return _SettingsTile(
+                  key: const Key('settings_currency_tile'),
+                  icon: Icons.payments_outlined,
+                  iconColor: palette.primary,
+                  title: 'Valuta',
+                  subtitle: _currencyLabel(currency),
+                  onTap: () => _showCurrencyPicker(context),
+                );
+              },
             ),
           ),
           const SizedBox(height: StreamSpacing.lg),
           _AppearanceSection(db: db),
           if (onManageProfiles != null) ...[
             const SizedBox(height: StreamSpacing.lg),
-            Card(
+            _SettingsSectionCard(
               key: const Key('settings_profile_section'),
-              color: StreamColors.surface,
-              child: Padding(
-                padding: const EdgeInsets.all(StreamSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Profilo', style: StreamTypography.h3),
-                    const SizedBox(height: StreamSpacing.sm),
-                    ListTile(
-                      key: const Key('settings_active_profile_tile'),
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        Icons.person_outline,
-                        color: StreamColors.primary,
-                      ),
-                      title: const Text('Principale'),
-                      subtitle: const Text('Profilo attivo'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: onManageProfiles,
-                    ),
-                  ],
-                ),
+              title: 'Profilo',
+              description:
+                  'Gestisci il profilo attivo e le configurazioni collegate.',
+              child: _SettingsTile(
+                key: const Key('settings_active_profile_tile'),
+                icon: Icons.person_outline,
+                iconColor: palette.primary,
+                title: 'Principale',
+                subtitle: 'Profilo attivo',
+                onTap: onManageProfiles,
               ),
             ),
           ],
           const SizedBox(height: StreamSpacing.lg),
-          Card(
-            color: StreamColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(StreamSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Aspetto', style: StreamTypography.h3),
-                  const SizedBox(height: StreamSpacing.sm),
-                  Text(
-                    'Personalizza l\'interfaccia dell\'app.',
-                    style: StreamTypography.body.copyWith(
-                      color: StreamColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: StreamSpacing.md),
-                  _CategoryLayoutTile(db: db),
-                ],
-              ),
-            ),
+          _SettingsSectionCard(
+            key: const Key('settings_category_layout_section'),
+            title: 'Categorie',
+            description:
+                'Personalizza il modello visuale della schermata categorie.',
+            child: _CategoryLayoutTile(db: db),
           ),
           const SizedBox(height: StreamSpacing.lg),
-          Card(
-            color: StreamColors.surface,
-            child: Padding(
-              padding: const EdgeInsets.all(StreamSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Dati', style: StreamTypography.h3),
-                  const SizedBox(height: StreamSpacing.sm),
-                  Text(
-                    'Azioni distruttive e manutenzione dei dati locali.',
-                    style: StreamTypography.body.copyWith(
-                      color: StreamColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: StreamSpacing.md),
-                  KeyedSubtree(
-                    key: const Key('settings_reset_data_tile'),
-                    child: ListTile(
-                      key: const Key('reset_data_tile'),
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(
-                        Icons.delete_forever_outlined,
-                        color: StreamColors.expense,
-                      ),
-                      title: const Text('Reset dati app'),
-                      subtitle: const Text(
-                        'Cancella dati utente e ripristina i default',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _confirmReset(context),
-                    ),
-                  ),
-                ],
+          _SettingsSectionCard(
+            key: const Key('settings_data_section'),
+            title: 'Dati',
+            description: 'Azioni distruttive e manutenzione dei dati locali.',
+            child: KeyedSubtree(
+              key: const Key('settings_reset_data_tile'),
+              child: _SettingsTile(
+                key: const Key('reset_data_tile'),
+                icon: Icons.delete_forever_outlined,
+                iconColor: palette.expense,
+                title: 'Reset dati app',
+                subtitle: 'Cancella dati utente e ripristina i default',
+                accentColor: palette.expense,
+                onTap: () => _confirmReset(context),
               ),
             ),
           ),
@@ -270,6 +174,8 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _showCurrencyPicker(BuildContext context) async {
+    final palette = context.$palette;
+
     final selected = await showModalBottomSheet<AppCurrency>(
       context: context,
       useSafeArea: true,
@@ -277,10 +183,15 @@ class SettingsScreen extends StatelessWidget {
         Widget tile(AppCurrency currency) {
           return ListTile(
             key: Key('currency_option_${currency.name}'),
-            title: Text(_currencyLabel(currency)),
+            title: Text(
+              _currencyLabel(currency),
+              style: StreamTypography.body.copyWith(color: palette.textPrimary),
+            ),
             trailing: PreferencesService.currencyNotifier.value == currency
-                ? const Icon(Icons.check, color: StreamColors.primary)
+                ? Icon(Icons.check, color: palette.primary)
                 : null,
+            iconColor: palette.textMuted,
+            textColor: palette.textPrimary,
             onTap: () => Navigator.of(sheetContext).pop(currency),
           );
         }
@@ -295,7 +206,7 @@ class SettingsScreen extends StatelessWidget {
                   width: 42,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: StreamColors.divider,
+                    color: palette.divider,
                     borderRadius: BorderRadius.circular(StreamRadius.full),
                   ),
                 ),
@@ -309,12 +220,14 @@ class SettingsScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Scegli valuta',
-                          style: StreamTypography.h3,
+                          style: StreamTypography.h3.copyWith(
+                            color: palette.textPrimary,
+                          ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(sheetContext).pop(),
-                        icon: const Icon(Icons.close),
+                        icon: Icon(Icons.close, color: palette.textMuted),
                       ),
                     ],
                   ),
@@ -347,6 +260,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _confirmReset(BuildContext context) async {
+    final palette = context.$palette;
     final typedOk = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -362,12 +276,18 @@ class SettingsScreen extends StatelessWidget {
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: const Text('Backup pre-reset fallito'),
+          title: Text(
+            'Backup pre-reset fallito',
+            style: StreamTypography.h3.copyWith(color: palette.textPrimary),
+          ),
           content: SingleChildScrollView(
             child: Text(
               'Non è stato possibile creare il backup automatico.\n\n'
               'Puoi continuare comunque, ma perderai la protezione del backup pre-reset.\n\n'
               'Errore: $e',
+              style: StreamTypography.body.copyWith(
+                color: palette.textSecondary,
+              ),
             ),
           ),
           actions: [
@@ -377,7 +297,8 @@ class SettingsScreen extends StatelessWidget {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: StreamColors.expense,
+                backgroundColor: palette.expense,
+                foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Continua'),
@@ -409,8 +330,10 @@ class SettingsScreen extends StatelessWidget {
     final platform = _platformLabel();
 
     if (!context.mounted) return;
+    final palette = context.$palette;
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(
           StreamSpacing.lg,
@@ -425,9 +348,14 @@ class SettingsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Info app', style: StreamTypography.h3),
+                Text(
+                  'Info app',
+                  style: StreamTypography.h3.copyWith(
+                    color: palette.textPrimary,
+                  ),
+                ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close, color: palette.textMuted),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -463,28 +391,48 @@ class SettingsScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: StreamTypography.body.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+          Builder(
+            builder: (context) {
+              final palette = context.$palette;
+              return Text(
+                label,
+                style: StreamTypography.body.copyWith(
+                  color: palette.textSecondary,
+                ),
+              );
+            },
           ),
-          Text(value, style: StreamTypography.bodyBold),
+          Builder(
+            builder: (context) {
+              final palette = context.$palette;
+              return Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: StreamTypography.bodyBold.copyWith(
+                    color: palette.textPrimary,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
   Widget _placeholderTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
   }) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: StreamColors.textSecondary),
-      title: Text(title),
-      subtitle: Text(subtitle),
+    final palette = context.$palette;
+    return _SettingsTile(
+      icon: icon,
+      iconColor: palette.textSecondary,
+      title: title,
+      subtitle: subtitle,
       enabled: false,
     );
   }
@@ -528,11 +476,14 @@ class _CategoryLayoutTileState extends State<_CategoryLayoutTile> {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(Icons.grid_view_outlined, color: StreamColors.primary),
-      title: const Text('Modello categoria'),
-      subtitle: Text(_layoutLabel(_currentLayout)),
+    final palette = context.$palette;
+
+    return _SettingsTile(
+      key: const Key('settings_category_layout_tile'),
+      icon: Icons.grid_view_outlined,
+      iconColor: palette.primary,
+      title: 'Modello categoria',
+      subtitle: _layoutLabel(_currentLayout),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
         final result = await showDialog<String>(
@@ -575,8 +526,13 @@ class _CategoryLayoutDialogState extends State<_CategoryLayoutDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.$palette;
+
     return AlertDialog(
-      title: const Text('Modello categoria'),
+      title: Text(
+        'Modello categoria',
+        style: StreamTypography.h3.copyWith(color: palette.textPrimary),
+      ),
       content: SingleChildScrollView(
         child: RadioGroup<String>(
           groupValue: _selected,
@@ -593,11 +549,12 @@ class _CategoryLayoutDialogState extends State<_CategoryLayoutDialog> {
               final label = option.$2;
               final desc = option.$3;
               return RadioListTile<String>(
+                activeColor: palette.primary,
                 title: Text(label),
                 subtitle: Text(
                   desc,
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
                 value: value,
@@ -642,15 +599,23 @@ class _ResetDataDialogState extends State<_ResetDataDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.$palette;
+
     return AlertDialog(
-      title: const Text('Reset dati app?'),
+      title: Text(
+        'Reset dati app?',
+        style: StreamTypography.h3.copyWith(color: palette.textPrimary),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'Questa azione cancellerà movimenti, conti, categorie personalizzate, rapidi, preferiti e backup locali. Non può essere annullata.',
+              style: StreamTypography.body.copyWith(
+                color: palette.textSecondary,
+              ),
             ),
             const SizedBox(height: StreamSpacing.md),
             TextField(
@@ -675,7 +640,10 @@ class _ResetDataDialogState extends State<_ResetDataDialog> {
         ),
         FilledButton(
           key: const Key('reset_data_confirm_button'),
-          style: FilledButton.styleFrom(backgroundColor: StreamColors.expense),
+          style: FilledButton.styleFrom(
+            backgroundColor: palette.expense,
+            foregroundColor: Colors.white,
+          ),
           onPressed: _isConfirmed
               ? () => Navigator.of(context).pop(true)
               : null,
@@ -715,20 +683,27 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
     super.dispose();
   }
 
-  void _onThemeChanged() => setState(() => _themeId = PreferencesService.themeIdNotifier.value);
-  void _onKpiChanged() => setState(() => _kpiStyle = PreferencesService.kpiStyleNotifier.value);
-  void _onChartChanged() => setState(() => _chartStyle = PreferencesService.chartStyleNotifier.value);
+  void _onThemeChanged() =>
+      setState(() => _themeId = PreferencesService.themeIdNotifier.value);
+  void _onKpiChanged() =>
+      setState(() => _kpiStyle = PreferencesService.kpiStyleNotifier.value);
+  void _onChartChanged() =>
+      setState(() => _chartStyle = PreferencesService.chartStyleNotifier.value);
 
   void _pickTheme() {
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(StreamRadius.xl),
+        ),
       ),
       builder: (ctx) => _PickerSheet(
         title: 'Tema app',
-        items: StreamThemeId.values.map((e) => _PickerItem(label: e.label, value: e.name)).toList(),
+        items: StreamThemeId.values
+            .map((e) => _PickerItem(label: e.label, value: e.name))
+            .toList(),
         selected: _themeId,
         onSelected: (v) => PreferencesService.saveThemeId(v),
       ),
@@ -740,11 +715,15 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
       context: context,
       useSafeArea: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(StreamRadius.xl),
+        ),
       ),
       builder: (ctx) => _PickerSheet(
         title: 'Stile KPI',
-        items: StreamKpiStyleId.values.map((e) => _PickerItem(label: e.label, value: e.name)).toList(),
+        items: StreamKpiStyleId.values
+            .map((e) => _PickerItem(label: e.label, value: e.name))
+            .toList(),
         selected: _kpiStyle,
         onSelected: (v) => PreferencesService.saveKpiStyleId(v),
       ),
@@ -756,11 +735,15 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
       context: context,
       useSafeArea: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(StreamRadius.xl),
+        ),
       ),
       builder: (ctx) => _PickerSheet(
         title: 'Stile grafici',
-        items: StreamChartStyleId.values.map((e) => _PickerItem(label: e.label, value: e.name)).toList(),
+        items: StreamChartStyleId.values
+            .map((e) => _PickerItem(label: e.label, value: e.name))
+            .toList(),
         selected: _chartStyle,
         onSelected: (v) => PreferencesService.saveChartStyleId(v),
       ),
@@ -769,47 +752,53 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
 
   @override
   Widget build(BuildContext context) {
-    final currentTheme = StreamThemeId.values.firstWhere((e) => e.name == _themeId, orElse: () => StreamThemeId.streamClassic);
-    final currentKpi = StreamKpiStyleId.values.firstWhere((e) => e.name == _kpiStyle, orElse: () => StreamKpiStyleId.automatic);
-    final currentChart = StreamChartStyleId.values.firstWhere((e) => e.name == _chartStyle, orElse: () => StreamChartStyleId.automatic);
+    final palette = context.$palette;
+    final currentTheme = StreamThemeId.values.firstWhere(
+      (e) => e.name == _themeId,
+      orElse: () => StreamThemeId.streamClassic,
+    );
+    final currentKpi = StreamKpiStyleId.values.firstWhere(
+      (e) => e.name == _kpiStyle,
+      orElse: () => StreamKpiStyleId.automatic,
+    );
+    final currentChart = StreamChartStyleId.values.firstWhere(
+      (e) => e.name == _chartStyle,
+      orElse: () => StreamChartStyleId.automatic,
+    );
 
-    return Card(
-      color: StreamColors.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(StreamSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Aspetto', style: StreamTypography.h3),
-            const SizedBox(height: StreamSpacing.sm),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.palette_outlined, color: StreamColors.primary),
-              title: const Text('Tema app'),
-              subtitle: Text(currentTheme.label),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickTheme,
-            ),
-            const Divider(height: 1, indent: 40),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.dashboard_customize_outlined, color: StreamColors.primary),
-              title: const Text('Stile KPI'),
-              subtitle: Text(currentKpi.label),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickKpiStyle,
-            ),
-            const Divider(height: 1, indent: 40),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.bar_chart_outlined, color: StreamColors.primary),
-              title: const Text('Stile grafici'),
-              subtitle: Text(currentChart.label),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickChartStyle,
-            ),
-          ],
-        ),
+    return _SettingsSectionCard(
+      key: const Key('settings_appearance_section'),
+      title: 'Aspetto',
+      description: 'Personalizza l\'interfaccia dell\'app.',
+      child: Column(
+        children: [
+          _SettingsTile(
+            key: const Key('settings_theme_picker_tile'),
+            icon: Icons.palette_outlined,
+            iconColor: palette.primary,
+            title: 'Tema app',
+            subtitle: currentTheme.label,
+            onTap: _pickTheme,
+          ),
+          _SettingsDivider(palette: palette),
+          _SettingsTile(
+            key: const Key('settings_kpi_picker_tile'),
+            icon: Icons.dashboard_customize_outlined,
+            iconColor: palette.primary,
+            title: 'Stile KPI',
+            subtitle: currentKpi.label,
+            onTap: _pickKpiStyle,
+          ),
+          _SettingsDivider(palette: palette),
+          _SettingsTile(
+            key: const Key('settings_chart_picker_tile'),
+            icon: Icons.bar_chart_outlined,
+            iconColor: palette.primary,
+            title: 'Stile grafici',
+            subtitle: currentChart.label,
+            onTap: _pickChartStyle,
+          ),
+        ],
       ),
     );
   }
@@ -836,35 +825,221 @@ class _PickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.$palette;
+
     return Container(
+      key: Key('picker_sheet_${title.toLowerCase().replaceAll(' ', '_')}'),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StreamRadius.xl),
+        ),
+        border: Border(top: BorderSide(color: palette.divider)),
+      ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: StreamColors.textMuted, borderRadius: BorderRadius.circular(2)),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: palette.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: StreamTypography.h3.copyWith(color: palette.textPrimary),
+            ),
+            const SizedBox(height: 12),
+            ...items.map((item) {
+              final isSelected = item.value == selected;
+              return Column(
+                children: [
+                  _SettingsTile(
+                    key: Key(
+                      '${title.toLowerCase().replaceAll(' ', '_')}_${item.value}',
+                    ),
+                    icon: isSelected
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    iconColor: isSelected ? palette.primary : palette.textMuted,
+                    title: item.label,
+                    titleColor: isSelected
+                        ? palette.primary
+                        : palette.textPrimary,
+                    subtitle: isSelected
+                        ? 'Selezionato'
+                        : 'Tocca per selezionare',
+                    accentColor: isSelected ? palette.primary : null,
+                    trailing: isSelected
+                        ? Icon(Icons.check, color: palette.primary)
+                        : null,
+                    onTap: () {
+                      onSelected(item.value);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  if (item != items.last) _SettingsDivider(palette: palette),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSectionCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final Widget child;
+
+  const _SettingsSectionCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.$palette;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(StreamRadius.lg),
+        border: Border.all(color: palette.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: palette.brightness == Brightness.dark ? 0.12 : 0.04,
+            ),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(height: 16),
-          Text(title, style: StreamTypography.h3),
-          const SizedBox(height: 12),
-          ...items.map((item) {
-            final isSelected = item.value == selected;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(item.label, style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
-              trailing: isSelected ? Icon(Icons.check, color: StreamColors.primary) : null,
-              onTap: () {
-                onSelected(item.value);
-                Navigator.pop(context);
-              },
-            );
-          }),
         ],
       ),
+      child: Padding(
+        padding: const EdgeInsets.all(StreamSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: StreamTypography.h3.copyWith(color: palette.textPrimary),
+            ),
+            const SizedBox(height: StreamSpacing.sm),
+            Text(
+              description,
+              style: StreamTypography.body.copyWith(
+                color: palette.textSecondary,
+              ),
+            ),
+            const SizedBox(height: StreamSpacing.md),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+  final Color? accentColor;
+  final Color? titleColor;
+  final bool enabled;
+
+  const _SettingsTile({
+    super.key,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+    this.trailing,
+    this.accentColor,
+    this.titleColor,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.$palette;
+    final effectiveAccent = accentColor;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: effectiveAccent == null
+            ? Colors.transparent
+            : effectiveAccent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(StreamRadius.md),
+        border: effectiveAccent == null
+            ? null
+            : Border.all(
+                color: effectiveAccent.withValues(
+                  alpha: palette.brightness == Brightness.dark ? 0.45 : 0.3,
+                ),
+              ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: StreamSpacing.sm,
+            vertical: StreamSpacing.xs,
+          ),
+          leading: Icon(icon, color: enabled ? iconColor : palette.textMuted),
+          minLeadingWidth: 28,
+          title: Text(
+            title,
+            style: StreamTypography.bodyBold.copyWith(
+              color: enabled
+                  ? (titleColor ?? palette.textPrimary)
+                  : palette.textMuted,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: StreamTypography.caption.copyWith(
+              color: enabled ? palette.textSecondary : palette.textMuted,
+            ),
+          ),
+          trailing:
+              trailing ?? Icon(Icons.chevron_right, color: palette.textMuted),
+          enabled: enabled,
+          onTap: enabled ? onTap : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsDivider extends StatelessWidget {
+  final StreamThemePalette palette;
+
+  const _SettingsDivider({required this.palette});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Divider(height: 1, thickness: 1, color: palette.divider),
     );
   }
 }
