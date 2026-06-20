@@ -9,16 +9,22 @@
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`
 - Full suite finale: **verde**
 - Stato finale: **Hermes candidate for closure / Hermes QA green**
-- Executive summary: `44+` file test, `960` test/casi dichiarati, `960` passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
-- V0.10 Grafici Tab + V0.10.1 Chart Readability + V0.10.1c Donut/Scroll/Extra: **32** nuovi test (18 metriche pure, 9 integrazione UI, 3 navigazione bottom nav, 2 composizione)
+- Executive summary: `44+` file test, `979` test/casi dichiarati, `979` passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
+- V0.10 Grafici Tab + V0.10.1 Chart Readability + V0.10.1c Donut/Scroll/Extra: **32** nuovi test
+- V0.11 Theme System foundation: **19** nuovi test
+- V0.11b Theme applied to widgets: widget grafici e Dashboard KPI migrati, helper fallback sicuro
+- V0.11c Real Chart Styles (applyStyle, StreamApp listener, 5 stili)
+- V0.11d Real KPI Styles (ValueListenableBuilder, _KpiCard switch, 6 stili)
+
+**V0.11c V0.11d completati:** chart styles reali (applyStyle, 5 stili), KPI styles reali (ValueListenableBuilder, 6 stili), 990 test finali
 
 ## Conteggio reale
 
 ### Test Dart / Flutter presenti
 
-- File test nel progetto: **44+** (+1 file charts_test.dart)
-- Test case Dart/Flutter dichiarati nei test: **960**
-- Test case Flutter/Dart passati nel run finale: **960**
+- File test nel progetto: **44+** (+1 file charts_test.dart, +1 file theme_test.dart)
+- Test case Dart/Flutter dichiarati nei test: **990**
+- Test case Flutter/Dart passati nel run finale: **990**
 
 ### Matrix QA estesa
 

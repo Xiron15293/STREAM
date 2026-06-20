@@ -43,6 +43,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - **Beneficiari**: `Valore medio per beneficiario` (barre orizzontali)
   - 12 nuovi test in `test/charts_test.dart` per le nuove metriche
   - Budget non implementato, Budget resta futuro
+
+- **V0.11 — Theme, KPI & Chart Style System**
+  - 6 temi app: Stream Classic, Forest, Midnight, Aurora, Minimal Sand (light), High Contrast
+  - `StreamThemePalette` — palette colori per ogni tema (canvas, surface, primary, income/expense/transfer, testi)
+  - `StreamChartPalette` — palette grafici per tema (donut colors, category colors, grid, axis)
+  - `StreamThemeExtension` — `ThemeExtension<StreamThemeExtension>` per accesso ai colori via `Theme.of(context)`
+  - `StreamTheme.build(palette)` — factory che produce `ThemeData` completo con `ColorScheme`, estensioni, bottoni, input, dialog, etc.
+  - `StreamThemeId` / `StreamKpiStyleId` / `StreamChartStyleId` — enum con `fromString` e fallback
+  - PreferencesService: `loadThemeId()`, `saveThemeId()`, `loadKpiStyleId()`, `saveKpiStyleId()`, `loadChartStyleId()`, `saveChartStyleId()` con `ValueNotifier` per live update
+  - Sezione "Aspetto" in Impostazioni: tema app, stile KPI, stile grafici — picker via bottom sheet
+  - Tema applicato live: `StreamApp` ora è `StatefulWidget` che ascolta `themeIdNotifier` e ricostruisce `ThemeData`
+  - `StreamBarChart` usa `StreamThemeExtension` per colori assi e griglia
+  - `StreamTheme.build` genera tema light per Minimal Sand (Brightness.light, palette chiara)
+  - `StreamTheme.build` genera tema dark per tutti gli altri (con palette scura)
+  - 19 test tema in `test/theme_test.dart` (palette, build, preferenze, fallback, enum)
+  - Nessuna modifica DB, nessuna migrazione, nessun Budget implementato
+
+- **V0.11b — Apply Themes to Widgets, KPI and Charts**
+  - Helper `context.streamTheme` / `context.$palette` / `context.$chart` con fallback sicuro se extension mancante
+  - `StreamChartCard`, `ChartEmptyState`, `StreamDonutChart`, `StreamHorizontalBarChart`, `StreamBarChart` migrati a `context.$palette` / `context.$chart` per colori dinamici
+  - Dashboard: `_KpiCard` e `_EmptyState` migrati; KPI style implementato (minimal, dense, outline, solid, split) con padding/bordi/sfondo variabili in base a `kpiStyleNotifier`
+  - `ChartsScreen`: section chips e legend row usano `context.$palette`
+  - `TimeFilterBar`: label data usa `context.$palette.surfaceElevated`
+  - Fallback sicuro: se `StreamThemeExtension` non è presente nel tema, i widget usano la palette `StreamColors` classica (Stream Classic)
+  - 578 occorrenze totali `StreamColors` prima; ~520 restano in widget non prioritari (accounts_screen, categories_screen, backup, movimenti, heatmap, ecc.) — migrazione completa come follow-up
+  - 979 test totali, tutti verdi
+
+- **V0.11d — Make KPI Styles Visibly Real**
+  - `_KpiCard` riscritto con switch su `StreamKpiStyleId` per produrre differenze visive reali
+  - `_KpiGrid` wrappato con `ValueListenableBuilder(kpiStyleNotifier)` per rebuild live senza cambiare tema
+  - **Minimal/automatic**: sfondo surface, padding 12, label 11px, nessun bordo
+  - **Dense**: padding 6, label 9px, value 13px, aspetto compatto
+  - **Glass**: sfondo `surfaceElevated` con alpha 0.7, bordo soft semi-trasparente
+  - **Outline**: bordo `primary.withAlpha(0.4)` evidente, sfondo surface
+  - **Solid**: sfondo colorato con `color.withAlpha(0.15)` (verde per entrate, rosso per uscite)
+  - **Split**: layout diverso — label in colonna sinistra, value in badge colorato a destra
+  - Dashboard si ricostruisce live al cambio KPI style in Settings (nessun riavvio)
+  - Valori KPI invariati (solo layout/stile cambia)
+  - +11 test KPI style (enum, fallback, label, persistenza, rebuild)
 - **Hermes Extended QA Audit**
   - Aggiunta matrice QA data-driven `test/qa_audit_matrix_test.dart`
   - Copertura deterministica su suggerimenti, beneficiari, TimeFilter/range e formatter valuta

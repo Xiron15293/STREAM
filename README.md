@@ -21,6 +21,7 @@ The app currently includes:
 
 - `lib/screens/`
   - app screens for Dashboard, Movimenti, Categorie, Conti, Archivio, Grafici, Beneficiari, Impostazioni, Backup
+  - 6 themes (Stream Classic, Forest, Midnight, Aurora, Minimal Sand, High Contrast) with chart palette and KPI styles
 - `lib/widgets/`
   - reusable UI for movement forms, calculator pad, heatmap cards, category selectors, account selectors, and cards
 - `lib/data/`

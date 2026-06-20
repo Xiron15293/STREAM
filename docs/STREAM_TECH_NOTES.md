@@ -97,6 +97,58 @@
 
 **CurrencyFormatter:** i valori precisi su barre usano `formatMovementCurrency()` dalla valuta globale.
 
+## Theme System (V0.11)
+
+**File chiave:**
+
+| File | Ruolo |
+|------|-------|
+| `lib/design/stream_theme_palette.dart` | 6 palette colore (`StreamThemePalette`) + enum `StreamThemeId` con `fromString` e fallback |
+| `lib/design/stream_chart_palette.dart` | `StreamChartPalette` per grafici (donut colors, category colors, grid, axis) per tema |
+| `lib/design/stream_kpi_style.dart` | Enum `StreamKpiStyleId` / `StreamChartStyleId` con `fromString` e fallback |
+| `lib/design/stream_theme_extension.dart` | `StreamThemeExtension` (ThemeExtension) con palette + chart palette |
+| `lib/theme.dart` | `StreamTheme.build(palette)` — factory ThemeData completo |
+
+**Architettura:**
+- `StreamTheme.build(p)` produce `ThemeData` con `extensions: [StreamThemeExtension(...)]`.
+- `StreamThemeExtension` si ottiene via `StreamThemeExtension.of(context)` o `context.streamTheme` (estensione con fallback).
+- Helper disponibili: `context.$palette` → `StreamThemePalette`, `context.$chart` → `StreamChartPalette`.
+- Fallback sicuro: se `StreamThemeExtension` non esiste nel tema (es. test senza tema custom), viene usata palette statica `_fallbackPalette` uguale ai colori Stream Classic.
+- Widget migrati a tema: `StreamChartCard`, `ChartEmptyState`, `StreamDonutChart`, `StreamHorizontalBarChart`, `StreamBarChart`, Dashboard `_KpiCard`, `_EmptyState`, `ChartsScreen` chips/legend, `TimeFilterBar`.
+- **StreamColors statici restano in ~520 occorrenze** in widget non prioritari (accounts, categories, backup, heatmap, calendar, movement_card, day_header). Migrazione completa come follow-up V0.12.
+- **Stili KPI attivi (V0.11d)**: Dashboard `_KpiGrid` con `ValueListenableBuilder(kpiStyleNotifier)`. `_KpiCard` usa `StreamKpiStyleId.fromString(kpiStyle)` e switch per:
+  - **Minimal/automatic**: sfondo surface, padding 12, label 11px, no bordo
+  - **Dense**: padding 6, label 9px, value 13px (compatto)
+  - **Glass**: sfondo `surfaceElevated.withAlpha(0.7)`, bordo `divider.withAlpha(0.5)`
+  - **Outline**: bordo `primary.withAlpha(0.4)` evidente
+  - **Solid**: sfondo `color.withAlpha(0.15)` (income/expense per colore semantico)
+  - **Split**: layout Row — label a sinistra, value in badge colorato a destra
+  Cambio live senza riavvio (solo `ValueListenableBuilder`, non ThemeData).
+- **Stili grafici reali (V0.11c)**: `StreamChartPalette.applyStyle(StreamChartStyleId, palette)`:
+  - **automatic**: palette base invariata
+  - **soft**: grid alpha 0.08, donut/category colors alpha 0.85, axis/legend textMuted
+  - **technical**: grid alpha 0.30, axis/legend `textPrimary`, palette ordinata income/expense/primary
+  - **highContrast**: donut giallo/verde/rosso/ciano/viola, grid alpha 0.50, axis/legend bianco
+  - **editorial**: grid alpha 0.06, palette indaco/verde/rosso/teal/viola stabile
+  `StreamApp` ascolta `themeIdNotifier` + `chartStyleNotifier` per ricostruire `ThemeData` con chart palette effettiva.
+
+**Temi implementati:**
+
+| Tema | Brightness | Primary | Income | Expense |
+|------|-----------|---------|--------|---------|
+| Stream Classic (default) | dark | #4B7BFF | #34C759 | #FF453A |
+| Forest | dark | #22C55E | #4ADE80 | #F97316 |
+| Midnight | dark | #60A5FA | #34D399 | #FB7185 |
+| Aurora | dark | #8B5CF6 | #10B981 | #F43F5E |
+| Minimal Sand | light | #C08457 | #15803D | #B91C1C |
+| High Contrast | dark | #FFFF00 | #00FF66 | #FF3366 |
+
+**Persistenza:** `PreferencesService` con `ValueNotifier` per live update. `StreamApp` è ora `StatefulWidget` che ascolta `themeIdNotifier` e ricostruisce `ThemeData`. `Settings → Aspetto` permette scelta tema, stile KPI e stile grafici via bottom sheet.
+
+**Fallback:** `fromString` invalido → Stream Classic / Automatico. High Contrast ha colori molto separati, primary giallo, income verde acceso, expense rosso acceso.
+
+**Budget:** non implementato. Nessuna UI Budget, nessun campo DB, nessun testo Budget visibile.
+
 ## MovementCard Widget
 
 > Widget unico per renderizzare movimenti in tutta l'app. Sostituisce 4 classi private duplicate (~376 righe eliminate).

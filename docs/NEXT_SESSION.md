@@ -22,30 +22,25 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`911` passati, `1` skipped).
 - Hermes QA green / closure candidate: nessun nuovo P0/P1/P2 trovato nel perimetro dell’audit finale.
 
-## Stato Attuale — V0.10 + V0.10.1 + V0.10.1c
+## Stato Attuale — V0.11b (Theme Applied to Widgets + KPI + Charts)
 
-- La tab "Grafici" è stata aggiunta tra Archivio e Impostazioni.
-- ChartsScreen ha 4 sezioni (Movimenti, Categorie, Conti, Beneficiari) con chip/pill orizzontali scrollabili.
-- **Donut charts**: composizione categorie, distribuzione tipo movimento, top beneficiari (importo), frequenza beneficiari, giorni settimana più costosi, quota saldo conto. Ogni donut ha legenda + percentuale + valore + totale centrale.
-- **Barre orizzontali**: top categorie, saldo/flussi/attività conti, conti uscite/entrate, top giorni spesa, delta categorie vs periodo precedente, media beneficiario.
-- **Barre verticali (fl_chart)**: cashflow nel tempo, movimenti per giorno.
-- Scroll UX: tutti i touch fl_chart disabilitati e nessun `ListView.builder` interno, il drag verticale scrolla la tab Grafici.
-- Nuove metriche: weekday cost, avg daily spend, category delta, account outflow/inflow, beneficiary average, quota saldo.
-- 7 nuove funzioni pure in `analytics_metrics.dart`.
-- TimeFilterBar rispetta il periodo globale; nella tab Grafici usa "Range".
-- Top N + Altro applicato ovunque.
-- Budget non implementato, resta futuro (struttura predisposta).
-- 960 test totali, tutti verdi.
+- **Helper theme**: `context.streamTheme`, `context.$palette`, `context.$chart` con fallback sicuro a palette Stream Classic
+- **Widget grafici migrati**: StreamChartCard, ChartEmptyState, StreamDonutChart, StreamHorizontalBarChart, StreamBarChart — tutti usano palette dinamica
+- **Dashboard migrata**: `_KpiCard` usa palette; stili KPI (minimal, dense, outline, solid, split) attivi con padding/bordi/sfondo variabili
+- **ChartsScreen**: chip sezione e legenda usano `context.$palette`
+- **TimeFilterBar**: label data usa palette
+- **StreamColors residue**: ~520 occorrenze in widget non prioritari (accounts, categories, backup, heatmap, calendar, movement_card, day_header) — migrazione completa come follow-up V0.12
+- **KPI styles visibili**: Minimal/Dense/Glass/Outline/Solid/Split hanno layout/sfondo/bordi diverso
+- **Chart styles reali**: V0.11c (automatic/soft/technical/highContrast/editorial con `applyStyle`)
+- **Chart palette effettiva** calcolata in `StreamTheme.build()` con chart style, ascoltata da `StreamApp`
+- **Budget non implementato**, resta futuro
+- **990 test totali**, tutti verdi
 
 ## Prossimo Sprint Consigliato
 
-1. **V0.11 — Theme, KPI & Chart Style System**
-   - Palette temi grafici (ChartPalette) per personalizzazione colore
-   - Stili KPI card (compact, expanded, trend indicator)
-   - Eventuale export report in PDF/CSV
-   - Budget charts futuri (nessuna UI Budget ora, solo predisposizione architetturale come già fatto)
-2. QA manuale su device reale per i flussi più sensibili
-3. Valutare treemap categorie se non già implementata in dashboard
+1. **V0.12 — UI Polish / Migrazione StreamColors residui** (~520 occorrenze in accounts, categories, backup, heatmap, calendar, movement_card, day_header)
+2. Oppure **V0.12 — Budget Foundation** se decisione prodotto orientata a Budget
+3. QA manuale su device reale per flussi più sensibili
 
 ## Regole Git
 

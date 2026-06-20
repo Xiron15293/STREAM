@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'data/database.dart';
 import 'data/sqlite_service.dart';
+import 'design/stream_kpi_style.dart';
+import 'design/stream_theme_palette.dart';
 import 'models/profile.dart';
 import 'screens/charts_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -18,22 +20,64 @@ Future<void> main() async {
   final profileService = ProfileService();
   await profileService.initialize();
   await PreferencesService.loadCurrency();
+  await PreferencesService.loadThemeId();
+  await PreferencesService.loadKpiStyleId();
+  await PreferencesService.loadChartStyleId();
   runApp(ProfileAwareStreamApp(profileService: profileService));
 }
 
-class StreamApp extends StatelessWidget {
+class StreamApp extends StatefulWidget {
   final AppDatabase db;
   final Widget? home;
 
   const StreamApp({super.key, required this.db, this.home});
 
   @override
+  State<StreamApp> createState() => _StreamAppState();
+}
+
+class _StreamAppState extends State<StreamApp> {
+  late ThemeData _theme;
+
+  @override
+  void initState() {
+    super.initState();
+    _rebuildTheme();
+    PreferencesService.themeIdNotifier.addListener(_onPreferenceChanged);
+    PreferencesService.chartStyleNotifier.addListener(_onPreferenceChanged);
+  }
+
+  @override
+  void dispose() {
+    PreferencesService.themeIdNotifier.removeListener(_onPreferenceChanged);
+    PreferencesService.chartStyleNotifier.removeListener(_onPreferenceChanged);
+    super.dispose();
+  }
+
+  void _onPreferenceChanged() {
+    _rebuildTheme();
+  }
+
+  void _rebuildTheme() {
+    setState(() {
+      _theme = StreamTheme.build(
+        StreamThemePalette.of(
+          StreamThemeId.fromString(PreferencesService.themeIdNotifier.value),
+        ),
+        chartStyle: StreamChartStyleId.fromString(
+          PreferencesService.chartStyleNotifier.value,
+        ),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'STREAM',
-      theme: StreamTheme.dark,
+      theme: _theme,
       debugShowCheckedModeBanner: false,
-      home: home ?? MainScaffold(db: db),
+      home: widget.home ?? MainScaffold(db: widget.db),
     );
   }
 }

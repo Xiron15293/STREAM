@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_kpi_style.dart';
+import '../design/stream_theme_extension.dart';
+import '../design/stream_theme_palette.dart';
 import '../models/account.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
@@ -114,12 +117,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     db: widget.db,
                   ),
                   const SizedBox(height: StreamSpacing.lg),
-                  _KpiGrid(
-                    income: filteredIncome,
-                    expenses: filteredExpenses,
-                    balance: filteredBalance,
-                    count: filteredCount,
-                    expenseComparison: expenseComparison,
+                  ValueListenableBuilder<String>(
+                    valueListenable: PreferencesService.kpiStyleNotifier,
+                    builder: (context, kpiStyle, _) => _KpiGrid(
+                      income: filteredIncome,
+                      expenses: filteredExpenses,
+                      balance: filteredBalance,
+                      count: filteredCount,
+                      expenseComparison: expenseComparison,
+                    ),
                   ),
                   const SizedBox(height: StreamSpacing.section),
                   _CategoryExpensesSection(
@@ -501,6 +507,7 @@ class _KpiGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Column(
       children: [
         Row(
@@ -509,7 +516,7 @@ class _KpiGrid extends StatelessWidget {
               child: _KpiCard(
                 label: 'Entrate',
                 value: formatMovementCurrency(income),
-                color: StreamColors.income,
+                color: p.income,
               ),
             ),
             const SizedBox(width: StreamSpacing.sm),
@@ -517,7 +524,7 @@ class _KpiGrid extends StatelessWidget {
               child: _KpiCard(
                 label: 'Uscite',
                 value: formatMovementCurrency(expenses),
-                color: StreamColors.expense,
+                color: p.expense,
                 subtitle: expenseComparison != null
                     ? _formatExpenseComparison(expenseComparison!)
                     : null,
@@ -533,8 +540,8 @@ class _KpiGrid extends StatelessWidget {
                 label: 'Saldo',
                 value: formatMovementCurrency(balance, showPositiveSign: true),
                 color: balance >= 0
-                    ? StreamColors.income
-                    : StreamColors.expense,
+                    ? p.income
+                    : p.expense,
               ),
             ),
             const SizedBox(width: StreamSpacing.sm),
@@ -542,7 +549,7 @@ class _KpiGrid extends StatelessWidget {
               child: _KpiCard(
                 label: 'Movimenti',
                 value: '$count',
-                color: StreamColors.textPrimary,
+                color: p.textPrimary,
               ),
             ),
           ],
@@ -573,45 +580,113 @@ class _KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final kpiStyle = PreferencesService.kpiStyleNotifier.value;
+    final styleId = StreamKpiStyleId.fromString(kpiStyle);
+
+    Color bgColor;
+    BoxBorder? border;
+    double pad;
+    double labelSize;
+    double valueSize;
+
+    switch (styleId) {
+      case StreamKpiStyleId.dense:
+        pad = 6; labelSize = 9; valueSize = 13;
+        bgColor = p.surface;
+        border = null;
+      case StreamKpiStyleId.outline:
+        pad = 12; labelSize = 11; valueSize = 15;
+        bgColor = p.surface;
+        border = Border.all(color: p.primary.withValues(alpha: 0.4));
+      case StreamKpiStyleId.solid:
+        pad = 12; labelSize = 11; valueSize = 15;
+        bgColor = color.withValues(alpha: 0.15);
+        border = null;
+      case StreamKpiStyleId.split:
+        pad = 12; labelSize = 11; valueSize = 15;
+        bgColor = p.surface;
+        border = null;
+      case StreamKpiStyleId.glass:
+        pad = 12; labelSize = 11; valueSize = 15;
+        bgColor = p.surfaceElevated.withValues(alpha: 0.7);
+        border = Border.all(color: p.divider.withValues(alpha: 0.5));
+      default: // automatic, minimal
+        pad = 12; labelSize = 11; valueSize = 15;
+        bgColor = p.surface;
+        border = null;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: StreamSpacing.md,
-        horizontal: StreamSpacing.md,
-      ),
+      padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
-        color: StreamColors.surface,
+        color: bgColor,
         borderRadius: BorderRadius.circular(StreamRadius.md),
+        border: border,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
+      child: styleId == StreamKpiStyleId.split
+          ? _buildSplit(p)
+          : _buildCompact(p, labelSize, valueSize),
+    );
+  }
+
+  Widget _buildCompact(StreamThemePalette p, double labelSize, double valueSize) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(),
+          style: StreamTypography.micro.copyWith(fontSize: labelSize, color: p.textSecondary),
+        ),
+        const SizedBox(height: StreamSpacing.xs),
+        Text(value,
+          style: StreamTypography.captionBold.copyWith(fontSize: valueSize, color: color),
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(subtitle!,
+              style: StreamTypography.micro.copyWith(fontSize: labelSize - 1, color: p.textMuted),
+              maxLines: 2, overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(height: StreamSpacing.xs),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: StreamTypography.captionBold.copyWith(color: color),
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: StreamSpacing.xs),
-            Text(
-              subtitle!,
-              style: StreamTypography.micro.copyWith(
-                color: StreamColors.textMuted,
+      ],
+    );
+  }
+
+  Widget _buildSplit(StreamThemePalette p) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(label.toUpperCase(),
+                style: StreamTypography.micro.copyWith(color: p.textSecondary),
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(value,
+                style: StreamTypography.captionBold.copyWith(color: color, fontSize: 13),
+              ),
             ),
           ],
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(subtitle!,
+            style: StreamTypography.micro.copyWith(color: p.textMuted),
+            maxLines: 2, overflow: TextOverflow.ellipsis,
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -629,28 +704,23 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Container(
       padding: const EdgeInsets.all(StreamSpacing.xxl),
       decoration: BoxDecoration(
-        color: StreamColors.surface,
+        color: p.surface,
         borderRadius: BorderRadius.circular(StreamRadius.lg),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 48, color: StreamColors.textMuted),
+          Icon(icon, size: 48, color: p.textMuted),
           const SizedBox(height: StreamSpacing.md),
-          Text(
-            message,
-            style: StreamTypography.bodyBold.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+          Text(message,
+            style: StreamTypography.bodyBold.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: StreamSpacing.xs),
-          Text(
-            subtitle,
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textMuted,
-            ),
+          Text(subtitle,
+            style: StreamTypography.caption.copyWith(color: p.textMuted),
           ),
         ],
       ),

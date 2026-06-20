@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'design/stream_chart_palette.dart';
+import 'design/stream_kpi_style.dart';
+import 'design/stream_theme_extension.dart';
+import 'design/stream_theme_palette.dart';
 
 class StreamColors {
   StreamColors._();
@@ -58,48 +62,65 @@ class StreamTypography {
 }
 
 class StreamTheme {
-  static ThemeData get dark => ThemeData(
+  static ThemeData get dark => build(StreamThemePalette.defaultPalette);
+
+  static ThemeData build(
+    StreamThemePalette p, {
+    StreamChartStyleId chartStyle = StreamChartStyleId.automatic,
+  }) {
+    final isLight = p.brightness == Brightness.light;
+    final basePalette = StreamChartPalette.forTheme(p);
+    final chartPalette = basePalette.applyStyle(chartStyle, p);
+    final scb = isLight ? p.canvas : p.surface;
+
+    return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: StreamColors.canvas,
-    colorScheme: ColorScheme.dark(
-      primary: StreamColors.primary,
-      secondary: StreamColors.primarySoft,
-      surface: StreamColors.surface,
-      error: StreamColors.expense,
+    brightness: p.brightness,
+    scaffoldBackgroundColor: scb,
+    extensions: [StreamThemeExtension(palette: p, chartPalette: chartPalette)],
+    colorScheme: ColorScheme(
+      brightness: p.brightness,
+      primary: p.primary,
+      secondary: p.primarySoft,
+      surface: p.surface,
+      error: p.expense,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: p.textPrimary,
+      onError: Colors.white,
     ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: StreamColors.canvas,
-      foregroundColor: StreamColors.textPrimary,
+    appBarTheme: AppBarTheme(
+      backgroundColor: scb,
+      foregroundColor: p.textPrimary,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
-      titleTextStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: StreamColors.textPrimary),
+      titleTextStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: p.textPrimary),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: StreamColors.surface,
-      selectedItemColor: StreamColors.primary,
-      unselectedItemColor: StreamColors.textMuted,
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: p.surface,
+      selectedItemColor: p.primary,
+      unselectedItemColor: p.textMuted,
       type: BottomNavigationBarType.fixed,
       elevation: 0,
-      selectedLabelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.3),
-      unselectedLabelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.3),
+      selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.3),
+      unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.3),
     ),
     cardTheme: CardThemeData(
-      color: StreamColors.surface,
+      color: p.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.lg)),
       margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
     ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: StreamColors.primary,
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: p.primary,
       foregroundColor: Colors.white,
       elevation: 0,
-      shape: CircleBorder(),
+      shape: const CircleBorder(),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: StreamColors.surfaceElevated,
+      fillColor: p.surfaceElevated,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(StreamRadius.md),
         borderSide: BorderSide.none,
@@ -110,19 +131,19 @@ class StreamTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(StreamRadius.md),
-        borderSide: const BorderSide(color: StreamColors.primary, width: 1.5),
+        borderSide: BorderSide(color: p.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(StreamRadius.md),
-        borderSide: const BorderSide(color: StreamColors.expense, width: 1),
+        borderSide: BorderSide(color: p.expense, width: 1),
       ),
-      labelStyle: const TextStyle(color: StreamColors.textSecondary, fontSize: 14),
-      hintStyle: const TextStyle(color: StreamColors.textMuted, fontSize: 14),
+      labelStyle: TextStyle(color: p.textSecondary, fontSize: 14),
+      hintStyle: TextStyle(color: p.textMuted, fontSize: 14),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: StreamColors.primary,
+        backgroundColor: p.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -132,7 +153,7 @@ class StreamTheme {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: StreamColors.primary,
+        backgroundColor: p.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -142,66 +163,66 @@ class StreamTheme {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: StreamColors.primary,
+        foregroundColor: p.primary,
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: StreamColors.textSecondary,
-        side: const BorderSide(color: StreamColors.surfaceElevated),
+        foregroundColor: p.textSecondary,
+        side: BorderSide(color: p.surfaceElevated),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.md)),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: StreamColors.surfaceElevated,
-      contentTextStyle: const TextStyle(color: StreamColors.textPrimary, fontSize: 14),
+      backgroundColor: p.surfaceElevated,
+      contentTextStyle: TextStyle(color: p.textPrimary, fontSize: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.md)),
       behavior: SnackBarBehavior.floating,
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: StreamColors.surfaceElevated,
-      labelStyle: const TextStyle(color: StreamColors.textPrimary, fontSize: 13),
+      backgroundColor: p.surfaceElevated,
+      labelStyle: TextStyle(color: p.textPrimary, fontSize: 13),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.full)),
       side: BorderSide.none,
     ),
-    dividerTheme: const DividerThemeData(
-      color: StreamColors.divider,
+    dividerTheme: DividerThemeData(
+      color: p.divider,
       thickness: 1,
       space: 0,
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: StreamColors.surface,
+      backgroundColor: p.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.xl)),
-      titleTextStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: StreamColors.textPrimary),
-      contentTextStyle: const TextStyle(fontSize: 15, color: StreamColors.textSecondary),
+      titleTextStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: p.textPrimary),
+      contentTextStyle: TextStyle(fontSize: 15, color: p.textSecondary),
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: StreamColors.surface,
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: p.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
       ),
     ),
     popupMenuTheme: PopupMenuThemeData(
-      color: StreamColors.surfaceElevated,
+      color: p.surfaceElevated,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.md)),
       elevation: 4,
     ),
     datePickerTheme: DatePickerThemeData(
-      backgroundColor: StreamColors.surface,
+      backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
-      headerBackgroundColor: StreamColors.primary,
+      headerBackgroundColor: p.primary,
       headerForegroundColor: Colors.white,
-      todayForegroundColor: WidgetStatePropertyAll(StreamColors.primary),
-      todayBackgroundColor: WidgetStatePropertyAll(StreamColors.primary.withValues(alpha: 0.15)),
+      todayForegroundColor: WidgetStatePropertyAll(p.primary),
+      todayBackgroundColor: WidgetStatePropertyAll(p.primary.withValues(alpha: 0.15)),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
-        backgroundColor: StreamColors.surfaceElevated,
-        selectedBackgroundColor: StreamColors.primary,
-        foregroundColor: StreamColors.textSecondary,
+        backgroundColor: p.surfaceElevated,
+        selectedBackgroundColor: p.primary,
+        foregroundColor: p.textSecondary,
         selectedForegroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(StreamRadius.md)),
         textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -209,13 +230,14 @@ class StreamTheme {
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return StreamColors.primary;
-        return StreamColors.textMuted;
+        if (states.contains(WidgetState.selected)) return p.primary;
+        return p.textMuted;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return StreamColors.primary.withValues(alpha: 0.3);
-        return StreamColors.surfaceElevated;
+        if (states.contains(WidgetState.selected)) return p.primary.withValues(alpha: 0.3);
+        return p.surfaceElevated;
       }),
     ),
   );
+  }
 }

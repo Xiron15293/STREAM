@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/time_filter.dart';
 import '../design/stream_date_picker.dart';
 import '../theme.dart';
@@ -132,7 +133,7 @@ class TimeFilterBar extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: StreamColors.surfaceElevated,
+                      color: context.$palette.surfaceElevated,
                       borderRadius: BorderRadius.circular(StreamRadius.md),
                     ),
                     child: Text(activeFilter.label, style: StreamTypography.h3),

@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../design/stream_theme_extension.dart';
 import '../../theme.dart';
 import '../../utils/analytics_metrics.dart';
 
@@ -11,9 +12,11 @@ class StreamBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final cp = context.$chart;
     if (series.isEmpty) return const SizedBox.shrink();
     if (series.every((s) => s.points.every((p) => p.value == 0))) {
-      return _empty();
+      return Center(child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)));
     }
 
     final allLabels = series.expand((s) => s.points.map((p) => p.label)).toSet().toList();
@@ -42,9 +45,8 @@ class StreamBarChart extends StatelessWidget {
                 if (!show) return const SizedBox.shrink();
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    label,
-                    style: TextStyle(fontSize: 9, color: StreamColors.textSecondary),
+                  child: Text(label,
+                    style: TextStyle(fontSize: 9, color: cp.axisTextColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 );
@@ -58,9 +60,8 @@ class StreamBarChart extends StatelessWidget {
               reservedSize: 48,
               getTitlesWidget: (value, meta) {
                 if (value == 0) return const SizedBox.shrink();
-                return Text(
-                  '${value.toInt()}',
-                  style: TextStyle(fontSize: 9, color: StreamColors.textSecondary),
+                return Text('${value.toInt()}',
+                  style: TextStyle(fontSize: 9, color: cp.axisTextColor),
                 );
               },
             ),
@@ -72,10 +73,7 @@ class StreamBarChart extends StatelessWidget {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: maxVal > 0 ? maxVal / 4 : 1,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: StreamColors.divider,
-            strokeWidth: 0.5,
-          ),
+          getDrawingHorizontalLine: (value) => FlLine(color: cp.gridColor, strokeWidth: 0.5),
         ),
         borderData: FlBorderData(show: false),
         barGroups: List.generate(allLabels.length, (i) {
@@ -85,23 +83,11 @@ class StreamBarChart extends StatelessWidget {
               toY: point?.value ?? 0.0,
               color: e.value.color,
               width: series.length > 1 ? 8 : 14,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(3),
-                topRight: Radius.circular(3),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(3), topRight: Radius.circular(3)),
             );
           }).toList();
           return BarChartGroupData(x: i, barRods: rods);
         }),
-      ),
-    );
-  }
-
-  Widget _empty() {
-    return Center(
-      child: Text(
-        'Nessun dato',
-        style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
       ),
     );
   }

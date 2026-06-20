@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_kpi_style.dart';
+import '../design/stream_theme_palette.dart';
 import '../services/backup_service.dart';
 import '../theme.dart';
 import 'backup_screen.dart';
@@ -171,6 +173,8 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: StreamSpacing.lg),
+          _AppearanceSection(db: db),
           if (onManageProfiles != null) ...[
             const SizedBox(height: StreamSpacing.lg),
             Card(
@@ -678,6 +682,189 @@ class _ResetDataDialogState extends State<_ResetDataDialog> {
           child: const Text('Resetta'),
         ),
       ],
+    );
+  }
+}
+
+class _AppearanceSection extends StatefulWidget {
+  final AppDatabase db;
+  const _AppearanceSection({required this.db});
+
+  @override
+  State<_AppearanceSection> createState() => _AppearanceSectionState();
+}
+
+class _AppearanceSectionState extends State<_AppearanceSection> {
+  String _themeId = PreferencesService.themeIdNotifier.value;
+  String _kpiStyle = PreferencesService.kpiStyleNotifier.value;
+  String _chartStyle = PreferencesService.chartStyleNotifier.value;
+
+  @override
+  void initState() {
+    super.initState();
+    PreferencesService.themeIdNotifier.addListener(_onThemeChanged);
+    PreferencesService.kpiStyleNotifier.addListener(_onKpiChanged);
+    PreferencesService.chartStyleNotifier.addListener(_onChartChanged);
+  }
+
+  @override
+  void dispose() {
+    PreferencesService.themeIdNotifier.removeListener(_onThemeChanged);
+    PreferencesService.kpiStyleNotifier.removeListener(_onKpiChanged);
+    PreferencesService.chartStyleNotifier.removeListener(_onChartChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() => setState(() => _themeId = PreferencesService.themeIdNotifier.value);
+  void _onKpiChanged() => setState(() => _kpiStyle = PreferencesService.kpiStyleNotifier.value);
+  void _onChartChanged() => setState(() => _chartStyle = PreferencesService.chartStyleNotifier.value);
+
+  void _pickTheme() {
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+      ),
+      builder: (ctx) => _PickerSheet(
+        title: 'Tema app',
+        items: StreamThemeId.values.map((e) => _PickerItem(label: e.label, value: e.name)).toList(),
+        selected: _themeId,
+        onSelected: (v) => PreferencesService.saveThemeId(v),
+      ),
+    );
+  }
+
+  void _pickKpiStyle() {
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+      ),
+      builder: (ctx) => _PickerSheet(
+        title: 'Stile KPI',
+        items: StreamKpiStyleId.values.map((e) => _PickerItem(label: e.label, value: e.name)).toList(),
+        selected: _kpiStyle,
+        onSelected: (v) => PreferencesService.saveKpiStyleId(v),
+      ),
+    );
+  }
+
+  void _pickChartStyle() {
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(StreamRadius.xl)),
+      ),
+      builder: (ctx) => _PickerSheet(
+        title: 'Stile grafici',
+        items: StreamChartStyleId.values.map((e) => _PickerItem(label: e.label, value: e.name)).toList(),
+        selected: _chartStyle,
+        onSelected: (v) => PreferencesService.saveChartStyleId(v),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentTheme = StreamThemeId.values.firstWhere((e) => e.name == _themeId, orElse: () => StreamThemeId.streamClassic);
+    final currentKpi = StreamKpiStyleId.values.firstWhere((e) => e.name == _kpiStyle, orElse: () => StreamKpiStyleId.automatic);
+    final currentChart = StreamChartStyleId.values.firstWhere((e) => e.name == _chartStyle, orElse: () => StreamChartStyleId.automatic);
+
+    return Card(
+      color: StreamColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(StreamSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aspetto', style: StreamTypography.h3),
+            const SizedBox(height: StreamSpacing.sm),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.palette_outlined, color: StreamColors.primary),
+              title: const Text('Tema app'),
+              subtitle: Text(currentTheme.label),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickTheme,
+            ),
+            const Divider(height: 1, indent: 40),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.dashboard_customize_outlined, color: StreamColors.primary),
+              title: const Text('Stile KPI'),
+              subtitle: Text(currentKpi.label),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickKpiStyle,
+            ),
+            const Divider(height: 1, indent: 40),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.bar_chart_outlined, color: StreamColors.primary),
+              title: const Text('Stile grafici'),
+              subtitle: Text(currentChart.label),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickChartStyle,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PickerItem {
+  final String label;
+  final String value;
+  const _PickerItem({required this.label, required this.value});
+}
+
+class _PickerSheet extends StatelessWidget {
+  final String title;
+  final List<_PickerItem> items;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  const _PickerSheet({
+    required this.title,
+    required this.items,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(color: StreamColors.textMuted, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(title, style: StreamTypography.h3),
+          const SizedBox(height: 12),
+          ...items.map((item) {
+            final isSelected = item.value == selected;
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(item.label, style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
+              trailing: isSelected ? Icon(Icons.check, color: StreamColors.primary) : null,
+              onTap: () {
+                onSelected(item.value);
+                Navigator.pop(context);
+              },
+            );
+          }),
+        ],
+      ),
     );
   }
 }

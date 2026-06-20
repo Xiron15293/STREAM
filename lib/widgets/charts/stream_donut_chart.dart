@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../design/stream_theme_extension.dart';
 import '../../theme.dart';
 import '../../utils/analytics_metrics.dart';
 import '../../utils/currency_formatter.dart';
@@ -11,23 +12,14 @@ class StreamDonutChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     if (slices.isEmpty) {
-      return Center(
-        child: Text(
-          'Nessun dato',
-          style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-        ),
-      );
+      return Center(child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)));
     }
 
     final total = slices.fold<double>(0.0, (s, sl) => s + sl.value);
     if (total == 0) {
-      return Center(
-        child: Text(
-          'Nessun dato',
-          style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
-        ),
-      );
+      return Center(child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)));
     }
 
     final spent = slices.where((s) => s.value > 0).toList();
@@ -61,15 +53,11 @@ class StreamDonutChart extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _fmtCenter(total),
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: StreamColors.textPrimary),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                    formatMovementCurrency(total, showPositiveSign: false),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: p.textPrimary),
+                    overflow: TextOverflow.ellipsis, maxLines: 1,
                   ),
-                  Text(
-                    'Totale',
-                    style: TextStyle(fontSize: 8, color: StreamColors.textSecondary),
-                  ),
+                  Text('Totale', style: TextStyle(fontSize: 8, color: p.textSecondary)),
                 ],
               ),
             ],
@@ -90,25 +78,18 @@ class StreamDonutChart extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: s.color,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                        Container(width: 8, height: 8,
+                          decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2)),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
-                            s.label,
-                            style: TextStyle(fontSize: 10, color: StreamColors.textSecondary),
+                          child: Text(s.label,
+                            style: TextStyle(fontSize: 10, color: p.textSecondary),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(
-                          '${pct.toStringAsFixed(1)}%',
-                          style: TextStyle(fontSize: 10, color: StreamColors.textPrimary, fontWeight: FontWeight.w600),
+                        Text('${pct.toStringAsFixed(1)}%',
+                          style: TextStyle(fontSize: 10, color: p.textPrimary, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -116,7 +97,7 @@ class StreamDonutChart extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 12),
                       child: Text(
                         formatMovementCurrency(s.value, showPositiveSign: false),
-                        style: TextStyle(fontSize: 9, color: StreamColors.textMuted),
+                        style: TextStyle(fontSize: 9, color: p.textMuted),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -128,9 +109,5 @@ class StreamDonutChart extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  static String _fmtCenter(double v) {
-    return formatMovementCurrency(v, showPositiveSign: false);
   }
 }

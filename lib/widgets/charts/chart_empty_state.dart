@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../design/stream_theme_extension.dart';
 import '../../theme.dart';
 
 class ChartEmptyState extends StatelessWidget {
@@ -8,18 +9,19 @@ class ChartEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(StreamSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bar_chart, size: 40, color: StreamColors.textMuted),
+            Icon(Icons.bar_chart, size: 40, color: p.textMuted),
             const SizedBox(height: StreamSpacing.md),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+              style: StreamTypography.caption.copyWith(color: p.textSecondary),
             ),
           ],
         ),

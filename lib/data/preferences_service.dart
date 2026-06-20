@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../design/stream_kpi_style.dart';
+import '../design/stream_theme_palette.dart';
 import '../utils/heatmap_utils.dart';
 
 enum MovementsViewMode { list, calendar, heatmap }
@@ -11,12 +13,18 @@ class PreferencesService {
   static const _categoryLayoutKey = 'category_layout';
   static const _movementsViewModeKey = 'movements_view_mode';
   static const _currencyKey = 'app_currency';
+  static const _themeIdKey = 'theme_id';
+  static const _kpiStyleKey = 'kpi_style';
+  static const _chartStyleKey = 'chart_style';
   static const heatmapThresholdsKey = 'heatmap_thresholds';
   static const heatmapColorsKey = 'heatmap_colors';
 
   static const defaultCategoryLayout = 'cleanList';
   static const defaultMovementsViewMode = MovementsViewMode.heatmap;
   static const defaultCurrency = AppCurrency.eur;
+  static const defaultThemeId = 'streamClassic';
+  static const defaultKpiStyle = 'automatic';
+  static const defaultChartStyle = 'automatic';
   static const defaultHeatmapSettings = HeatmapSettings.defaults;
 
   static final categoryLayoutNotifier = ValueNotifier<String>(
@@ -29,6 +37,9 @@ class PreferencesService {
     defaultHeatmapSettings,
   );
   static final currencyNotifier = ValueNotifier<AppCurrency>(defaultCurrency);
+  static final themeIdNotifier = ValueNotifier<String>(defaultThemeId);
+  static final kpiStyleNotifier = ValueNotifier<String>(defaultKpiStyle);
+  static final chartStyleNotifier = ValueNotifier<String>(defaultChartStyle);
 
   static Future<bool> loadShowNotes() async {
     final prefs = await SharedPreferences.getInstance();
@@ -145,6 +156,51 @@ class PreferencesService {
     heatmapSettingsNotifier.value = defaultHeatmapSettings;
   }
 
+  static Future<String> loadThemeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_themeIdKey) ?? defaultThemeId;
+    final valid = StreamThemeId.values.any((e) => e.name == value);
+    final result = valid ? value : defaultThemeId;
+    themeIdNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveThemeId(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeIdKey, value);
+    themeIdNotifier.value = value;
+  }
+
+  static Future<String> loadKpiStyleId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_kpiStyleKey) ?? defaultKpiStyle;
+    final valid = StreamKpiStyleId.values.any((e) => e.name == value);
+    final result = valid ? value : defaultKpiStyle;
+    kpiStyleNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveKpiStyleId(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kpiStyleKey, value);
+    kpiStyleNotifier.value = value;
+  }
+
+  static Future<String> loadChartStyleId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_chartStyleKey) ?? defaultChartStyle;
+    final valid = StreamChartStyleId.values.any((e) => e.name == value);
+    final result = valid ? value : defaultChartStyle;
+    chartStyleNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveChartStyleId(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_chartStyleKey, value);
+    chartStyleNotifier.value = value;
+  }
+
   static Future<void> clearForReset() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_showNotesKey);
@@ -152,5 +208,8 @@ class PreferencesService {
     await prefs.remove(_categoryLayoutKey);
     await prefs.remove(_movementsViewModeKey);
     await prefs.remove(_currencyKey);
+    await prefs.remove(_themeIdKey);
+    await prefs.remove(_kpiStyleKey);
+    await prefs.remove(_chartStyleKey);
   }
 }

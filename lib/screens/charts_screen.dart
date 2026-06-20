@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
@@ -98,19 +99,20 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
   Widget _buildSectionChip(_ChartSection value, IconData icon, String label) {
     final selected = _section == value;
+    final p = context.$palette;
     return FilterChip(
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: selected ? Colors.white : StreamColors.textSecondary),
+          Icon(icon, size: 16, color: selected ? Colors.white : p.textSecondary),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 13, color: selected ? Colors.white : StreamColors.textSecondary)),
+          Text(label, style: TextStyle(fontSize: 13, color: selected ? Colors.white : p.textSecondary)),
         ],
       ),
       selected: selected,
       onSelected: (_) => setState(() => _section = value),
-      selectedColor: StreamColors.primary,
-      backgroundColor: StreamColors.surfaceElevated,
+      selectedColor: p.primary,
+      backgroundColor: p.surfaceElevated,
       showCheckmark: false,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -401,6 +403,7 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -411,12 +414,11 @@ class _LegendRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 10, height: 10,
+                  Container(width: 10, height: 10,
                     decoration: BoxDecoration(color: colors[i], borderRadius: BorderRadius.circular(2)),
                   ),
                   const SizedBox(width: 4),
-                  Text(labels[i], style: TextStyle(fontSize: 11, color: StreamColors.textSecondary)),
+                  Text(labels[i], style: TextStyle(fontSize: 11, color: p.textSecondary)),
                 ],
               ),
             );

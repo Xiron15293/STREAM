@@ -66,6 +66,10 @@
 | V0.10 | Grafici Tab — Analytics Hub (4 sezioni, metriche pure, fl_chart) | ✅ COMPLETATO | 2026-06-19 |
 | V0.10.1 | Chart Readability Fix (barre orizzontali, valori precisi, label leggibili, chip/pill scrollabili) | ✅ COMPLETATO | 2026-06-19 |
 | V0.10.1c | Donut Charts + Extra Analytics + Chart Scroll UX | ✅ COMPLETATO | 2026-06-20 |
+| V0.11 | Theme, KPI & Chart Style System (foundation) | ✅ COMPLETATO | 2026-06-20 |
+| V0.11b | Apply Theme to Widgets + KPI + Charts | ✅ COMPLETATO | 2026-06-20 |
+| V0.11c | Real Chart Styles (soft/technical/highContrast/editorial) | ✅ COMPLETATO | 2026-06-20 |
+| V0.11d | Real KPI Styles (minimal/dense/glass/outline/solid/split) | ✅ COMPLETATO | 2026-06-20 |
 
 ## Approvate / Future (V0.11+)
 
