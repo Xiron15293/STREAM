@@ -11,6 +11,8 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/charts_screen.dart';
 import 'package:stream_app/utils/analytics_metrics.dart';
+import 'package:stream_app/widgets/charts/stream_donut_chart.dart';
+import 'package:stream_app/data/preferences_service.dart';
 
 void main() {
   setUpAll(() {
@@ -331,6 +333,102 @@ void main() {
       final result = buildQuotaSaldoSeries(db.accounts, db);
       expect(result, isNotEmpty);
       expect(result.first.label, isNotEmpty);
+    });
+  });
+
+  group('Donut chart geometry & order', () {
+    test('buildMovementTypeBreakdown returns slices in deterministic order', () {
+      final now = DateTime(2026, 6, 15);
+      final filter = TimeFilter.month(2026, 6);
+      final movements = [
+        Movement(id: '1', title: 'Inc', amount: 100, type: MovementType.income, date: now, categoryId: 'inc_1', createdAt: now),
+        Movement(id: '2', title: 'Exp', amount: 50, type: MovementType.expense, date: now, categoryId: 'exp_1', createdAt: now),
+        Movement(id: '3', title: 'Trf', amount: 30, type: MovementType.transfer, date: now, categoryId: '', createdAt: now),
+      ];
+      final result = buildMovementTypeBreakdown(movements, filter);
+      expect(result.length, 3);
+      expect(result[0].label, 'Entrate');
+      expect(result[1].label, 'Uscite');
+      expect(result[2].label, 'Trasferimenti');
+    });
+
+    testWidgets('StreamDonutChart render has no internal percentage titles', (tester) async {
+      final slices = [
+        const DonutSlice(label: 'A', value: 50, color: Colors.red),
+        const DonutSlice(label: 'B', value: 30, color: Colors.green),
+        const DonutSlice(label: 'C', value: 20, color: Colors.blue),
+      ];
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: StreamDonutChart(slices: slices))));
+      await tester.pumpAndSettle();
+      // Verify legend shows external percentages
+      expect(find.text('50.0%'), findsOneWidget);
+      expect(find.text('30.0%'), findsOneWidget);
+      expect(find.text('20.0%'), findsOneWidget);
+    });
+
+    testWidgets('StreamDonutChart legend shows percentages matching input order', (tester) async {
+      final slices = [
+        const DonutSlice(label: 'Pippo', value: 50, color: Colors.red),
+        const DonutSlice(label: 'Pluto', value: 30, color: Colors.green),
+        const DonutSlice(label: 'Paperino', value: 20, color: Colors.blue),
+      ];
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: StreamDonutChart(slices: slices))));
+      await tester.pumpAndSettle();
+      // Legend order must match slice input order
+      final legendItems = tester.widgetList<Text>(find.byType(Text)).toList();
+      final legendTexts = legendItems.map((t) => t.data).whereType<String>().toList();
+      expect(legendTexts.any((t) => t.contains('Pippo')), true);
+      expect(legendTexts.any((t) => t.contains('Pluto')), true);
+      expect(legendTexts.any((t) => t.contains('Paperino')), true);
+    });
+
+    testWidgets('buildMovementTypeBreakdown renders legend with correct percentages', (tester) async {
+      final sliceData = buildMovementTypeBreakdown([
+        Movement(id: '1', title: 'Inc', amount: 100, type: MovementType.income,
+          date: DateTime(2026, 6, 15), categoryId: 'inc_1', createdAt: DateTime(2026, 6, 15)),
+        Movement(id: '2', title: 'Exp', amount: 50, type: MovementType.expense,
+          date: DateTime(2026, 6, 15), categoryId: 'exp_1', createdAt: DateTime(2026, 6, 15)),
+      ], TimeFilter.month(2026, 6));
+      expect(sliceData, hasLength(2));
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: StreamDonutChart(slices: sliceData))));
+      await tester.pumpAndSettle();
+      expect(find.byType(StreamDonutChart), findsOneWidget);
+      // Legend shows percentage text (rendered as Flutter Text widget)
+      expect(find.text('66.7%'), findsOneWidget);
+      expect(find.text('33.3%'), findsOneWidget);
+    });
+  });
+
+  group('Chart visibility preferences', () {
+    test('isChartVisible returns true by default', () {
+      PreferencesService.hiddenChartIdsNotifier.value = {};
+      expect(PreferencesService.isChartVisible('movements_type_distribution'), true);
+      expect(PreferencesService.isChartVisible('movements_cashflow'), true);
+      expect(PreferencesService.isChartVisible('nonexistent'), true);
+    });
+
+    test('hidden chart returns false', () async {
+      PreferencesService.hiddenChartIdsNotifier.value = {'movements_type_distribution'};
+      expect(PreferencesService.isChartVisible('movements_type_distribution'), false);
+      // Reset for other tests
+      PreferencesService.hiddenChartIdsNotifier.value = {};
+    });
+
+    testWidgets('all charts hidden shows empty state', (tester) async {
+      PreferencesService.hiddenChartIdsNotifier.value = {
+        'movements_cashflow', 'movements_daily_count', 'movements_type_distribution',
+        'movements_top_spending_days', 'movements_weekday_costs', 'movements_avg_daily_spend',
+      };
+      addTearDown(() => PreferencesService.hiddenChartIdsNotifier.value = {});
+      final db = AppDatabase();
+      final now = DateTime.now();
+      await db.addMovement(Movement(
+        id: 'm1', title: 'Test', amount: 10, type: MovementType.expense,
+        date: now, categoryId: 'exp_1', createdAt: now,
+      ));
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: ChartsScreen(db: db))));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Nessun grafico attivo'), findsOneWidget);
     });
   });
 

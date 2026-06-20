@@ -35,7 +35,8 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - **Chart palette effettiva** calcolata in `StreamTheme.build()` con chart style, ascoltata da `StreamApp`
 - **Budget non implementato**, resta futuro
 - **V0.11g**: donut outside labels + leader lines, chart visibility preferences (registry, hiddenChartIds, settings sheet)
-- **1015 test totali**, tutti verdi
+- **V0.11g-fix3**: sectionsSpace alignment (2° gap tra slice ora considerato), collision avoidance, pure layout function
+- **1022 test totali**, tutti verdi
 
 ## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
 

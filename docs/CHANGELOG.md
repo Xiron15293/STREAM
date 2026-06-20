@@ -86,6 +86,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Allineamento: label a destra se coseno >= 0 (lato destro), label a sinistra se coseno < 0 (lato sinistro)
   - Soglia `_minExternalLabelPercent` = 4%: slice sotto il 4% mostrano solo leader line, la percentuale solo in legenda
   - Legenda laterale: mantiene nome + percentuale + valore formattato
+
+- **V0.11g-fix2+3** — Donut angle mapping fix
+  - Singola sorgente `_computeSliceData()` con `_SliceGeometry` usata per PieChart, legenda e painter
+  - `startDegreeOffset: -90` su `PieChartData` per allineare con il painter (entrambi partono da -90° = 12 in alto)
+  - Eliminata lista parallela `_SliceLabel`, sostituita da `sliceData` unica
+  - `_LegendColumn` estratto come widget separato, riceve `sliceData` invece di ricalcolare
+  - Bug risolto: leader line e label percentuale ora puntano alla fetta/colore corretto
+  - Tutti i donut/pie chart della tab Grafici usano lo stesso widget (`StreamDonutChart`)
+  - Chart registry: `chartRegistry` con ID stabili per ogni grafico
+  - `PreferencesService`: `hiddenChartIdsNotifier`, `setChartVisible()`, `isChartVisible()`, `resetChartVisibility()`, `loadHiddenChartIds()`
+  - `ChartsScreen`: icona `Icons.tune` in AppBar con key `charts_settings_button`
+  - `_ChartVisibilitySheet`: bottom sheet con `SwitchListTile` per ogni grafico, sezioni Movimenti/Categorie/Conti/Beneficiari, "Mostra tutti" e "Ripristina predefiniti"
+  - Filtraggio: se una sezione non ha grafici visibili, mostra `_noVisibleCharts()` con empty state tappabile
+  - Nessuna modifica DB, analytics/calcoli invariati
+
+- **V0.11g-fix3 — Leader Lines Mapping Collision Fix**
+  - Causa identificata: `sectionsSpace: 2` (2 gradi tra sezioni) non era considerato in `_computeSliceData()`, causando shift cumulativo delle label rispetto alle fette reali: con 7 sezioni, l'ultima fetta aveva 12° di disallineamento
+  - `_computeSliceData()` ora accumula `_sectionsSpaceRad` tra le sezioni, allineando gli angoli del painter con fl_chart
+  - Collision avoidance implementata: label separate per lato (dx >= 0 / dx < 0), ordinate per y, distanza minima 16px tra label adiacenti
+  - `_layoutLabels()` funzione pura per testabilità
+  - “Distribuzione tipo movimento” già migrata a `StreamDonutChart` (nessuna percentuale interna, leader lines esterne)
+  - Legenda mostra tutte le slice (incluse quelle sotto soglia 4%)
+  - Nuovi test: ordine slice deterministico, verifica percentuali legenda, collision avoidance (layout), visibilità grafici, empty state
+  - `flutter analyze` pulito, `flutter test` 1022 test tutti verdi
+  - Nessuna modifica DB, analytics/calcoli, backup/restore, import/export
+  - Singola sorgente `_computeSliceData()` con `_SliceGeometry` usata per PieChart, legenda e painter
+  - `startDegreeOffset: -90` su `PieChartData` per allineare con il painter (entrambi partono da -90° = 12 in alto)
+  - Eliminata lista parallela `_SliceLabel`, sostituita da `sliceData` unica
+  - `_LegendColumn` estratto come widget separato, riceve `sliceData` invece di ricalcolare
+  - Bug risolto: leader line e label percentuale ora puntano alla fetta/colore corretto
+  - Tutti i donut/pie chart della tab Grafici usano lo stesso widget (`StreamDonutChart`)
   - Chart registry: `chartRegistry` con ID stabili per ogni grafico
   - `PreferencesService`: `hiddenChartIdsNotifier`, `setChartVisible()`, `isChartVisible()`, `resetChartVisibility()`, `loadHiddenChartIds()`
   - `ChartsScreen`: icona `Icons.tune` in AppBar con key `charts_settings_button`

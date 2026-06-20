@@ -105,6 +105,8 @@
 - Label posizionata a destra della lineetta se lato destro, a sinistra se lato sinistro.
 - Soglia `_minExternalLabelPercent = 4%`: slice sotto 4% mostrano solo lineetta, percentuale solo in legenda.
 - Legenda a destra: dot + label + percentuale + valore. Totale centrale mantenuto.
+- Fix V0.11g-fix2+3: singola sorgente `_computeSliceData()` con `_SliceGeometry` per PieChart, legenda e painter. `startDegreeOffset: -90` allineato. Bug mapping slice → leader line risolto.
+- Fix V0.11g-fix3: `sectionsSpace: 2` ora incluso nel calcolo angoli (`_sectionsSpaceRad`). Collision avoidance: `_layoutLabels()` separa label destra/sinistra, ordina per y, gap minimo 16px. `_minExternalLabelPercent = 4%` invariato. 1022 test totali.
 
 **TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
 
