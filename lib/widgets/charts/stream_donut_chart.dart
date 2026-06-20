@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import '../../utils/analytics_metrics.dart';
+import '../../utils/currency_formatter.dart';
 
 class StreamDonutChart extends StatelessWidget {
   final List<DonutSlice> slices;
@@ -36,21 +37,42 @@ class StreamDonutChart extends StatelessWidget {
       children: [
         Expanded(
           flex: 3,
-          child: PieChart(
-            PieChartData(
-              sections: spent.map((s) {
-                final pct = (s.value / total * 100);
-                return PieChartSectionData(
-                  value: s.value,
-                  title: '${pct.toStringAsFixed(1)}%',
-                  color: s.color,
-                  radius: 50,
-                  titleStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
-                );
-              }).toList(),
-              centerSpaceRadius: 30,
-              sectionsSpace: 2,
-            ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              PieChart(
+                PieChartData(
+                  sections: spent.map((s) {
+                    final pct = (s.value / total * 100);
+                    return PieChartSectionData(
+                      value: s.value,
+                      title: '${pct.toStringAsFixed(1)}%',
+                      color: s.color,
+                      radius: 50,
+                      titleStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
+                    );
+                  }).toList(),
+                  centerSpaceRadius: 30,
+                  sectionsSpace: 2,
+                  pieTouchData: PieTouchData(enabled: false),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _fmtCenter(total),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: StreamColors.textPrimary),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  Text(
+                    'Totale',
+                    style: TextStyle(fontSize: 8, color: StreamColors.textSecondary),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         const SizedBox(width: StreamSpacing.md),
@@ -63,27 +85,40 @@ class StreamDonutChart extends StatelessWidget {
               final pct = (s.value / total * 100);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: s.color,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: s.color,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            s.label,
+                            style: TextStyle(fontSize: 10, color: StreamColors.textSecondary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${pct.toStringAsFixed(1)}%',
+                          style: TextStyle(fontSize: 10, color: StreamColors.textPrimary, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
                       child: Text(
-                        s.label,
-                        style: TextStyle(fontSize: 11, color: StreamColors.textSecondary),
+                        formatMovementCurrency(s.value, showPositiveSign: false),
+                        style: TextStyle(fontSize: 9, color: StreamColors.textMuted),
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      '${pct.toStringAsFixed(1)}%',
-                      style: TextStyle(fontSize: 11, color: StreamColors.textPrimary, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -93,5 +128,9 @@ class StreamDonutChart extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  static String _fmtCenter(double v) {
+    return formatMovementCurrency(v, showPositiveSign: false);
   }
 }

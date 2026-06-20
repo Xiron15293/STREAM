@@ -56,6 +56,7 @@ class StreamHorizontalBarChart extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (legendLabel1 != null || legendLabel2 != null)
           Padding(
@@ -76,33 +77,25 @@ class StreamHorizontalBarChart extends StatelessWidget {
               ],
             ),
           ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: bars.length,
-            itemExtent: barHeight + 8,
-            itemBuilder: (context, index) {
-              final bar = bars[index];
-              final pct = maxVal > 0 ? (bar.value.abs() / maxVal) : 0.0;
-              final secondaryPct = maxVal > 0 && bar.secondaryValue != null
-                  ? (bar.secondaryValue!.abs() / maxVal)
-                  : 0.0;
-
-              return _SingleHorizontalBar(
-                label: bar.label,
-                value: bar.value,
-                formattedValue: bar.formattedValue,
-                barColor: bar.barColor,
-                pct: pct,
-                secondaryValue: bar.secondaryValue,
-                secondaryFormattedValue: bar.secondaryFormattedValue,
-                secondaryColor: bar.secondaryColor,
-                secondaryPct: secondaryPct,
-                barHeight: barHeight,
-                maxVal: maxVal,
-              );
-            },
-          ),
-        ),
+        ...bars.map((bar) {
+          final pct = maxVal > 0 ? (bar.value.abs() / maxVal) : 0.0;
+          final secondaryPct = maxVal > 0 && bar.secondaryValue != null
+              ? (bar.secondaryValue!.abs() / maxVal)
+              : 0.0;
+          return _SingleHorizontalBar(
+            label: bar.label,
+            value: bar.value,
+            formattedValue: bar.formattedValue,
+            barColor: bar.barColor,
+            pct: pct,
+            secondaryValue: bar.secondaryValue,
+            secondaryFormattedValue: bar.secondaryFormattedValue,
+            secondaryColor: bar.secondaryColor,
+            secondaryPct: secondaryPct,
+            barHeight: barHeight,
+            maxVal: maxVal,
+          );
+        }),
       ],
     );
   }

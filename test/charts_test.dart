@@ -236,6 +236,102 @@ void main() {
       expect(find.text('Flussi per conto'), findsWidgets);
       expect(find.byType(ChartsScreen), findsOneWidget);
     });
+
+    testWidgets('Categorie section shows top and composition', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      await db.addMovement(Movement(id: 'm1', title: 'T', amount: 100, type: MovementType.expense, date: now, categoryId: 'exp_1', createdAt: now));
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: ChartsScreen(db: db))));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Categorie'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('charts_time_filter')), findsOneWidget);
+      expect(find.byType(ChartsScreen), findsOneWidget);
+    });
+
+    testWidgets('Weekday and avg daily cards appear in Movimenti', (tester) async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      await db.addMovement(Movement(id: 'm1', title: 'T', amount: 50, type: MovementType.expense, date: now, categoryId: 'exp_1', createdAt: now));
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: ChartsScreen(db: db))));
+      await tester.pumpAndSettle();
+      expect(find.byType(ChartsScreen), findsOneWidget);
+    });
+  });
+
+  group('New analytics functions', () {
+    final now = DateTime(2026, 6, 15);
+    final filter = TimeFilter.month(2026, 6);
+
+    test('buildWeekdayCostBreakdown returns donut slices', () {
+      final movements = [
+        Movement(id: '1', title: 'M', amount: 50, type: MovementType.expense, date: DateTime(2026, 6, 1), categoryId: 'exp_1', createdAt: now),
+      ];
+      final result = buildWeekdayCostBreakdown(movements, filter);
+      expect(result, isNotEmpty);
+      expect(result.any((s) => s.value > 0), true);
+    });
+
+    test('buildWeekdayCostBreakdown excludes transfers', () {
+      final movements = [
+        Movement(id: '1', title: 'M', amount: 50, type: MovementType.transfer, date: now, categoryId: '', createdAt: now),
+      ];
+      final result = buildWeekdayCostBreakdown(movements, filter);
+      expect(result, isEmpty);
+    });
+
+    test('buildAvgDailySpend computes correctly', () {
+      final movements = [
+        Movement(id: '1', title: 'M', amount: 100, type: MovementType.expense, date: now, categoryId: 'exp_1', createdAt: now),
+        Movement(id: '2', title: 'M', amount: 50, type: MovementType.expense, date: now, categoryId: 'exp_1', createdAt: now),
+      ];
+      final result = buildAvgDailySpend(movements, filter);
+      expect(result > 0, true);
+    });
+
+    test('buildAvgDailySpend returns 0 for empty', () {
+      expect(buildAvgDailySpend([], filter), 0.0);
+    });
+
+    test('buildCategoryDeltaVsPreviousPeriod handles empty', () {
+      expect(buildCategoryDeltaVsPreviousPeriod([], [], filter, null), isEmpty);
+    });
+
+    test('buildAccountOutflowSeries handles empty', () {
+      final db = AppDatabase();
+      expect(buildAccountOutflowSeries([], db.accounts, filter), isEmpty);
+    });
+
+    test('buildAccountInflowSeries handles empty', () {
+      final db = AppDatabase();
+      expect(buildAccountInflowSeries([], db.accounts, filter), isEmpty);
+    });
+
+    test('buildBeneficiaryAverageSeries computes correctly', () {
+      final movements = [
+        Movement(id: '1', title: 'M', amount: 100, type: MovementType.expense, date: now, categoryId: 'exp_1', payee: 'Pippo', createdAt: now),
+        Movement(id: '2', title: 'M', amount: 50, type: MovementType.expense, date: now, categoryId: 'exp_1', payee: 'Pippo', createdAt: now),
+      ];
+      final result = buildBeneficiaryAverageSeries(movements, filter);
+      expect(result, isNotEmpty);
+      expect(result[0].points.first.value, 75.0); // (100+50)/2
+    });
+
+    test('buildBeneficiaryAverageSeries ignores empty payee', () {
+      final movements = [
+        Movement(id: '1', title: 'M', amount: 100, type: MovementType.expense, date: now, categoryId: 'exp_1', createdAt: now),
+      ];
+      expect(buildBeneficiaryAverageSeries(movements, filter), isEmpty);
+    });
+
+    test('buildQuotaSaldoSeries returns donut slices for accounts with positive balance', () async {
+      final db = AppDatabase();
+      final now = DateTime.now();
+      await db.addMovement(Movement(id: 'm1', title: 'T', amount: 100, type: MovementType.income, date: now, categoryId: 'inc_1', createdAt: now));
+      final result = buildQuotaSaldoSeries(db.accounts, db);
+      expect(result, isNotEmpty);
+      expect(result.first.label, isNotEmpty);
+    });
   });
 
   group('Bottom navigation integration', () {

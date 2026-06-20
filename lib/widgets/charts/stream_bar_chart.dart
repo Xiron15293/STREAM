@@ -28,18 +28,7 @@ class StreamBarChart extends StatelessWidget {
         alignment: BarChartAlignment.spaceAround,
         maxY: maxVal * 1.2,
         minY: 0,
-        barTouchData: BarTouchData(
-          enabled: true,
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final label = allLabels[group.x.toInt()];
-              return BarTooltipItem(
-                '$label\n${rod.toY.toStringAsFixed(1)} €',
-                TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-              );
-            },
-          ),
-        ),
+        barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(
           show: true,
           bottomTitles: AxisTitles(
