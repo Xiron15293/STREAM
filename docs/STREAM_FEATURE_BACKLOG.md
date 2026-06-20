@@ -70,14 +70,36 @@
 
 ## Priorità prossime
 
-1. V0.9.0 — Beneficiary detail direct edit entry + manual QA closure
-2. V0.9.1 — Notes & Tags
-3. V0.9.2 — Dashboard recalcolo + tabella editor
-4. Subcategories Analytics (Budget/Actual/Scenari)
+1. V0.11j — Advanced Chart Styles (automatic/soft/technical/highContrast/editorial)
+2. V0.9.0 — Beneficiary detail direct edit entry + manual QA closure
+3. V0.9.1 — Notes & Tags
+4. V0.9.2 — Dashboard recalcolo + tabella editor
+5. Subcategories Analytics (Budget/Actual/Scenari)
 
 ---
 
 ## 2. Feature approvate (📋)
+
+### V0.11j — Advanced Chart Styles 📋 DA IMPLEMENTARE
+
+| Campo | Valore |
+|-------|--------|
+| **Descrizione** | Introdurre 5 stili grafici selezionabili (automatic, soft, technical, highContrast, editorial) via preferenza utente in PreferencesService. Mantenere V0.11g donut leader lines e V0.11h adaptive palette. Nessuna modifica analytics/calcoli. |
+| **Priorità** | Alta (prossimo sprint consigliato) |
+| **Dipendenze** | V0.11h (adaptive palette), V0.11g (leader lines fix), V0.11i (categories cleanup) |
+| **Versione candidata** | V0.11j |
+| **Stato** | 📋 DA IMPLEMENTARE |
+
+**Sotto-feature:**
+1. PreferencesService: nuovo chartStyleId avanzato (enum StreamChartAdvancedStyleId)
+2. Settings: opzione per selezionare stile grafico (UI utente)
+3. StreamChartPalette.applyStyle() da estendere per i 5 nuovi stili
+4. Applicazione stile a tutti i grafici (bar, donut, pie, horizontal bar)
+5. Mantenere automatic come default
+
+**Test richiesti:** ~10-15 test (preferenza, applicazione stile, regressione grafici V0.11g/V0.11h)
+
+**Rischio tecnico:** BASSO-MEDIO — solo UI/preferenze, nessuna modifica analytics
 
 ### F12 — V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker ✅ COMPLETATA
 

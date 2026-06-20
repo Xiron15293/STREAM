@@ -201,6 +201,7 @@ Future<void> _showDeleteCategoryDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (context, setState) {
+        final p = context.$palette;
         final reassignBlockedReason = quickCount > 0 || favoriteCount > 0
             ? 'La riassegnazione elimina la categoria solo quando non ci sono rapidi o preferiti collegati.'
             : destinationOptions.isEmpty
@@ -233,7 +234,7 @@ Future<void> _showDeleteCategoryDialog(
                   Text(
                     'Le sottocategorie collegate verranno rimosse e i movimenti passeranno senza sottocategoria se non compatibile.',
                     style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                 ],
@@ -262,7 +263,7 @@ Future<void> _showDeleteCategoryDialog(
                   Text(
                     reassignBlockedReason,
                     style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                 ] else ...[
@@ -270,7 +271,7 @@ Future<void> _showDeleteCategoryDialog(
                   Text(
                     'Archiviala o sposta/elimina prima gli elementi collegati.',
                     style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                 ],
@@ -425,6 +426,7 @@ void _showCategoryMergeDialog(
     builder: (ctx) {
       return StatefulBuilder(
         builder: (context, setDialogState) {
+          final p = context.$palette;
           final sameTypeCats =
               db.categories
                   .where(
@@ -492,7 +494,7 @@ void _showCategoryMergeDialog(
                     'La categoria sorgente verrà archiviata, non eliminata.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                   if (movCount > 0 || quickCount > 0 || favCount > 0) ...[
@@ -628,7 +630,7 @@ void _showCategoryMergeDialog(
                       'Scegli cosa fare di ogni sottocategoria di "${sourceCategory.name}"',
                       style: TextStyle(
                         fontSize: 12,
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -772,7 +774,7 @@ void _showCategoryMergeDialog(
                       key: const Key('category_merge_preview'),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: StreamColors.surfaceElevated,
+                        color: p.surfaceElevated,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -891,6 +893,7 @@ void _showSubcategoryMergeDialog(
     builder: (ctx) {
       return StatefulBuilder(
         builder: (context, setDialogState) {
+          final p = context.$palette;
           final sameTypeCats =
               db.categories
                   .where(
@@ -958,7 +961,7 @@ void _showSubcategoryMergeDialog(
                     'La sottocategoria sorgente verrà archiviata, non eliminata.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                   if (movCount > 0 || quickCount > 0 || favCount > 0) ...[
@@ -1086,7 +1089,7 @@ void _showSubcategoryMergeDialog(
                       key: const Key('subcategory_merge_preview'),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: StreamColors.surfaceElevated,
+                        color: p.surfaceElevated,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -1142,41 +1145,43 @@ void _showSubcategoryMergeDialog(
 void _showMergeReport(BuildContext context, CategoryMergeReport report) {
   showDialog(
     context: context,
-    builder: (ctx) => AlertDialog(
-      key: const Key('category_merge_report'),
-      title: Text(
-        report.sourceType == 'subcategory'
-            ? 'Unione sottocategoria completata'
-            : 'Unione categoria completata',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (report.warnings.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: StreamColors.warning.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: report.warnings
-                    .map(
-                      (w) => Text(
-                        w,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: StreamColors.warning,
+    builder: (ctx) {
+      final p = ctx.$palette;
+      return AlertDialog(
+        key: const Key('category_merge_report'),
+        title: Text(
+          report.sourceType == 'subcategory'
+              ? 'Unione sottocategoria completata'
+              : 'Unione categoria completata',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (report.warnings.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: p.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: report.warnings
+                      .map(
+                        (w) => Text(
+                          w,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: p.warning,
+                          ),
                         ),
-                      ),
-                    )
-                    .toList(),
+                      )
+                      .toList(),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-          ],
+              const SizedBox(height: 12),
+            ],
           if (report.sourceType == 'subcategory') ...[
             _reportRow('Categoria sorgente', report.sourceCategoryName),
             _reportRow(
@@ -1242,7 +1247,7 @@ void _showMergeReport(BuildContext context, CategoryMergeReport report) {
                     ' • ${d.subcategoryName}: $actionLabel',
                     style: TextStyle(
                       fontSize: 12,
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                 );
@@ -1271,8 +1276,9 @@ void _showMergeReport(BuildContext context, CategoryMergeReport report) {
           child: const Text('OK'),
         ),
       ],
-    ),
-  );
+    );
+  },
+);
 }
 
 class CategoriesScreen extends StatefulWidget {
@@ -1755,6 +1761,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     List<Category> archived,
     List<Movement> periodTypeMovements,
   ) {
+    final p = context.$palette;
     return CustomScrollView(
       key: const Key('categories_layout_stream_cards'),
       slivers: [
@@ -1806,7 +1813,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 child: Text(
                   'Archiviate (${archived.length})',
                   style: StreamTypography.captionBold.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
               ),
@@ -1842,7 +1849,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 child: Text(
                   'Nessuna categoria',
                   style: StreamTypography.body.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
               ),
@@ -2462,6 +2469,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
+        final p = context.$palette;
         final currentExisting = _currentExisting;
         return AlertDialog(
           title: Text(
@@ -2503,14 +2511,14 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                       Icon(
                         Icons.info_outline,
                         size: 14,
-                        color: StreamColors.warning,
+                        color: p.warning,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         _typeLockMessage!,
                         style: TextStyle(
                           fontSize: 12,
-                          color: StreamColors.warning,
+                          color: p.warning,
                         ),
                       ),
                     ],
@@ -2523,7 +2531,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                     Text(
                       'Icona',
                       style: StreamTypography.caption.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                     ),
                     GestureDetector(
@@ -2531,13 +2539,13 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: StreamColors.surfaceElevated,
+                          color: p.surfaceElevated,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(previewIcon, size: 20, color: Colors.white),
+                            Icon(previewIcon, size: 20, color: p.textPrimary),
                             const SizedBox(width: 8),
                             Text(
                               StreamIconLibrary.getLabel(_iconKey),
@@ -2547,7 +2555,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                             Icon(
                               Icons.chevron_right,
                               size: 16,
-                              color: StreamColors.textMuted,
+                              color: p.textMuted,
                             ),
                           ],
                         ),
@@ -2559,7 +2567,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                 Text(
                   'Colore',
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2574,10 +2582,10 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                     key: const Key('category_convert_to_subcategory_hint'),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: StreamColors.surfaceElevated,
+                      color: p.surfaceElevated,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: StreamColors.textMuted.withValues(alpha: 0.3),
+                        color: p.textMuted.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -2585,7 +2593,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                         Icon(
                           Icons.merge_type,
                           size: 18,
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -2593,7 +2601,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                             'Questa categoria può essere convertita in sottocategoria.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: StreamColors.textSecondary,
+                              color: p.textSecondary,
                             ),
                           ),
                         ),
@@ -2762,6 +2770,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
+        final p = context.$palette;
         final fresh = widget.db.getSubcategoriesForCategory(widget.categoryId);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2772,7 +2781,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                 Text(
                   'Sottocategorie (${fresh.length})',
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
                 TextButton.icon(
@@ -2789,7 +2798,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                 child: Text(
                   'Nessuna sottocategoria',
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textMuted,
+                    color: p.textMuted,
                   ),
                 ),
               )
@@ -2821,7 +2830,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                         child: Text(
                           sub.name,
                           style: TextStyle(
-                            color: sub.archived ? StreamColors.textMuted : null,
+                            color: sub.archived ? p.textMuted : null,
                             decoration: sub.archived
                                 ? TextDecoration.lineThrough
                                 : null,
@@ -2834,7 +2843,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                           icon: Icon(
                             Icons.archive_outlined,
                             size: 18,
-                            color: StreamColors.textMuted,
+                            color: p.textMuted,
                           ),
                           onPressed: () => _archiveSubcategory(sub.id),
                           tooltip: 'Archivia',
@@ -2846,7 +2855,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                           icon: Icon(
                             Icons.unarchive_outlined,
                             size: 18,
-                            color: StreamColors.textMuted,
+                            color: p.textMuted,
                           ),
                           onPressed: () => _restoreSubcategory(sub.id),
                           tooltip: 'Ripristina',
@@ -2858,7 +2867,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                           icon: Icon(
                             Icons.merge,
                             size: 18,
-                            color: StreamColors.textMuted,
+                            color: p.textMuted,
                           ),
                           onPressed: () => _showSubcategoryMergeDialog(
                             context,
@@ -2873,7 +2882,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                         icon: Icon(
                           Icons.edit_outlined,
                           size: 18,
-                          color: StreamColors.textMuted,
+                          color: p.textMuted,
                         ),
                         onPressed: () => _showSubcategoryFormDialog(sub),
                         tooltip: 'Modifica',
@@ -2884,7 +2893,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                         icon: Icon(
                           Icons.delete_outline,
                           size: 18,
-                          color: StreamColors.expense,
+                          color: p.expense,
                         ),
                         onPressed: () => _confirmDeleteSubcategory(sub),
                         tooltip: 'Elimina',
@@ -2923,25 +2932,28 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminare sottocategoria?'),
-        content: Text(
-          total > 0
-              ? 'I movimenti associati$summary verranno spostati nella categoria madre.'
-              : 'La sottocategoria "${sub.name}" sarà eliminata definitivamente.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+      builder: (ctx) {
+        final p = ctx.$palette;
+        return AlertDialog(
+          title: const Text('Eliminare sottocategoria?'),
+          content: Text(
+            total > 0
+                ? 'I movimenti associati$summary verranno spostati nella categoria madre.'
+                : 'La sottocategoria "${sub.name}" sarà eliminata definitivamente.',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: p.expense),
+              child: const Text('Elimina'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
     if (total > 0) {
@@ -2952,6 +2964,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
     setState(() {});
   }
 }
+
 
 class _SubcategoryFormDialog extends StatefulWidget {
   final AppDatabase db;
@@ -3036,25 +3049,28 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
   Future<void> _confirmDelete({required bool cascade}) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminare sottocategoria?'),
-        content: Text(
-          cascade
-              ? 'I movimenti associati verranno spostati nella categoria madre.'
-              : 'La sottocategoria "${_sub.name}" sarà eliminata definitivamente.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annulla'),
+      builder: (ctx) {
+        final p = ctx.$palette;
+        return AlertDialog(
+          title: const Text('Eliminare sottocategoria?'),
+          content: Text(
+            cascade
+                ? 'I movimenti associati verranno spostati nella categoria madre.'
+                : 'La sottocategoria "${_sub.name}" sarà eliminata definitivamente.',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: StreamColors.expense),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: p.expense),
+              child: const Text('Elimina'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
     if (cascade) {
@@ -3068,6 +3084,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return AlertDialog(
       title: const Text('Modifica sottocategoria'),
       content: SingleChildScrollView(
@@ -3088,7 +3105,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
                   Icon(
                     Icons.info_outline,
                     size: 14,
-                    color: StreamColors.warning,
+                    color: p.warning,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -3096,7 +3113,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
                       _buildMovementSummary(),
                       style: TextStyle(
                         fontSize: 12,
-                        color: StreamColors.warning,
+                        color: p.warning,
                       ),
                     ),
                   ),
@@ -3129,7 +3146,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
                 icon: const Icon(Icons.delete_outline, size: 18),
                 onPressed: () => _confirmDelete(cascade: _totalCount > 0),
                 style: TextButton.styleFrom(
-                  foregroundColor: StreamColors.expense,
+                  foregroundColor: p.expense,
                 ),
                 label: Text(
                   _totalCount > 0
@@ -3155,7 +3172,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
                 icon: const Icon(Icons.delete_outline, size: 18),
                 onPressed: () => _confirmDelete(cascade: _totalCount > 0),
                 style: TextButton.styleFrom(
-                  foregroundColor: StreamColors.expense,
+                  foregroundColor: p.expense,
                 ),
                 label: Text(
                   _totalCount > 0
@@ -3193,6 +3210,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final previewIcon = StreamIconLibrary.getIcon(iconKey);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3203,7 +3221,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
             Text(
               'Icona',
               style: StreamTypography.caption.copyWith(
-                color: StreamColors.textSecondary,
+                color: p.textSecondary,
               ),
             ),
             GestureDetector(
@@ -3220,13 +3238,13 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: StreamColors.surfaceElevated,
+                  color: p.surfaceElevated,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(previewIcon, size: 20, color: Colors.white),
+                    Icon(previewIcon, size: 20, color: p.textPrimary),
                     const SizedBox(width: 8),
                     Text(
                       StreamIconLibrary.getLabel(iconKey),
@@ -3236,7 +3254,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
                     Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: StreamColors.textMuted,
+                      color: p.textMuted,
                     ),
                   ],
                 ),
@@ -3248,7 +3266,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
         Text(
           'Colore',
           style: StreamTypography.caption.copyWith(
-            color: StreamColors.textSecondary,
+            color: p.textSecondary,
           ),
         ),
         const SizedBox(height: 12),
@@ -3351,6 +3369,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
+        final p = context.$palette;
         final category = _category;
         final movements = _categoryMovements;
         final hasMovements = movements.isNotEmpty;
@@ -3378,7 +3397,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                           color: Color(category.color),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Icon(iconData, color: Colors.white, size: 22),
+                        child: Icon(iconData, color: StreamSurfaceTokens.onAccent(Color(category.color)), size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -3388,7 +3407,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                             Text(
                               'Movimenti categoria',
                               style: StreamTypography.captionBold.copyWith(
-                                color: StreamColors.textSecondary,
+                                color: p.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -3401,7 +3420,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                             Text(
                               '$typeLabel • ${category.archived ? 'Archiviata' : 'Attiva'}',
                               style: StreamTypography.caption.copyWith(
-                                color: StreamColors.textSecondary,
+                                color: p.textSecondary,
                               ),
                             ),
                           ],
@@ -3534,7 +3553,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                           child: Text(
                             'Nessun movimento in questo periodo',
                             style: StreamTypography.body.copyWith(
-                              color: StreamColors.textSecondary,
+                              color: p.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -3620,6 +3639,7 @@ class _CategoryPropagateStyleDialogState
   Widget build(BuildContext context) {
     return StatefulBuilder(
       builder: (context, setDialogState) {
+        final p = context.$palette;
         final allSelected = _selected.length == widget.subcategories.length;
         final noneSelected = _selected.isEmpty;
         return AlertDialog(
@@ -3633,7 +3653,7 @@ class _CategoryPropagateStyleDialogState
                 Text(
                   'Scegli a quali sottocategorie applicare il nuovo colore e la nuova icona:',
                   style: StreamTypography.caption.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -3676,7 +3696,7 @@ class _CategoryPropagateStyleDialogState
                             subtitle: Text(
                               _subtitleFor(sub),
                               style: StreamTypography.micro.copyWith(
-                                color: StreamColors.textMuted,
+                                color: p.textMuted,
                               ),
                             ),
                             value: _selected.contains(sub.id),
@@ -3774,11 +3794,12 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Container(
       width: 160,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: StreamColors.surfaceElevated,
+        color: p.surfaceElevated,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -3788,7 +3809,7 @@ class _StatChip extends StatelessWidget {
             label,
             key: labelKey,
             style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
+              color: p.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -3796,11 +3817,11 @@ class _StatChip extends StatelessWidget {
             value,
             key: valueKey,
             style: StreamTypography.amount.copyWith(
-              color: StreamColors.textPrimary,
+              color: p.textPrimary,
             ),
           ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 }

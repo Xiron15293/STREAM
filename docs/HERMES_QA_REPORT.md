@@ -28,11 +28,12 @@
 - V0.10.1c: +12 nuovi test (7 metriche pure, 3 integrazione, 2 composizione/ui)
 - V0.11 Theme System: +19 nuovi test (9 preferenze, 5 palette/build, 5 enum/fallback)
 - V0.11b Theme Applied: widget grafici migrati, Dashboard KPI migrata, helper context.streamTheme, fallback sicuro, 979 test invariati
-- V0.11c Real Chart Styles: chart_style effettivo in ThemeExtension, StreamApp ascolta chartStyleNotifier, 5 stili visibili (automatic/soft/technical/highContrast/editorial)
+- V0.11c Chart Style Foundation: chart_style plumbing in ThemeExtension, StreamApp ascolta chartStyleNotifier, palette adattiva per tema. NOTA: gli stili (automatic/soft/technical/highContrast/editorial) sono plumbing di palette — V0.11j renderà gli stili selezionabili dall'utente via PreferencesService
 - V0.11d Real KPI Styles: _KpiCard riscritto, ValueListenableBuilder in Dashboard, 6 KPI styles visibili (minimal/dense/glass/outline/solid/split), 990 test finali
 - V0.11g Chart Readability: donut outside labels (leader lines + TextPainter + left/right alignment + 4% threshold) + chart visibility preferences
 - V0.11g-fix2+3: single source slice data, startDegreeOffset -90 alignment, legend widget extraction, 1015 test finali
 - V0.11g-fix3: sectionsSpace alignment in angle calculation, collision avoidance (min 16px vertical gap), pure layout function, 1022 test finali
+- V0.11i: categories_screen.dart StreamColors 49→0, palette tema unificata, 1026 test finali
 - P0: 0 nuovi
 - P1: 0 nuovi
 - P2: 0 nuovi

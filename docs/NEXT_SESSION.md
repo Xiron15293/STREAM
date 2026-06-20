@@ -42,13 +42,14 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - **Budget non implementato**, resta futuro
 - **V0.11g**: donut outside labels + leader lines, chart visibility preferences (registry, hiddenChartIds, settings sheet)
 - **V0.11g-fix3**: sectionsSpace alignment (2° gap tra slice ora considerato), collision avoidance, pure layout function
-- **1022 test totali**, tutti verdi
+- **V0.11i**: categories_screen StreamColors 49→0, palette tema unificata, 1026 test verdi
+- **1026 test totali**, tutti verdi
 
 ## Focus consigliato
 
-1. Chiudere i residui `StreamColors` in `categories_screen.dart`
-2. Estendere lo stesso approccio theme-adaptive alle schermate legacy ancora fuori perimetro
-3. Pulire gli analyzer info storici in `categories_screen.dart`, `backup_screen.dart`, `database.dart`
+1. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService
+2. QA manuale su device reale per flussi più sensibili
+3. UI polish residui (accounts_screen, dashboard_screen) se non già coperti
 
 ## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
 
@@ -58,13 +59,13 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Hero `Patrimonio` è collegato allo stile KPI: `dense` è compatto, `minimal` è più arioso, `solid/outline/glass/split` hanno differenze visive reali
 - Verifica locale aggiornata: `flutter analyze` pulito sui file toccati; `flutter test` full suite **1015 pass / 1 skipped**
 - Residui `StreamColors` fuori scope sprint: `categories_screen.dart` (`77`), `accounts_screen.dart` (`24`), `dashboard_screen.dart` (`9`)
-- `Package.resolved` può comparire come deleted nel workspace iOS: non è stato corretto automaticamente in questa sessione
+- `Package.resolved` può comparire come deleted: ripristinare con `git restore ios/.../Package.resolved` se necessario
 
 ## Prossimo Sprint Consigliato
 
-1. **V0.12 — UI Polish / Migrazione StreamColors residui** con priorità su `categories_screen.dart`, residui `accounts_screen.dart` e residui `dashboard_screen.dart`
-2. Oppure **V0.12 — Budget Foundation** se decisione prodotto orientata a Budget
-3. QA manuale su device reale per flussi più sensibili
+1. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService, mantenendo V0.11g leader lines e V0.11h adaptive palette
+2. QA manuale su device reale per flussi più sensibili
+3. UI polish residui (accounts_screen, dashboard_screen) o Budget Foundation se priorità prodotto
 
 ## Regole Git
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../design/stream_theme_palette.dart';
 import '../models/category.dart';
@@ -382,7 +383,9 @@ class _MovementPanel extends StatelessWidget {
         child: Text(
           label,
           style: StreamTypography.micro.copyWith(
-            color: selected ? Colors.white : p.textSecondary,
+            color: selected
+                ? StreamSurfaceTokens.onAccent(p.primary)
+                : p.textSecondary,
           ),
         ),
       ),

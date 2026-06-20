@@ -111,6 +111,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Filtraggio: se una sezione non ha grafici visibili, mostra `_noVisibleCharts()` con empty state tappabile
   - Nessuna modifica DB, analytics/calcoli invariati
 
+- **V0.11i — Categories Legacy Theme Cleanup**
+  - categories_screen.dart: StreamColors 49 → 0 (textSecondary, textMuted, textPrimary, warning, surfaceElevated, expense → p.* via context.$palette)
+  - Colors.white (3 occorrenze) sostituiti con p.textPrimary / StreamSurfaceTokens.onAccent()
+  - Colors.transparent (2 occorrenze) mantenuti come tecnici
+  - `final p = context.$palette;` aggiunto in 15 scopes (dialog builders, widget build, ListenableBuilder callback)
+  - Refactor puramente UI: nessuna modifica a DB, analytics, modelli, logica business
+  - flutter analyze: solo info preesistenti (deprecation/lingering style warnings)
+  - flutter test: 1026/1026, tutti verdi
+  - V0.11j (Advanced Chart Styles) preparata nei docs come futura, nessun codice implementato
+
 - **V0.11g-fix3 — Leader Lines Mapping Collision Fix**
   - Causa identificata: `sectionsSpace: 2` (2 gradi tra sezioni) non era considerato in `_computeSliceData()`, causando shift cumulativo delle label rispetto alle fette reali: con 7 sezioni, l'ultima fetta aveva 12° di disallineamento
   - `_computeSliceData()` ora accumula `_sectionsSpaceRad` tra le sezioni, allineando gli angoli del painter con fl_chart

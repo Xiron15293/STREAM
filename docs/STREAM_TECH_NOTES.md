@@ -118,6 +118,19 @@
 - Fix V0.11g-fix2+3: singola sorgente `_computeSliceData()` con `_SliceGeometry` per PieChart, legenda e painter. `startDegreeOffset: -90` allineato. Bug mapping slice → leader line risolto.
 - Fix V0.11g-fix3: `sectionsSpace: 2` ora incluso nel calcolo angoli (`_sectionsSpaceRad`). Collision avoidance: `_layoutLabels()` separa label destra/sinistra, ordina per y, gap minimo 16px. `_minExternalLabelPercent = 4%` invariato. 1022 test totali.
 
+**Categories Legacy Theme Cleanup (V0.11i):**
+- categories_screen.dart: 49 StreamColors → palette tema (`context.$palette`)
+- 3 Colors.white icon → p.textPrimary / StreamSurfaceTokens.onAccent()
+- 2 Colors.transparent rimasti (tecnici)
+- `final p = context.$palette;` aggiunto in 15 scopes
+- Nessuna modifica DB, analytics, modelli, logica business
+
+**V0.11j (future — Advanced Chart Styles):**
+- Non implementato in V0.11i
+- Dovrà introdurre 5 stili: automatic, soft, technical, highContrast, editorial
+- Dovrà aggiungere preferenza utente via PreferencesService
+- Dovrà mantenere V0.11g donut leader lines e V0.11h adaptive palette
+
 **TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
 
 **CurrencyFormatter:** i valori precisi su barre usano `formatMovementCurrency()` dalla valuta globale.

@@ -69,14 +69,16 @@
 | V0.10.1c | Donut Charts + Extra Analytics + Chart Scroll UX | ✅ COMPLETATO | 2026-06-20 |
 | V0.11 | Theme, KPI & Chart Style System (foundation) | ✅ COMPLETATO | 2026-06-20 |
 | V0.11b | Apply Theme to Widgets + KPI + Charts | ✅ COMPLETATO | 2026-06-20 |
-| V0.11c | Real Chart Styles (soft/technical/highContrast/editorial) | ✅ COMPLETATO | 2026-06-20 |
+| V0.11c | Chart Style Foundation / Palette Plumbing | ✅ COMPLETATO | 2026-06-20 |
 | V0.11d | Real KPI Styles (minimal/dense/glass/outline/solid/split) | ✅ COMPLETATO | 2026-06-20 |
 | V0.11g | Chart Readability + Visibility Preferences | ✅ COMPLETATO | 2026-06-20 |
+| V0.11i | Categories Legacy Theme Cleanup | ✅ COMPLETATO | 2026-06-20 |
 
-## Approvate / Future (V0.11+)
+## Future
 
 | Versione | Nome | Stato |
 |----------|------|-------|
+| V0.11j | Advanced Chart Styles (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService | 📋 DA IMPLEMENTARE |
 | V0.9.0 | Beneficiary detail direct edit entry + residual manual QA closure | 📋 PRIORITARIA |
 | V0.9.1 | Notes & Tags | 📋 APPROVATA |
 | V0.9.2 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
