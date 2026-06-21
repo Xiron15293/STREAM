@@ -73,17 +73,22 @@ void main() {
     );
     final screenScrollable = find.byKey(const Key('movements_layout_heatmap'));
 
-    for (var attempt = 0;
-        attempt < 5 &&
-            cardButton.evaluate().isEmpty &&
-            dayButton.evaluate().isEmpty &&
-            screenScrollable.evaluate().isNotEmpty;
-        attempt++) {
+    for (
+      var attempt = 0;
+      attempt < 5 &&
+          cardButton.evaluate().isEmpty &&
+          dayButton.evaluate().isEmpty &&
+          screenScrollable.evaluate().isNotEmpty;
+      attempt++
+    ) {
       await tester.drag(screenScrollable, const Offset(0, -250));
       await tester.pumpAndSettle();
     }
 
-    expect(cardButton.evaluate().isNotEmpty || dayButton.evaluate().isNotEmpty, isTrue);
+    expect(
+      cardButton.evaluate().isNotEmpty || dayButton.evaluate().isNotEmpty,
+      isTrue,
+    );
   }
 
   void expectNoLegacyMovementLayouts() {
@@ -111,17 +116,13 @@ void main() {
       MovementsViewMode.heatmap,
     );
 
-    SharedPreferences.setMockInitialValues({
-      'movements_view_mode': 'list',
-    });
+    SharedPreferences.setMockInitialValues({'movements_view_mode': 'list'});
     expect(
       await PreferencesService.loadMovementsViewMode(),
       MovementsViewMode.heatmap,
     );
 
-    SharedPreferences.setMockInitialValues({
-      'movements_view_mode': 'calendar',
-    });
+    SharedPreferences.setMockInitialValues({'movements_view_mode': 'calendar'});
     expect(
       await PreferencesService.loadMovementsViewMode(),
       MovementsViewMode.heatmap,
@@ -158,7 +159,10 @@ void main() {
     expect(find.text('Vista movimenti predefinita'), findsNothing);
     expect(find.text('Modalità vista movimenti'), findsNothing);
     expect(find.byKey(const Key('movements_view_mode_setting')), findsNothing);
-    expect(find.byKey(const Key('settings_heatmap_configure_tile')), findsOneWidget);
+    expect(
+      find.byKey(const Key('settings_heatmap_configure_tile')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('settings_heatmap_configure_tile')));
     await tester.pumpAndSettle();
@@ -195,7 +199,9 @@ void main() {
         'movements_view_mode': 'listHeatmap',
       });
 
-      await tester.pumpWidget(MaterialApp(home: SettingsScreen(db: seededDb())));
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(db: seededDb())),
+      );
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
@@ -206,8 +212,14 @@ void main() {
 
       expect(find.text('Vista movimenti predefinita'), findsNothing);
       expect(find.text('Modalità vista movimenti'), findsNothing);
-      expect(find.byKey(const Key('movements_view_mode_setting')), findsNothing);
-      expect(find.byKey(const Key('settings_heatmap_configure_tile')), findsOneWidget);
+      expect(
+        find.byKey(const Key('movements_view_mode_setting')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('settings_heatmap_configure_tile')),
+        findsOneWidget,
+      );
     },
   );
 
@@ -242,12 +254,16 @@ void main() {
       await tester.pumpAndSettle();
       expectNoLegacyMovementLayouts();
 
-      final configureButton = find.byKey(
-        const Key('movements_card_configure_heatmap_button'),
-      ).evaluate().isNotEmpty
+      final configureButton =
+          find
+              .byKey(const Key('movements_card_configure_heatmap_button'))
+              .evaluate()
+              .isNotEmpty
           ? find.byKey(const Key('movements_card_configure_heatmap_button'))
           : find.byKey(const Key('movements_day_configure_heatmap_button'));
 
+      await tester.ensureVisible(configureButton);
+      await tester.pumpAndSettle();
       await tester.tap(configureButton);
       await tester.pumpAndSettle();
 
@@ -290,13 +306,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('movements_list_heatmap_preview_card')), findsOneWidget);
+      expect(
+        find.byKey(const Key('movements_list_heatmap_preview_card')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const Key('movements_preview_configure_heatmap_button')),
         findsOneWidget,
       );
 
-      await tester.tap(find.byKey(const Key('movements_preview_configure_heatmap_button')));
+      await tester.tap(
+        find.byKey(const Key('movements_preview_configure_heatmap_button')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('heatmap_settings_screen')), findsOneWidget);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../design/stream_icon_library.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/subcategory.dart';
 import '../theme.dart';
@@ -118,6 +120,8 @@ class _CategorySubcategorySelectorState
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     final resolved = resolveCategorySubcategorySelection(
       categories: widget.categories,
       subcategories: widget.subcategories,
@@ -126,22 +130,25 @@ class _CategorySubcategorySelectorState
       subcategoryId: widget.selectedSubcategoryId,
     );
     final iconKey = resolved?.iconKey ?? StreamIconLibrary.defaultCategoryIcon;
-    final color = resolved?.color ?? StreamColors.textMuted.toARGB32();
+    final color = resolved?.color ?? p.textMuted.toARGB32();
 
     return InkWell(
       key: const Key('movement_category_subcategory_field'),
       onTap: _openPicker,
       borderRadius: BorderRadius.circular(StreamRadius.md),
       child: InputDecorator(
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Categoria / Sottocategoria',
           border: OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(StreamRadius.md)),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(
+              color: surface.border,
+              width: surface.borderWidth,
+            ),
           ),
           filled: true,
-          fillColor: StreamColors.surfaceElevated,
-          suffixIcon: Icon(Icons.arrow_drop_down),
+          fillColor: surface.background,
+          suffixIcon: Icon(Icons.arrow_drop_down, color: p.textMuted),
         ),
         child: Row(
           children: [
@@ -155,7 +162,7 @@ class _CategorySubcategorySelectorState
               child: Icon(
                 StreamIconLibrary.getIcon(iconKey),
                 size: 12,
-                color: Colors.white,
+                color: StreamSurfaceTokens.onAccent(Color(color)),
               ),
             ),
             const SizedBox(width: 8),
@@ -163,9 +170,7 @@ class _CategorySubcategorySelectorState
               child: Text(
                 resolved?.label ?? 'Seleziona categoria',
                 style: resolved == null
-                    ? StreamTypography.body.copyWith(
-                        color: StreamColors.textMuted,
-                      )
+                    ? StreamTypography.body.copyWith(color: p.textMuted)
                     : StreamTypography.body,
               ),
             ),
@@ -242,54 +247,68 @@ class _CategorySubcategoryPickerSheetState
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final tileSurface = StreamSurfaceTokens.card(p, elevated: true);
     return SafeArea(
-      child: KeyedSubtree(
-        key: const Key('category_subcategory_picker'),
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: StreamSpacing.lg,
-            right: StreamSpacing.lg,
-            top: StreamSpacing.lg,
-            bottom:
-                MediaQuery.of(context).viewInsets.bottom + StreamSpacing.xxl,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Scegli categoria', style: StreamTypography.h3),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: StreamSpacing.sm),
-              TextField(
-                key: const Key('category_subcategory_search_field'),
-                controller: _searchCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Cerca categoria o sottocategoria',
-                  prefixIcon: Icon(Icons.search, size: 18),
-                ),
-                onChanged: (value) =>
-                    setState(() => _searchQuery = value.trim().toLowerCase()),
-              ),
-              const SizedBox(height: StreamSpacing.md),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
+      child: Material(
+        color: p.canvas,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(StreamRadius.xl),
+        ),
+        child: KeyedSubtree(
+          key: const Key('category_subcategory_picker'),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: StreamSpacing.lg,
+              right: StreamSpacing.lg,
+              top: StreamSpacing.lg,
+              bottom:
+                  MediaQuery.of(context).viewInsets.bottom + StreamSpacing.xxl,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    for (final category in _activeCategories) ...[
-                      ..._buildCategoryGroup(category),
-                    ],
+                    const Text('Scegli categoria', style: StreamTypography.h3),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: StreamSpacing.sm),
+                TextField(
+                  key: const Key('category_subcategory_search_field'),
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Cerca categoria o sottocategoria',
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 18,
+                      color: p.textMuted,
+                    ),
+                    filled: true,
+                    fillColor: tileSurface.background,
+                  ),
+                  onChanged: (value) =>
+                      setState(() => _searchQuery = value.trim().toLowerCase()),
+                ),
+                const SizedBox(height: StreamSpacing.md),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final category in _activeCategories) ...[
+                        ..._buildCategoryGroup(category),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -297,6 +316,7 @@ class _CategorySubcategoryPickerSheetState
   }
 
   List<Widget> _buildCategoryGroup(Category category) {
+    final p = context.$palette;
     final subcategories = _activeSubcategoriesForCategory(category.id);
     final categoryMatches = _matches(category.name);
     final matchingSubcategories = subcategories
@@ -316,37 +336,63 @@ class _CategorySubcategoryPickerSheetState
         widget.selectedSubcategoryId == null;
 
     return [
-      ListTile(
-        key: Key('category_option_${category.id}'),
-        contentPadding: EdgeInsets.zero,
-        leading: _IconSwatch(iconKey: category.iconKey, color: category.color),
-        title: Text(category.name),
-        trailing: isCategorySelected
-            ? const Icon(Icons.check, color: StreamColors.primary)
-            : null,
-        onTap: () => Navigator.of(context).pop(
-          _CategorySubcategoryChoice(
-            categoryId: category.id,
-            subcategoryId: null,
+      Material(
+        color: Colors.transparent,
+        child: ListTile(
+          key: Key('category_option_${category.id}'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(StreamRadius.md),
+            side: BorderSide(color: isCategorySelected ? p.primary : p.divider),
           ),
-        ),
-      ),
-      for (final subcategory in visibleSubcategories)
-        ListTile(
-          key: Key('subcategory_option_${subcategory.id}'),
-          contentPadding: const EdgeInsets.only(left: 40),
+          tileColor: isCategorySelected
+              ? p.primary.withValues(alpha: 0.1)
+              : p.surfaceElevated,
           leading: _IconSwatch(
-            iconKey: subcategory.iconKey ?? category.iconKey,
-            color: subcategory.color ?? category.color,
+            iconKey: category.iconKey,
+            color: category.color,
           ),
-          title: Text(subcategory.name),
-          trailing: widget.selectedSubcategoryId == subcategory.id
-              ? const Icon(Icons.check, color: StreamColors.primary)
+          title: Text(category.name),
+          trailing: isCategorySelected
+              ? Icon(Icons.check, color: p.primary)
               : null,
           onTap: () => Navigator.of(context).pop(
             _CategorySubcategoryChoice(
               categoryId: category.id,
-              subcategoryId: subcategory.id,
+              subcategoryId: null,
+            ),
+          ),
+        ),
+      ),
+      for (final subcategory in visibleSubcategories)
+        Material(
+          color: Colors.transparent,
+          child: ListTile(
+            key: Key('subcategory_option_${subcategory.id}'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(StreamRadius.md),
+              side: BorderSide(
+                color: widget.selectedSubcategoryId == subcategory.id
+                    ? p.primary
+                    : p.divider.withValues(alpha: 0.55),
+              ),
+            ),
+            tileColor: widget.selectedSubcategoryId == subcategory.id
+                ? p.primary.withValues(alpha: 0.1)
+                : p.surface,
+            contentPadding: const EdgeInsets.only(left: 40, right: 8),
+            leading: _IconSwatch(
+              iconKey: subcategory.iconKey ?? category.iconKey,
+              color: subcategory.color ?? category.color,
+            ),
+            title: Text(subcategory.name),
+            trailing: widget.selectedSubcategoryId == subcategory.id
+                ? Icon(Icons.check, color: p.primary)
+                : null,
+            onTap: () => Navigator.of(context).pop(
+              _CategorySubcategoryChoice(
+                categoryId: category.id,
+                subcategoryId: subcategory.id,
+              ),
             ),
           ),
         ),
@@ -373,7 +419,7 @@ class _IconSwatch extends StatelessWidget {
       child: Icon(
         StreamIconLibrary.getIcon(iconKey),
         size: 12,
-        color: Colors.white,
+        color: StreamSurfaceTokens.onAccent(Color(color)),
       ),
     );
   }

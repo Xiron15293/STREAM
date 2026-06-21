@@ -195,7 +195,10 @@ void main() {
       expect(find.text('Heatmap annuale compatta dei 12 mesi'), findsNothing);
       expect(find.byKey(const Key('annual_heatmap_legend')), findsOneWidget);
       for (int month = 1; month <= 12; month++) {
-        expect(find.byKey(Key('annual_heatmap_month_label_$month')), findsOneWidget);
+        expect(
+          find.byKey(Key('annual_heatmap_month_label_$month')),
+          findsOneWidget,
+        );
       }
     },
   );
@@ -258,9 +261,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('annual_heatmap_day_2026_1_1')), findsOneWidget);
-      expect(find.byKey(const Key('annual_heatmap_day_2026_2_1')), findsOneWidget);
-      expect(_annualHeatmapCellColor(tester, 2026, 1, 2), Colors.transparent);
+      expect(
+        find.byKey(const Key('annual_heatmap_day_2026_1_1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('annual_heatmap_day_2026_2_1')),
+        findsOneWidget,
+      );
+      expect(
+        _annualHeatmapCellColor(tester, 2026, 1, 2),
+        _annualHeatmapCellColor(tester, 2026, 1, 3),
+      );
     },
   );
 
@@ -292,28 +304,16 @@ void main() {
       find.byKey(const Key('period_heatmap_range_surface')),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const Key('range_period_income')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('range_period_expense')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('range_period_balance')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('range_period_income')), findsOneWidget);
+    expect(find.byKey(const Key('range_period_expense')), findsOneWidget);
+    expect(find.byKey(const Key('range_period_balance')), findsOneWidget);
     expect(
       find.byKey(const Key('range_period_movements_count')),
       findsOneWidget,
     );
 
     // Day in range (May 2) exists
-    expect(
-      find.byKey(const Key('range_heatmap_day_2026_5_2')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('range_heatmap_day_2026_5_2')), findsOneWidget);
 
     // Day in range (May 14) exists
     expect(
@@ -322,90 +322,80 @@ void main() {
     );
 
     // Day outside range (May 20) does not exist
-    expect(
-      find.byKey(const Key('range_heatmap_day_2026_5_20')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('range_heatmap_day_2026_5_20')), findsNothing);
 
     // Day outside range (Apr 30) does not exist
-    expect(
-      find.byKey(const Key('range_heatmap_day_2026_4_30')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('range_heatmap_day_2026_4_30')), findsNothing);
   });
 
-  testWidgets('range heatmap with selectedPeriodDay shows chip and clear button', (
-    tester,
-  ) async {
-    final filter = TimeFilter.customRange(
-      DateTime(2026, 5, 1),
-      DateTime(2026, 5, 14),
-    );
-    final filteredMovements = movements.where((movement) {
-      return !movement.date.isBefore(DateTime(2026, 5, 1)) &&
-          !movement.date.isAfter(DateTime(2026, 5, 14, 23, 59));
-    }).toList();
+  testWidgets(
+    'range heatmap with selectedPeriodDay shows chip and clear button',
+    (tester) async {
+      final filter = TimeFilter.customRange(
+        DateTime(2026, 5, 1),
+        DateTime(2026, 5, 14),
+      );
+      final filteredMovements = movements.where((movement) {
+        return !movement.date.isBefore(DateTime(2026, 5, 1)) &&
+            !movement.date.isAfter(DateTime(2026, 5, 14, 23, 59));
+      }).toList();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PeriodHeatmapCard(
-            timeFilter: filter,
-            movements: filteredMovements,
-            selectedPeriodDay: DateTime(2026, 5, 2),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PeriodHeatmapCard(
+              timeFilter: filter,
+              movements: filteredMovements,
+              selectedPeriodDay: DateTime(2026, 5, 2),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('range_selected_day_chip')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('range_clear_selected_day')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('period_selected_day_2026_5_2')),
-      findsOneWidget,
-    );
-  });
+      expect(find.byKey(const Key('range_selected_day_chip')), findsOneWidget);
+      expect(find.byKey(const Key('range_clear_selected_day')), findsOneWidget);
+      expect(
+        find.byKey(const Key('period_selected_day_2026_5_2')),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('range heatmap onClearSelectedDay is called when clear button tapped', (
-    tester,
-  ) async {
-    final filter = TimeFilter.customRange(
-      DateTime(2026, 5, 1),
-      DateTime(2026, 5, 14),
-    );
-    final filteredMovements = movements.where((movement) {
-      return !movement.date.isBefore(DateTime(2026, 5, 1)) &&
-          !movement.date.isAfter(DateTime(2026, 5, 14, 23, 59));
-    }).toList();
+  testWidgets(
+    'range heatmap onClearSelectedDay is called when clear button tapped',
+    (tester) async {
+      final filter = TimeFilter.customRange(
+        DateTime(2026, 5, 1),
+        DateTime(2026, 5, 14),
+      );
+      final filteredMovements = movements.where((movement) {
+        return !movement.date.isBefore(DateTime(2026, 5, 1)) &&
+            !movement.date.isAfter(DateTime(2026, 5, 14, 23, 59));
+      }).toList();
 
-    bool cleared = false;
+      bool cleared = false;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PeriodHeatmapCard(
-            timeFilter: filter,
-            movements: filteredMovements,
-            selectedPeriodDay: DateTime(2026, 5, 2),
-            onClearSelectedDay: () => cleared = true,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PeriodHeatmapCard(
+              timeFilter: filter,
+              movements: filteredMovements,
+              selectedPeriodDay: DateTime(2026, 5, 2),
+              onClearSelectedDay: () => cleared = true,
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('range_clear_selected_day')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('range_clear_selected_day')));
+      await tester.pumpAndSettle();
 
-    expect(cleared, isTrue);
-  });
+      expect(cleared, isTrue);
+    },
+  );
 
   testWidgets('range heatmap >6 months shows semester grid blocks', (
     tester,
@@ -419,20 +409,14 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: PeriodHeatmapCard(
-              timeFilter: filter,
-              movements: movements,
-            ),
+            child: PeriodHeatmapCard(timeFilter: filter, movements: movements),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('range_semester_heatmap')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('range_semester_heatmap')), findsOneWidget);
   });
 
   testWidgets('range heatmap cross-year >6 months shows semester blocks', (
@@ -447,20 +431,14 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: PeriodHeatmapCard(
-              timeFilter: filter,
-              movements: movements,
-            ),
+            child: PeriodHeatmapCard(timeFilter: filter, movements: movements),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('range_semester_heatmap')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('range_semester_heatmap')), findsOneWidget);
   });
 
   testWidgets('range heatmap partial semester shows only days in range', (
@@ -471,9 +449,13 @@ void main() {
       DateTime(2026, 9, 30),
     );
 
-    final filteredMovements = movements.where((m) =>
-        !m.date.isBefore(DateTime(2026, 3, 1)) &&
-        !m.date.isAfter(DateTime(2026, 9, 30, 23, 59))).toList();
+    final filteredMovements = movements
+        .where(
+          (m) =>
+              !m.date.isBefore(DateTime(2026, 3, 1)) &&
+              !m.date.isAfter(DateTime(2026, 9, 30, 23, 59)),
+        )
+        .toList();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -496,7 +478,12 @@ void main() {
   });
 }
 
-Color? _annualHeatmapCellColor(WidgetTester tester, int year, int month, int day) {
+Color? _annualHeatmapCellColor(
+  WidgetTester tester,
+  int year,
+  int month,
+  int day,
+) {
   final container = tester.widget<Container>(
     find.byKey(Key('annual_heatmap_day_${year}_${month}_$day')).first,
   );

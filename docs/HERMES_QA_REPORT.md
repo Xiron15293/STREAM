@@ -6,6 +6,12 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-21 — V0.11i-fix1
+- Theme completion verificata per summary periodali, heatmap annuale/range, picker data, picker categoria/sottocategoria, rapidi/preferiti e flow add/edit movimento
+- Regressioni intercettate e corrette su `Material` dei bottom sheet e su aspettative test della annual heatmap
+- `flutter test`: **1036 passati / 1 skipped**
+- `flutter analyze`: nessun errore, solo info preesistenti fuori scope
+
 ### Delta 2026-06-20 — V0.11h
 - Theme-adaptive cards/charts verificati su Conti, Beneficiari, Categorie, Movimenti e Grafici
 - Regressione individuata e corretta nel foglio interattivo Conti su viewport piccoli

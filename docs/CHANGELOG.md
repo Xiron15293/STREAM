@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11i-fix1 — Movement Flow Theme Completion**
+  - Completata la tematizzazione delle superfici legacy collegate ai movimenti: `PeriodSummaryCard`, `PeriodHeatmapCard`, `AnnualHeatmapCard`, preview heatmap, `TimeFilterBar`, flow add/edit movimento, picker rapidi/preferiti e selettori categoria/sottocategoria
+  - Le heatmap annuali/range e i riepiloghi periodo usano ora superfici, bordi, shadow e stati attivi derivati da `StreamSurfaceTokens` e `context.$palette`
+  - Bottom sheet e picker movimento/data/categoria ora usano `Material` tematizzato, senza sfondi statici o splash invisibili
+  - `MovementForm`, `MovementPicker`, `AddMovementFlow`, `MovementCalculatorPad` e `MovementTextSuggestions` allineati alla palette corrente senza modificare logica movimenti, heatmap o TimeFilter
+  - 7 nuovi test tema aggiunti: `test/period_summary_theme_test.dart`, `test/heatmap_theme_test.dart`, `test/time_filter_theme_test.dart`, `test/movement_flow_theme_test.dart`, `test/movement_edit_theme_test.dart`, `test/quick_movements_theme_test.dart`, `test/favorite_movements_theme_test.dart`
+  - Test legacy aggiornati per il nuovo comportamento tema delle celle annual heatmap e per il bottone heatmap fuori viewport
+  - `flutter test` full suite finale verde: `1036` passati, `1` skipped
+  - Nessuna modifica a DB/schema/migrazioni, backup/restore/import/export, analytics, KPI o calcoli movimenti
+
 - **V0.11h — Theme Adaptive Cards and Charts**
   - Nuovo helper `StreamSurfaceTokens` per superfici, bordi, shadow e foreground leggibile su badge/accent
   - `StreamThemePalette` espone detector tema (`classic`, `forest`, `midnight`, `aurora`, `minimalSand`, `highContrast`) usati per adattamento visuale

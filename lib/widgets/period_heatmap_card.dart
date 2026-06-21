@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/database.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../design/stream_icon_library.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
@@ -56,37 +58,34 @@ class PeriodHeatmapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     return Container(
       key: const Key('period_heatmap_card'),
       padding: const EdgeInsets.all(StreamSpacing.lg),
       decoration: BoxDecoration(
-        color: StreamColors.surface,
+        color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.lg),
-        border: Border.all(color: StreamColors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        border: Border.all(color: surface.border, width: surface.borderWidth),
+        boxShadow: surface.shadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           if (footerAction != null) ...[
             const SizedBox(height: StreamSpacing.sm),
             Align(alignment: Alignment.centerLeft, child: footerAction!),
           ],
           const SizedBox(height: StreamSpacing.md),
-          _buildBody(),
+          _buildBody(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final p = context.$palette;
     if (compactHeader) {
       return Row(
         children: [
@@ -97,9 +96,9 @@ class PeriodHeatmapCard extends StatelessWidget {
               style: StreamTypography.h3,
             ),
           ),
-          Icon(Icons.chevron_left, color: StreamColors.textMuted),
+          Icon(Icons.chevron_left, color: p.textMuted),
           const SizedBox(width: StreamSpacing.sm),
-          Icon(Icons.chevron_right, color: StreamColors.textMuted),
+          Icon(Icons.chevron_right, color: p.textMuted),
         ],
       );
     }
@@ -115,9 +114,7 @@ class PeriodHeatmapCard extends StatelessWidget {
         const SizedBox(height: StreamSpacing.sm),
         Text(
           _subtitle,
-          style: StreamTypography.body.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.body.copyWith(color: p.textSecondary),
         ),
       ],
     );
@@ -138,21 +135,21 @@ class PeriodHeatmapCard extends StatelessWidget {
     }
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
     final effectiveSelectedDay = selectedPeriodDay ?? selectedDay;
 
     switch (timeFilter.mode) {
       case TimeFilterMode.day:
-        return _buildDaySurface();
+        return _buildDaySurface(context);
       case TimeFilterMode.week:
-        return _buildWeekSurface();
+        return _buildWeekSurface(context);
       case TimeFilterMode.month:
         return KeyedSubtree(
           key: const Key('period_heatmap_month_surface'),
           child: Column(
             children: [
               if (selectedPeriodDay != null)
-                _buildSelectedPeriodDayChip(selectedPeriodDay!),
+                _buildSelectedPeriodDayChip(context, selectedPeriodDay!),
               ExpenseHeatmap(
                 key: const Key('period_heatmap_month_grid'),
                 allMovements: movements,
@@ -171,7 +168,7 @@ class PeriodHeatmapCard extends StatelessWidget {
           child: Column(
             children: [
               if (selectedPeriodDay != null)
-                _buildSelectedPeriodDayChip(selectedPeriodDay!),
+                _buildSelectedPeriodDayChip(context, selectedPeriodDay!),
               AnnualHeatmapCard(
                 year: timeFilter.startDate.year,
                 movements: movements,
@@ -183,11 +180,12 @@ class PeriodHeatmapCard extends StatelessWidget {
           ),
         );
       case TimeFilterMode.customRange:
-        return _buildRangeSurface();
+        return _buildRangeSurface(context);
     }
   }
 
-  Widget _buildDaySurface() {
+  Widget _buildDaySurface(BuildContext context) {
+    final p = context.$palette;
     final dayDate = timeFilter.startDate;
     final dayMoves = movementsForDay(dayDate, movements);
     final income = dayIncomeTotal(dayDate, movements);
@@ -206,32 +204,33 @@ class PeriodHeatmapCard extends StatelessWidget {
     final isToday = dayDate == todayDate;
 
     final balanceColor = balance > 0
-        ? StreamColors.income
+        ? p.income
         : balance < 0
-        ? StreamColors.expense
-        : StreamColors.textPrimary;
+        ? p.expense
+        : p.textPrimary;
 
     return Container(
       key: const Key('day_period_card'),
-      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        StreamSpacing.lg,
+        StreamSpacing.lg,
+        StreamSpacing.lg,
+        StreamSpacing.md,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(StreamRadius.xl),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            StreamColors.surfaceHighlight.withValues(alpha: 0.72),
-            StreamColors.surface.withValues(alpha: 0.96),
+            p.primary.withValues(
+              alpha: p.brightness == Brightness.light ? 0.12 : 0.18,
+            ),
+            p.surfaceElevated,
           ],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.22),
-            blurRadius: 30,
-            offset: const Offset(0, 18),
-          ),
-        ],
+        border: Border.all(color: p.divider.withValues(alpha: 0.9)),
+        boxShadow: StreamSurfaceTokens.card(p, elevated: true).shadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +245,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                       isToday ? 'OGGI' : 'GIORNO',
                       key: const Key('day_period_title'),
                       style: StreamTypography.h3.copyWith(
-                        color: StreamColors.primary,
+                        color: p.primary,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -255,7 +254,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                       _formatDate(dayDate),
                       key: const Key('day_period_date'),
                       style: StreamTypography.caption.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                     ),
                   ],
@@ -267,13 +266,13 @@ class PeriodHeatmapCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: StreamColors.primary.withValues(alpha: 0.12),
+                  color: p.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(StreamRadius.full),
                 ),
                 child: Text(
                   'Giorno',
                   style: StreamTypography.micro.copyWith(
-                    color: StreamColors.primary,
+                    color: p.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -291,7 +290,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   icon: Icons.arrow_upward,
                   label: 'Prima uscita',
                   value: formatEuro(firstExpense.amount),
-                  color: StreamColors.expense,
+                  color: p.expense,
                 ),
               if (lastExpense != null && lastExpense != firstExpense)
                 _DayChip(
@@ -299,7 +298,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   icon: Icons.arrow_downward,
                   label: 'Ultima uscita',
                   value: formatEuro(lastExpense.amount),
-                  color: StreamColors.expense,
+                  color: p.expense,
                 ),
               if (topCategory != null)
                 _DayChip(
@@ -315,22 +314,19 @@ class PeriodHeatmapCard extends StatelessWidget {
                   icon: Icons.category_outlined,
                   label: 'Nessuna uscita',
                   value: '—',
-                  color: StreamColors.textMuted,
+                  color: p.textMuted,
                 ),
               _DayChip(
                 keyName: 'day_period_movements_count',
                 icon: Icons.receipt_long_outlined,
                 label: 'Movimenti',
                 value: '$count',
-                color: StreamColors.primary,
+                color: p.primary,
               ),
             ],
           ),
           const SizedBox(height: StreamSpacing.md),
-          Container(
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          Container(height: 1, color: p.divider.withValues(alpha: 0.08)),
           const SizedBox(height: StreamSpacing.md),
           Row(
             children: [
@@ -338,30 +334,31 @@ class PeriodHeatmapCard extends StatelessWidget {
                 keyName: 'day_period_income',
                 label: 'Entrate',
                 value: formatEuro(income),
-                color: StreamColors.income,
+                color: p.income,
               ),
               const SizedBox(width: StreamSpacing.md),
               _DayKpi(
                 keyName: 'day_period_expense',
                 label: 'Uscite',
                 value: formatEuro(expense),
-                color: StreamColors.expense,
+                color: p.expense,
               ),
               const SizedBox(width: StreamSpacing.md),
               _DayKpi(
                 keyName: 'day_period_balance',
                 label: 'Saldo',
                 value:
-                    '${balance > 0 ? '+' : balance < 0 ? '-' : ''}${formatEuro(balance.abs())}',
+                    '${balance > 0
+                        ? '+'
+                        : balance < 0
+                        ? '-'
+                        : ''}${formatEuro(balance.abs())}',
                 color: balanceColor,
               ),
             ],
           ),
           const SizedBox(height: StreamSpacing.md),
-          Container(
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          Container(height: 1, color: p.divider.withValues(alpha: 0.08)),
           const SizedBox(height: StreamSpacing.md),
           _DayExpenseBreakdown(
             dayDate: dayDate,
@@ -380,7 +377,8 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
-  Widget _buildWeekSurface() {
+  Widget _buildWeekSurface(BuildContext context) {
+    final p = context.$palette;
     final start = timeFilter.startDate;
     final metrics = MovementPeriodMetrics.fromMovements(movements);
     final now = DateTime.now();
@@ -388,10 +386,10 @@ class PeriodHeatmapCard extends StatelessWidget {
     final effectiveSelectedDay = selectedPeriodDay ?? selectedDay;
 
     final balanceColor = metrics.netBalance > 0
-        ? StreamColors.income
+        ? p.income
         : metrics.netBalance < 0
-        ? StreamColors.expense
-        : StreamColors.textPrimary;
+        ? p.expense
+        : p.textPrimary;
 
     final dailyTotals = <int, double>{};
     for (final m in movements) {
@@ -399,31 +397,36 @@ class PeriodHeatmapCard extends StatelessWidget {
       if (!m.isExpense) continue;
       final offset = m.date.difference(start).inDays;
       if (offset >= 0 && offset < 7) {
-        dailyTotals.update(offset, (v) => v + m.amount, ifAbsent: () => m.amount);
+        dailyTotals.update(
+          offset,
+          (v) => v + m.amount,
+          ifAbsent: () => m.amount,
+        );
       }
     }
 
     return Container(
       key: const Key('week_period_card'),
-      padding: const EdgeInsets.fromLTRB(StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.lg, StreamSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        StreamSpacing.lg,
+        StreamSpacing.lg,
+        StreamSpacing.lg,
+        StreamSpacing.md,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(StreamRadius.xl),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            StreamColors.surfaceHighlight.withValues(alpha: 0.72),
-            StreamColors.surface.withValues(alpha: 0.96),
+            p.primary.withValues(
+              alpha: p.brightness == Brightness.light ? 0.1 : 0.16,
+            ),
+            p.surfaceElevated,
           ],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.22),
-            blurRadius: 30,
-            offset: const Offset(0, 18),
-          ),
-        ],
+        border: Border.all(color: p.divider),
+        boxShadow: StreamSurfaceTokens.card(p, elevated: true).shadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +441,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                       'Settimana',
                       key: const Key('week_period_title'),
                       style: StreamTypography.h3.copyWith(
-                        color: StreamColors.primary,
+                        color: p.primary,
                         letterSpacing: 1.2,
                       ),
                     ),
@@ -447,7 +450,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                       timeFilter.label,
                       key: const Key('week_period_range'),
                       style: StreamTypography.caption.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                     ),
                   ],
@@ -463,7 +466,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   keyName: 'week_period_income',
                   label: 'Entrate',
                   value: formatEuro(metrics.totalIncome),
-                  color: StreamColors.income,
+                  color: p.income,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -472,7 +475,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   keyName: 'week_period_expense',
                   label: 'Uscite',
                   value: formatEuro(metrics.totalExpense),
-                  color: StreamColors.expense,
+                  color: p.expense,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -481,7 +484,11 @@ class PeriodHeatmapCard extends StatelessWidget {
                   keyName: 'week_period_balance',
                   label: 'Saldo',
                   value:
-                      '${metrics.netBalance > 0 ? '+' : metrics.netBalance < 0 ? '-' : ''}${formatEuro(metrics.netBalance.abs())}',
+                      '${metrics.netBalance > 0
+                          ? '+'
+                          : metrics.netBalance < 0
+                          ? '-'
+                          : ''}${formatEuro(metrics.netBalance.abs())}',
                   color: balanceColor,
                 ),
               ),
@@ -492,11 +499,11 @@ class PeriodHeatmapCard extends StatelessWidget {
             keyName: 'week_period_movements_count',
             label: 'Movimenti della settimana',
             value: '${metrics.movementCount}',
-            color: StreamColors.textPrimary,
+            color: p.textPrimary,
           ),
           if (selectedPeriodDay != null) ...[
             const SizedBox(height: StreamSpacing.md),
-            _buildSelectedPeriodDayChip(selectedPeriodDay!),
+            _buildSelectedPeriodDayChip(context, selectedPeriodDay!),
           ],
           const SizedBox(height: StreamSpacing.md),
           ValueListenableBuilder<HeatmapSettings>(
@@ -507,20 +514,22 @@ class PeriodHeatmapCard extends StatelessWidget {
                 children: List.generate(7, (index) {
                   final dayDate = start.add(Duration(days: index));
                   final total = dailyTotals[index] ?? 0.0;
-                  final isSelected = effectiveSelectedDay != null &&
+                  final isSelected =
+                      effectiveSelectedDay != null &&
                       effectiveSelectedDay.year == dayDate.year &&
                       effectiveSelectedDay.month == dayDate.month &&
                       effectiveSelectedDay.day == dayDate.day;
                   final isToday = dayDate == todayDate;
                   final bgColor = total > 0
                       ? heatmapColorForAmount(total, settings: settings)
-                      : Colors.transparent;
+                      : p.surfaceElevated.withValues(
+                          alpha: p.brightness == Brightness.light ? 0.72 : 0.5,
+                        );
+                  final onBg = StreamSurfaceTokens.onAccent(bgColor);
 
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(
-                        left: index > 0 ? 4 : 0,
-                      ),
+                      padding: EdgeInsets.only(left: index > 0 ? 4 : 0),
                       child: GestureDetector(
                         onTap: onDaySelected != null
                             ? () => onDaySelected!(dayDate)
@@ -535,29 +544,25 @@ class PeriodHeatmapCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: bgColor,
-                            borderRadius: BorderRadius.circular(StreamRadius.md),
+                            borderRadius: BorderRadius.circular(
+                              StreamRadius.md,
+                            ),
                             border: isSelected
-                                ? Border.all(
-                                    color: StreamColors.primary,
-                                    width: 2,
-                                  )
+                                ? Border.all(color: p.primary, width: 2)
                                 : isToday
-                                    ? Border.all(
-                                        color: StreamColors.primary
-                                            .withValues(alpha: 0.45),
-                                        width: 1,
-                                      )
-                                    : total > 0
-                                        ? Border.all(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.15),
-                                            width: 0.5,
-                                          )
-                                        : Border.all(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.06),
-                                            width: 0.5,
-                                          ),
+                                ? Border.all(
+                                    color: p.primary.withValues(alpha: 0.45),
+                                    width: 1,
+                                  )
+                                : total > 0
+                                ? Border.all(
+                                    color: p.divider.withValues(alpha: 0.15),
+                                    width: 0.5,
+                                  )
+                                : Border.all(
+                                    color: p.divider.withValues(alpha: 0.06),
+                                    width: 0.5,
+                                  ),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -565,7 +570,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                               Text(
                                 _weekdayLabels[index],
                                 style: StreamTypography.micro.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.7),
+                                  color: p.textSecondary.withValues(alpha: 0.7),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -573,9 +578,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                               Text(
                                 '${dayDate.day}',
                                 style: StreamTypography.captionBold.copyWith(
-                                  color: total > 0
-                                      ? Colors.white
-                                      : StreamColors.textMuted,
+                                  color: total > 0 ? onBg : p.textMuted,
                                 ),
                               ),
                               if (total > 0) ...[
@@ -583,7 +586,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                                 Text(
                                   formatEuro(total),
                                   style: StreamTypography.micro.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.85),
+                                    color: onBg.withValues(alpha: 0.88),
                                     fontWeight: FontWeight.w500,
                                     fontSize: 9,
                                   ),
@@ -612,11 +615,25 @@ class PeriodHeatmapCard extends StatelessWidget {
     for (final m in dayMoves) {
       if (m.isTransfer) continue;
       if (!m.isExpense) continue;
-      expenseByCat.update(m.categoryId, (v) => v + m.amount, ifAbsent: () => m.amount);
+      expenseByCat.update(
+        m.categoryId,
+        (v) => v + m.amount,
+        ifAbsent: () => m.amount,
+      );
     }
     if (expenseByCat.isEmpty) return null;
-    final topId = expenseByCat.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-    final cat = categories?.firstWhere((c) => c.id == topId, orElse: () => Category(id: topId, name: topId, type: MovementType.expense, color: 0xFF888888));
+    final topId = expenseByCat.entries
+        .reduce((a, b) => a.value >= b.value ? a : b)
+        .key;
+    final cat = categories?.firstWhere(
+      (c) => c.id == topId,
+      orElse: () => Category(
+        id: topId,
+        name: topId,
+        type: MovementType.expense,
+        color: 0xFF888888,
+      ),
+    );
     if (cat == null) {
       return (topId, expenseByCat[topId]!, const Color(0xFF888888));
     }
@@ -628,21 +645,32 @@ class PeriodHeatmapCard extends StatelessWidget {
   }
 
   static const _monthNames = [
-    'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+    'gennaio',
+    'febbraio',
+    'marzo',
+    'aprile',
+    'maggio',
+    'giugno',
+    'luglio',
+    'agosto',
+    'settembre',
+    'ottobre',
+    'novembre',
+    'dicembre',
   ];
 
-  Widget _buildRangeSurface() {
+  Widget _buildRangeSurface(BuildContext context) {
+    final p = context.$palette;
     final start = timeFilter.startDate;
     final end = timeFilter.endDate;
     final totalDays = end.difference(start).inDays + 1;
 
     final metrics = MovementPeriodMetrics.fromMovements(movements);
     final balanceColor = metrics.netBalance > 0
-        ? StreamColors.income
+        ? p.income
         : metrics.netBalance < 0
-        ? StreamColors.expense
-        : StreamColors.textPrimary;
+        ? p.expense
+        : p.textPrimary;
 
     final effectiveSelectedDay = selectedPeriodDay ?? selectedDay;
 
@@ -658,7 +686,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   keyName: 'range_period_income',
                   label: 'Entrate',
                   value: formatEuro(metrics.totalIncome),
-                  color: StreamColors.income,
+                  color: p.income,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -667,7 +695,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   keyName: 'range_period_expense',
                   label: 'Uscite',
                   value: formatEuro(metrics.totalExpense),
-                  color: StreamColors.expense,
+                  color: p.expense,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -676,7 +704,11 @@ class PeriodHeatmapCard extends StatelessWidget {
                   keyName: 'range_period_balance',
                   label: 'Saldo',
                   value:
-                      '${metrics.netBalance > 0 ? '+' : metrics.netBalance < 0 ? '-' : ''}${formatEuro(metrics.netBalance.abs())}',
+                      '${metrics.netBalance > 0
+                          ? '+'
+                          : metrics.netBalance < 0
+                          ? '-'
+                          : ''}${formatEuro(metrics.netBalance.abs())}',
                   color: balanceColor,
                 ),
               ),
@@ -687,11 +719,11 @@ class PeriodHeatmapCard extends StatelessWidget {
             keyName: 'range_period_movements_count',
             label: 'Movimenti',
             value: '${metrics.movementCount}',
-            color: StreamColors.textPrimary,
+            color: p.textPrimary,
           ),
           if (selectedPeriodDay != null) ...[
             const SizedBox(height: StreamSpacing.md),
-            _buildSelectedPeriodDayChip(selectedPeriodDay!),
+            _buildSelectedPeriodDayChip(context, selectedPeriodDay!),
           ],
           const SizedBox(height: StreamSpacing.md),
           if (totalDays <= 31)
@@ -709,10 +741,21 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedPeriodDayChip(DateTime day) {
+  Widget _buildSelectedPeriodDayChip(BuildContext context, DateTime day) {
+    final p = context.$palette;
     const months = [
-      'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+      'gennaio',
+      'febbraio',
+      'marzo',
+      'aprile',
+      'maggio',
+      'giugno',
+      'luglio',
+      'agosto',
+      'settembre',
+      'ottobre',
+      'novembre',
+      'dicembre',
     ];
     final label = '${day.day} ${months[day.month - 1]} ${day.year}';
 
@@ -750,19 +793,24 @@ class PeriodHeatmapCard extends StatelessWidget {
             key: chipKey,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: StreamColors.primary.withValues(alpha: 0.12),
+              color: p.primary.withValues(
+                alpha: p.brightness == Brightness.light ? 0.14 : 0.24,
+              ),
               borderRadius: BorderRadius.circular(StreamRadius.full),
+              border: Border.all(color: p.primary.withValues(alpha: 0.35)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.today, size: 14, color: StreamColors.primary),
+                Icon(Icons.today, size: 14, color: p.primary),
                 const SizedBox(width: 6),
                 Text(
                   label,
-                  key: Key('period_selected_day_${day.year}_${day.month}_${day.day}'),
+                  key: Key(
+                    'period_selected_day_${day.year}_${day.month}_${day.day}',
+                  ),
                   style: StreamTypography.micro.copyWith(
-                    color: StreamColors.primary,
+                    color: p.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -775,7 +823,7 @@ class PeriodHeatmapCard extends StatelessWidget {
             icon: const Icon(Icons.close, size: 14),
             label: Text(clearLabel),
             style: TextButton.styleFrom(
-              foregroundColor: StreamColors.textSecondary,
+              foregroundColor: p.textSecondary,
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
@@ -786,7 +834,11 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
-  Widget _buildShortRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay) {
+  Widget _buildShortRangeGrid(
+    DateTime start,
+    DateTime end,
+    DateTime? effectiveSelectedDay,
+  ) {
     final totalDays = end.difference(start).inDays + 1;
     final firstWeekday = start.weekday;
     final dailyTotals = <int, double>{};
@@ -806,6 +858,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     return ValueListenableBuilder<HeatmapSettings>(
       valueListenable: PreferencesService.heatmapSettingsNotifier,
       builder: (context, settings, _) {
+        final p = context.$palette;
         final cells = <Widget>[];
         for (int i = 0; i < firstWeekday - 1; i++) {
           cells.add(const SizedBox.shrink());
@@ -813,13 +866,17 @@ class PeriodHeatmapCard extends StatelessWidget {
         for (int offset = 0; offset < totalDays; offset++) {
           final dayDate = start.add(Duration(days: offset));
           final total = dailyTotals[offset] ?? 0.0;
-          final isSelected = effectiveSelectedDay != null &&
+          final isSelected =
+              effectiveSelectedDay != null &&
               effectiveSelectedDay.year == dayDate.year &&
               effectiveSelectedDay.month == dayDate.month &&
               effectiveSelectedDay.day == dayDate.day;
           final bgColor = total > 0
               ? heatmapColorForAmount(total, settings: settings)
-              : Colors.transparent;
+              : p.surfaceElevated.withValues(
+                  alpha: p.brightness == Brightness.light ? 0.72 : 0.5,
+                );
+          final onBg = StreamSurfaceTokens.onAccent(bgColor);
 
           cells.add(
             GestureDetector(
@@ -834,16 +891,16 @@ class PeriodHeatmapCard extends StatelessWidget {
                   color: bgColor,
                   borderRadius: BorderRadius.circular(6),
                   border: isSelected
-                      ? Border.all(color: StreamColors.primary, width: 2)
+                      ? Border.all(color: p.primary, width: 2)
                       : total > 0
-                          ? Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              width: 0.5,
-                            )
-                          : Border.all(
-                              color: Colors.white.withValues(alpha: 0.06),
-                              width: 0.5,
-                            ),
+                      ? Border.all(
+                          color: p.divider.withValues(alpha: 0.15),
+                          width: 0.5,
+                        )
+                      : Border.all(
+                          color: p.divider.withValues(alpha: 0.06),
+                          width: 0.5,
+                        ),
                 ),
                 padding: const EdgeInsets.all(6),
                 child: Text(
@@ -852,9 +909,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: total > 0
-                        ? Colors.white
-                        : StreamColors.textMuted,
+                    color: total > 0 ? onBg : p.textMuted,
                   ),
                 ),
               ),
@@ -877,9 +932,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   d.toUpperCase(),
                   textAlign: TextAlign.center,
                   style: StreamTypography.micro.copyWith(
-                    color: isWeekend
-                        ? StreamColors.textMuted
-                        : StreamColors.textSecondary,
+                    color: isWeekend ? p.textMuted : p.textSecondary,
                   ),
                 ),
               );
@@ -896,9 +949,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                 children: [
                   for (int j = 0; j < 7; j++) ...[
                     if (j > 0) const SizedBox(width: 4),
-                    Expanded(
-                      child: cells[i + j],
-                    ),
+                    Expanded(child: cells[i + j]),
                   ],
                 ],
               ),
@@ -908,24 +959,23 @@ class PeriodHeatmapCard extends StatelessWidget {
 
         return KeyedSubtree(
           key: const Key('range_heatmap'),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: rows,
-          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: rows),
         );
       },
     );
   }
 
-  Widget _buildLongRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay) {
+  Widget _buildLongRangeGrid(
+    DateTime start,
+    DateTime end,
+    DateTime? effectiveSelectedDay,
+  ) {
     final firstDay = start;
     final lastDay = end;
     final startMonday = firstDay.subtract(
       Duration(days: (firstDay.weekday - 1) % 7),
     );
-    final endSunday = lastDay.add(
-      Duration(days: (7 - lastDay.weekday) % 7),
-    );
+    final endSunday = lastDay.add(Duration(days: (7 - lastDay.weekday) % 7));
 
     final weeks = <List<DateTime?>>[];
     var current = startMonday;
@@ -965,7 +1015,9 @@ class PeriodHeatmapCard extends StatelessWidget {
             final gap = 1.5;
             final dayLabelWidth = 14.0;
             final cellWidth =
-                ((constraints.maxWidth - dayLabelWidth - gap * (totalWeeks - 1)) /
+                ((constraints.maxWidth -
+                            dayLabelWidth -
+                            gap * (totalWeeks - 1)) /
                         totalWeeks)
                     .clamp(8.0, 22.0);
             final cellHeight = cellWidth;
@@ -976,12 +1028,18 @@ class PeriodHeatmapCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildRangeMonthLabelRow(
-                  weeks, cellWidth, dayLabelWidth, gap),
+                  context,
+                  weeks,
+                  cellWidth,
+                  dayLabelWidth,
+                  gap,
+                ),
                 const SizedBox(height: 2),
                 for (int dow = 0; dow < 7; dow++)
                   Padding(
                     padding: EdgeInsets.only(bottom: gap),
-                    child:                     _buildRangeDayRow(
+                    child: _buildRangeDayRow(
+                      context: context,
                       dow: dow,
                       weeks: weeks,
                       cellWidth: cellWidth,
@@ -1005,17 +1063,21 @@ class PeriodHeatmapCard extends StatelessWidget {
   }
 
   Widget _buildRangeMonthLabelRow(
+    BuildContext context,
     List<List<DateTime?>> weeks,
     double cellWidth,
     double dayLabelWidth,
     double gap,
   ) {
+    final p = context.$palette;
     final monthChanges = <int, int>{};
     int? lastMonth;
     for (int col = 0; col < weeks.length; col++) {
       final week = weeks[col];
-      final firstDayOfWeek =
-          week.firstWhere((d) => d != null, orElse: () => null);
+      final firstDayOfWeek = week.firstWhere(
+        (d) => d != null,
+        orElse: () => null,
+      );
       if (firstDayOfWeek == null) continue;
       if (firstDayOfWeek.month != lastMonth) {
         monthChanges[col] = firstDayOfWeek.month;
@@ -1027,8 +1089,9 @@ class PeriodHeatmapCard extends StatelessWidget {
     final sortedCols = monthChanges.keys.toList()..sort();
     for (int i = 0; i < sortedCols.length; i++) {
       final col = sortedCols[i];
-      final nextCol =
-          i + 1 < sortedCols.length ? sortedCols[i + 1] : weeks.length;
+      final nextCol = i + 1 < sortedCols.length
+          ? sortedCols[i + 1]
+          : weeks.length;
       labelPositions.add(MapEntry(col, nextCol - col));
     }
 
@@ -1040,14 +1103,13 @@ class PeriodHeatmapCard extends StatelessWidget {
           SizedBox(width: dayLabelWidth),
           for (final entry in labelPositions)
             Container(
-              width:
-                  entry.value * cellWidth + (entry.value - 1) * gap,
+              width: entry.value * cellWidth + (entry.value - 1) * gap,
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(left: 2, bottom: 2),
               child: Text(
                 _rangeMonthLabels[monthChanges[entry.key]! - 1],
                 style: StreamTypography.micro.copyWith(
-                  color: StreamColors.textMuted,
+                  color: p.textMuted,
                   fontSize: 9,
                   letterSpacing: 0.2,
                 ),
@@ -1060,6 +1122,7 @@ class PeriodHeatmapCard extends StatelessWidget {
   }
 
   Widget _buildRangeDayRow({
+    required BuildContext context,
     required int dow,
     required List<List<DateTime?>> weeks,
     required double cellWidth,
@@ -1073,6 +1136,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     required DateTime end,
     required DateTime? effectiveSelectedDay,
   }) {
+    final p = context.$palette;
     return Row(
       children: [
         SizedBox(
@@ -1084,7 +1148,7 @@ class PeriodHeatmapCard extends StatelessWidget {
               _rangeDayLabels[dow],
               style: TextStyle(
                 fontSize: 8,
-                color: StreamColors.textMuted,
+                color: p.textMuted,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1093,6 +1157,7 @@ class PeriodHeatmapCard extends StatelessWidget {
         for (int col = 0; col < weeks.length; col++) ...[
           if (col > 0) SizedBox(width: gap),
           _buildRangeCell(
+            context,
             weeks[col][dow],
             cellWidth,
             cellHeight,
@@ -1109,6 +1174,7 @@ class PeriodHeatmapCard extends StatelessWidget {
   }
 
   Widget _buildRangeCell(
+    BuildContext context,
     DateTime? date,
     double width,
     double height,
@@ -1119,6 +1185,7 @@ class PeriodHeatmapCard extends StatelessWidget {
     DateTime end,
     DateTime? effectiveSelectedDay,
   ) {
+    final p = context.$palette;
     if (date == null) {
       return SizedBox(width: width, height: height);
     }
@@ -1127,7 +1194,8 @@ class PeriodHeatmapCard extends StatelessWidget {
     final total = daysInRange[key] ?? 0.0;
     final isToday = date == todayDate;
     final sel = effectiveSelectedDay;
-    final isSelected = sel != null &&
+    final isSelected =
+        sel != null &&
         sel.year == date.year &&
         sel.month == date.month &&
         sel.day == date.day;
@@ -1139,33 +1207,29 @@ class PeriodHeatmapCard extends StatelessWidget {
     return GestureDetector(
       onTap: onDaySelected != null ? () => onDaySelected!(date) : null,
       child: Container(
-        key: Key(
-          'range_heatmap_day_${date.year}_${date.month}_${date.day}',
-        ),
+        key: Key('range_heatmap_day_${date.year}_${date.month}_${date.day}'),
         width: width,
         height: height,
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(2),
           border: isSelected
-              ? Border.all(color: StreamColors.primary, width: 1.5)
+              ? Border.all(color: p.primary, width: 1.5)
               : isToday
-                  ? Border.all(
-                      color: StreamColors.primary.withValues(alpha: 0.5),
-                      width: 1,
-                    )
-                  : total > 0
-                      ? Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          width: 0.5,
-                        )
-                      : null,
+              ? Border.all(color: p.primary.withValues(alpha: 0.5), width: 1)
+              : total > 0
+              ? Border.all(color: p.divider.withValues(alpha: 0.15), width: 0.5)
+              : null,
         ),
       ),
     );
   }
 
-  Widget _buildSemesterRangeGrid(DateTime start, DateTime end, DateTime? effectiveSelectedDay) {
+  Widget _buildSemesterRangeGrid(
+    DateTime start,
+    DateTime end,
+    DateTime? effectiveSelectedDay,
+  ) {
     final semesterBlocks = <_SemesterBlock>[];
     var cursor = DateTime(start.year, start.month, 1);
 
@@ -1175,13 +1239,15 @@ class PeriodHeatmapCard extends StatelessWidget {
       final blockStart = DateTime(cursor.year, semStartMonth, 1);
       final blockEnd = DateTime(cursor.year, semEndMonth + 1, 0);
 
-      semesterBlocks.add(_SemesterBlock(
-        startDate: blockStart.isBefore(start) ? start : blockStart,
-        endDate: blockEnd.isAfter(end) ? end : blockEnd,
-        year: cursor.year,
-        startMonth: blockStart.month,
-        endMonth: blockEnd.month,
-      ));
+      semesterBlocks.add(
+        _SemesterBlock(
+          startDate: blockStart.isBefore(start) ? start : blockStart,
+          endDate: blockEnd.isAfter(end) ? end : blockEnd,
+          year: cursor.year,
+          startMonth: blockStart.month,
+          endMonth: blockEnd.month,
+        ),
+      );
 
       cursor = DateTime(cursor.year, semEndMonth + 1, 1);
     }
@@ -1218,11 +1284,29 @@ class PeriodHeatmapCard extends StatelessWidget {
     );
   }
 
-  static const _weekdayLabels = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  static const _weekdayLabels = [
+    'Lun',
+    'Mar',
+    'Mer',
+    'Gio',
+    'Ven',
+    'Sab',
+    'Dom',
+  ];
   static const _rangeDayLabels = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
   static const _rangeMonthLabels = [
-    'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
-    'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
+    'Gen',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mag',
+    'Giu',
+    'Lug',
+    'Ago',
+    'Set',
+    'Ott',
+    'Nov',
+    'Dic',
   ];
 }
 
@@ -1267,15 +1351,27 @@ class _RangeSemesterGrid extends StatelessWidget {
 
   static const _dayLabels = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
   static const _monthLabels = [
-    'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
-    'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
+    'Gen',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mag',
+    'Giu',
+    'Lug',
+    'Ago',
+    'Set',
+    'Ott',
+    'Nov',
+    'Dic',
   ];
 
   @override
   Widget build(BuildContext context) {
     final firstDay = startDate;
     final lastDay = endDate;
-    final startMonday = firstDay.subtract(Duration(days: (firstDay.weekday - 1) % 7));
+    final startMonday = firstDay.subtract(
+      Duration(days: (firstDay.weekday - 1) % 7),
+    );
     final endSunday = lastDay.add(Duration(days: (7 - lastDay.weekday) % 7));
 
     final weeks = <List<DateTime?>>[];
@@ -1312,20 +1408,23 @@ class _RangeSemesterGrid extends StatelessWidget {
         final totalWeeks = weeks.length;
         final dayLabelWidth = 14.0;
         final gap = 1.5;
-        final cellWidth = ((constraints.maxWidth - dayLabelWidth - gap * (totalWeeks - 1)) / totalWeeks)
-            .clamp(8.0, 22.0);
+        final cellWidth =
+            ((constraints.maxWidth - dayLabelWidth - gap * (totalWeeks - 1)) /
+                    totalWeeks)
+                .clamp(8.0, 22.0);
         final cellHeight = cellWidth;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildMonthLabelRow(weeks, cellWidth, dayLabelWidth, gap),
+            _buildMonthLabelRow(context, weeks, cellWidth, dayLabelWidth, gap),
             const SizedBox(height: 2),
             for (int dow = 0; dow < 7; dow++)
               Padding(
                 padding: EdgeInsets.only(bottom: gap),
                 child: _buildDayRow(
+                  context: context,
                   dow: dow,
                   weeks: weeks,
                   cellWidth: cellWidth,
@@ -1343,16 +1442,21 @@ class _RangeSemesterGrid extends StatelessWidget {
   }
 
   Widget _buildMonthLabelRow(
+    BuildContext context,
     List<List<DateTime?>> weeks,
     double cellWidth,
     double dayLabelWidth,
     double gap,
   ) {
+    final p = context.$palette;
     final monthChanges = <int, int>{};
     int? lastMonth;
     for (int col = 0; col < weeks.length; col++) {
       final week = weeks[col];
-      final firstDayOfWeek = week.firstWhere((d) => d != null, orElse: () => null);
+      final firstDayOfWeek = week.firstWhere(
+        (d) => d != null,
+        orElse: () => null,
+      );
       if (firstDayOfWeek == null) continue;
       if (firstDayOfWeek.month != lastMonth) {
         monthChanges[col] = firstDayOfWeek.month;
@@ -1364,7 +1468,9 @@ class _RangeSemesterGrid extends StatelessWidget {
     final sortedCols = monthChanges.keys.toList()..sort();
     for (int i = 0; i < sortedCols.length; i++) {
       final col = sortedCols[i];
-      final nextCol = i + 1 < sortedCols.length ? sortedCols[i + 1] : weeks.length;
+      final nextCol = i + 1 < sortedCols.length
+          ? sortedCols[i + 1]
+          : weeks.length;
       labelPositions.add(MapEntry(col, nextCol - col));
     }
 
@@ -1382,20 +1488,20 @@ class _RangeSemesterGrid extends StatelessWidget {
               child: Text(
                 _monthLabels[monthChanges[entry.key]! - 1],
                 style: StreamTypography.micro.copyWith(
-                  color: StreamColors.textMuted,
+                  color: p.textMuted,
                   fontSize: 9,
                   letterSpacing: 0.2,
                 ),
               ),
             ),
-          if (labelPositions.isNotEmpty)
-            const Spacer(),
+          if (labelPositions.isNotEmpty) const Spacer(),
         ],
       ),
     );
   }
 
   Widget _buildDayRow({
+    required BuildContext context,
     required int dow,
     required List<List<DateTime?>> weeks,
     required double cellWidth,
@@ -1405,6 +1511,7 @@ class _RangeSemesterGrid extends StatelessWidget {
     required Map<int, double> daysInRange,
     required DateTime todayDate,
   }) {
+    final p = context.$palette;
     return Row(
       children: [
         SizedBox(
@@ -1416,7 +1523,7 @@ class _RangeSemesterGrid extends StatelessWidget {
               _dayLabels[dow],
               style: TextStyle(
                 fontSize: 8,
-                color: StreamColors.textMuted,
+                color: p.textMuted,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1424,19 +1531,28 @@ class _RangeSemesterGrid extends StatelessWidget {
         ),
         for (int col = 0; col < weeks.length; col++) ...[
           if (col > 0) SizedBox(width: gap),
-          _buildCell(weeks[col][dow], cellWidth, cellHeight, daysInRange, todayDate),
+          _buildCell(
+            context,
+            weeks[col][dow],
+            cellWidth,
+            cellHeight,
+            daysInRange,
+            todayDate,
+          ),
         ],
       ],
     );
   }
 
   Widget _buildCell(
+    BuildContext context,
     DateTime? date,
     double width,
     double height,
     Map<int, double> daysInRange,
     DateTime todayDate,
   ) {
+    final p = context.$palette;
     if (date == null) {
       return SizedBox(width: width, height: height);
     }
@@ -1445,7 +1561,8 @@ class _RangeSemesterGrid extends StatelessWidget {
     final total = daysInRange[key] ?? 0.0;
     final isToday = date == todayDate;
     final sel = effectiveSelectedDay;
-    final isSelected = sel != null &&
+    final isSelected =
+        sel != null &&
         sel.year == date.year &&
         sel.month == date.month &&
         sel.day == date.day;
@@ -1464,17 +1581,11 @@ class _RangeSemesterGrid extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(2),
           border: isSelected
-              ? Border.all(color: StreamColors.primary, width: 1.5)
+              ? Border.all(color: p.primary, width: 1.5)
               : isToday
-              ? Border.all(
-                  color: StreamColors.primary.withValues(alpha: 0.5),
-                  width: 1,
-                )
+              ? Border.all(color: p.primary.withValues(alpha: 0.5), width: 1)
               : total > 0
-              ? Border.all(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  width: 0.5,
-                )
+              ? Border.all(color: p.divider.withValues(alpha: 0.15), width: 0.5)
               : null,
         ),
       ),
@@ -1497,6 +1608,7 @@ class _MetricChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 100),
       child: Column(
@@ -1505,9 +1617,7 @@ class _MetricChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.micro.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: 2),
           Text(
@@ -1537,6 +1647,7 @@ class _DayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Container(
       key: Key(keyName),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1552,7 +1663,7 @@ class _DayChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: StreamTypography.micro.copyWith(color: StreamColors.textSecondary),
+            style: StreamTypography.micro.copyWith(color: p.textSecondary),
           ),
           const SizedBox(width: 4),
           Text(
@@ -1583,6 +1694,7 @@ class _DayKpi extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Expanded(
       child: Container(
         key: Key(keyName),
@@ -1602,9 +1714,7 @@ class _DayKpi extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              style: StreamTypography.micro.copyWith(
-                color: StreamColors.textSecondary,
-              ),
+              style: StreamTypography.micro.copyWith(color: p.textSecondary),
             ),
           ],
         ),
@@ -1640,10 +1750,15 @@ class _DayExpenseBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final expenseByCat = <String, double>{};
     for (final m in movements) {
       if (m.isTransfer || !m.isExpense) continue;
-      expenseByCat.update(m.categoryId, (v) => v + m.amount, ifAbsent: () => m.amount);
+      expenseByCat.update(
+        m.categoryId,
+        (v) => v + m.amount,
+        ifAbsent: () => m.amount,
+      );
     }
     if (expenseByCat.isEmpty) return const SizedBox.shrink();
 
@@ -1662,7 +1777,7 @@ class _DayExpenseBreakdown extends StatelessWidget {
             Text(
               'Ripartizione spese',
               style: StreamTypography.captionBold.copyWith(
-                color: StreamColors.textSecondary,
+                color: p.textSecondary,
               ),
             ),
             if (entries.length > 1)
@@ -1671,7 +1786,7 @@ class _DayExpenseBreakdown extends StatelessWidget {
                 icon: const Icon(Icons.chevron_right, size: 16),
                 label: const Text('Vedi dettaglio'),
                 style: TextButton.styleFrom(
-                  foregroundColor: StreamColors.primary,
+                  foregroundColor: p.primary,
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
@@ -1703,7 +1818,7 @@ class _DayExpenseBreakdown extends StatelessWidget {
                       child: Text(
                         cat?.name ?? e.key,
                         style: StreamTypography.micro.copyWith(
-                          color: StreamColors.textPrimary,
+                          color: p.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1712,7 +1827,7 @@ class _DayExpenseBreakdown extends StatelessWidget {
                       formatEuro(e.value),
                       style: StreamTypography.micro.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: StreamColors.textPrimary,
+                        color: p.textPrimary,
                       ),
                     ),
                   ],
@@ -1736,6 +1851,7 @@ class _DayExpenseBreakdown extends StatelessWidget {
   }
 
   void _showDetailSheet(BuildContext context) {
+    final p = context.$palette;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1746,7 +1862,7 @@ class _DayExpenseBreakdown extends StatelessWidget {
         maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
           decoration: BoxDecoration(
-            color: StreamColors.surface,
+            color: p.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: _DayExpenseDetailSheet(
@@ -1797,16 +1913,17 @@ class _DayExpenseDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final expenseMoves = movements
-        .where((m) => !m.isTransfer && m.isExpense)
-        .toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    final p = context.$palette;
+    final expenseMoves =
+        movements.where((m) => !m.isTransfer && m.isExpense).toList()
+          ..sort((a, b) => b.amount.compareTo(a.amount));
 
     final total = expenseMoves.fold(0.0, (sum, m) => sum + m.amount);
 
     final catMap = {for (final c in categories) c.id: c};
     final subcatMap = {for (final s in subcategories) s.id: s};
-    final hasCallbacks = onEdit != null ||
+    final hasCallbacks =
+        onEdit != null ||
         onDuplicate != null ||
         onSaveAsFavorite != null ||
         onAddQuick != null ||
@@ -1823,19 +1940,19 @@ class _DayExpenseDetailSheet extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: StreamColors.textMuted.withValues(alpha: 0.3),
+                color: p.textMuted.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           Text(
             'Dettaglio spese — ${_formatDate(dayDate)}',
-            style: StreamTypography.h3.copyWith(color: StreamColors.textPrimary),
+            style: StreamTypography.h3.copyWith(color: p.textPrimary),
           ),
           const SizedBox(height: 4),
           Text(
             '${expenseMoves.length} movimenti · ${formatEuro(total)}',
-            style: StreamTypography.caption.copyWith(color: StreamColors.textSecondary),
+            style: StreamTypography.caption.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -1846,12 +1963,20 @@ class _DayExpenseDetailSheet extends StatelessWidget {
               itemBuilder: (context, index) {
                 final m = expenseMoves[index];
                 final cat = catMap[m.categoryId];
-                final subcat = m.subcategoryId != null ? subcatMap[m.subcategoryId] : null;
-                final account = db?.accounts.where((a) => a.id == m.accountId).firstOrNull;
-                final destAccount = m.destinationAccountId != null
-                    ? db?.accounts.where((a) => a.id == m.destinationAccountId).firstOrNull
+                final subcat = m.subcategoryId != null
+                    ? subcatMap[m.subcategoryId]
                     : null;
-                final beneficiaryProfile = db?.resolveBeneficiaryProfile(m.payee);
+                final account = db?.accounts
+                    .where((a) => a.id == m.accountId)
+                    .firstOrNull;
+                final destAccount = m.destinationAccountId != null
+                    ? db?.accounts
+                          .where((a) => a.id == m.destinationAccountId)
+                          .firstOrNull
+                    : null;
+                final beneficiaryProfile = db?.resolveBeneficiaryProfile(
+                  m.payee,
+                );
 
                 return MovementCard(
                   movement: m,
@@ -1859,7 +1984,9 @@ class _DayExpenseDetailSheet extends StatelessWidget {
                   subcategory: subcat,
                   account: account,
                   destinationAccount: destAccount,
-                  beneficiaryDisplayName: db?.resolveBeneficiaryDisplayName(m.payee),
+                  beneficiaryDisplayName: db?.resolveBeneficiaryDisplayName(
+                    m.payee,
+                  ),
                   beneficiaryIconKey: beneficiaryProfile?.iconKey,
                   beneficiaryColor: beneficiaryProfile?.color,
                   showNotes: false,
@@ -1874,9 +2001,7 @@ class _DayExpenseDetailSheet extends StatelessWidget {
                   onSaveAsFavorite: onSaveAsFavorite != null
                       ? () => onSaveAsFavorite!(m)
                       : null,
-                  onAddQuick: onAddQuick != null
-                      ? () => onAddQuick!(m)
-                      : null,
+                  onAddQuick: onAddQuick != null ? () => onAddQuick!(m) : null,
                   onDelete: onDelete != null ? () => onDelete!(m) : null,
                 );
               },
@@ -1889,8 +2014,18 @@ class _DayExpenseDetailSheet extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
+      'gennaio',
+      'febbraio',
+      'marzo',
+      'aprile',
+      'maggio',
+      'giugno',
+      'luglio',
+      'agosto',
+      'settembre',
+      'ottobre',
+      'novembre',
+      'dicembre',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -1901,6 +2036,7 @@ class _RangeHeatmapLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ValueListenableBuilder<HeatmapSettings>(
       valueListenable: PreferencesService.heatmapSettingsNotifier,
       builder: (context, settings, _) {
@@ -1909,9 +2045,9 @@ class _RangeHeatmapLegend extends StatelessWidget {
           key: const Key('range_heatmap_legend'),
           padding: const EdgeInsets.all(StreamSpacing.md),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.035),
+            color: p.surface,
             borderRadius: BorderRadius.circular(StreamRadius.lg),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+            border: Border.all(color: p.divider),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1919,7 +2055,7 @@ class _RangeHeatmapLegend extends StatelessWidget {
               Text(
                 'Legenda heatmap',
                 style: StreamTypography.captionBold.copyWith(
-                  color: StreamColors.textPrimary,
+                  color: p.textPrimary,
                 ),
               ),
               const SizedBox(height: StreamSpacing.sm),
@@ -1950,6 +2086,7 @@ class _RangeLegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1959,14 +2096,14 @@ class _RangeLegendItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            border: Border.all(color: p.divider.withValues(alpha: 0.12)),
           ),
         ),
         const SizedBox(width: StreamSpacing.sm),
         Text(
           label,
           style: StreamTypography.micro.copyWith(
-            color: StreamColors.textSecondary,
+            color: p.textSecondary,
             letterSpacing: 0.1,
           ),
         ),

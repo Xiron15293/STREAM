@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
@@ -24,15 +26,18 @@ class MovementsHeatmapPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     final monthLabel = TimeFilter.month(year, month).label;
 
     return Container(
       key: const Key('movements_list_heatmap_preview_card'),
       margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
       decoration: BoxDecoration(
-        color: StreamColors.surface,
+        color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(color: StreamColors.divider),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
+        boxShadow: surface.shadows,
       ),
       child: Padding(
         padding: const EdgeInsets.all(StreamSpacing.md),

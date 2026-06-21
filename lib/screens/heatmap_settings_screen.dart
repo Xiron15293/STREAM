@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_theme_extension.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
 
@@ -81,6 +82,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
   }
 
   Future<void> _pickColor(int index) async {
+    final p = context.$palette;
     final selected = await showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
@@ -102,8 +104,8 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                     borderRadius: BorderRadius.circular(StreamRadius.sm),
                     border: Border.all(
                       color: colorValue == _settings.colors[index]
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.16),
+                          ? p.textPrimary
+                          : p.textPrimary.withValues(alpha: 0.16),
                       width: colorValue == _settings.colors[index] ? 2 : 1,
                     ),
                   ),
@@ -132,6 +134,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final bands = _settings.bands;
+    final p = context.$palette;
     return Scaffold(
       key: const Key('heatmap_settings_screen'),
       appBar: AppBar(title: const Text('Configura heatmap')),
@@ -140,7 +143,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
         children: [
           Card(
             key: const Key('heatmap_settings_section'),
-            color: StreamColors.surface,
+            color: p.surface,
             child: Padding(
               padding: const EdgeInsets.all(StreamSpacing.lg),
               child: Column(
@@ -151,7 +154,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                   Text(
                     'Colori e intervalli della heatmap Movimenti.',
                     style: StreamTypography.body.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                   const SizedBox(height: StreamSpacing.xs),
@@ -159,7 +162,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                     'Metrica principale: Totale uscite',
                     key: const Key('heatmap_primary_metric'),
                     style: StreamTypography.caption.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                   const SizedBox(height: StreamSpacing.md),
@@ -173,22 +176,29 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                       children: [
                         for (int i = 0; i < _controllers.length; i++)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
+                            padding: const EdgeInsets.only(
+                              bottom: StreamSpacing.sm,
+                            ),
                             child: TextField(
                               key: Key('heatmap_threshold_field_$i'),
                               controller: _controllers[i],
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                              onSubmitted: (_) =>
+                                  FocusScope.of(context).unfocus(),
                               decoration: InputDecoration(
                                 labelText: 'Soglia ${i + 1}',
                                 suffixText: '€',
                                 suffixIcon: IconButton(
-                                  key: const Key('heatmap_threshold_done_button'),
+                                  key: const Key(
+                                    'heatmap_threshold_done_button',
+                                  ),
                                   icon: const Icon(Icons.check, size: 18),
-                                  onPressed: () => FocusScope.of(context).unfocus(),
+                                  onPressed: () =>
+                                      FocusScope.of(context).unfocus(),
                                   tooltip: 'Chiudi tastiera',
                                 ),
                               ),
@@ -201,7 +211,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                             child: Text(
                               _error!,
                               style: StreamTypography.caption.copyWith(
-                                color: StreamColors.expense,
+                                color: p.expense,
                               ),
                             ),
                           ),
@@ -225,8 +235,10 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                                 height: 24,
                                 decoration: BoxDecoration(
                                   color: Color(_settings.colors[i]),
-                                  borderRadius: BorderRadius.circular(StreamRadius.sm),
-                                  border: Border.all(color: StreamColors.divider),
+                                  borderRadius: BorderRadius.circular(
+                                    StreamRadius.sm,
+                                  ),
+                                  border: Border.all(color: p.divider),
                                 ),
                               ),
                             ),
@@ -254,6 +266,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
   }
 
   Widget _buildPreview(List<({double max, String label})> bands) {
+    final p = context.$palette;
     return KeyedSubtree(
       key: const Key('heatmap_settings_preview'),
       child: Column(
@@ -285,7 +298,7 @@ class _HeatmapSettingsScreenState extends State<HeatmapSettingsScreen> {
                 Text(
                   band.label,
                   style: StreamTypography.micro.copyWith(
-                    color: StreamColors.textSecondary,
+                    color: p.textSecondary,
                     letterSpacing: 0,
                   ),
                 ),

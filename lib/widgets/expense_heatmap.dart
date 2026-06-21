@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/preferences_service.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/movement.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
@@ -39,7 +41,7 @@ class ExpenseHeatmap extends StatelessWidget {
     return ValueListenableBuilder<HeatmapSettings>(
       valueListenable: PreferencesService.heatmapSettingsNotifier,
       builder: (context, settings, _) {
-        if (rowCompact) return _buildRowCompact(settings);
+        if (rowCompact) return _buildRowCompact(context, settings);
 
         final daysInMonth = DateTime(year, month + 1, 0).day;
         final firstWeekday = DateTime(year, month, 1).weekday;
@@ -84,6 +86,7 @@ class ExpenseHeatmap extends StatelessWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
+            final p = context.$palette;
             final availableWidth = constraints.maxWidth.isFinite
                 ? constraints.maxWidth
                 : MediaQuery.sizeOf(context).width;
@@ -141,9 +144,7 @@ class ExpenseHeatmap extends StatelessWidget {
                             d.toUpperCase(),
                             textAlign: TextAlign.center,
                             style: StreamTypography.micro.copyWith(
-                              color: isWeekend
-                                  ? StreamColors.textMuted
-                                  : StreamColors.textSecondary,
+                              color: isWeekend ? p.textMuted : p.textSecondary,
                             ),
                           ),
                         );
@@ -162,7 +163,8 @@ class ExpenseHeatmap extends StatelessWidget {
     );
   }
 
-  Widget _buildRowCompact(HeatmapSettings settings) {
+  Widget _buildRowCompact(BuildContext context, HeatmapSettings settings) {
+    final p = context.$palette;
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final dailyTotals = dailyExpenseTotals(year, month, allMovements);
     final now = DateTime.now();
@@ -189,7 +191,9 @@ class ExpenseHeatmap extends StatelessWidget {
                     compact: true,
                     settings: settings,
                   )
-                : Colors.transparent;
+                : p.surfaceElevated.withValues(
+                    alpha: p.brightness == Brightness.light ? 0.7 : 0.5,
+                  );
 
             return Expanded(
               child: GestureDetector(
@@ -205,10 +209,10 @@ class ExpenseHeatmap extends StatelessWidget {
                     color: bgColor,
                     borderRadius: BorderRadius.circular(2),
                     border: isSelected
-                        ? Border.all(color: StreamColors.primary, width: 1.5)
+                        ? Border.all(color: p.primary, width: 1.5)
                         : isToday
                         ? Border.all(
-                            color: StreamColors.primary.withValues(alpha: 0.4),
+                            color: p.primary.withValues(alpha: 0.4),
                             width: 0.5,
                           )
                         : null,
@@ -267,6 +271,7 @@ class _HeatmapCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     if (data.isEmpty) {
       return SizedBox(height: height);
     }
@@ -274,21 +279,19 @@ class _HeatmapCell extends StatelessWidget {
     final total = data.total;
     final bgColor = total > 0
         ? heatmapColorForAmount(total, compact: compact, settings: settings)
-        : StreamColors.surfaceElevated;
+        : p.surfaceElevated;
+    final onBg = StreamSurfaceTokens.onAccent(bgColor);
     final border = data.isSelected
-        ? Border.all(color: StreamColors.primary, width: 2)
+        ? Border.all(color: p.primary, width: 2)
         : data.isToday
-        ? Border.all(
-            color: StreamColors.primary.withValues(alpha: 0.45),
-            width: 1,
-          )
-        : Border.all(color: StreamColors.divider, width: 0.7);
+        ? Border.all(color: p.primary.withValues(alpha: 0.45), width: 1)
+        : Border.all(color: p.divider, width: 0.7);
     final radius = isAdvanced ? 8.0 : 6.0;
     final dayColor = total > 0
-        ? Colors.white
+        ? onBg
         : data.isSelected || data.isToday
-        ? StreamColors.primary
-        : StreamColors.textPrimary;
+        ? p.primary
+        : p.textPrimary;
 
     return GestureDetector(
       onTap: onDaySelected != null ? () => onDaySelected!(data.date!) : null,
@@ -329,8 +332,8 @@ class _HeatmapCell extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: StreamTypography.micro.copyWith(
                     color: total > 0
-                        ? Colors.white.withValues(alpha: 0.92)
-                        : StreamColors.textSecondary,
+                        ? onBg.withValues(alpha: 0.9)
+                        : p.textSecondary,
                     fontSize: 9,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -348,7 +351,7 @@ class _HeatmapCell extends StatelessWidget {
                     width: 5,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: onBg.withValues(alpha: 0.92),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -362,8 +365,8 @@ class _HeatmapCell extends StatelessWidget {
                 child: Container(
                   width: 5,
                   height: 5,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: onBg,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -383,6 +386,7 @@ class HeatmapLegend extends StatelessWidget {
     return ValueListenableBuilder<HeatmapSettings>(
       valueListenable: PreferencesService.heatmapSettingsNotifier,
       builder: (context, settings, _) {
+        final p = context.$palette;
         final bands = settings.bands;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -406,7 +410,7 @@ class HeatmapLegend extends StatelessWidget {
                           color: Color(settings.colors[i]),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.14),
+                            color: p.divider.withValues(alpha: 0.14),
                             width: 0.7,
                           ),
                         ),
@@ -417,7 +421,7 @@ class HeatmapLegend extends StatelessWidget {
                         key: const Key('heatmap_legend_label'),
                         textAlign: TextAlign.center,
                         style: StreamTypography.micro.copyWith(
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                           fontSize: 10,
                           letterSpacing: 0,
                         ),

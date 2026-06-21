@@ -4,6 +4,7 @@
 
 ## Sintesi
 
+- Delta 2026-06-21: V0.11i-fix1 confermata con movement flow/theme completion, bottom sheet tematizzati e full suite finale **1036 passati / 1 skipped**
 - Delta 2026-06-20: V0.11h confermata con superfici/card/chart theme-adaptive, full suite finale **1026 passati / 1 skipped**
 - Regressione emersa durante full suite su `AccountsScreen` interactive sheet risolta senza toccare logica dati
 - Analyzer locale invariato: solo info storici, nessun errore nuovo

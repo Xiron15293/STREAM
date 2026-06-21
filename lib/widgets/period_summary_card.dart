@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/movement.dart';
+import '../design/stream_surface_tokens.dart';
 import '../models/time_filter.dart';
+import '../design/stream_theme_extension.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
 import '../utils/movement_period_metrics.dart';
@@ -20,19 +22,22 @@ class PeriodSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final metrics = MovementPeriodMetrics.fromMovements(movements);
     final periodLabel = timeFilterPeriodLabel(timeFilter.mode);
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, elevated: true);
     final balanceColor = metrics.netBalance > 0
-        ? StreamColors.income
+        ? p.income
         : metrics.netBalance < 0
-        ? StreamColors.expense
-        : StreamColors.textPrimary;
+        ? p.expense
+        : p.textPrimary;
 
     return Container(
       key: const Key('period_summary_card'),
       padding: const EdgeInsets.all(StreamSpacing.md),
       decoration: BoxDecoration(
-        color: StreamColors.surface,
-        borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(color: StreamColors.divider),
+        color: surface.background,
+        borderRadius: BorderRadius.circular(StreamRadius.lg),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
+        boxShadow: surface.shadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,13 +56,13 @@ class PeriodSummaryCard extends StatelessWidget {
                 keyName: 'period_summary_income',
                 label: 'Entrate del $periodLabel',
                 value: formatEuro(metrics.totalIncome),
-                color: StreamColors.income,
+                color: p.income,
               ),
               _MetricChip(
                 keyName: 'period_summary_expense',
                 label: 'Uscite del $periodLabel',
                 value: formatEuro(metrics.totalExpense),
-                color: StreamColors.expense,
+                color: p.expense,
               ),
               _MetricChip(
                 keyName: 'period_summary_balance',
@@ -74,7 +79,7 @@ class PeriodSummaryCard extends StatelessWidget {
                 keyName: 'period_summary_count',
                 label: 'Movimenti del $periodLabel',
                 value: '${metrics.movementCount}',
-                color: StreamColors.textPrimary,
+                color: p.textPrimary,
               ),
             ],
           ),
@@ -99,24 +104,60 @@ class _MetricChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final chipSurface = StreamSurfaceTokens.card(p, muted: true);
+    final tint = color.withValues(
+      alpha: p.brightness == Brightness.light ? 0.14 : 0.22,
+    );
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 140),
-      child: Column(
+      child: Container(
         key: Key(keyName),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: StreamTypography.micro.copyWith(
-              color: StreamColors.textSecondary,
+        padding: const EdgeInsets.symmetric(
+          horizontal: StreamSpacing.sm,
+          vertical: StreamSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: chipSurface.background,
+          borderRadius: BorderRadius.circular(StreamRadius.md),
+          border: Border.all(
+            color: chipSurface.border,
+            width: chipSurface.borderWidth,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: tint,
+                shape: BoxShape.circle,
+                border: Border.all(color: color.withValues(alpha: 0.65)),
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: StreamTypography.captionBold.copyWith(color: color),
-          ),
-        ],
+            const SizedBox(width: StreamSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: StreamTypography.micro.copyWith(
+                      color: p.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: StreamTypography.captionBold.copyWith(color: color),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

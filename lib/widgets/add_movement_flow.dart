@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/account.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
@@ -573,6 +575,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildSubcategoryStep() {
+    final p = context.$palette;
     final category = _selectedCategory;
     final subcategories = category == null
         ? const <Subcategory>[]
@@ -606,24 +609,24 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           ),
           const SizedBox(height: StreamSpacing.md),
           ...subcategories.map((sub) {
-            return ListTile(
-              key: Key('subcategory_option_${sub.id}'),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(StreamRadius.md),
+            return Material(
+              color: Colors.transparent,
+              child: ListTile(
+                key: Key('subcategory_option_${sub.id}'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(StreamRadius.md),
+                ),
+                tileColor: p.surfaceElevated,
+                leading: _IconBubble(
+                  color: sub.color ?? category?.color ?? p.primary.toARGB32(),
+                  iconKey:
+                      sub.iconKey ??
+                      category?.iconKey ??
+                      StreamIconLibrary.defaultCategoryIcon,
+                ),
+                title: Text(sub.name),
+                onTap: () => _selectSubcategory(sub.id),
               ),
-              tileColor: StreamColors.surfaceElevated,
-              leading: _IconBubble(
-                color:
-                    sub.color ??
-                    category?.color ??
-                    StreamColors.primary.toARGB32(),
-                iconKey:
-                    sub.iconKey ??
-                    category?.iconKey ??
-                    StreamIconLibrary.defaultCategoryIcon,
-              ),
-              title: Text(sub.name),
-              onTap: () => _selectSubcategory(sub.id),
             );
           }),
         ],
@@ -686,6 +689,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildTransferAccountsStep() {
+    final p = context.$palette;
     final invalid =
         _accountId != null &&
         _destinationAccountId != null &&
@@ -703,7 +707,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               key: const Key('transfer_selection_summary'),
               padding: const EdgeInsets.all(StreamSpacing.md),
               decoration: BoxDecoration(
-                color: StreamColors.surfaceElevated,
+                color: p.surfaceElevated,
                 borderRadius: BorderRadius.circular(StreamRadius.lg),
               ),
               child: Row(
@@ -714,11 +718,11 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       account: _selectedAccount,
                     ),
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(horizontal: StreamSpacing.sm),
                     child: Icon(
                       Icons.arrow_forward_rounded,
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                   Expanded(
@@ -735,16 +739,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           Text('Conto origine', style: StreamTypography.h3),
           Text(
             'Scegli da dove inviare',
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.caption.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: StreamSpacing.sm),
           Container(
             key: const Key('transfer_origin_list'),
             padding: const EdgeInsets.all(StreamSpacing.sm),
             decoration: BoxDecoration(
-              color: StreamColors.surfaceHighlight,
+              color: p.surfaceElevated,
               borderRadius: BorderRadius.circular(StreamRadius.lg),
             ),
             child: Column(
@@ -767,16 +769,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
           Text('Conto destinazione', style: StreamTypography.h3),
           Text(
             'Scegli dove inviare',
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.textSecondary,
-            ),
+            style: StreamTypography.caption.copyWith(color: p.textSecondary),
           ),
           const SizedBox(height: StreamSpacing.sm),
           Container(
             key: const Key('transfer_destination_list'),
             padding: const EdgeInsets.all(StreamSpacing.sm),
             decoration: BoxDecoration(
-              color: StreamColors.surfaceHighlight,
+              color: p.surfaceElevated,
               borderRadius: BorderRadius.circular(StreamRadius.lg),
             ),
             child: Column(
@@ -800,9 +800,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             Text(
               'Origine e destinazione non possono coincidere',
               key: const Key('transfer_same_account_error'),
-              style: StreamTypography.caption.copyWith(
-                color: StreamColors.expense,
-              ),
+              style: StreamTypography.caption.copyWith(color: p.expense),
             ),
           ],
           const SizedBox(height: StreamSpacing.lg),
@@ -829,6 +827,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildDetailsStep() {
+    final p = context.$palette;
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight.isFinite
@@ -852,7 +851,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                           vertical: StreamSpacing.sm,
                         ),
                         decoration: BoxDecoration(
-                          color: StreamColors.surfaceElevated,
+                          color: p.surfaceElevated,
                           borderRadius: BorderRadius.circular(StreamRadius.md),
                           boxShadow: const [
                             BoxShadow(
@@ -869,7 +868,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                             Text(
                               '${_amountDisplayText()} ${_currentCurrencySymbol()}',
                               style: StreamTypography.bodyBold.copyWith(
-                                color: StreamColors.primary,
+                                color: p.primary,
                               ),
                             ),
                           ],
@@ -892,7 +891,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                         key: const Key('movement_amount_display'),
                         textAlign: TextAlign.center,
                         style: StreamTypography.amountLarge.copyWith(
-                          color: StreamColors.primary,
+                          color: p.primary,
                         ),
                       ),
                       const SizedBox(height: StreamSpacing.lg),
@@ -984,7 +983,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                         _formatDateLabel(),
                         textAlign: TextAlign.center,
                         style: StreamTypography.bodyBold.copyWith(
-                          color: StreamColors.primary,
+                          color: p.primary,
                         ),
                       ),
                       if (_selectionError != null) ...[
@@ -992,7 +991,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                         Text(
                           _selectionError!,
                           style: StreamTypography.caption.copyWith(
-                            color: StreamColors.expense,
+                            color: p.expense,
                           ),
                         ),
                       ],
@@ -1068,6 +1067,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildTopSelectors() {
+    final p = context.$palette;
     if (_type == MovementType.transfer) {
       return Row(
         children: [
@@ -1079,7 +1079,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                   ? Icons.account_balance_wallet_outlined
                   : StreamIconLibrary.getAccountIcon(_selectedAccount!.iconKey),
               color: _selectedAccount == null
-                  ? StreamColors.primary
+                  ? p.primary
                   : Color(_selectedAccount!.color),
               onTap: () => setState(() => _step = _FlowStep.transferAccounts),
             ),
@@ -1103,7 +1103,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       _selectedDestinationAccount!.iconKey,
                     ),
               color: _selectedDestinationAccount == null
-                  ? StreamColors.primary
+                  ? p.primary
                   : Color(_selectedDestinationAccount!.color),
               onTap: () => setState(() => _step = _FlowStep.transferAccounts),
             ),
@@ -1123,7 +1123,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               ? Icons.account_balance_wallet_outlined
               : StreamIconLibrary.getAccountIcon(_selectedAccount!.iconKey),
           color: _selectedAccount == null
-              ? StreamColors.primary
+              ? p.primary
               : Color(_selectedAccount!.color),
           onTap: () => setState(() => _step = _FlowStep.account),
         ),
@@ -1134,7 +1134,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               ? Icons.sell_outlined
               : StreamIconLibrary.getIcon(_selectedCategory!.iconKey),
           color: _selectedCategory == null
-              ? StreamColors.primary
+              ? p.primary
               : Color(_selectedCategory!.color),
           onTap: () => setState(() => _step = _FlowStep.category),
         ),
@@ -1148,7 +1148,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                 : Icons.label_outline,
             color: _selectedSubcategory?.color != null
                 ? Color(_selectedSubcategory!.color!)
-                : StreamColors.surfaceHighlight,
+                : p.surfaceElevated,
             onTap: () => setState(() => _step = _FlowStep.subcategory),
           ),
       ],
@@ -1170,12 +1170,13 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildCategoryTile(Category category) {
+    final p = context.$palette;
     final total = _categoryTotal(category.id);
     final hasSubs = _subcategoriesFor(category.id).isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
       child: Material(
-        color: StreamColors.surfaceElevated,
+        color: p.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.md),
         child: InkWell(
           key: Key('category_option_${category.id}'),
@@ -1196,17 +1197,14 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                         Text(
                           _formatCurrency(total),
                           style: StreamTypography.caption.copyWith(
-                            color: StreamColors.textSecondary,
+                            color: p.textSecondary,
                           ),
                         ),
                     ],
                   ),
                 ),
                 if (hasSubs)
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: StreamColors.textSecondary,
-                  ),
+                  Icon(Icons.chevron_right_rounded, color: p.textSecondary),
               ],
             ),
           ),
@@ -1216,10 +1214,11 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
   }
 
   Widget _buildAccountTile(Account account, {required VoidCallback onTap}) {
+    final p = context.$palette;
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
       child: Material(
-        color: StreamColors.surfaceElevated,
+        color: p.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.md),
         child: InkWell(
           key: Key('account_option_${account.id}'),
@@ -1231,10 +1230,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
               iconKey: account.iconKey,
             ),
             title: Text(account.name),
-            trailing: const Icon(
-              Icons.chevron_right_rounded,
-              color: StreamColors.textSecondary,
-            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: p.textSecondary),
           ),
         ),
       ),
@@ -1247,13 +1243,12 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     required bool selected,
     required VoidCallback onTap,
   }) {
+    final p = context.$palette;
     final balance = widget.db.getAccountBalance(account);
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
       child: Material(
-        color: selected
-            ? StreamColors.primary.withValues(alpha: 0.08)
-            : StreamColors.surfaceElevated,
+        color: selected ? p.primary.withValues(alpha: 0.08) : p.surfaceElevated,
         borderRadius: BorderRadius.circular(StreamRadius.md),
         child: InkWell(
           key: Key('transfer_${scope}_option_${account.id}'),
@@ -1264,7 +1259,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(StreamRadius.md),
               border: Border.all(
-                color: selected ? StreamColors.primary : Colors.transparent,
+                color: selected ? p.primary : Colors.transparent,
                 width: 1.5,
               ),
             ),
@@ -1280,7 +1275,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                       Text(
                         _formatCurrency(balance),
                         style: StreamTypography.caption.copyWith(
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                         ),
                       ),
                     ],
@@ -1290,9 +1285,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                   selected
                       ? Icons.check_circle_rounded
                       : Icons.chevron_right_rounded,
-                  color: selected
-                      ? StreamColors.primary
-                      : StreamColors.textSecondary,
+                  color: selected ? p.primary : p.textSecondary,
                 ),
               ],
             ),
@@ -1311,21 +1304,20 @@ class _TransferSelectionSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final selectedAccount = account;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: StreamTypography.caption.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
         ),
         const SizedBox(height: StreamSpacing.xs),
         Row(
           children: [
             _IconBubble(
-              color: selectedAccount?.color ?? StreamColors.primary.toARGB32(),
+              color: selectedAccount?.color ?? p.primary.toARGB32(),
               iconKey:
                   selectedAccount?.iconKey ??
                   StreamIconLibrary.defaultAccountIcon,
@@ -1362,6 +1354,7 @@ class _SelectorPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(StreamRadius.md),
@@ -1371,7 +1364,7 @@ class _SelectorPill extends StatelessWidget {
           vertical: StreamSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: StreamColors.surfaceElevated,
+          color: p.surfaceElevated,
           borderRadius: BorderRadius.circular(StreamRadius.md),
         ),
         child: Row(
@@ -1386,7 +1379,7 @@ class _SelectorPill extends StatelessWidget {
                   Text(
                     label,
                     style: StreamTypography.micro.copyWith(
-                      color: StreamColors.textSecondary,
+                      color: p.textSecondary,
                     ),
                   ),
                   Text(value, style: StreamTypography.bodyBold),
@@ -1421,11 +1414,10 @@ class _SelectionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Material(
       key: widgetKey,
-      color: selected
-          ? color.withValues(alpha: 0.22)
-          : StreamColors.surfaceElevated,
+      color: selected ? color.withValues(alpha: 0.22) : p.surfaceElevated,
       borderRadius: BorderRadius.circular(StreamRadius.md),
       child: InkWell(
         borderRadius: BorderRadius.circular(StreamRadius.md),
@@ -1448,7 +1440,7 @@ class _SelectionChip extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: StreamTypography.caption.copyWith(
-                        color: StreamColors.textSecondary,
+                        color: p.textSecondary,
                       ),
                     ),
                 ],
@@ -1488,7 +1480,11 @@ class _IconBubble extends StatelessWidget {
         color: Color(color),
         borderRadius: BorderRadius.circular(StreamRadius.md),
       ),
-      child: Icon(icon, color: Colors.white, size: size),
+      child: Icon(
+        icon,
+        color: StreamSurfaceTokens.onAccent(Color(color)),
+        size: size,
+      ),
     );
   }
 }

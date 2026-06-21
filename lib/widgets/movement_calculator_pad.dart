@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design/stream_theme_extension.dart';
 import '../theme.dart';
 import 'calculator_amount_pad.dart';
 
@@ -83,6 +84,7 @@ class _MovementCalculatorPadState extends State<MovementCalculatorPad> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -91,9 +93,7 @@ class _MovementCalculatorPadState extends State<MovementCalculatorPad> {
           Text(
             _error!,
             key: const Key('movement_calculator_error'),
-            style: StreamTypography.caption.copyWith(
-              color: StreamColors.warning,
-            ),
+            style: StreamTypography.caption.copyWith(color: p.warning),
           ),
         ],
         const SizedBox(height: StreamSpacing.md),
@@ -166,9 +166,15 @@ class _MovementCalculatorPadState extends State<MovementCalculatorPad> {
   }
 
   Widget _buildButton(_PadSpec spec) {
-    final background = spec.tinted || spec.operator
-        ? StreamColors.surfaceHighlight
-        : StreamColors.surfaceElevated;
+    final p = context.$palette;
+    final background = spec.operator
+        ? p.primary.withValues(
+            alpha: p.brightness == Brightness.light ? 0.14 : 0.2,
+          )
+        : spec.tinted
+        ? p.surfaceElevated
+        : p.surface;
+    final foreground = spec.operator ? p.primary : p.textPrimary;
     return SizedBox(
       height: 56,
       child: FilledButton(
@@ -183,9 +189,12 @@ class _MovementCalculatorPadState extends State<MovementCalculatorPad> {
         },
         style: FilledButton.styleFrom(
           backgroundColor: background,
-          foregroundColor: Colors.white,
+          foregroundColor: foreground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(StreamRadius.md),
+          ),
+          side: BorderSide(
+            color: spec.operator ? p.primary.withValues(alpha: 0.4) : p.divider,
           ),
           padding: EdgeInsets.zero,
         ),

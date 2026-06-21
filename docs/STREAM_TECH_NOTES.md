@@ -2,7 +2,16 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes closure candidate / QA stabilized + movement actions sheet centralizzato + add/edit movement flow polish + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore/warning bloccante (`flutter analyze --no-pub`)
+**Stato:** Hermes closure candidate / QA stabilized + movement actions sheet centralizzato + add/edit movement flow polish + movement theme completion + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+
+## Update 2026-06-21 — V0.11i-fix1 Movement Flow Theme Completion
+
+- Completata la migrazione tema delle superfici legacy collegate ai movimenti usando `StreamSurfaceTokens` + `context.$palette`
+- `PeriodSummaryCard`, `PeriodHeatmapCard`, `AnnualHeatmapCard`, `MovementsHeatmapPreviewCard` e `TimeFilterBar` usano superfici, border e shadow coerenti col tema corrente
+- `MovementPicker`, `MovementForm`, `AddMovementFlow`, `CategorySubcategorySelector`, `MovementCalculatorPad` e `MovementTextSuggestions` non dipendono più da sfondi statici lato utente
+- Bottom sheet/picker con `ListTile` dentro superfici decorate ora hanno `Material` locale, evitando assert Flutter su background/ink invisibili
+- Test legacy aggiornati: annual heatmap empty/ignored days ora verificati contro la superficie neutra tema, non più contro `Colors.transparent`
+- Nessuna modifica a calcoli heatmap, TimeFilter, movimenti o persistenza
 
 ## Update 2026-06-20 — V0.11h Theme Adaptive Cards and Charts
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../theme.dart';
@@ -206,6 +207,7 @@ class _MovementFormState extends State<MovementForm> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
@@ -367,7 +369,7 @@ class _MovementFormState extends State<MovementForm> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: StreamColors.surfaceElevated,
+                  fillColor: p.surfaceElevated,
                 ),
                 items: widget.db.accounts
                     .where((a) => !a.archived)
@@ -394,7 +396,7 @@ class _MovementFormState extends State<MovementForm> {
                 const SizedBox(height: StreamSpacing.md),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedDestinationAccountId,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Conto destinazione',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(
@@ -403,7 +405,7 @@ class _MovementFormState extends State<MovementForm> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: StreamColors.surfaceElevated,
+                    fillColor: p.surfaceElevated,
                   ),
                   items: widget.db.accounts
                       .where((a) => !a.archived)

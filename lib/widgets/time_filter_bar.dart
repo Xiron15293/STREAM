@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../models/time_filter.dart';
 import '../design/stream_date_picker.dart';
@@ -92,17 +93,53 @@ class TimeFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final selectedText = StreamSurfaceTokens.onAccent(p.primary);
+    final pillSurface = StreamSurfaceTokens.card(p, elevated: true);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: StreamSpacing.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SegmentedButton<TimeFilterMode>(
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return p.primary;
+                }
+                return p.surfaceElevated;
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return selectedText;
+                }
+                return p.textSecondary;
+              }),
+              side: WidgetStateProperty.resolveWith((states) {
+                return BorderSide(
+                  color: states.contains(WidgetState.selected)
+                      ? p.primary
+                      : p.divider,
+                );
+              }),
+            ),
             segments: [
-              const ButtonSegment(value: TimeFilterMode.day, label: Text('Giorno')),
-              const ButtonSegment(value: TimeFilterMode.week, label: Text('Sett.')),
-              const ButtonSegment(value: TimeFilterMode.month, label: Text('Mese')),
-              const ButtonSegment(value: TimeFilterMode.year, label: Text('Anno')),
+              const ButtonSegment(
+                value: TimeFilterMode.day,
+                label: Text('Giorno'),
+              ),
+              const ButtonSegment(
+                value: TimeFilterMode.week,
+                label: Text('Sett.'),
+              ),
+              const ButtonSegment(
+                value: TimeFilterMode.month,
+                label: Text('Mese'),
+              ),
+              const ButtonSegment(
+                value: TimeFilterMode.year,
+                label: Text('Anno'),
+              ),
               ButtonSegment(
                 value: TimeFilterMode.customRange,
                 label: Text(customRangeLabel ?? 'Intervallo'),
@@ -121,7 +158,7 @@ class TimeFilterBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chevron_left),
+                  icon: Icon(Icons.chevron_left, color: p.textSecondary),
                   onPressed: () => onChanged(activeFilter.previous()),
                   tooltip: 'Precedente',
                 ),
@@ -133,14 +170,22 @@ class TimeFilterBar extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: context.$palette.surfaceElevated,
+                      color: pillSurface.background,
                       borderRadius: BorderRadius.circular(StreamRadius.md),
+                      border: Border.all(
+                        color: pillSurface.border,
+                        width: pillSurface.borderWidth,
+                      ),
+                      boxShadow: pillSurface.shadows,
                     ),
-                    child: Text(activeFilter.label, style: StreamTypography.h3),
+                    child: Text(
+                      activeFilter.label,
+                      style: StreamTypography.h3.copyWith(color: p.textPrimary),
+                    ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chevron_right),
+                  icon: Icon(Icons.chevron_right, color: p.textSecondary),
                   onPressed: () => onChanged(activeFilter.next()),
                   tooltip: 'Successivo',
                 ),

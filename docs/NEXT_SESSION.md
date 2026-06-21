@@ -1,10 +1,15 @@
 # NEXT SESSION
 
-> Aggiornato: 2026-06-20
+> Aggiornato: 2026-06-21
 
 Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
+
+- V0.11i-fix1 completata: il perimetro legacy dei movimenti ora reagisce chiaramente al tema corrente anche in summary periodali, heatmap, selector/picker e flow add/edit.
+- `PeriodSummaryCard`, `PeriodHeatmapCard`, `AnnualHeatmapCard`, `TimeFilterBar`, `MovementPicker`, `AddMovementFlow`, `MovementForm`, suggerimenti e sheet rapidi/preferiti usano palette/superfici dinamiche senza logica business cambiata.
+- QA locale aggiornata: `flutter test` full suite verde con `1036` passati e `1` skipped; `flutter analyze` resta info-only per warning storici fuori scope.
+- Residuo principale fuori sprint: warning analyzer legacy in `database.dart`, `backup_screen.dart`, `categories_screen.dart` e `theme_test.dart`, ma nessun errore bloccante nell’area movimenti.
 
 - V0.11h completata: card, summary chip e grafici reagiscono al tema corrente con differenze visive reali tra Classic, Forest, Minimal Sand e High Contrast.
 - `AccountsScreen`, `BeneficiariesScreen`, `CategoriesScreen`, `MovementCard`, `ChartsScreen` e chart widgets usano superfici derivate da palette invece di superfici statiche.
@@ -47,9 +52,9 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService
-2. QA manuale su device reale per flussi più sensibili
-3. UI polish residui (accounts_screen, dashboard_screen) se non già coperti
+1. QA manuale su device reale dei flow movimento su Classic, Forest, Minimal Sand e High Contrast
+2. Pulizia warning analyzer storici fuori scope tema movimenti
+3. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService
 
 ## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
 

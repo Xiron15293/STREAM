@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../design/stream_icon_library.dart';
+import '../design/stream_surface_tokens.dart';
+import '../design/stream_theme_extension.dart';
 import '../design/stream_date_picker.dart';
 import '../models/movement.dart';
 import '../models/category.dart';
@@ -29,6 +31,7 @@ Future<DateTime?> _pickTemplateDate(BuildContext context) async {
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) {
+      final p = sheetContext.$palette;
       Widget tile({
         required IconData icon,
         required String title,
@@ -36,67 +39,76 @@ Future<DateTime?> _pickTemplateDate(BuildContext context) async {
         required _TemplateDateChoice value,
         required Key key,
       }) {
-        return ListTile(
-          key: key,
-          leading: Icon(icon, color: StreamColors.primary),
-          title: Text(title),
-          subtitle: Text(subtitle),
-          onTap: () => Navigator.of(sheetContext).pop(value),
+        return Material(
+          color: Colors.transparent,
+          child: ListTile(
+            key: key,
+            leading: Icon(icon, color: p.primary),
+            title: Text(title),
+            subtitle: Text(subtitle),
+            onTap: () => Navigator.of(sheetContext).pop(value),
+          ),
         );
       }
 
       return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            StreamSpacing.lg,
-            StreamSpacing.md,
-            StreamSpacing.lg,
-            StreamSpacing.xxl,
+        child: Material(
+          color: p.canvas,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(StreamRadius.xl),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Scegli data', style: StreamTypography.h3),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(sheetContext).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: StreamSpacing.sm),
-              tile(
-                icon: Icons.today,
-                title: 'Oggi',
-                subtitle: 'Data odierna',
-                value: _TemplateDateChoice.today,
-                key: const Key('quick_date_today'),
-              ),
-              tile(
-                icon: Icons.history,
-                title: 'Ieri',
-                subtitle: 'Data di ieri',
-                value: _TemplateDateChoice.yesterday,
-                key: const Key('quick_date_yesterday'),
-              ),
-              tile(
-                icon: Icons.update,
-                title: 'Domani',
-                subtitle: 'Data di domani',
-                value: _TemplateDateChoice.tomorrow,
-                key: const Key('quick_date_tomorrow'),
-              ),
-              tile(
-                icon: Icons.calendar_month,
-                title: 'Scegli data',
-                subtitle: 'Apri il selettore completo',
-                value: _TemplateDateChoice.custom,
-                key: const Key('quick_date_custom'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              StreamSpacing.lg,
+              StreamSpacing.md,
+              StreamSpacing.lg,
+              StreamSpacing.xxl,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Scegli data', style: StreamTypography.h3),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: StreamSpacing.sm),
+                tile(
+                  icon: Icons.today,
+                  title: 'Oggi',
+                  subtitle: 'Data odierna',
+                  value: _TemplateDateChoice.today,
+                  key: const Key('quick_date_today'),
+                ),
+                tile(
+                  icon: Icons.history,
+                  title: 'Ieri',
+                  subtitle: 'Data di ieri',
+                  value: _TemplateDateChoice.yesterday,
+                  key: const Key('quick_date_yesterday'),
+                ),
+                tile(
+                  icon: Icons.update,
+                  title: 'Domani',
+                  subtitle: 'Data di domani',
+                  value: _TemplateDateChoice.tomorrow,
+                  key: const Key('quick_date_tomorrow'),
+                ),
+                tile(
+                  icon: Icons.calendar_month,
+                  title: 'Scegli data',
+                  subtitle: 'Apri il selettore completo',
+                  value: _TemplateDateChoice.custom,
+                  key: const Key('quick_date_custom'),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -186,58 +198,67 @@ class _MovementPickerState extends State<MovementPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return SafeArea(
       top: true,
       bottom: false,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: StreamSpacing.lg,
-          right: StreamSpacing.lg,
-          top: StreamSpacing.lg,
-          bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
+      child: Container(
+        decoration: BoxDecoration(
+          color: p.canvas,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(StreamRadius.xl),
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    _mode == AddMode.manuale
-                        ? (widget.prefill != null
-                              ? 'Modifica movimento'
-                              : 'Nuovo movimento')
-                        : _mode == AddMode.rapidi
-                        ? 'Movimenti rapidi'
-                        : 'Preferiti',
-                    style: StreamTypography.h3,
-                    overflow: TextOverflow.ellipsis,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: StreamSpacing.lg,
+            right: StreamSpacing.lg,
+            top: StreamSpacing.lg,
+            bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      _mode == AddMode.manuale
+                          ? (widget.prefill != null
+                                ? 'Modifica movimento'
+                                : 'Nuovo movimento')
+                          : _mode == AddMode.rapidi
+                          ? 'Movimenti rapidi'
+                          : 'Preferiti',
+                      style: StreamTypography.h3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: StreamSpacing.md),
-            SegmentedButton<AddMode>(
-              segments: const [
-                ButtonSegment(value: AddMode.manuale, label: Text('Manuale')),
-                ButtonSegment(value: AddMode.rapidi, label: Text('Rapidi')),
-                ButtonSegment(
-                  value: AddMode.preferiti,
-                  label: Text('Preferiti'),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (set) => setState(() => _mode = set.first),
-            ),
-            const SizedBox(height: StreamSpacing.lg),
-            Flexible(child: SingleChildScrollView(child: _buildContent())),
-          ],
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: StreamSpacing.md),
+              SegmentedButton<AddMode>(
+                segments: const [
+                  ButtonSegment(value: AddMode.manuale, label: Text('Manuale')),
+                  ButtonSegment(value: AddMode.rapidi, label: Text('Rapidi')),
+                  ButtonSegment(
+                    value: AddMode.preferiti,
+                    label: Text('Preferiti'),
+                  ),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (set) => setState(() => _mode = set.first),
+              ),
+              const SizedBox(height: StreamSpacing.lg),
+              Flexible(child: SingleChildScrollView(child: _buildContent())),
+            ],
+          ),
         ),
       ),
     );
@@ -508,6 +529,7 @@ class _ManualFormState extends State<_ManualForm> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
@@ -635,7 +657,7 @@ class _ManualFormState extends State<_ManualForm> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: StreamColors.surfaceElevated,
+                fillColor: p.surfaceElevated,
               ),
               items: widget.db.accounts
                   .where((a) => !a.archived)
@@ -662,7 +684,7 @@ class _ManualFormState extends State<_ManualForm> {
               const SizedBox(height: StreamSpacing.md),
               DropdownButtonFormField<String>(
                 initialValue: _selectedDestinationAccountId,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Conto destinazione',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(
@@ -671,7 +693,7 @@ class _ManualFormState extends State<_ManualForm> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: StreamColors.surfaceElevated,
+                  fillColor: p.surfaceElevated,
                 ),
                 items: widget.db.accounts
                     .where((a) => !a.archived)
@@ -728,6 +750,8 @@ class _QuickPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final cardSurface = StreamSurfaceTokens.card(p, elevated: true);
     return ListenableBuilder(
       listenable: db,
       builder: (context, _) {
@@ -762,7 +786,7 @@ class _QuickPanel extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
                   child: Material(
-                    color: StreamColors.surface,
+                    color: cardSurface.background,
                     borderRadius: BorderRadius.circular(StreamRadius.md),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(StreamRadius.md),
@@ -804,7 +828,7 @@ class _QuickPanel extends StatelessWidget {
                                   Text(
                                     '${resolved?.label ?? qmCat?.name ?? ''} • ${formatMovementCurrency(qm.type == MovementType.expense ? -qm.amount : qm.amount, showPositiveSign: true)}',
                                     style: StreamTypography.caption.copyWith(
-                                      color: StreamColors.textSecondary,
+                                      color: p.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -817,7 +841,7 @@ class _QuickPanel extends StatelessWidget {
                                   icon: Icon(
                                     Icons.edit,
                                     size: 18,
-                                    color: StreamColors.textMuted,
+                                    color: p.textMuted,
                                   ),
                                   onPressed: () => _showQuickForm(
                                     context,
@@ -826,10 +850,10 @@ class _QuickPanel extends StatelessWidget {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.play_arrow,
                                     size: 22,
-                                    color: StreamColors.primary,
+                                    color: p.primary,
                                   ),
                                   tooltip: 'Usa',
                                   onPressed: () => _useTemplateMovement(
@@ -962,6 +986,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
@@ -1049,7 +1074,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
               const SizedBox(height: StreamSpacing.md),
               DropdownButtonFormField<String>(
                 initialValue: _selectedAccountId,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Conto',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(
@@ -1058,7 +1083,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: StreamColors.surfaceElevated,
+                  fillColor: p.surfaceElevated,
                 ),
                 items: widget.db.accounts
                     .where((a) => !a.archived)
@@ -1104,9 +1129,7 @@ class _QuickFormDialogState extends State<_QuickFormDialog> {
                     widget.db.deleteQuickMovement(widget.existing!.id);
                     Navigator.of(context).pop();
                   },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: StreamColors.expense,
-                  ),
+                  style: OutlinedButton.styleFrom(foregroundColor: p.expense),
                   child: const Text('Elimina'),
                 ),
               ],
@@ -1130,6 +1153,7 @@ class _FavoritesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ListenableBuilder(
       listenable: db,
       builder: (context, _) {
@@ -1146,6 +1170,7 @@ class _FavoritesPanel extends StatelessWidget {
                 TextButton.icon(
                   icon: const Icon(Icons.add_circle_outline, size: 18),
                   label: const Text('Nuovo'),
+                  style: TextButton.styleFrom(foregroundColor: p.primary),
                   onPressed: () => _showFavoriteForm(context, db: db),
                 ),
               ],
@@ -1202,6 +1227,8 @@ class _FavoriteTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
+    final cardSurface = StreamSurfaceTokens.card(p, elevated: true);
     final resolved = resolveCategorySubcategorySelection(
       categories: db.categories,
       subcategories: db.subcategories,
@@ -1215,7 +1242,7 @@ class _FavoriteTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: StreamSpacing.sm),
       child: Material(
-        color: StreamColors.surface,
+        color: cardSurface.background,
         borderRadius: BorderRadius.circular(StreamRadius.md),
         child: InkWell(
           borderRadius: BorderRadius.circular(StreamRadius.md),
@@ -1253,7 +1280,7 @@ class _FavoriteTile extends StatelessWidget {
                       Text(
                         '${resolved?.label ?? favCat?.name ?? ''} • ${formatMovementCurrency(fm.type == MovementType.expense ? -fm.amount : fm.amount, showPositiveSign: true)}',
                         style: StreamTypography.caption.copyWith(
-                          color: StreamColors.textSecondary,
+                          color: p.textSecondary,
                         ),
                       ),
                     ],
@@ -1264,11 +1291,7 @@ class _FavoriteTile extends StatelessWidget {
                   children: [
                     if (!isSuggestion) ...[
                       IconButton(
-                        icon: Icon(
-                          Icons.edit,
-                          size: 18,
-                          color: StreamColors.textMuted,
-                        ),
+                        icon: Icon(Icons.edit, size: 18, color: p.textMuted),
                         onPressed: () =>
                             _showFavoriteForm(context, db: db, existing: fm),
                       ),
@@ -1276,17 +1299,13 @@ class _FavoriteTile extends StatelessWidget {
                         icon: Icon(
                           Icons.delete_outline,
                           size: 18,
-                          color: StreamColors.expense,
+                          color: p.expense,
                         ),
                         onPressed: () => db.deleteFavoriteMovement(fm.id),
                       ),
                     ],
                     IconButton(
-                      icon: const Icon(
-                        Icons.play_arrow,
-                        size: 22,
-                        color: StreamColors.primary,
-                      ),
+                      icon: Icon(Icons.play_arrow, size: 22, color: p.primary),
                       tooltip: 'Usa',
                       onPressed: () => _useTemplateMovement(
                         context: context,
@@ -1413,6 +1432,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return ListenableBuilder(
       listenable: widget.db,
       builder: (context, _) {
@@ -1500,7 +1520,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
               const SizedBox(height: StreamSpacing.md),
               DropdownButtonFormField<String>(
                 initialValue: _selectedAccountId,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Conto',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(
@@ -1509,7 +1529,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: StreamColors.surfaceElevated,
+                  fillColor: p.surfaceElevated,
                 ),
                 items: widget.db.accounts
                     .where((a) => !a.archived)
@@ -1554,9 +1574,7 @@ class _FavoriteFormDialogState extends State<_FavoriteFormDialog> {
                     widget.db.deleteFavoriteMovement(widget.existing!.id);
                     Navigator.of(context).pop();
                   },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: StreamColors.expense,
-                  ),
+                  style: OutlinedButton.styleFrom(foregroundColor: p.expense),
                   child: const Text('Elimina'),
                 ),
               ],
@@ -1635,6 +1653,7 @@ class _SuggestedSectionState extends State<_SuggestedSection> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final grouped = _grouped;
     return KeyedSubtree(
       key: const Key('suggested_section'),
@@ -1650,14 +1669,10 @@ class _SuggestedSectionState extends State<_SuggestedSection> {
                 Icon(
                   _expanded ? Icons.expand_less : Icons.expand_more,
                   size: 18,
-                  color: StreamColors.textMuted,
+                  color: p.textMuted,
                 ),
                 const SizedBox(width: 4),
-                const Icon(
-                  Icons.lightbulb_outline,
-                  size: 14,
-                  color: StreamColors.textMuted,
-                ),
+                Icon(Icons.lightbulb_outline, size: 14, color: p.textMuted),
                 const SizedBox(width: StreamSpacing.sm),
                 Text(
                   'Suggeriti (${widget.suggestions.length})',
@@ -1722,14 +1737,14 @@ class _SuggestedSectionState extends State<_SuggestedSection> {
                                     ? Icons.expand_less
                                     : Icons.expand_more,
                                 size: 18,
-                                color: StreamColors.textMuted,
+                                color: p.textMuted,
                               ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   '$categoryName (${items.length})',
                                   style: StreamTypography.captionBold.copyWith(
-                                    color: StreamColors.textSecondary,
+                                    color: p.textSecondary,
                                   ),
                                 ),
                               ),
@@ -1776,7 +1791,6 @@ class _CategoryIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
       height: size,
       decoration: BoxDecoration(
         color: Color(color),
@@ -1784,7 +1798,7 @@ class _CategoryIcon extends StatelessWidget {
       ),
       child: Icon(
         StreamIconLibrary.getIcon(iconKey),
-        color: Colors.white,
+        color: StreamSurfaceTokens.onAccent(Color(color)),
         size: size * 0.45,
       ),
     );
@@ -1798,14 +1812,13 @@ class _EmptyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: StreamSpacing.xxl),
+      padding: const EdgeInsets.symmetric(vertical: StreamSpacing.lg),
       child: Center(
         child: Text(
           message,
-          style: StreamTypography.body.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+          style: StreamTypography.body.copyWith(color: p.textSecondary),
         ),
       ),
     );

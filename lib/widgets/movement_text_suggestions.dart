@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
+import '../design/stream_theme_extension.dart';
 import '../models/category.dart';
 import '../theme.dart';
 
@@ -414,6 +415,7 @@ class MovementTextSuggestions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final mergedListenable = Listenable.merge([controller, focusNode]);
     return ListenableBuilder(
       listenable: mergedListenable,
@@ -445,7 +447,7 @@ class MovementTextSuggestions extends StatelessWidget {
               Text(
                 title,
                 style: StreamTypography.caption.copyWith(
-                  color: StreamColors.textSecondary,
+                  color: p.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -460,6 +462,11 @@ class MovementTextSuggestions extends StatelessWidget {
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                       padding: EdgeInsets.zero,
+                      backgroundColor: p.surfaceElevated,
+                      side: BorderSide(color: p.divider),
+                      labelStyle: StreamTypography.caption.copyWith(
+                        color: p.textPrimary,
+                      ),
                       label: Text(
                         suggestions[i].text,
                         overflow: TextOverflow.ellipsis,
@@ -503,6 +510,7 @@ class MovementBeneficiarySuggestions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.$palette;
     final mergedListenable = Listenable.merge([controller, focusNode]);
     return ListenableBuilder(
       listenable: mergedListenable,
@@ -527,7 +535,7 @@ class MovementBeneficiarySuggestions extends StatelessWidget {
               Text(
                 'Suggerimenti beneficiario',
                 style: StreamTypography.caption.copyWith(
-                  color: StreamColors.textSecondary,
+                  color: p.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -542,6 +550,11 @@ class MovementBeneficiarySuggestions extends StatelessWidget {
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       labelPadding: const EdgeInsets.symmetric(horizontal: 8),
                       padding: EdgeInsets.zero,
+                      backgroundColor: p.surfaceElevated,
+                      side: BorderSide(color: p.divider),
+                      labelStyle: StreamTypography.caption.copyWith(
+                        color: p.textPrimary,
+                      ),
                       label: Text(
                         suggestions[i].text,
                         overflow: TextOverflow.ellipsis,
