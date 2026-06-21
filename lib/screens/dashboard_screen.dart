@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
@@ -18,8 +21,9 @@ import '../widgets/time_filter_bar.dart';
 
 class DashboardScreen extends StatefulWidget {
   final AppDatabase db;
+  final String? activeProfileId;
 
-  const DashboardScreen({super.key, required this.db});
+  const DashboardScreen({super.key, required this.db, this.activeProfileId});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -28,6 +32,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late TimeFilter _filter;
   Set<String>? _selectedAccountIds;
+  bool _selectionSyncInProgress = false;
 
   @override
   void initState() {
@@ -37,8 +42,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadAccountSelection();
   }
 
+  @override
+  void didUpdateWidget(covariant DashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeProfileId != widget.activeProfileId) {
+      setState(() => _selectedAccountIds = null);
+      _loadAccountSelection();
+    }
+  }
+
   Future<void> _loadAccountSelection() async {
-    final ids = await PreferencesService.loadDashboardNetWorthAccountIds();
+    final ids = await PreferencesService.loadDashboardNetWorthAccountIds(
+      profileId: widget.activeProfileId,
+    );
     if (mounted) {
       setState(() => _selectedAccountIds = ids);
     }
@@ -51,6 +67,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return activeAccounts
         .where((a) => _selectedAccountIds!.contains(a.id))
         .toList();
+  }
+
+  Future<void> _syncAccountSelection(List<Account> activeAccounts) async {
+    if (_selectionSyncInProgress) return;
+    final current = _selectedAccountIds;
+    if (current == null) return;
+
+    final validIds = activeAccounts.map((account) => account.id).toSet();
+    final sanitized = current.intersection(validIds);
+    final shouldClear =
+        sanitized.isEmpty || sanitized.length == activeAccounts.length;
+    final nextSelection = shouldClear ? null : sanitized;
+
+    if (setEquals(current, nextSelection)) return;
+
+    _selectionSyncInProgress = true;
+    try {
+      if (nextSelection == null) {
+        await PreferencesService.clearDashboardNetWorthAccountSelection(
+          profileId: widget.activeProfileId,
+        );
+      } else {
+        await PreferencesService.saveDashboardNetWorthAccountIds(
+          nextSelection,
+          profileId: widget.activeProfileId,
+        );
+      }
+      if (mounted) {
+        setState(() => _selectedAccountIds = nextSelection);
+      }
+    } finally {
+      _selectionSyncInProgress = false;
+    }
   }
 
   void _onFilterChanged(TimeFilter filter) {
@@ -107,6 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final activeAccounts = widget.db.accounts
                   .where((a) => !a.archived)
                   .toList();
+              unawaited(_syncAccountSelection(activeAccounts));
               final selectedAccounts = _getFilteredAccounts(activeAccounts);
               final accountsBalance = selectedAccounts.fold<double>(
                 0.0,
@@ -140,6 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       accounts: selectedAccounts,
                       allAccounts: activeAccounts,
                       selectedAccountIds: _selectedAccountIds,
+                      activeProfileId: widget.activeProfileId,
                       db: widget.db,
                       onAccountSelectionChanged: (ids) {
                         setState(() => _selectedAccountIds = ids);
@@ -177,6 +228,7 @@ class _BalanceHero extends StatelessWidget {
   final List<Account> accounts;
   final List<Account> allAccounts;
   final Set<String>? selectedAccountIds;
+  final String? activeProfileId;
   final AppDatabase db;
   final ValueChanged<Set<String>?> onAccountSelectionChanged;
 
@@ -185,23 +237,31 @@ class _BalanceHero extends StatelessWidget {
     required this.accounts,
     required this.allAccounts,
     required this.selectedAccountIds,
+    required this.activeProfileId,
     required this.db,
     required this.onAccountSelectionChanged,
   });
 
   String _selectionLabel() {
-    if (selectedAccountIds == null || selectedAccountIds!.isEmpty) {
+    final validSelectedCount = accounts.length;
+    final activeCount = allAccounts.length;
+
+    if (selectedAccountIds == null ||
+        selectedAccountIds!.isEmpty ||
+        validSelectedCount == 0 ||
+        validSelectedCount == activeCount) {
       return 'Tutti i conti';
     }
-    final count = selectedAccountIds!.length;
-    if (count == 1) return '1 conto selezionato';
-    return '$count conti selezionati';
+    if (validSelectedCount == 1) return '1 conto selezionato';
+    return '$validSelectedCount conti selezionati';
   }
 
   void _showAccountFilterSheet(BuildContext context) {
     final p = context.$palette;
     final activeAccounts = allAccounts;
-    Set<String> workingIds = Set.from(selectedAccountIds ?? activeAccounts.map((a) => a.id));
+    Set<String> workingIds = Set.from(
+      selectedAccountIds ?? activeAccounts.map((a) => a.id),
+    );
 
     showModalBottomSheet(
       context: context,
@@ -215,7 +275,9 @@ class _BalanceHero extends StatelessWidget {
                   left: StreamSpacing.lg,
                   right: StreamSpacing.lg,
                   top: StreamSpacing.lg,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
+                  bottom:
+                      MediaQuery.of(context).viewInsets.bottom +
+                      StreamSpacing.lg,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -254,7 +316,10 @@ class _BalanceHero extends StatelessWidget {
                               size: 22,
                             ),
                             const SizedBox(width: StreamSpacing.md),
-                            Text('Tutti i conti', style: StreamTypography.bodyBold),
+                            Text(
+                              'Tutti i conti',
+                              style: StreamTypography.bodyBold,
+                            ),
                           ],
                         ),
                       ),
@@ -263,7 +328,9 @@ class _BalanceHero extends StatelessWidget {
                     ...activeAccounts.map((account) {
                       final isSelected = workingIds.contains(account.id);
                       return InkWell(
-                        key: Key('dashboard_net_worth_account_option_${account.id}'),
+                        key: Key(
+                          'dashboard_net_worth_account_option_${account.id}',
+                        ),
                         onTap: () {
                           setSheetState(() {
                             if (isSelected) {
@@ -278,13 +345,17 @@ class _BalanceHero extends StatelessWidget {
                           child: Row(
                             children: [
                               Icon(
-                                isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                                isSelected
+                                    ? Icons.check_box
+                                    : Icons.check_box_outline_blank,
                                 color: p.primary,
                                 size: 22,
                               ),
                               const SizedBox(width: StreamSpacing.md),
                               Icon(
-                                StreamIconLibrary.getAccountIcon(account.iconKey),
+                                StreamIconLibrary.getAccountIcon(
+                                  account.iconKey,
+                                ),
                                 size: 18,
                                 color: Color(account.color),
                               ),
@@ -315,7 +386,9 @@ class _BalanceHero extends StatelessWidget {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            key: const Key('dashboard_net_worth_account_filter_cancel'),
+                            key: const Key(
+                              'dashboard_net_worth_account_filter_cancel',
+                            ),
                             onPressed: () => Navigator.of(context).pop(),
                             child: const Text('Annulla'),
                           ),
@@ -323,15 +396,29 @@ class _BalanceHero extends StatelessWidget {
                         const SizedBox(width: StreamSpacing.md),
                         Expanded(
                           child: FilledButton(
-                            key: const Key('dashboard_net_worth_account_filter_apply'),
+                            key: const Key(
+                              'dashboard_net_worth_account_filter_apply',
+                            ),
                             onPressed: () {
-                              final finalIds = workingIds.length == activeAccounts.length
+                              final finalIds =
+                                  workingIds.length == activeAccounts.length
                                   ? null
                                   : workingIds;
                               onAccountSelectionChanged(finalIds);
-                              PreferencesService.saveDashboardNetWorthAccountIds(
-                                finalIds ?? <String>{},
-                              );
+                              if (finalIds == null) {
+                                unawaited(
+                                  PreferencesService.clearDashboardNetWorthAccountSelection(
+                                    profileId: activeProfileId,
+                                  ),
+                                );
+                              } else {
+                                unawaited(
+                                  PreferencesService.saveDashboardNetWorthAccountIds(
+                                    finalIds,
+                                    profileId: activeProfileId,
+                                  ),
+                                );
+                              }
                               Navigator.of(context).pop();
                             },
                             child: const Text('Applica'),
@@ -434,9 +521,7 @@ class _BalanceHero extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: p.surfaceElevated.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(StreamRadius.full),
-                    border: Border.all(
-                      color: p.divider.withValues(alpha: 0.4),
-                    ),
+                    border: Border.all(color: p.divider.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

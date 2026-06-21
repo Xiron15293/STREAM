@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11k-fix2 — Profile-Safe Net Worth Preferences and Reset Runtime Notifiers**
+  - La selezione conti del Patrimonio Dashboard ora e sicura per profilo: la preferenza usa chiavi scoped `dashboard_net_worth_account_ids_<profileId>` invece di applicare ciecamente una selezione globale
+  - `DashboardScreen` ricarica la selezione quando cambia `activeProfileId`, evitando eredita stale tra profili anche se il widget resta montato
+  - La label filtro Patrimonio e i pill della hero si basano solo sui conti validi attivi/non archiviati del profilo corrente, non sugli ID raw salvati
+  - Gli ID selezionati vengono sanificati contro i conti correnti; se dopo sanitize non resta nulla, la preferenza viene pulita e la UI torna a `Tutti i conti`
+  - `PreferencesService.clearForReset()` riallinea anche i runtime notifier principali ai default progetto (`themeIdNotifier`, `kpiStyleNotifier`, `chartStyleNotifier`, `hiddenChartIdsNotifier`, `netWorthAccountIdsNotifier`, `movementsViewModeNotifier`, `categoryLayoutNotifier`)
+  - Nuovi test: `test/dashboard_net_worth_account_selection_test.dart`, `test/dashboard_net_worth_profile_scope_test.dart`, `test/preferences_reset_notifiers_test.dart`
+  - Regressioni verificate: `dashboard_filtered_test`, `qa_extensive_test` e full suite verde con `1068` passati e `~1` skipped
+  - Repo hygiene: `android/.kotlin/` non si e ripresentato dopo i test, quindi nessuna modifica a `.gitignore`
+  - Follow-up documentato come P2: fragilita test shader `Asset 'shaders/ink_sparkle.frag' not found` da trattare in patch separata
+  - Nessuna modifica a DB/schema/migrazioni/backup/import/export, formule patrimonio o logica chart/KPI
+
 - **V0.11j-fix4 — Remove Dashboard Hero Duplication and Make Automatic KPI Style Meaningful**
   - Rimossa la seconda lista ridondante dei conti dalla hero Patrimonio: ogni conto compare al massimo una volta nella card
   - La hero mostra solo pill compatte, con limite ai primi `3` conti visibili e pill finale `+N altri` quando necessario

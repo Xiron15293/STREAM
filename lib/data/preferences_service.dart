@@ -5,6 +5,7 @@ import '../design/stream_theme_palette.dart';
 import '../utils/heatmap_utils.dart';
 
 enum MovementsViewMode { list, calendar, heatmap }
+
 enum AppCurrency { eur, usd, gbp, chf, jpy }
 
 class PreferencesService {
@@ -86,7 +87,10 @@ class PreferencesService {
 
   static Future<void> saveMovementsViewMode(MovementsViewMode mode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_movementsViewModeKey, MovementsViewMode.heatmap.name);
+    await prefs.setString(
+      _movementsViewModeKey,
+      MovementsViewMode.heatmap.name,
+    );
     movementsViewModeNotifier.value = MovementsViewMode.heatmap;
   }
 
@@ -202,28 +206,49 @@ class PreferencesService {
   }
 
   static const _netWorthAccountIdsKey = 'dashboard_net_worth_account_ids';
+  static const _netWorthAccountIdsKeyPrefix =
+      'dashboard_net_worth_account_ids_';
   static const _hiddenChartIdsKey = 'hidden_chart_ids';
 
   static final netWorthAccountIdsNotifier = ValueNotifier<Set<String>?>(null);
   static final hiddenChartIdsNotifier = ValueNotifier<Set<String>>({});
 
-  static Future<Set<String>?> loadDashboardNetWorthAccountIds() async {
+  static String _dashboardNetWorthAccountIdsKey({String? profileId}) {
+    if (profileId == null || profileId.trim().isEmpty) {
+      return _netWorthAccountIdsKey;
+    }
+    return '$_netWorthAccountIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static Future<Set<String>?> loadDashboardNetWorthAccountIds({
+    String? profileId,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList(_netWorthAccountIdsKey);
+    final list = prefs.getStringList(
+      _dashboardNetWorthAccountIdsKey(profileId: profileId),
+    );
     final result = list?.toSet();
     netWorthAccountIdsNotifier.value = result;
     return result;
   }
 
-  static Future<void> saveDashboardNetWorthAccountIds(Set<String> ids) async {
+  static Future<void> saveDashboardNetWorthAccountIds(
+    Set<String> ids, {
+    String? profileId,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_netWorthAccountIdsKey, ids.toList());
+    await prefs.setStringList(
+      _dashboardNetWorthAccountIdsKey(profileId: profileId),
+      ids.toList(),
+    );
     netWorthAccountIdsNotifier.value = ids;
   }
 
-  static Future<void> clearDashboardNetWorthAccountSelection() async {
+  static Future<void> clearDashboardNetWorthAccountSelection({
+    String? profileId,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_netWorthAccountIdsKey);
+    await prefs.remove(_dashboardNetWorthAccountIdsKey(profileId: profileId));
     netWorthAccountIdsNotifier.value = null;
   }
 
@@ -275,5 +300,22 @@ class PreferencesService {
     await prefs.remove(_chartStyleKey);
     await prefs.remove(_netWorthAccountIdsKey);
     await prefs.remove(_hiddenChartIdsKey);
+
+    final scopedNetWorthKeys = prefs
+        .getKeys()
+        .where((key) => key.startsWith(_netWorthAccountIdsKeyPrefix))
+        .toList(growable: false);
+    for (final key in scopedNetWorthKeys) {
+      await prefs.remove(key);
+    }
+
+    categoryLayoutNotifier.value = defaultCategoryLayout;
+    movementsViewModeNotifier.value = defaultMovementsViewMode;
+    currencyNotifier.value = defaultCurrency;
+    themeIdNotifier.value = defaultThemeId;
+    kpiStyleNotifier.value = defaultKpiStyle;
+    chartStyleNotifier.value = defaultChartStyle;
+    hiddenChartIdsNotifier.value = {};
+    netWorthAccountIdsNotifier.value = null;
   }
 }

@@ -86,10 +86,7 @@ class _StreamAppState extends State<StreamApp> {
 class ProfileAwareStreamApp extends StatefulWidget {
   final ProfileService profileService;
 
-  const ProfileAwareStreamApp({
-    super.key,
-    required this.profileService,
-  });
+  const ProfileAwareStreamApp({super.key, required this.profileService});
 
   @override
   State<ProfileAwareStreamApp> createState() => _ProfileAwareStreamAppState();
@@ -169,9 +166,7 @@ class _ProfileAwareStreamAppState extends State<ProfileAwareStreamApp> {
         title: 'STREAM',
         theme: StreamTheme.dark,
         debugShowCheckedModeBanner: false,
-        home: const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -211,20 +206,14 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      DashboardScreen(db: widget.db),
+      DashboardScreen(db: widget.db, activeProfileId: widget.activeProfileId),
       ArchiveScreen(db: widget.db),
       ChartsScreen(db: widget.db),
-      SettingsScreen(
-        db: widget.db,
-        onManageProfiles: widget.onManageProfiles,
-      ),
+      SettingsScreen(db: widget.db, onManageProfiles: widget.onManageProfiles),
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(

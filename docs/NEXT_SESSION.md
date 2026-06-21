@@ -6,6 +6,9 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11k-fix2 completata: la selezione conti Patrimonio Dashboard e ora profile-scoped, sanificata contro i conti validi del profilo corrente e ricaricata correttamente al cambio profilo.
+- V0.11k-fix2 completata anche sul reset runtime: `clearForReset()` riallinea SharedPreferences e notifier in-memory per tema, KPI, chart style, chart visibility, layout categorie, vista movimenti e filtro conti patrimonio.
+- QA locale aggiornata: `flutter test` full suite verde con `1068` passati e `~1` skipped; `android/.kotlin/` non si e ripresentato dopo i test.
 - V0.11k-fix1 completata: Archive top tabs single-line — le label `Movimenti`, `Conti`, `Categorie`, `Benefic.` nel `SegmentedButton` dell'Archivio non vanno piu a capo grazie a `FittedBox` + `Text(maxLines:1, softWrap:false)`.
 - V0.11k completata: Dashboard Net Worth Account Selection — l'utente puo selezionare quali conti attivi includere nel patrimonio Dashboard tramite bottom sheet con checkbox. Default "Tutti i conti". Preferenza salvata via PreferencesService. Healing automatico per conti archiviati/eliminati. Pill conti hero mostrano solo conti selezionati (max 3 + "+N altri").
 - V0.11k fix tab: label SegmentedButton (`Giorno`, `Sett.`, `Mese`, `Anno`, `Intervallo`) non vanno piu a capo grazie a `FittedBox`.
@@ -33,14 +36,14 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale selezione conti Dashboard: verifica comportamento con conti archiviati/eliminati, multi-profilo
-2. Verifica visiva tab Archivio (`Movimenti`, `Categorie`, `Benefic.`) su viewport stretti
-3. Verifica form movimento/trasferimento: azioni top funzionano, nessun bottom button residuo
+1. QA manuale selezione conti Dashboard: verifica comportamento con conti archiviati/eliminati e cambio profilo su device reale
+2. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
+3. Verifica visiva tab Archivio (`Movimenti`, `Categorie`, `Benefic.`) su viewport stretti
 
 ## Prossimo Sprint Consigliato
 
-1. QA manuale su device reale per selezione conti patrimonio
-2. Eventuali test di integrazione per account selection (multi-profilo)
+1. QA manuale su device reale per selezione conti patrimonio e reset dati senza restart
+2. Hardening ambiente test Material 3 per il caso shader `ink_sparkle.frag`
 3. UI polish residui
 
 ## Regole Git
@@ -53,6 +56,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 ## Rischi Noti
 
 - Restano info-level analyzer già presenti nel progetto.
+- Fragilita test nota P2: `Asset 'shaders/ink_sparkle.frag' not found` in alcuni ambienti test; non risolta in questa patch per evitare cambi fuori scope.
 - Alcuni file doc storici contengono dettagli vecchi utili; se li aggiorni, non perdere il contesto precedente.
 - Le viste Movimenti/Archivio hanno ancora molta logica di stato e vanno toccate con attenzione.
 - Il flusso categorie ha regole di sicurezza e duplicati già consolidate: qualsiasi refactor futuro deve preservare ID, namespace e normalizzazione.
