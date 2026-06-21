@@ -541,7 +541,7 @@ void main() {
       final expectedLabel = TimeFilter.month(now.year, now.month).label;
       expect(find.text(expectedLabel), findsOneWidget);
 
-      expect(find.text('PATRIMONIO'), findsOneWidget);
+      expect(find.text('Patrimonio netto'), findsOneWidget);
     });
 
     testWidgets('2.2 Filtered values and category expenses shown in UI', (
@@ -710,7 +710,7 @@ void main() {
         find.text('Nessuna spesa nel periodo selezionato'),
         findsOneWidget,
       );
-      expect(find.text('PATRIMONIO'), findsOneWidget);
+      expect(find.text('Patrimonio netto'), findsOneWidget);
       expect(find.text('Giorno'), findsOneWidget);
     });
 

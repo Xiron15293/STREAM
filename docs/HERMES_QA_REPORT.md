@@ -6,6 +6,15 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-21 — V0.11j-fix4
+- Verificata la hero Patrimonio senza duplicazione conti: ogni conto visibile compare una sola volta e gli account extra vengono compressi in `+N altri`
+- Verificata la semplificazione del titolo hero: `Patrimonio netto` resta il titolo principale e la label ridondante `PATRIMONIO` non viene piu renderizzata
+- Verificato che `Automatico` risolva davvero stili diversi in base al tema e che in Aurora la hero attivi la variante split invece di sembrare Minimal
+- Nuovi test: `test/dashboard_hero_account_dedup_test.dart`, `test/kpi_automatic_style_resolution_test.dart`
+- Test aggiornati: `test/kpi_hero_theme_test.dart`, `test/stream_kpi_card_theme_emphasis_test.dart`
+- `flutter test`: **1059 passati / ~1 skipped**
+- `flutter analyze`: nessun errore nuovo, solo `33` info preesistenti fuori scope
+
 ### Delta 2026-06-21 — V0.11j
 - Verificato il rollout reale di `chart_style` su Grafici, Dashboard `Spese per categoria`, empty state e superfici heatmap collegate
 - Confermata la separazione tra KPI style e chart style; nessuna regressione su analytics, formule, filtri o dati mostrati

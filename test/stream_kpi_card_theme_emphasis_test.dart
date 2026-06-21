@@ -15,7 +15,10 @@ void main() {
     PreferencesService.kpiStyleNotifier.value = 'automatic';
   });
 
-  Widget wrapKpi(StreamKpiCard card, [StreamThemeId themeId = StreamThemeId.streamClassic]) {
+  Widget wrapKpi(
+    StreamKpiCard card, [
+    StreamThemeId themeId = StreamThemeId.streamClassic,
+  ]) {
     return MaterialApp(
       theme: StreamTheme.build(StreamThemePalette.of(themeId)),
       home: Scaffold(body: card),
@@ -24,14 +27,16 @@ void main() {
 
   group('StreamKpiCard emphasis', () {
     testWidgets('hero emphasis renders with key', (tester) async {
-      await tester.pumpWidget(wrapKpi(
-        StreamKpiCard(
-          cardKey: const Key('test_hero_kpi'),
-          title: 'Test Hero',
-          value: '100.00 €',
-          emphasis: StreamKpiEmphasis.hero,
+      await tester.pumpWidget(
+        wrapKpi(
+          StreamKpiCard(
+            cardKey: const Key('test_hero_kpi'),
+            title: 'Test Hero',
+            value: '100.00 €',
+            emphasis: StreamKpiEmphasis.hero,
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('test_hero_kpi')), findsOneWidget);
       // uppercaseTitle defaults to true, so title is uppercased
@@ -40,13 +45,15 @@ void main() {
     });
 
     testWidgets('normal emphasis renders by default', (tester) async {
-      await tester.pumpWidget(wrapKpi(
-        StreamKpiCard(
-          cardKey: const Key('test_normal_kpi'),
-          title: 'Normal',
-          value: '50.00 €',
+      await tester.pumpWidget(
+        wrapKpi(
+          StreamKpiCard(
+            cardKey: const Key('test_normal_kpi'),
+            title: 'Normal',
+            value: '50.00 €',
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('test_normal_kpi')), findsOneWidget);
     });
@@ -54,44 +61,71 @@ void main() {
     testWidgets('all KPI styles render without crash', (tester) async {
       for (final style in StreamKpiStyleId.values) {
         PreferencesService.kpiStyleNotifier.value = style.name;
-        await tester.pumpWidget(wrapKpi(
-          StreamKpiCard(
-            title: 'Style ${style.name}',
-            value: '100.00 €',
-            emphasis: StreamKpiEmphasis.hero,
+        await tester.pumpWidget(
+          wrapKpi(
+            StreamKpiCard(
+              title: 'Style ${style.name}',
+              value: '100.00 €',
+              emphasis: StreamKpiEmphasis.hero,
+            ),
           ),
-        ));
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }
+    });
+
+    test('automatic theme recommendation differs from minimal in aurora', () {
+      final aurora = StreamThemePalette.of(StreamThemeId.aurora);
+      final automatic = resolveKpiChrome(
+        aurora,
+        aurora.primary,
+        StreamKpiStyleId.automatic,
+        StreamKpiDensity.regular,
+        StreamKpiEmphasis.normal,
+      );
+      final minimal = resolveKpiChrome(
+        aurora,
+        aurora.primary,
+        StreamKpiStyleId.minimal,
+        StreamKpiDensity.regular,
+        StreamKpiEmphasis.normal,
+      );
+
+      expect(automatic.leftAccent, isTrue);
+      expect(minimal.leftAccent, isFalse);
     });
   });
 
   group('High Contrast hero card', () {
     testWidgets('High Contrast hero renders without crash', (tester) async {
-      await tester.pumpWidget(wrapKpi(
-        StreamKpiCard(
-          cardKey: const Key('hc_hero_kpi'),
-          title: 'HC Hero',
-          value: '500.00 €',
-          emphasis: StreamKpiEmphasis.hero,
+      await tester.pumpWidget(
+        wrapKpi(
+          StreamKpiCard(
+            cardKey: const Key('hc_hero_kpi'),
+            title: 'HC Hero',
+            value: '500.00 €',
+            emphasis: StreamKpiEmphasis.hero,
+          ),
+          StreamThemeId.highContrast,
         ),
-        StreamThemeId.highContrast,
-      ));
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('hc_hero_kpi')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('High Contrast normal card still renders', (tester) async {
-      await tester.pumpWidget(wrapKpi(
-        StreamKpiCard(
-          cardKey: const Key('hc_normal_kpi'),
-          title: 'HC Normal',
-          value: '100.00 €',
+      await tester.pumpWidget(
+        wrapKpi(
+          StreamKpiCard(
+            cardKey: const Key('hc_normal_kpi'),
+            title: 'HC Normal',
+            value: '100.00 €',
+          ),
+          StreamThemeId.highContrast,
         ),
-        StreamThemeId.highContrast,
-      ));
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('hc_normal_kpi')), findsOneWidget);
       expect(tester.takeException(), isNull);

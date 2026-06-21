@@ -131,6 +131,32 @@ void main() {
     expect(solidDecoration.color, isNot(outlineDecoration.color));
   });
 
+  testWidgets('automatic aurora hero is visually distinct from minimal', (
+    tester,
+  ) async {
+    await pumpDashboard(
+      tester,
+      themeId: StreamThemeId.aurora,
+      kpiStyle: 'automatic',
+    );
+    final heroIconFinder = find.descendant(
+      of: find.byKey(const Key('dashboard_hero_networth_card')),
+      matching: find.byIcon(Icons.account_balance_wallet_outlined),
+    );
+    final automaticIconCount = tester.widgetList<Icon>(heroIconFinder).length;
+
+    await pumpDashboard(
+      tester,
+      themeId: StreamThemeId.aurora,
+      kpiStyle: 'minimal',
+    );
+    final minimalIconCount = tester.widgetList<Icon>(heroIconFinder).length;
+
+    expect(find.byKey(const Key('dashboard_hero_more_accounts')), findsNothing);
+    expect(find.text('PATRIMONIO'), findsNothing);
+    expect(automaticIconCount, greaterThan(minimalIconCount));
+  });
+
   testWidgets('small viewport does not overflow with dense hero', (
     tester,
   ) async {
@@ -141,7 +167,10 @@ void main() {
       size: const Size(320, 480),
     );
 
-    await tester.drag(find.byKey(const Key('dashboard_scroll_view')), const Offset(0, -300));
+    await tester.drag(
+      find.byKey(const Key('dashboard_scroll_view')),
+      const Offset(0, -300),
+    );
     await tester.pumpAndSettle();
 
     expect(

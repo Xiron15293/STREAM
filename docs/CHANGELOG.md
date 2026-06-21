@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11j-fix4 — Remove Dashboard Hero Duplication and Make Automatic KPI Style Meaningful**
+  - Rimossa la seconda lista ridondante dei conti dalla hero Patrimonio: ogni conto compare al massimo una volta nella card
+  - La hero mostra solo pill compatte, con limite ai primi `3` conti visibili e pill finale `+N altri` quando necessario
+  - Ridotto il rumore visivo della hero: mantenuto `Patrimonio netto` come titolo principale e rimossa la label interna ridondante `PATRIMONIO`
+  - I pill conto ora hanno layout piu robusto su viewport stretti e nomi lunghi grazie a larghezza massima e `ellipsis`
+  - `Automatico` per i KPI ora risolve davvero a uno stile consigliato per tema tramite `resolveEffectiveKpiStyle(...)`
+  - Mappatura attiva: Classic/Forest → `glass`, Midnight → `outline`, Aurora → `split`, Minimal Sand → `minimal`, High Contrast → `solid`
+  - La hero Dashboard usa lo stile effettivo anche per il layout: in Aurora `Automatico` attiva davvero la variante split
+  - Nuovi test: `test/dashboard_hero_account_dedup_test.dart`, `test/kpi_automatic_style_resolution_test.dart`
+  - Test aggiornati: `test/kpi_hero_theme_test.dart`, `test/stream_kpi_card_theme_emphasis_test.dart`, aspettative testo in `dashboard_filtered_test.dart` e `qa_extensive_test.dart`
+  - Verifica finale locale: `flutter analyze` con soli `33` info preesistenti fuori scope; `flutter test` full suite verde con `1059` passati e `~1` skipped
+  - Nessuna modifica a DB/schema/migrazioni, chart palette/style, analytics, formule KPI o filtri periodo
+
 - **V0.11j-fix2 — Make KPI Styles Visually Distinct**
   - Riscritto `resolveKpiChrome()` in `stream_kpi_card.dart` con differenze visive forti per ogni stile KPI: minimal (sobrio), dense (compatto), glass (translucido), outline (bordo spesso), solid (sfondo pieno), split (fascia colore)
   - Dashboard `_BalanceHero` ora usa lo stesso `resolveKpiChrome()` invece di duplicare la logica — chrome e layout coerenti con StreamKpiCard

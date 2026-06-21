@@ -116,10 +116,7 @@ class _TestMainScaffoldState extends State<_TestMainScaffold> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
@@ -267,7 +264,9 @@ Future<void> _goToTab(WidgetTester tester, String tab) async {
 
 Future<void> _goToArchiveMovements(WidgetTester tester) async {
   await _goToTab(tester, 'Archivio');
-  final movementsSection = find.byKey(const Key('archive_section_movements')).hitTestable();
+  final movementsSection = find
+      .byKey(const Key('archive_section_movements'))
+      .hitTestable();
   expect(movementsSection, findsOneWidget);
   await tester.ensureVisible(movementsSection);
   await tester.tap(movementsSection);
@@ -368,10 +367,16 @@ Future<void> startResetFlow(WidgetTester tester) async {
   await tester.ensureVisible(confirmField);
   await tester.enterText(confirmField, 'RESET');
   await tester.pumpAndSettle();
-  final confirmButton = find.byKey(const Key('reset_data_confirm_button')).hitTestable();
+  final confirmButton = find
+      .byKey(const Key('reset_data_confirm_button'))
+      .hitTestable();
   expect(confirmButton, findsOneWidget);
   expect(
-    tester.widget<FilledButton>(find.byKey(const Key('reset_data_confirm_button'))).onPressed,
+    tester
+        .widget<FilledButton>(
+          find.byKey(const Key('reset_data_confirm_button')),
+        )
+        .onPressed,
     isNotNull,
   );
   await tester.ensureVisible(confirmButton);
@@ -400,25 +405,27 @@ Future<bool> confirmResetFlow(
 
     final backupFailed = find.text('Backup pre-reset fallito');
     if (backupFailed.evaluate().isNotEmpty) {
-        if (continueIfBackupFails) {
-          final continueButton =
-              find.widgetWithText(FilledButton, 'Continua').hitTestable();
-          expect(continueButton, findsOneWidget);
-          await tester.ensureVisible(continueButton);
-          await tester.runAsync(() async {
-            await tester.tap(continueButton);
-            await Future<void>.delayed(Duration.zero);
-          });
-        } else {
-          final cancelButton =
-              find.widgetWithText(TextButton, 'Annulla').hitTestable();
-          expect(cancelButton, findsOneWidget);
-          await tester.ensureVisible(cancelButton);
-          await tester.runAsync(() async {
-            await tester.tap(cancelButton);
-            await Future<void>.delayed(Duration.zero);
-          });
-        }
+      if (continueIfBackupFails) {
+        final continueButton = find
+            .widgetWithText(FilledButton, 'Continua')
+            .hitTestable();
+        expect(continueButton, findsOneWidget);
+        await tester.ensureVisible(continueButton);
+        await tester.runAsync(() async {
+          await tester.tap(continueButton);
+          await Future<void>.delayed(Duration.zero);
+        });
+      } else {
+        final cancelButton = find
+            .widgetWithText(TextButton, 'Annulla')
+            .hitTestable();
+        expect(cancelButton, findsOneWidget);
+        await tester.ensureVisible(cancelButton);
+        await tester.runAsync(() async {
+          await tester.tap(cancelButton);
+          await Future<void>.delayed(Duration.zero);
+        });
+      }
       await tester.pumpAndSettle();
       return true;
     }
@@ -510,16 +517,13 @@ Future<void> assertDefaultsRestored(WidgetTester tester, AppDatabase db) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _openResetDialog(WidgetTester tester) => openSettingsOrResetArea(tester);
+Future<void> _openResetDialog(WidgetTester tester) =>
+    openSettingsOrResetArea(tester);
 
 Future<bool> _confirmResetFlow(
   WidgetTester tester, {
   bool continueIfBackupFails = true,
-}) =>
-    confirmResetFlow(
-      tester,
-      continueIfBackupFails: continueIfBackupFails,
-    );
+}) => confirmResetFlow(tester, continueIfBackupFails: continueIfBackupFails);
 
 Future<void> _waitForResetComplete(WidgetTester tester, AppDatabase db) =>
     waitForResetCompleted(tester, db);
@@ -1487,38 +1491,37 @@ void main() {
 
     // TODO: Reset widget flow fragile; reset validated manually on Pixel;
     // rerun as integration test or service-level test.
-    testWidgets(
-      'C2. Dashboard resta insight-only e si aggiorna dopo reset',
-      (WidgetTester tester) async {
-        final db = AppDatabase();
-        await _seedResetDataset(db);
-        await db.addMovement(
-          _movement(
-            id: 'dash_income',
-            title: 'Entrata',
-            amount: 100,
-            type: MovementType.income,
-            date: _d(18),
-            categoryId: 'inc_1',
-            accountId: 'acc_a',
-          ),
-        );
-        await _pumpMainAppWithResetBackupStub(tester, db);
+    testWidgets('C2. Dashboard resta insight-only e si aggiorna dopo reset', (
+      WidgetTester tester,
+    ) async {
+      final db = AppDatabase();
+      await _seedResetDataset(db);
+      await db.addMovement(
+        _movement(
+          id: 'dash_income',
+          title: 'Entrata',
+          amount: 100,
+          type: MovementType.income,
+          date: _d(18),
+          categoryId: 'inc_1',
+          accountId: 'acc_a',
+        ),
+      );
+      await _pumpMainAppWithResetBackupStub(tester, db);
 
-        expect(find.text('PATRIMONIO'), findsOneWidget);
-        expect(find.text('Nessun movimento'), findsNothing);
-        expect(find.byType(GroupedMovementsList), findsNothing);
+      expect(find.text('Patrimonio netto'), findsOneWidget);
+      expect(find.text('Nessun movimento'), findsNothing);
+      expect(find.byType(GroupedMovementsList), findsNothing);
 
-        await _openResetDialog(tester);
-        await _confirmResetFlow(tester);
-        await _waitForResetComplete(tester, db);
-        await _goToTab(tester, 'Dashboard');
-        await tester.pumpAndSettle();
-        expect(find.text('+0.00 €'), findsAtLeastNWidgets(1));
-        expect(find.text('Vecchio movimento'), findsNothing);
-        expect(find.text('Nessun movimento'), findsNothing);
-      },
-    );
+      await _openResetDialog(tester);
+      await _confirmResetFlow(tester);
+      await _waitForResetComplete(tester, db);
+      await _goToTab(tester, 'Dashboard');
+      await tester.pumpAndSettle();
+      expect(find.text('+0.00 €'), findsAtLeastNWidgets(1));
+      expect(find.text('Vecchio movimento'), findsNothing);
+      expect(find.text('Nessun movimento'), findsNothing);
+    });
   });
 
   group('D. Archivio / grouping / ordering', () {
@@ -1609,10 +1612,11 @@ void main() {
         final heatmapLayout = find.byKey(const Key('movements_layout_heatmap'));
         expect(heatmapLayout, findsOneWidget);
 
-        for (var attempt = 0;
-            attempt < 20 &&
-                find.text('Nota finale visibile').evaluate().isEmpty;
-            attempt++) {
+        for (
+          var attempt = 0;
+          attempt < 20 && find.text('Nota finale visibile').evaluate().isEmpty;
+          attempt++
+        ) {
           await tester.drag(heatmapLayout, const Offset(0, -450));
           await tester.pumpAndSettle();
         }
@@ -1803,7 +1807,10 @@ void main() {
         ],
       );
 
-      expect(() => BackupService.restore(db, backup), throwsA(isA<StateError>()));
+      expect(
+        () => BackupService.restore(db, backup),
+        throwsA(isA<StateError>()),
+      );
       expect(db.movements.length, 1);
       expect(db.movements.first.id, 'restore_keep');
       expectMoney(db.totalIncome, 0);
@@ -2198,7 +2205,10 @@ void main() {
         await _openMovementPicker(tester);
         await tester.tap(find.text('Trasferimento'));
         await tester.pumpAndSettle();
-        expect(find.byKey(const Key('add_movement_transfer_step')), findsOneWidget);
+        expect(
+          find.byKey(const Key('add_movement_transfer_step')),
+          findsOneWidget,
+        );
         expect(find.text('Conto origine'), findsWidgets);
         expect(find.text('Conto destinazione'), findsWidgets);
 
@@ -2215,7 +2225,10 @@ void main() {
           find.byKey(const Key('transfer_continue_button')),
         );
 
-        expect(find.byKey(const Key('add_movement_details_step')), findsOneWidget);
+        expect(
+          find.byKey(const Key('add_movement_details_step')),
+          findsOneWidget,
+        );
         expect(find.text('Origine'), findsWidgets);
         expect(find.text('Destinazione'), findsWidgets);
         expect(find.text('Categoria'), findsNothing);
@@ -2661,10 +2674,8 @@ void main() {
         await _goToArchiveMovements(tester);
         final fabFinder = find.byType(FloatingActionButton);
         final fabDeadline = DateTime.now().add(const Duration(seconds: 5));
-        while (
-          DateTime.now().isBefore(fabDeadline) &&
-          fabFinder.hitTestable().evaluate().isEmpty
-        ) {
+        while (DateTime.now().isBefore(fabDeadline) &&
+            fabFinder.hitTestable().evaluate().isEmpty) {
           await tester.pump(const Duration(milliseconds: 100));
         }
         final fab = fabFinder.hitTestable();
@@ -2709,7 +2720,7 @@ void main() {
         expect(db.movements.length, 3);
 
         await _goToTab(tester, 'Dashboard');
-        expect(find.text('PATRIMONIO'), findsOneWidget);
+        expect(find.text('Patrimonio netto'), findsOneWidget);
         await _goToTab(tester, 'Archivio');
         await tester.enterText(
           find.widgetWithText(

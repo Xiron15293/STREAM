@@ -162,8 +162,9 @@ class _BalanceHero extends StatelessWidget {
     final kpiStyle = StreamKpiStyleId.fromString(
       PreferencesService.kpiStyleNotifier.value,
     );
+    final effectiveStyle = resolveEffectiveKpiStyle(p, kpiStyle);
     final valueColor = accountsBalance >= 0 ? p.income : p.expense;
-    final isDense = kpiStyle == StreamKpiStyleId.dense;
+    final isDense = effectiveStyle == StreamKpiStyleId.dense;
 
     // Use shared chrome resolver for consistent KPI style rendering.
     final chrome = resolveKpiChrome(
@@ -174,20 +175,13 @@ class _BalanceHero extends StatelessWidget {
       StreamKpiEmphasis.hero,
     );
 
-    // Pill background and text colors adapt to the chrome background.
-    final isLightBg = chrome.backgroundColor.computeLuminance() > 0.5;
-    final pillBg = isLightBg
-        ? Colors.black.withValues(alpha: 0.08)
-        : Colors.white.withValues(alpha: 0.15);
-    final pillTextColor = isLightBg ? Colors.black87 : Colors.white;
-
     Widget content;
     if (isDense) {
       content = Row(
         key: const Key('dashboard_hero_kpi_style_dense'),
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(child: _HeroHeading(accountsBalance: accountsBalance)),
+          const Expanded(child: _HeroHeading()),
           const SizedBox(width: StreamSpacing.md),
           Flexible(
             child: Text(
@@ -200,7 +194,7 @@ class _BalanceHero extends StatelessWidget {
           ),
         ],
       );
-    } else if (kpiStyle == StreamKpiStyleId.split) {
+    } else if (effectiveStyle == StreamKpiStyleId.split) {
       content = _HeroSplit(
         accounts: accounts,
         db: db,
@@ -235,27 +229,6 @@ class _BalanceHero extends StatelessWidget {
           Text('Patrimonio netto', style: chrome.titleStyle),
           SizedBox(height: chrome.valueSpacing),
           content,
-          if (!isDense && kpiStyle != StreamKpiStyleId.split) ...[
-            SizedBox(height: chrome.valueSpacing),
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: accounts.where((a) => !a.archived).take(5).map((account) {
-                final bal = db.getAccountBalance(account);
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: pillBg,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${account.name} ${formatMovementCurrency(bal, showPositiveSign: true)}',
-                    style: TextStyle(fontSize: 10, color: pillTextColor),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
         ],
       ),
     );
@@ -263,32 +236,16 @@ class _BalanceHero extends StatelessWidget {
 }
 
 class _HeroHeading extends StatelessWidget {
-  final double accountsBalance;
-
-  const _HeroHeading({required this.accountsBalance});
+  const _HeroHeading();
 
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'PATRIMONIO',
-          style: StreamTypography.micro.copyWith(
-            color: p.textSecondary,
-            letterSpacing: 1.1,
-          ),
-        ),
-        const SizedBox(height: StreamSpacing.xs),
-        Text(
-          'Situazione attuale, non filtrata dal periodo',
-          style: StreamTypography.caption.copyWith(color: p.textMuted),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return Text(
+      'Situazione attuale, non filtrata dal periodo',
+      style: StreamTypography.caption.copyWith(color: p.textMuted),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
@@ -311,22 +268,18 @@ class _HeroStacked extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
-    final titleColor = forcePrimaryForeground ? p.textPrimary : p.textSecondary;
     final subtitleColor = forcePrimaryForeground
         ? p.textPrimary.withValues(alpha: 0.78)
         : p.textSecondary;
 
+    const maxPills = 3;
+    final activeAccounts = accounts.where((a) => !a.archived).toList();
+    final visible = activeAccounts.take(maxPills).toList();
+    final extraCount = activeAccounts.length - visible.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'PATRIMONIO',
-          style: StreamTypography.micro.copyWith(
-            color: titleColor,
-            letterSpacing: 1.1,
-          ),
-        ),
-        const SizedBox(height: StreamSpacing.sm),
         Text(
           formatMovementCurrency(accountsBalance, showPositiveSign: true),
           key: const Key('dashboard_hero_networth_value'),
@@ -339,18 +292,43 @@ class _HeroStacked extends StatelessWidget {
           'Situazione attuale, non filtrata dal periodo',
           style: StreamTypography.caption.copyWith(color: subtitleColor),
         ),
-        if (accounts.isNotEmpty) ...[
+        if (visible.isNotEmpty) ...[
           const SizedBox(height: StreamSpacing.md),
           Wrap(
             spacing: StreamSpacing.sm,
             runSpacing: StreamSpacing.sm,
-            children: accounts.take(3).map((account) {
-              return _AccountBalancePill(
-                account: account,
-                balance: db.getAccountBalance(account),
-                emphasis: forcePrimaryForeground,
-              );
-            }).toList(),
+            children: [
+              ...visible.map(
+                (account) => _AccountBalancePill(
+                  account: account,
+                  balance: db.getAccountBalance(account),
+                  emphasis: forcePrimaryForeground,
+                ),
+              ),
+              if (extraCount > 0)
+                Container(
+                  key: const Key('dashboard_hero_more_accounts'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: forcePrimaryForeground
+                        ? p.textPrimary.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '+$extraCount altri',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: forcePrimaryForeground
+                          ? p.textPrimary
+                          : p.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ],
@@ -374,13 +352,18 @@ class _HeroSplit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    const maxPills = 3;
+    final activeAccounts = accounts.where((a) => !a.archived).toList();
+    final visible = activeAccounts.take(maxPills).toList();
+    final extraCount = activeAccounts.length - visible.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _HeroHeading(accountsBalance: accountsBalance)),
+            const Expanded(child: _HeroHeading()),
             const SizedBox(width: StreamSpacing.md),
             Icon(Icons.account_balance_wallet_outlined, color: p.primary),
           ],
@@ -393,17 +376,35 @@ class _HeroSplit extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        if (accounts.isNotEmpty) ...[
+        if (visible.isNotEmpty) ...[
           const SizedBox(height: StreamSpacing.md),
           Wrap(
             spacing: StreamSpacing.sm,
             runSpacing: StreamSpacing.sm,
-            children: accounts.take(3).map((account) {
-              return _AccountBalancePill(
-                account: account,
-                balance: db.getAccountBalance(account),
-              );
-            }).toList(),
+            children: [
+              ...visible.map(
+                (account) => _AccountBalancePill(
+                  account: account,
+                  balance: db.getAccountBalance(account),
+                ),
+              ),
+              if (extraCount > 0)
+                Container(
+                  key: const Key('dashboard_hero_more_accounts'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '+$extraCount altri',
+                    style: TextStyle(fontSize: 11, color: p.textSecondary),
+                  ),
+                ),
+            ],
           ),
         ],
       ],
@@ -425,39 +426,48 @@ class _AccountBalancePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StreamSpacing.sm,
-        vertical: StreamSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: emphasis
-            ? p.textPrimary.withValues(alpha: 0.12)
-            : p.surfaceElevated,
-        borderRadius: BorderRadius.circular(StreamRadius.full),
-      ),
-      child: Wrap(
-        spacing: StreamSpacing.xs,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Icon(
-            StreamIconLibrary.getAccountIcon(account.iconKey),
-            size: 14,
-            color: Color(account.color),
-          ),
-          Text(
-            account.name,
-            style: StreamTypography.caption.copyWith(
-              color: emphasis ? p.textPrimary : p.textSecondary,
+    final width = MediaQuery.sizeOf(context).width;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: width * 0.82),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: StreamSpacing.sm,
+          vertical: StreamSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: emphasis
+              ? p.textPrimary.withValues(alpha: 0.12)
+              : p.surfaceElevated,
+          borderRadius: BorderRadius.circular(StreamRadius.full),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              StreamIconLibrary.getAccountIcon(account.iconKey),
+              size: 14,
+              color: Color(account.color),
             ),
-          ),
-          Text(
-            formatMovementCurrency(balance, showPositiveSign: true),
-            style: StreamTypography.captionBold.copyWith(
-              color: balance >= 0 ? p.income : p.expense,
+            const SizedBox(width: StreamSpacing.xs),
+            Flexible(
+              child: Text(
+                account.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: StreamTypography.caption.copyWith(
+                  color: emphasis ? p.textPrimary : p.textSecondary,
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: StreamSpacing.xs),
+            Text(
+              formatMovementCurrency(balance, showPositiveSign: true),
+              style: StreamTypography.captionBold.copyWith(
+                color: balance >= 0 ? p.income : p.expense,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -712,9 +722,7 @@ class _CategoryExpenseRow extends StatelessWidget {
                   const SizedBox(width: StreamSpacing.sm),
                   Text(
                     formatMovementCurrency(item.total),
-                    style: StreamTypography.amount.copyWith(
-                      color: p.expense,
-                    ),
+                    style: StreamTypography.amount.copyWith(color: p.expense),
                   ),
                 ],
               ),

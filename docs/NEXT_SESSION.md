@@ -6,13 +6,15 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11j-fix4 completata: hero Patrimonio senza duplicazione conti, lista pill compatta con `+N altri`, titolo semplificato e layout pill piu robusto su viewport stretti.
+- V0.11j-fix4 completata anche sul lato KPI: `Automatico` non e piu un clone di `Minimal`, ma una scelta consigliata dal tema via `resolveEffectiveKpiStyle(...)`; in Aurora la hero usa davvero il layout split.
 - V0.11j completata: lo `chart_style` scelto in Impostazioni ora cambia davvero card, barre, donut, legenda, empty state e superfici heatmap collegate ai grafici senza toccare dati o calcoli.
 - Fix di audit incluso in V0.11j: le chart visibility preferences ora filtrano davvero il render di ogni card singola, quindi cambiare stile non riattiva grafici nascosti e nascondere un grafico non resetta lo stile.
 - V0.11i-fix3 completata: la sheet dettaglio conto ora e movement-first. Header, azioni, filtro periodo e mini-summary occupano meno spazio; il `Riepilogo dettagliato` e collassabile e la lista movimenti entra nel primo viewport molto prima.
 - V0.11i-fix2 completata: gli stili KPI globali hanno copertura coerente anche nei riepiloghi condivisi e nelle card legacy gia migrate al tema.
 - V0.11i-fix1 completata: summary periodali, heatmap, flow add/edit, picker e suggerimenti movimento usano superfici/palette dinamiche senza cambiare logica business.
 - V0.11j-fix1 completata: Hero KPI Cards con `StreamKpiEmphasis` (normal/hero), High Contrast hero giallo/nero, key stabili per tutte le schermate. KPI style e Chart style restano separati. `flutter test`: 1053 passati, ~1 skipped.
-- QA locale aggiornata: `flutter analyze` resta info-only per warning storici fuori scope; `flutter test` full suite verde con `1053` passati e `1` skipped.
+- QA locale aggiornata: `flutter analyze` resta info-only per warning storici fuori scope; `flutter test` full suite verde con `1059` passati e `~1` skipped.
 - Residuo principale fuori sprint: warning analyzer legacy in `database.dart`, `backup_screen.dart`, `categories_screen.dart` e `theme_test.dart`, ma nessun errore bloccante nell’area Conti/Movimenti/KPI.
 
 - Profili separati e isolamento DB sono attivi e verificati.
@@ -33,9 +35,9 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale multi-tema su combinazioni `theme + chart_style + hidden_chart_ids` in Dashboard, Grafici e heatmap
+1. QA manuale multi-tema su combinazioni `theme + kpi_style automatic/minimal + chart_style + hidden_chart_ids` in Dashboard, Grafici e heatmap
 2. Pulizia warning analyzer storici fuori scope
-3. Verifica visuale finale su device reale della nuova sheet account in viewport piccoli e su piu temi/KPI styles
+3. Verifica visuale finale su device reale della hero Patrimonio con nomi conto lunghi e tanti conti attivi
 
 ## Prossimo Sprint Consigliato
 

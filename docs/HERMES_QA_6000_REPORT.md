@@ -4,6 +4,7 @@
 
 ## Sintesi
 
+- Delta 2026-06-21: V0.11j-fix4 confermata con hero Patrimonio deduplicata, pill `+N altri` e `Automatico` KPI davvero theme-aware, full suite finale **1059 passati / ~1 skipped**
 - Delta 2026-06-21: V0.11j confermata con advanced chart styles reali, fix chart visibility per-card e full suite finale **1048 passati / 1 skipped**
 - Delta 2026-06-21: V0.11i-fix3 confermata con account detail movement-priority UX, KPI dettagliati collassabili e full suite finale **1038 passati / 1 skipped**
 - Delta 2026-06-21: V0.11i-fix2 confermata con copertura KPI style globale allineata ai riepiloghi condivisi
@@ -18,7 +19,7 @@
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`
 - Full suite finale: **verde**
 - Stato finale: **Hermes candidate for closure / Hermes QA green**
-- Executive summary: `68` file test, `1048` test/casi passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
+- Executive summary: `68` file test, `1059` test/casi passati, `~1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
 - V0.10 Grafici Tab + V0.10.1 Chart Readability + V0.10.1c Donut/Scroll/Extra: **32** nuovi test
 - V0.11 Theme System foundation: **19** nuovi test
 - V0.11b Theme applied to widgets: widget grafici e Dashboard KPI migrati, helper fallback sicuro
@@ -84,7 +85,7 @@
 - `flutter analyze`: ok, nessun errore nuovo, solo info preesistenti
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
-- `flutter test`: ok (`1048` passed, `1` skipped)
+- `flutter test`: ok (`1059` passed, `~1` skipped)
 
 ## Note funzionali consolidate
 

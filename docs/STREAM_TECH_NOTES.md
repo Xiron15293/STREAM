@@ -2,7 +2,19 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes closure candidate / QA stabilized + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+**Stato:** Hermes closure candidate / QA stabilized + dashboard hero dedup + effective automatic KPI style mapping + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+
+## Update 2026-06-21 — V0.11j-fix4 Dashboard Hero Dedup + Effective Automatic KPI Style
+
+- In `lib/screens/dashboard_screen.dart` la hero Patrimonio non renderizza piu una seconda lista bottom-level di account pill: la duplicazione nasceva dal fatto che `_BalanceHero` aggiungeva una wrap extra oltre a quelle gia prodotte da `_HeroStacked` / `_HeroSplit`
+- La hero mantiene una sola lista compatta con massimo `3` conti visibili e pill finale `+N altri`; nessuna modifica a ordine, saldi o calcolo del patrimonio
+- La label interna `PATRIMONIO` e stata rimossa: il titolo principale resta `Patrimonio netto`, mentre il contesto testuale non duplica piu lo stesso concetto
+- `_AccountBalancePill` ora applica un `maxWidth` relativo al viewport e usa `ellipsis` sul nome conto per ridurre il rischio di overflow orizzontale
+- `resolveEffectiveKpiStyle(StreamThemePalette, StreamKpiStyleId)` resta il punto centrale per rendere `automatic` davvero theme-aware: Classic/Forest → `glass`, Midnight → `outline`, Aurora → `split`, Minimal Sand → `minimal`, High Contrast → `solid`
+- Correzione importante: la hero Dashboard ora usa lo stile effettivo anche per scegliere il layout; prima `automatic` poteva risolvere a `split` ma continuare a usare il layout stacked
+- Test aggiunti: `dashboard_hero_account_dedup_test.dart`, `kpi_automatic_style_resolution_test.dart`
+- Test aggiornati: `kpi_hero_theme_test.dart`, `stream_kpi_card_theme_emphasis_test.dart`, `dashboard_filtered_test.dart`, `qa_extensive_test.dart`
+- Validazione finale locale: `flutter test` full suite verde con `1059` passati e `~1` skipped
 
 ## Update 2026-06-21 — V0.11j Advanced Chart Styles Settings Rollout
 

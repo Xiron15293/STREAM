@@ -75,6 +75,7 @@
 | V0.11i | Categories Legacy Theme Cleanup | ✅ COMPLETATO | 2026-06-20 |
 | V0.11j | Advanced Chart Styles (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService | ✅ COMPLETATO | 2026-06-21 |
 | V0.11j-fix1 | Hero KPI Cards + Strong Theme Differentiation (StreamKpiEmphasis, High Contrast giallo/nero, key stabili) | ✅ COMPLETATO | 2026-06-21 |
+| V0.11j-fix4 | Dashboard Hero Dedup + Effective Automatic KPI Style | ✅ COMPLETATO | 2026-06-21 |
 
 ## Future
 
@@ -104,6 +105,7 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **Delta** | **Profili separati (✅) — registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** |
 | **Delta** | **V0.11j (✅) — advanced chart styles reali in Settings/Grafici/Dashboard + bugfix chart visibility per-card, full suite finale `1048 passed`, `1 skipped`** |
 | **Delta** | **V0.11j-fix1 (✅) — Hero KPI Cards, High Contrast giallo/nero, key stabili, full suite `1053 passed`, `1 skipped`** |
+| **Delta** | **V0.11j-fix4 (✅) — hero Patrimonio senza conti duplicati, pill compatte con `+N altri`, `Automatico` KPI risolto per tema e hero split reale in Aurora, full suite `1059 passed`, `~1 skipped`** |
 | **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`1048 passed`, `1 skipped`)** |
 | **Delta** | **V0.11i-fix2/fix3 (✅) — copertura KPI style globale + sheet conto movement-first con riepilogo dettagliato collassabile, full suite finale `1038 passed`, `1 skipped`** |
 | **Delta** | **Hermes closure stabilization (✅) — azioni movimento centralizzate, tap breve modifica, long-press/tre puntini sullo stesso sheet, header compatto add/edit, sticky amount, restore conti, delete categoria con riassegnazione sicura** |

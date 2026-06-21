@@ -70,10 +70,17 @@ class StreamKpiCard extends StatelessWidget {
       builder: (context, rawStyle, _) {
         final palette = context.$palette;
         final styleId = StreamKpiStyleId.fromString(rawStyle);
+        final effectiveStyle = resolveEffectiveKpiStyle(palette, styleId);
         final accent = accentColor ?? _resolveAccent(palette);
-        final chrome = resolveKpiChrome(palette, accent, styleId, density, emphasis);
+        final chrome = resolveKpiChrome(
+          palette,
+          accent,
+          styleId,
+          density,
+          emphasis,
+        );
         final effectiveLayout = layout == StreamKpiLayout.auto
-            ? (styleId == StreamKpiStyleId.dense
+            ? (effectiveStyle == StreamKpiStyleId.dense
                   ? StreamKpiLayout.inline
                   : StreamKpiLayout.stacked)
             : layout;
@@ -154,7 +161,9 @@ class StreamKpiCard extends StatelessWidget {
                     Container(
                       width: chrome.accentStripeWidth,
                       decoration: BoxDecoration(
-                        color: accent.withValues(alpha: chrome.accentStripeAlpha),
+                        color: accent.withValues(
+                          alpha: chrome.accentStripeAlpha,
+                        ),
                         borderRadius: BorderRadius.circular(StreamRadius.full),
                       ),
                     ),
@@ -417,7 +426,11 @@ class _TitleRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
-          Icon(icon, size: style.fontSize != null ? style.fontSize! + 1 : 12, color: accent),
+          Icon(
+            icon,
+            size: style.fontSize != null ? style.fontSize! + 1 : 12,
+            color: accent,
+          ),
           const SizedBox(width: StreamSpacing.xs),
         ],
         Expanded(
@@ -511,6 +524,25 @@ class StreamKpiChrome {
 /// Clamp an alpha value to the valid [0.0, 1.0] range.
 double safeAlpha(double value) => value.clamp(0.0, 1.0);
 
+/// Resolve the effective KPI style based on the selected style and current theme.
+///
+/// When the user selects [StreamKpiStyleId.automatic], this returns a theme-aware
+/// recommended style instead of defaulting to [StreamKpiStyleId.minimal].
+/// Manual selection bypasses the mapping.
+StreamKpiStyleId resolveEffectiveKpiStyle(
+  StreamThemePalette palette,
+  StreamKpiStyleId selected,
+) {
+  if (selected != StreamKpiStyleId.automatic) return selected;
+  // Automatic: theme-recommended style.
+  if (palette.isHighContrastTheme) return StreamKpiStyleId.solid;
+  if (palette.isForestTheme) return StreamKpiStyleId.glass;
+  if (palette.isMidnightTheme) return StreamKpiStyleId.outline;
+  if (palette.isAuroraTheme) return StreamKpiStyleId.split;
+  if (palette.isMinimalSandTheme) return StreamKpiStyleId.minimal;
+  return StreamKpiStyleId.glass; // Classic default
+}
+
 /// Returns a base alpha modifier and surface character for each theme.
 /// Used by resolveKpiChrome to produce distinctly different chrome per theme.
 Color _themeAccentBase(StreamThemePalette palette, Color accent) {
@@ -537,12 +569,26 @@ Color _themeAccentBase(StreamThemePalette palette, Color accent) {
 
 /// Select the border color per theme and style — ensures every theme has
 /// a visibly distinct border tone.
-Color _themeBorderColor(StreamThemePalette palette, Color accent, double alpha) {
-  if (palette.isForestTheme) return const Color(0xFF22C55E).withValues(alpha: alpha);
-  if (palette.isMidnightTheme) return const Color(0xFF38BDF8).withValues(alpha: alpha);
-  if (palette.isAuroraTheme) return const Color(0xFFA78BFA).withValues(alpha: alpha);
-  if (palette.isMinimalSandTheme) return const Color(0xFFC08457).withValues(alpha: alpha);
-  if (palette.isHighContrastTheme) return const Color(0xFFFFFF00).withValues(alpha: alpha);
+Color _themeBorderColor(
+  StreamThemePalette palette,
+  Color accent,
+  double alpha,
+) {
+  if (palette.isForestTheme) {
+    return const Color(0xFF22C55E).withValues(alpha: alpha);
+  }
+  if (palette.isMidnightTheme) {
+    return const Color(0xFF38BDF8).withValues(alpha: alpha);
+  }
+  if (palette.isAuroraTheme) {
+    return const Color(0xFFA78BFA).withValues(alpha: alpha);
+  }
+  if (palette.isMinimalSandTheme) {
+    return const Color(0xFFC08457).withValues(alpha: alpha);
+  }
+  if (palette.isHighContrastTheme) {
+    return const Color(0xFFFFFF00).withValues(alpha: alpha);
+  }
   return accent.withValues(alpha: alpha);
 }
 
@@ -555,6 +601,7 @@ StreamKpiChrome resolveKpiChrome(
   StreamKpiDensity density,
   StreamKpiEmphasis emphasis,
 ) {
+  final effectiveStyle = resolveEffectiveKpiStyle(palette, styleId);
   final baseSurface = StreamSurfaceTokens.card(palette, elevated: true);
   final isHighContrast = palette.isHighContrastTheme;
   final isForest = palette.isForestTheme;
@@ -570,8 +617,16 @@ StreamKpiChrome resolveKpiChrome(
   final heroBorderMul = isHero ? 1.5 : 1.0;
 
   EdgeInsets paddingBase(bool tight, bool compact) {
-    final hPad = tight ? 8.0 : compact ? 10.0 : StreamSpacing.md.toDouble();
-    final vPad = tight ? 6.0 : compact ? 8.0 : StreamSpacing.md.toDouble();
+    final hPad = tight
+        ? 8.0
+        : compact
+        ? 10.0
+        : StreamSpacing.md.toDouble();
+    final vPad = tight
+        ? 6.0
+        : compact
+        ? 8.0
+        : StreamSpacing.md.toDouble();
     return EdgeInsets.symmetric(
       horizontal: hPad * heroPaddingMul,
       vertical: vPad * heroPaddingMul,
@@ -583,14 +638,20 @@ StreamKpiChrome resolveKpiChrome(
 
   // For High Contrast, distinct chrome per style regardless of hero/normal.
   if (isHighContrast) {
-    return _highContrastChrome(styleId, tight, compact, isHero);
+    return _highContrastChrome(effectiveStyle, tight, compact, isHero);
   }
 
   // ---- Baby / normal chrome per style and theme ----
   final titleStyle = StreamTypography.micro.copyWith(
-    fontSize: (tight ? 9 : compact ? 10 : 11) * (isHero ? 1.1 : 1.0),
+    fontSize:
+        (tight
+            ? 9
+            : compact
+            ? 10
+            : 11) *
+        (isHero ? 1.1 : 1.0),
     color: palette.textSecondary,
-    letterSpacing: styleId == StreamKpiStyleId.dense ? 0.8 : 0.5,
+    letterSpacing: effectiveStyle == StreamKpiStyleId.dense ? 0.8 : 0.5,
   );
   final subtitleStyle = StreamTypography.micro.copyWith(
     fontSize: (tight ? 8 : 9) * (isHero ? 1.1 : 1.0),
@@ -599,40 +660,84 @@ StreamKpiChrome resolveKpiChrome(
 
   // Factor: amplify per-style character for hero.
   final aMul = isHero ? 2.0 : 1.0;
-  final bWidth = (isHero ? 1.5 : 1.0) * (styleId == StreamKpiStyleId.outline ? 1.4 : 1.0);
+  final bWidth =
+      (isHero ? 1.5 : 1.0) *
+      (effectiveStyle == StreamKpiStyleId.outline ? 1.4 : 1.0);
 
-  switch (styleId) {
+  switch (effectiveStyle) {
     case StreamKpiStyleId.dense:
       return StreamKpiChrome(
         backgroundColor: palette.surfaceElevated,
         gradient: isForest
-            ? LinearGradient(colors: [const Color(0xFF22C55E).withValues(alpha: safeAlpha(0.08 * aMul)), palette.surfaceElevated])
+            ? LinearGradient(
+                colors: [
+                  const Color(
+                    0xFF22C55E,
+                  ).withValues(alpha: safeAlpha(0.08 * aMul)),
+                  palette.surfaceElevated,
+                ],
+              )
             : isHero
-                ? LinearGradient(colors: [themeAccent.withValues(alpha: 0.15), palette.surfaceElevated])
-                : null,
+            ? LinearGradient(
+                colors: [
+                  themeAccent.withValues(alpha: 0.15),
+                  palette.surfaceElevated,
+                ],
+              )
+            : null,
         border: Border.all(
-          color: _themeBorderColor(palette, themeAccent, safeAlpha(0.15 * aMul)),
+          color: _themeBorderColor(
+            palette,
+            themeAccent,
+            safeAlpha(0.15 * aMul),
+          ),
           width: baseSurface.borderWidth * bWidth,
         ),
         shadows: const [],
         padding: EdgeInsets.symmetric(
-          horizontal: (tight ? 6 : compact ? 8 : 10) * heroPaddingMul,
-          vertical: (tight ? 4 : compact ? 5 : 6) * heroPaddingMul,
+          horizontal:
+              (tight
+                  ? 6
+                  : compact
+                  ? 8
+                  : 10) *
+              heroPaddingMul,
+          vertical:
+              (tight
+                  ? 4
+                  : compact
+                  ? 5
+                  : 6) *
+              heroPaddingMul,
         ),
         radius: compact ? 8 : 10,
         leftAccent: false,
         accentStripeWidth: 0,
         accentStripeAlpha: 0,
         titleStyle: titleStyle.copyWith(
-          fontSize: (tight ? 7.5 : compact ? 8 : 8.5) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 7.5
+                  : compact
+                  ? 8
+                  : 8.5) *
+              heroFontMul,
           letterSpacing: 1.0,
         ),
         valueStyle: StreamTypography.captionBold.copyWith(
-          fontSize: (tight ? 10 : compact ? 11 : 12) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 10
+                  : compact
+                  ? 11
+                  : 12) *
+              heroFontMul,
           fontWeight: isHero ? FontWeight.w900 : FontWeight.w700,
           height: 1,
         ),
-        subtitleStyle: subtitleStyle.copyWith(fontSize: (tight ? 7 : 7.5) * heroFontMul),
+        subtitleStyle: subtitleStyle.copyWith(
+          fontSize: (tight ? 7 : 7.5) * heroFontMul,
+        ),
         valueSpacing: 4,
         subtitleSpacing: 2,
         centeredIconSize: 12,
@@ -640,17 +745,32 @@ StreamKpiChrome resolveKpiChrome(
 
     case StreamKpiStyleId.glass:
       return StreamKpiChrome(
-        backgroundColor: palette.surfaceElevated.withValues(alpha: isHero ? 0.45 : 0.55),
+        backgroundColor: palette.surfaceElevated.withValues(
+          alpha: isHero ? 0.45 : 0.55,
+        ),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            themeAccent.withValues(alpha: safeAlpha((isAurora ? 0.30 : isForest ? 0.22 : 0.18) * aMul)),
+            themeAccent.withValues(
+              alpha: safeAlpha(
+                (isAurora
+                        ? 0.30
+                        : isForest
+                        ? 0.22
+                        : 0.18) *
+                    aMul,
+              ),
+            ),
             palette.surface.withValues(alpha: isHero ? 0.85 : 0.92),
           ],
         ),
         border: Border.all(
-          color: _themeBorderColor(palette, themeAccent, safeAlpha((isAurora ? 0.40 : 0.25) * aMul)),
+          color: _themeBorderColor(
+            palette,
+            themeAccent,
+            safeAlpha((isAurora ? 0.40 : 0.25) * aMul),
+          ),
           width: baseSurface.borderWidth * bWidth,
         ),
         shadows: baseSurface.shadows,
@@ -659,9 +779,17 @@ StreamKpiChrome resolveKpiChrome(
         leftAccent: false,
         accentStripeWidth: 0,
         accentStripeAlpha: 0,
-        titleStyle: titleStyle.copyWith(color: palette.textPrimary.withValues(alpha: 0.8)),
+        titleStyle: titleStyle.copyWith(
+          color: palette.textPrimary.withValues(alpha: 0.8),
+        ),
         valueStyle: StreamTypography.captionBold.copyWith(
-          fontSize: (tight ? 12 : compact ? 13 : 18) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 12
+                  : compact
+                  ? 13
+                  : 18) *
+              heroFontMul,
           fontWeight: isHero ? FontWeight.w900 : FontWeight.w700,
         ),
         subtitleStyle: subtitleStyle,
@@ -675,7 +803,11 @@ StreamKpiChrome resolveKpiChrome(
         backgroundColor: palette.surface.withValues(alpha: isHero ? 0.3 : 0.5),
         gradient: null,
         border: Border.all(
-          color: _themeBorderColor(palette, themeAccent, safeAlpha(0.55 * aMul)),
+          color: _themeBorderColor(
+            palette,
+            themeAccent,
+            safeAlpha(0.55 * aMul),
+          ),
           width: (isHero ? 2.5 : 1.5) * heroBorderMul,
         ),
         shadows: const [],
@@ -686,7 +818,13 @@ StreamKpiChrome resolveKpiChrome(
         accentStripeAlpha: 0,
         titleStyle: titleStyle,
         valueStyle: StreamTypography.captionBold.copyWith(
-          fontSize: (tight ? 12 : compact ? 13 : 18) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 12
+                  : compact
+                  ? 13
+                  : 18) *
+              heroFontMul,
           fontWeight: isHero ? FontWeight.w900 : FontWeight.w600,
         ),
         subtitleStyle: subtitleStyle,
@@ -696,16 +834,18 @@ StreamKpiChrome resolveKpiChrome(
       );
 
     case StreamKpiStyleId.solid:
-      final solidAlpha = isHero ? 0.35 : (palette.brightness == Brightness.light ? 0.14 : 0.18);
+      final solidAlpha = isHero
+          ? 0.35
+          : (palette.brightness == Brightness.light ? 0.14 : 0.18);
       final bg = isMidnight
           ? const Color(0xFF38BDF8).withValues(alpha: isHero ? 0.40 : 0.20)
           : isForest
-              ? const Color(0xFF22C55E).withValues(alpha: isHero ? 0.50 : 0.22)
-              : isSand
-                  ? const Color(0xFFC08457).withValues(alpha: isHero ? 0.35 : 0.15)
-                  : isAurora
-                      ? const Color(0xFFA78BFA).withValues(alpha: isHero ? 0.40 : 0.20)
-                      : accent.withValues(alpha: solidAlpha);
+          ? const Color(0xFF22C55E).withValues(alpha: isHero ? 0.50 : 0.22)
+          : isSand
+          ? const Color(0xFFC08457).withValues(alpha: isHero ? 0.35 : 0.15)
+          : isAurora
+          ? const Color(0xFFA78BFA).withValues(alpha: isHero ? 0.40 : 0.20)
+          : accent.withValues(alpha: solidAlpha);
       return StreamKpiChrome(
         backgroundColor: bg,
         gradient: null,
@@ -718,7 +858,13 @@ StreamKpiChrome resolveKpiChrome(
         accentStripeAlpha: 0,
         titleStyle: titleStyle.copyWith(color: palette.textPrimary),
         valueStyle: StreamTypography.captionBold.copyWith(
-          fontSize: (tight ? 12 : compact ? 13 : 18) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 12
+                  : compact
+                  ? 13
+                  : 18) *
+              heroFontMul,
           fontWeight: FontWeight.w900,
         ),
         subtitleStyle: subtitleStyle.copyWith(color: palette.textSecondary),
@@ -743,7 +889,13 @@ StreamKpiChrome resolveKpiChrome(
         accentStripeAlpha: 0.95,
         titleStyle: titleStyle,
         valueStyle: StreamTypography.captionBold.copyWith(
-          fontSize: (tight ? 12 : compact ? 13 : 16) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 12
+                  : compact
+                  ? 13
+                  : 16) *
+              heroFontMul,
           fontWeight: isHero ? FontWeight.w900 : FontWeight.w700,
         ),
         subtitleStyle: subtitleStyle,
@@ -757,10 +909,19 @@ StreamKpiChrome resolveKpiChrome(
       return StreamKpiChrome(
         backgroundColor: palette.surface,
         gradient: isAurora
-            ? LinearGradient(colors: [const Color(0xFFA78BFA).withValues(alpha: safeAlpha(0.10 * aMul)), palette.surface])
+            ? LinearGradient(
+                colors: [
+                  const Color(
+                    0xFFA78BFA,
+                  ).withValues(alpha: safeAlpha(0.10 * aMul)),
+                  palette.surface,
+                ],
+              )
             : isHero
-                ? LinearGradient(colors: [themeAccent.withValues(alpha: 0.12), palette.surface])
-                : null,
+            ? LinearGradient(
+                colors: [themeAccent.withValues(alpha: 0.12), palette.surface],
+              )
+            : null,
         border: Border.all(
           color: baseSurface.border.withValues(alpha: isHero ? 0.6 : 0.3),
           width: baseSurface.borderWidth * (isHero ? 1.5 : 1.0),
@@ -769,15 +930,21 @@ StreamKpiChrome resolveKpiChrome(
         padding: tight
             ? EdgeInsets.symmetric(horizontal: 8, vertical: 7 * heroPaddingMul)
             : compact
-                ? EdgeInsets.symmetric(horizontal: 10, vertical: 9 * heroPaddingMul)
-                : EdgeInsets.all(StreamSpacing.md * heroPaddingMul),
+            ? EdgeInsets.symmetric(horizontal: 10, vertical: 9 * heroPaddingMul)
+            : EdgeInsets.all(StreamSpacing.md * heroPaddingMul),
         radius: StreamRadius.lg,
         leftAccent: false,
         accentStripeWidth: 0,
         accentStripeAlpha: 0,
         titleStyle: titleStyle,
         valueStyle: StreamTypography.captionBold.copyWith(
-          fontSize: (tight ? 12 : compact ? 13 : 20) * heroFontMul,
+          fontSize:
+              (tight
+                  ? 12
+                  : compact
+                  ? 13
+                  : 20) *
+              heroFontMul,
           fontWeight: isHero ? FontWeight.w900 : FontWeight.w700,
         ),
         subtitleStyle: subtitleStyle,
@@ -789,32 +956,36 @@ StreamKpiChrome resolveKpiChrome(
 }
 
 /// High Contrast chrome: each style keeps its own distinct look.
-StreamKpiChrome _highContrastChrome(StreamKpiStyleId styleId, bool tight, bool compact, bool isHero) {
+StreamKpiChrome _highContrastChrome(
+  StreamKpiStyleId styleId,
+  bool tight,
+  bool compact,
+  bool isHero,
+) {
   const hcYellow = Color(0xFFFFFF00);
   const hcBlack = Colors.black;
   const hcWhite = Colors.white;
   final sc = isHero ? 1.2 : 1.0; // hero scale
 
-  EdgeInsets pad(double h, double v) => EdgeInsets.symmetric(
-        horizontal: h * sc,
-        vertical: v * sc,
-      );
+  EdgeInsets pad(double h, double v) =>
+      EdgeInsets.symmetric(horizontal: h * sc, vertical: v * sc);
 
   TextStyle titleStyle(double size) => StreamTypography.micro.copyWith(
-        fontSize: size * sc,
-        color: hcBlack,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
-      );
+    fontSize: size * sc,
+    color: hcBlack,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.5,
+  );
 
   TextStyle valueStyle(double size) => StreamTypography.amountLarge.copyWith(
-        fontSize: size * sc,
-        color: hcBlack,
-        fontWeight: FontWeight.w900,
-      );
+    fontSize: size * sc,
+    color: hcBlack,
+    fontWeight: FontWeight.w900,
+  );
 
   // Helper: fill common defaults
-  StreamKpiChrome hc(bool left, double stripeW, double stripeA, Gradient? g) => StreamKpiChrome(
+  StreamKpiChrome hc(bool left, double stripeW, double stripeA, Gradient? g) =>
+      StreamKpiChrome(
         backgroundColor: hcYellow,
         gradient: g,
         border: Border.all(color: hcWhite, width: 1.0),
@@ -840,7 +1011,18 @@ StreamKpiChrome _highContrastChrome(StreamKpiStyleId styleId, bool tight, bool c
       return hc(false, 0, 0, null).copyWith(
         backgroundColor: hcYellow,
         border: Border.all(color: hcWhite, width: 1.0),
-        padding: pad(tight ? 8 : compact ? 10 : 14, tight ? 4 : compact ? 6 : 10),
+        padding: pad(
+          tight
+              ? 8
+              : compact
+              ? 10
+              : 14,
+          tight
+              ? 4
+              : compact
+              ? 6
+              : 10,
+        ),
         radius: 8,
         titleStyle: titleStyle(tight ? 8 : 10),
         valueStyle: valueStyle(tight ? 14 : 18),
@@ -853,16 +1035,43 @@ StreamKpiChrome _highContrastChrome(StreamKpiStyleId styleId, bool tight, bool c
         centeredIconSize: 12,
       );
     case StreamKpiStyleId.glass:
-      return hc(false, 0, 0, LinearGradient(colors: [hcWhite.withValues(alpha: 0.3), hcYellow])).copyWith(
+      return hc(
+        false,
+        0,
+        0,
+        LinearGradient(colors: [hcWhite.withValues(alpha: 0.3), hcYellow]),
+      ).copyWith(
         backgroundColor: hcYellow.withValues(alpha: 0.85),
-        padding: pad(tight ? 10 : compact ? 14 : 20, tight ? 8 : compact ? 10 : 16),
+        padding: pad(
+          tight
+              ? 10
+              : compact
+              ? 14
+              : 20,
+          tight
+              ? 8
+              : compact
+              ? 10
+              : 16,
+        ),
         radius: 20,
       );
     case StreamKpiStyleId.outline:
       return hc(false, 0, 0, null).copyWith(
         backgroundColor: hcBlack,
         border: Border.all(color: hcYellow, width: 2.0 * sc),
-        padding: pad(tight ? 10 : compact ? 14 : 20, tight ? 8 : compact ? 10 : 16),
+        padding: pad(
+          tight
+              ? 10
+              : compact
+              ? 14
+              : 20,
+          tight
+              ? 8
+              : compact
+              ? 10
+              : 16,
+        ),
         radius: 8,
         titleStyle: titleStyle(tight ? 9 : 11).copyWith(color: hcYellow),
         valueStyle: valueStyle(tight ? 18 : 26).copyWith(color: hcYellow),
@@ -875,9 +1084,22 @@ StreamKpiChrome _highContrastChrome(StreamKpiStyleId styleId, bool tight, bool c
       return hc(false, 0, 0, null).copyWith(
         backgroundColor: hcYellow,
         clearBorder: true,
-        padding: pad(tight ? 10 : compact ? 14 : 20, tight ? 8 : compact ? 10 : 16),
+        padding: pad(
+          tight
+              ? 10
+              : compact
+              ? 14
+              : 20,
+          tight
+              ? 8
+              : compact
+              ? 10
+              : 16,
+        ),
         radius: 16,
-        titleStyle: titleStyle(tight ? 9 : 11).copyWith(fontWeight: FontWeight.w700),
+        titleStyle: titleStyle(
+          tight ? 9 : 11,
+        ).copyWith(fontWeight: FontWeight.w700),
         valueStyle: valueStyle(tight ? 18 : 28),
         subtitleStyle: StreamTypography.micro.copyWith(
           fontSize: (tight ? 8 : 10) * sc,
@@ -888,7 +1110,18 @@ StreamKpiChrome _highContrastChrome(StreamKpiStyleId styleId, bool tight, bool c
       return hc(true, tight ? 6 : 8, 0.95, null).copyWith(
         backgroundColor: hcBlack,
         border: Border.all(color: hcYellow, width: 1.2 * sc),
-        padding: pad(tight ? 10 : compact ? 14 : 20, tight ? 8 : compact ? 10 : 16),
+        padding: pad(
+          tight
+              ? 10
+              : compact
+              ? 14
+              : 20,
+          tight
+              ? 8
+              : compact
+              ? 10
+              : 16,
+        ),
         titleStyle: titleStyle(tight ? 9 : 11).copyWith(color: hcYellow),
         valueStyle: valueStyle(tight ? 18 : 26).copyWith(color: hcYellow),
         subtitleStyle: StreamTypography.micro.copyWith(
@@ -901,8 +1134,21 @@ StreamKpiChrome _highContrastChrome(StreamKpiStyleId styleId, bool tight, bool c
       return hc(false, 0, 0, null).copyWith(
         backgroundColor: hcYellow,
         border: Border.all(color: hcWhite, width: 1.5 * sc),
-        padding: pad(tight ? 10 : compact ? 14 : 20, tight ? 8 : compact ? 10 : 16),
-        valueStyle: valueStyle(tight ? 18 : 26).copyWith(fontWeight: FontWeight.w800),
+        padding: pad(
+          tight
+              ? 10
+              : compact
+              ? 14
+              : 20,
+          tight
+              ? 8
+              : compact
+              ? 10
+              : 16,
+        ),
+        valueStyle: valueStyle(
+          tight ? 18 : 26,
+        ).copyWith(fontWeight: FontWeight.w800),
       );
   }
 }
