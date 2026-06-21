@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:stream_app/design/stream_surface_tokens.dart';
+import 'package:stream_app/data/preferences_service.dart';
+import 'package:stream_app/design/stream_chart_palette.dart';
+import 'package:stream_app/design/stream_kpi_style.dart';
 import 'package:stream_app/design/stream_theme_palette.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
@@ -53,14 +55,17 @@ void main() {
     tester,
   ) async {
     final palette = StreamThemePalette.of(StreamThemeId.forest);
-    final surface = StreamSurfaceTokens.card(palette, elevated: true);
+    final chartPalette = StreamChartPalette.forTheme(palette).applyStyle(
+      StreamChartStyleId.fromString(PreferencesService.defaultChartStyle),
+      palette,
+    );
     await pumpHeatmap(tester, StreamThemeId.forest);
 
     final container = tester.widget<Container>(
       find.byKey(const Key('period_heatmap_card')),
     );
     final decoration = container.decoration as BoxDecoration;
-    expect(decoration.color, surface.background);
+    expect(decoration.color, chartPalette.cardBackground);
     expect(find.byKey(const Key('period_heatmap_month_grid')), findsOneWidget);
   });
 

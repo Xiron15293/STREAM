@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11j — Advanced Chart Styles Settings Rollout**
+  - Lo `chart_style` esistente in `PreferencesService` e ora collegato davvero ai grafici tramite `chartStyleNotifier`, rebuild live di `StreamApp` e applicazione reale dei token visuali in `StreamChartPalette`
+  - `StreamChartPalette` estesa oltre i soli colori: superfici card, bordi, shadow, empty state, legenda, spessori/raggi barre, track orizzontali e geometria donut ora cambiano per stile
+  - Supportati 5 stili distinti e persistenti: `automatic`, `soft`, `technical`, `highContrast`, `editorial`
+  - `SettingsScreen` aggiornata con selettore `Stile grafici`, descrizioni brevi per ogni stile e key stabili (`settings_chart_style_section`, opzioni `settings_chart_style_option_*`)
+  - `ChartsScreen` collega tutti i grafici principali allo stile grafico e corregge una regressione reale emersa in audit: `hidden_chart_ids` non decidevano sempre il render delle singole card; ora ogni chart card e filtrata per ID visibilita
+  - `Dashboard` collega `Spese per categoria` allo stile grafico tramite superficie chart-aware e mini progress bar coerenti senza cambiare valori, ranking o logica insight-only
+  - Heatmap periodali/annuali/preview allineate alle superfici chart-style solo su card, legenda e contrasto; invariati celle, soglie e intensita basate sui valori
+  - Sicurezza preservata: donut labels esterne e leader lines V0.11g restano intatte; KPI style resta separato dal chart style
+  - Nuovi test: `test/chart_style_preferences_test.dart`, `test/chart_style_settings_test.dart`, `test/charts_style_render_test.dart`, `test/dashboard_category_expenses_chart_style_test.dart`, `test/chart_visibility_and_style_test.dart`, `test/chart_donut_label_regression_test.dart`
+  - Test aggiornati: `test/charts_theme_test.dart`, `test/heatmap_theme_test.dart`
+  - Verifica finale locale: `flutter analyze` con soli `33` info-level preesistenti fuori scope; `flutter test` full suite verde con `1048` passati e `1` skipped
+  - Nessuna modifica a DB/schema/migrazioni, import/export, analytics, KPI, calcoli o filtri periodo
+
 - **V0.11i-fix3 — Account Detail Movement Priority UX**
   - Sheet `Movimenti del conto` riorganizzata per dare priorita visiva alla lista movimenti: header compatto, azioni piu leggere, filtro periodo sempre accessibile e prima card piu alta nel viewport
   - Introdotto mini-summary compatto sopra la lista e sezione `Riepilogo dettagliato` collassabile, chiusa di default quando il periodo contiene movimenti e aperta automaticamente sugli empty state
@@ -144,7 +158,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Refactor puramente UI: nessuna modifica a DB, analytics, modelli, logica business
   - flutter analyze: solo info preesistenti (deprecation/lingering style warnings)
   - flutter test: 1026/1026, tutti verdi
-  - V0.11j (Advanced Chart Styles) preparata nei docs come futura, nessun codice implementato
+  - V0.11j (Advanced Chart Styles) era stata preparata nei docs come futura; implementazione reale arrivata poi nel rollout V0.11j
 
 - **V0.11g-fix3 — Leader Lines Mapping Collision Fix**
   - Causa identificata: `sectionsSpace: 2` (2 gradi tra sezioni) non era considerato in `_computeSliceData()`, causando shift cumulativo delle label rispetto alle fette reali: con 7 sezioni, l'ultima fetta aveva 12° di disallineamento

@@ -3,7 +3,6 @@ import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_icon_library.dart';
 import '../design/stream_kpi_style.dart';
-import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../models/account.dart';
 import '../models/category.dart';
@@ -569,7 +568,7 @@ class _CategoryExpensesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
+    final cp = context.$chart;
     if (items.isEmpty) {
       return _EmptyState(
         icon: Icons.receipt_long_outlined,
@@ -587,14 +586,15 @@ class _CategoryExpensesSection extends StatelessWidget {
         Text('Spese per categoria', style: StreamTypography.h3),
         const SizedBox(height: StreamSpacing.md),
         Container(
+          key: const Key('dashboard_category_expenses_chart'),
           decoration: BoxDecoration(
-            color: surface.background,
-            borderRadius: BorderRadius.circular(StreamRadius.lg),
+            color: cp.cardBackground,
+            borderRadius: BorderRadius.circular(cp.cardRadius),
             border: Border.all(
-              color: surface.border,
-              width: surface.borderWidth,
+              color: cp.cardBorderColor,
+              width: cp.cardBorderWidth,
             ),
-            boxShadow: surface.shadows,
+            boxShadow: cp.cardShadows,
           ),
           child: Padding(
             padding: const EdgeInsets.all(StreamSpacing.md),
@@ -650,6 +650,7 @@ class _CategoryExpenseRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final cp = context.$chart;
     final category = item.category;
     final categoryColor = category != null
         ? Color(category.color)
@@ -660,6 +661,7 @@ class _CategoryExpenseRow extends StatelessWidget {
     final percentage = totalExpenses > 0
         ? (item.total / totalExpenses) * 100
         : null;
+    final progress = totalExpenses > 0 ? (item.total / totalExpenses) : 0.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: StreamSpacing.sm),
@@ -713,6 +715,38 @@ class _CategoryExpenseRow extends StatelessWidget {
                               color: p.textSecondary,
                             ),
                           ),
+                        if (percentage != null) ...[
+                          const SizedBox(height: StreamSpacing.xs),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              cp.horizontalBarRadius,
+                            ),
+                            child: SizedBox(
+                              height: cp.horizontalBarHeight / 4,
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: ColoredBox(
+                                      color: cp.horizontalTrackColor,
+                                    ),
+                                  ),
+                                  FractionallySizedBox(
+                                    widthFactor: progress.clamp(0.0, 1.0),
+                                    alignment: Alignment.centerLeft,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: categoryColor,
+                                        borderRadius: BorderRadius.circular(
+                                          cp.horizontalBarRadius,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

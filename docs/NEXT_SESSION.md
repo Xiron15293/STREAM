@@ -6,10 +6,12 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11j completata: lo `chart_style` scelto in Impostazioni ora cambia davvero card, barre, donut, legenda, empty state e superfici heatmap collegate ai grafici senza toccare dati o calcoli.
+- Fix di audit incluso in V0.11j: le chart visibility preferences ora filtrano davvero il render di ogni card singola, quindi cambiare stile non riattiva grafici nascosti e nascondere un grafico non resetta lo stile.
 - V0.11i-fix3 completata: la sheet dettaglio conto ora e movement-first. Header, azioni, filtro periodo e mini-summary occupano meno spazio; il `Riepilogo dettagliato` e collassabile e la lista movimenti entra nel primo viewport molto prima.
 - V0.11i-fix2 completata: gli stili KPI globali hanno copertura coerente anche nei riepiloghi condivisi e nelle card legacy gia migrate al tema.
 - V0.11i-fix1 completata: summary periodali, heatmap, flow add/edit, picker e suggerimenti movimento usano superfici/palette dinamiche senza cambiare logica business.
-- QA locale aggiornata: `flutter analyze` resta info-only per warning storici fuori scope; `flutter test` full suite verde con `1038` passati e `1` skipped.
+- QA locale aggiornata: `flutter analyze` resta info-only per warning storici fuori scope; `flutter test` full suite verde con `1048` passati e `1` skipped.
 - Residuo principale fuori sprint: warning analyzer legacy in `database.dart`, `backup_screen.dart`, `categories_screen.dart` e `theme_test.dart`, ma nessun errore bloccante nell’area Conti/Movimenti/KPI.
 
 - Profili separati e isolamento DB sono attivi e verificati.
@@ -25,20 +27,20 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - La schermata Movimenti usa la heatmap come vista utente principale per i periodi.
 - Le impostazioni heatmap espongono solo `Configura heatmap`.
 - Categorie e sottocategorie supportano safe edit, duplicate validation corretta e restore coerente.
-- Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`1038` passati, `1` skipped).
+- Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`1048` passati, `1` skipped).
 - Hermes QA green / closure candidate: nessun nuovo P0/P1/P2 trovato nel perimetro dell’audit finale.
 
 ## Focus consigliato
 
-1. QA manuale su device reale della nuova sheet account in viewport piccoli e su piu temi/KPI styles
+1. QA manuale multi-tema su combinazioni `theme + chart_style + hidden_chart_ids` in Dashboard, Grafici e heatmap
 2. Pulizia warning analyzer storici fuori scope
-3. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService
+3. Verifica visuale finale su device reale della nuova sheet account in viewport piccoli e su piu temi/KPI styles
 
 ## Prossimo Sprint Consigliato
 
-1. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService, mantenendo V0.11g leader lines e V0.11h adaptive palette
+1. Pulizia warning analyzer/documentazione storica incoerente dopo la chiusura V0.11j
 2. QA manuale su device reale per flussi più sensibili
-3. UI polish residui e progressiva pulizia analyzer/documentazione storica incoerente
+3. UI polish residui sulle combinazioni tema/grafici
 
 ## Regole Git
 
@@ -55,6 +57,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - Il flusso categorie ha regole di sicurezza e duplicati già consolidate: qualsiasi refactor futuro deve preservare ID, namespace e normalizzazione.
 - I suggerimenti locali Titolo/Note/Beneficiario restano basati su euristiche e possono produrre falsi positivi/negativi non critici.
 - La QA automatizzata è forte, ma alcune verifiche restano da fare manualmente su device reale.
+- Le superfici heatmap ora condividono token chart-style sulle card esterne: eventuali test futuri non devono piu aspettarsi la vecchia surface elevata generica.
 - Non documentare un entry point edit da Beneficiari finché il dettaglio beneficiario non passa callback `onEdit` alla lista movimenti.
 
 ## Storico Utile

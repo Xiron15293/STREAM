@@ -6,6 +6,14 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-21 — V0.11j
+- Verificato il rollout reale di `chart_style` su Grafici, Dashboard `Spese per categoria`, empty state e superfici heatmap collegate
+- Confermata la separazione tra KPI style e chart style; nessuna regressione su analytics, formule, filtri o dati mostrati
+- Regressione emersa nella full suite su `heatmap_theme_test.dart` riallineata al nuovo token grafico esterno; bug di visibilita per-card corretto nel codice con test dedicato
+- Nuovi test dedicati: preferenze chart style, Settings, render multi-stile, dashboard category expenses, convivenza con `hidden_chart_ids`, regressione donut labels
+- `flutter test`: **1048 passati / 1 skipped**
+- `flutter analyze`: nessun errore, solo `33` info preesistenti fuori scope
+
 ### Delta 2026-06-21 — V0.11i-fix3
 - Verificata la nuova gerarchia movement-first del dettaglio conto: lista piu alta nel viewport, mini-summary compatto, toggle KPI dettagliati e empty state coerente
 - Corrette regressioni test/layout su `AccountsScreen` e sulla variante split di `StreamKpiCard`
@@ -35,8 +43,8 @@
 **Stato:** Hermes candidate for closure / Hermes QA green
 
 ### Executive summary
-- 62 file test Dart/Flutter
-- 1038 test/casi passati nel run finale
+- 68 file test Dart/Flutter
+- 1048 test/casi passati nel run finale
 - 1 skipped (preesistente)
 - 1.641+ scenari data-driven
 - 7.475+ controlli/logiche reali documentati
@@ -45,12 +53,13 @@
 - V0.10.1c: +12 nuovi test (7 metriche pure, 3 integrazione, 2 composizione/ui)
 - V0.11 Theme System: +19 nuovi test (9 preferenze, 5 palette/build, 5 enum/fallback)
 - V0.11b Theme Applied: widget grafici migrati, Dashboard KPI migrata, helper context.streamTheme, fallback sicuro, 979 test invariati
-- V0.11c Chart Style Foundation: chart_style plumbing in ThemeExtension, StreamApp ascolta chartStyleNotifier, palette adattiva per tema. NOTA: gli stili (automatic/soft/technical/highContrast/editorial) sono plumbing di palette — V0.11j renderà gli stili selezionabili dall'utente via PreferencesService
+- V0.11c Chart Style Foundation: chart_style plumbing in ThemeExtension, StreamApp ascolta chartStyleNotifier, palette adattiva per tema. NOTA storica: in questa fase gli stili erano solo plumbing di palette; il rollout reale lato utente e arrivato poi in V0.11j
 - V0.11d Real KPI Styles: _KpiCard riscritto, ValueListenableBuilder in Dashboard, 6 KPI styles visibili (minimal/dense/glass/outline/solid/split), 990 test finali
 - V0.11g Chart Readability: donut outside labels (leader lines + TextPainter + left/right alignment + 4% threshold) + chart visibility preferences
 - V0.11g-fix2+3: single source slice data, startDegreeOffset -90 alignment, legend widget extraction, 1015 test finali
 - V0.11g-fix3: sectionsSpace alignment in angle calculation, collision avoidance (min 16px vertical gap), pure layout function, 1022 test finali
 - V0.11i-fix2/fix3: KPI style coverage globale + account detail movement-priority UX, 1038 test finali
+- V0.11j: advanced chart styles reali + safety su chart visibility/donut labels, 1048 test finali
 - P0: 0 nuovi
 - P1: 0 nuovi
 - P2: 0 nuovi
@@ -79,7 +88,7 @@
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
 - `flutter test`: ok
-- Suite finale: `1038` test verdi, `1` skipped
+- Suite finale: `1048` test verdi, `1` skipped
 
 ### Verifiche funzionali documentate
 - `MovementCard`: tap breve apre modifica; tap lungo e tre puntini aprono lo stesso `showMovementActionsSheet`
@@ -119,7 +128,7 @@
 
 ### Final state
 
-Hermes Extended QA Audit completato con `1.641` scenari data-driven e `7.475` controlli/logiche reali documentati. Suite finale verde: `1038` passed, `1` skipped. Nessun nuovo P0/P1/P2 emerso nei flussi coperti.
+Hermes Extended QA Audit completato con `1.641` scenari data-driven e `7.475` controlli/logiche reali documentati. Suite finale verde: `1048` passed, `1` skipped. Nessun nuovo P0/P1/P2 emerso nei flussi coperti.
 
 ---
 

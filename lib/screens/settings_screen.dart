@@ -742,7 +742,25 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
       builder: (ctx) => _PickerSheet(
         title: 'Stile grafici',
         items: StreamChartStyleId.values
-            .map((e) => _PickerItem(label: e.label, value: e.name))
+            .map(
+              (e) => _PickerItem(
+                label: e.label,
+                value: e.name,
+                tileKey: Key('settings_chart_style_option_${e.name}'),
+                description: switch (e) {
+                  StreamChartStyleId.automatic =>
+                    'Usa lo stile piu coerente col tema',
+                  StreamChartStyleId.soft =>
+                    'Superfici leggere e colori piu calmi',
+                  StreamChartStyleId.technical =>
+                    'Griglie e assi piu leggibili',
+                  StreamChartStyleId.highContrast =>
+                    'Massima leggibilita e separazione visiva',
+                  StreamChartStyleId.editorial =>
+                    'Look pulito e presentabile',
+                },
+              ),
+            )
             .toList(),
         selected: _chartStyle,
         onSelected: (v) => PreferencesService.saveChartStyleId(v),
@@ -767,7 +785,7 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
     );
 
     return _SettingsSectionCard(
-      key: const Key('settings_appearance_section'),
+      key: const Key('settings_chart_style_section'),
       title: 'Aspetto',
       description: 'Personalizza l\'interfaccia dell\'app.',
       child: Column(
@@ -807,7 +825,15 @@ class _AppearanceSectionState extends State<_AppearanceSection> {
 class _PickerItem {
   final String label;
   final String value;
-  const _PickerItem({required this.label, required this.value});
+  final String? description;
+  final Key? tileKey;
+
+  const _PickerItem({
+    required this.label,
+    required this.value,
+    this.description,
+    this.tileKey,
+  });
 }
 
 class _PickerSheet extends StatelessWidget {
@@ -863,9 +889,11 @@ class _PickerSheet extends StatelessWidget {
               return Column(
                 children: [
                   _SettingsTile(
-                    key: Key(
-                      '${title.toLowerCase().replaceAll(' ', '_')}_${item.value}',
-                    ),
+                    key:
+                        item.tileKey ??
+                        Key(
+                          '${title.toLowerCase().replaceAll(' ', '_')}_${item.value}',
+                        ),
                     icon: isSelected
                         ? Icons.check_circle_rounded
                         : Icons.radio_button_unchecked_rounded,
@@ -874,9 +902,10 @@ class _PickerSheet extends StatelessWidget {
                     titleColor: isSelected
                         ? palette.primary
                         : palette.textPrimary,
-                    subtitle: isSelected
-                        ? 'Selezionato'
-                        : 'Tocca per selezionare',
+                    subtitle: item.description ??
+                        (isSelected
+                            ? 'Selezionato'
+                            : 'Tocca per selezionare'),
                     accentColor: isSelected ? palette.primary : null,
                     trailing: isSelected
                         ? Icon(Icons.check, color: palette.primary)

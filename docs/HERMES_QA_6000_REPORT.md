@@ -4,6 +4,7 @@
 
 ## Sintesi
 
+- Delta 2026-06-21: V0.11j confermata con advanced chart styles reali, fix chart visibility per-card e full suite finale **1048 passati / 1 skipped**
 - Delta 2026-06-21: V0.11i-fix3 confermata con account detail movement-priority UX, KPI dettagliati collassabili e full suite finale **1038 passati / 1 skipped**
 - Delta 2026-06-21: V0.11i-fix2 confermata con copertura KPI style globale allineata ai riepiloghi condivisi
 - Delta 2026-06-21: V0.11i-fix1 confermata con movement flow/theme completion, bottom sheet tematizzati e validazione finale consolidata nella stessa suite **1038 passati / 1 skipped**
@@ -16,25 +17,26 @@
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`
 - Full suite finale: **verde**
 - Stato finale: **Hermes candidate for closure / Hermes QA green**
-- Executive summary: `62` file test, `1038` test/casi passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
+- Executive summary: `68` file test, `1048` test/casi passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
 - V0.10 Grafici Tab + V0.10.1 Chart Readability + V0.10.1c Donut/Scroll/Extra: **32** nuovi test
 - V0.11 Theme System foundation: **19** nuovi test
 - V0.11b Theme applied to widgets: widget grafici e Dashboard KPI migrati, helper fallback sicuro
-- V0.11c Chart Style Foundation: applyStyle plumbing, StreamApp listener, palette adattiva. NOTA: stili selezionabili dall'utente → V0.11j
+- V0.11c Chart Style Foundation: applyStyle plumbing, StreamApp listener, palette adattiva. NOTA storica: gli stili selezionabili dall'utente sono arrivati poi nel rollout V0.11j
 - V0.11d Real KPI Styles (ValueListenableBuilder, _KpiCard switch, 6 stili)
 - V0.11g Chart Readability + Visibility Preferences (donut outside labels, leader lines, chart registry, hiddenChartIds)
 - V0.11g-fix2+3: single source slice data, startDegreeOffset -90 alignment, legend widget extraction
 - V0.11g-fix3: sectionsSpace alignment in angle calculation + collision avoidance, 1022 test finali
 - V0.11i-fix2/fix3: KPI style coverage globale + account detail movement-priority UX, 1038 test finali
+- V0.11j: chart style reale in Settings/Grafici/Dashboard + bugfix visibilita singole card, 1048 test finali
 
-**V0.11c V0.11d V0.11g V0.11i completati:** chart style foundation, KPI styles reali, chart readability + visibility, categories legacy cleanup, 1026 test finali. V0.11j (Advanced Chart Styles selezionabili) è futuro.
+**V0.11c V0.11d V0.11g V0.11i V0.11j completati:** chart style foundation, KPI styles reali, chart readability + visibility, categories legacy cleanup e chart styles selezionabili con rollout reale, 1048 test finali.
 
 ## Conteggio reale
 
 ### Test Dart / Flutter presenti
 
-- File test nel progetto: **62**
-- Test case Flutter/Dart passati nel run finale: **1038**
+- File test nel progetto: **68**
+- Test case Flutter/Dart passati nel run finale: **1048**
 
 ### Matrix QA estesa
 
@@ -81,12 +83,13 @@
 - `flutter analyze`: ok, nessun errore nuovo, solo info preesistenti
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
-- `flutter test`: ok (`1038` passed, `1` skipped)
+- `flutter test`: ok (`1048` passed, `1` skipped)
 
 ## Note funzionali consolidate
 
 - `MovementCard` usa tap breve per modifica e long-press/tre puntini per lo stesso sheet azioni centralizzato.
 - `AddMovementFlow` mantiene `X` e conferma top sempre accessibili, con importo sticky compatto sincronizzato allo stesso controller.
+- `chart_style` e `hidden_chart_ids` convivono: nascondere un grafico non resetta lo stile e cambiare stile non riattiva grafici nascosti.
 - I suggerimenti Titolo/Note/Beneficiario sono locali, deduplicati, focus-aware, visibili da 2 caratteri e sostituiscono il valore del campo al tap.
 - Il picker Beneficiari legacy resta disponibile; i suggerimenti beneficiario nel flow movimento non fondono automaticamente nomi simili.
 - La valuta globale è solo una preferenza di formattazione UI.

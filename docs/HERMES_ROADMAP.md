@@ -73,12 +73,12 @@
 | V0.11d | Real KPI Styles (minimal/dense/glass/outline/solid/split) | ✅ COMPLETATO | 2026-06-20 |
 | V0.11g | Chart Readability + Visibility Preferences | ✅ COMPLETATO | 2026-06-20 |
 | V0.11i | Categories Legacy Theme Cleanup | ✅ COMPLETATO | 2026-06-20 |
+| V0.11j | Advanced Chart Styles (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService | ✅ COMPLETATO | 2026-06-21 |
 
 ## Future
 
 | Versione | Nome | Stato |
 |----------|------|-------|
-| V0.11j | Advanced Chart Styles (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService | 📋 DA IMPLEMENTARE |
 | V0.9.0 | Beneficiary detail direct edit entry + residual manual QA closure | 📋 PRIORITARIA |
 | V0.9.1 | Notes & Tags | 📋 APPROVATA |
 | V0.9.2 | Dashboard recalcolo + tabella editor | 📋 APPROVATA |
@@ -101,7 +101,8 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **V0.9.0e** | **Beneficiari (✅) — creazione `BeneficiaryProfile`, merge manuali+payee derivati, proposta salvataggio da form movimento, display metadata su MovementCard, dettaglio tappabile, backup/restore, DB v12, payee raw preservato, audit finale chiuso** |
 | **Delta** | **iFinance transfer pairing hardening (✅) — pairing per `data + importo`, indizi `Trasferimento da/su`, movimenti normali sbloccati, reimport stesso CSV = 0 nuovi movimenti** |
 | **Delta** | **Profili separati (✅) — registry profili persistito, DB SQLite separato per profilo, `MainScaffold` keyed per profilo, reset/beneficiari/iFinance isolati** |
-| **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`1038 passed`, `1 skipped`)** |
+| **Delta** | **V0.11j (✅) — advanced chart styles reali in Settings/Grafici/Dashboard + bugfix chart visibility per-card, full suite finale `1048 passed`, `1 skipped`** |
+| **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`1048 passed`, `1 skipped`)** |
 | **Delta** | **V0.11i-fix2/fix3 (✅) — copertura KPI style globale + sheet conto movement-first con riepilogo dettagliato collassabile, full suite finale `1038 passed`, `1 skipped`** |
 | **Delta** | **Hermes closure stabilization (✅) — azioni movimento centralizzate, tap breve modifica, long-press/tre puntini sullo stesso sheet, header compatto add/edit, sticky amount, restore conti, delete categoria con riassegnazione sicura** |
 | **V0.9.0** | **Beneficiary detail direct edit entry + manual QA closure (📋) — eventuale apertura edit direttamente dal dettaglio Beneficiari, oggi non presente nel codice attuale** |
@@ -119,7 +120,7 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 ## Stato Hermes
 
 - Hermes è in stato **closure candidate / QA stabilized**.
-- Full suite dichiarata verde: `62` file test, `1038` passed, `1` skipped.
+- Full suite dichiarata verde: `68` file test, `1048` passed, `1` skipped.
 - Nessun nuovo P0/P1/P2 emerso nell’Hermes Extended QA Audit.
 - Residui dichiarabili: manual QA su device reale e info analyzer preesistenti.
 - Limitazione corrente esplicita: il dettaglio Beneficiari mostra i movimenti ma non passa ancora callback `onEdit` diretta alla lista.

@@ -9,19 +9,21 @@ class ChartEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
+    final cp = context.$chart;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(StreamSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bar_chart, size: 40, color: p.textMuted),
+            Icon(Icons.bar_chart, size: 40, color: cp.emptyStateIconColor),
             const SizedBox(height: StreamSpacing.md),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: StreamTypography.caption.copyWith(color: p.textSecondary),
+              style: StreamTypography.caption.copyWith(
+                color: cp.emptyStateTextColor,
+              ),
             ),
           ],
         ),

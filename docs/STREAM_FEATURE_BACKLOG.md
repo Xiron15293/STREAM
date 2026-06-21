@@ -65,41 +65,42 @@
 | F50 | Profili separati con isolamento dati reale — registry profili persistito, DB SQLite dedicato per profilo, `MainScaffold` keyed per `activeProfileId`, reset/beneficiari/iFinance isolati, voce Profili visibile solo con callback reale | delta | 2026-06-15 |
 | F51 | Movement suggestion chips + currency selector — chip locali per Titolo/Note/Beneficiario, max 5, focus-aware, tap-to-replace, valuta configurabile da Impostazioni con formatter condiviso | delta | 2026-06-18 |
 | F52 | Hermes closure stabilization — azioni movimento centralizzate, tap breve modifica, long-press/tre puntini sullo stesso sheet, add/edit movement header compatto + sticky amount, restore conti, delete categoria con riassegnazione sicura | delta | 2026-06-19 |
+| F53 | V0.11j Advanced Chart Styles Settings Rollout — chart_style reale su Settings/Grafici/Dashboard/heatmap card, bugfix chart visibility per-card, regressioni donut labels preservate | V0.11j | 2026-06-21 |
 
 ---
 
 ## Priorità prossime
 
-1. V0.11j — Advanced Chart Styles (automatic/soft/technical/highContrast/editorial)
-2. V0.9.0 — Beneficiary detail direct edit entry + manual QA closure
-3. V0.9.1 — Notes & Tags
-4. V0.9.2 — Dashboard recalcolo + tabella editor
-5. Subcategories Analytics (Budget/Actual/Scenari)
+1. V0.9.0 — Beneficiary detail direct edit entry + manual QA closure
+2. V0.9.1 — Notes & Tags
+3. V0.9.2 — Dashboard recalcolo + tabella editor
+4. Subcategories Analytics (Budget/Actual/Scenari)
+5. Pulizia analyzer/docs post-V0.11j
 
 ---
 
 ## 2. Feature approvate (📋)
 
-### V0.11j — Advanced Chart Styles 📋 DA IMPLEMENTARE
+### V0.11j — Advanced Chart Styles ✅ COMPLETATA
 
 | Campo | Valore |
 |-------|--------|
-| **Descrizione** | Introdurre 5 stili grafici selezionabili (automatic, soft, technical, highContrast, editorial) via preferenza utente in PreferencesService. Mantenere V0.11g donut leader lines e V0.11h adaptive palette. Nessuna modifica analytics/calcoli. |
-| **Priorità** | Alta (prossimo sprint consigliato) |
+| **Descrizione** | 5 stili grafici reali selezionabili (automatic, soft, technical, highContrast, editorial) collegati alla preferenza utente `chart_style`, con rollout su Grafici, Dashboard e superfici heatmap collegate. |
+| **Priorità** | Completata |
 | **Dipendenze** | V0.11h (adaptive palette), V0.11g (leader lines fix), V0.11i (categories cleanup) |
 | **Versione candidata** | V0.11j |
-| **Stato** | 📋 DA IMPLEMENTARE |
+| **Stato** | ✅ COMPLETATA |
 
 **Sotto-feature:**
-1. PreferencesService: nuovo chartStyleId avanzato (enum StreamChartAdvancedStyleId)
-2. Settings: opzione per selezionare stile grafico (UI utente)
-3. StreamChartPalette.applyStyle() da estendere per i 5 nuovi stili
-4. Applicazione stile a tutti i grafici (bar, donut, pie, horizontal bar)
-5. Mantenere automatic come default
+1. PreferencesService: `chart_style` persistente e `chartStyleNotifier` live
+2. Settings: selettore `Stile grafici` con descrizioni e key stabili
+3. `StreamChartPalette.applyStyle()` estesa a token strutturali, non solo cromatici
+4. Applicazione stile a Grafici, `Spese per categoria`, empty state e heatmap card esterne
+5. Bugfix audit: `hidden_chart_ids` ora governa davvero il render di ogni singola chart card
 
-**Test richiesti:** ~10-15 test (preferenza, applicazione stile, regressione grafici V0.11g/V0.11h)
+**Test eseguiti:** 6 nuovi test dedicati + regressioni tema/grafici/heatmap; full suite finale `1048` passed, `1` skipped
 
-**Rischio tecnico:** BASSO-MEDIO — solo UI/preferenze, nessuna modifica analytics
+**Rischio tecnico:** Chiuso senza impatti su analytics/calcoli/DB
 
 ### F12 — V0.6.4 UX Movimenti Rapidi/Preferiti — Data Picker ✅ COMPLETATA
 

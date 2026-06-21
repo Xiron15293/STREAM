@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../data/preferences_service.dart';
-import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../models/movement.dart';
 import '../theme.dart';
@@ -26,7 +25,7 @@ class AnnualHeatmapCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
+    final cp = context.$chart;
     return Container(
       key: const Key('annual_heatmap'),
       decoration: BoxDecoration(
@@ -38,11 +37,14 @@ class AnnualHeatmapCard extends StatelessWidget {
             p.primary.withValues(
               alpha: p.brightness == Brightness.light ? 0.08 : 0.14,
             ),
-            surface.background,
+            cp.cardBackground,
           ],
         ),
-        border: Border.all(color: surface.border, width: surface.borderWidth),
-        boxShadow: surface.shadows,
+        border: Border.all(
+          color: cp.cardBorderColor,
+          width: cp.cardBorderWidth,
+        ),
+        boxShadow: cp.cardShadows,
       ),
       child: Padding(
         padding: EdgeInsets.all(compact ? StreamSpacing.md : StreamSpacing.lg),

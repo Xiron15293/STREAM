@@ -56,9 +56,9 @@ class StreamDonutChart extends StatelessWidget {
     // ---- single source of truth: compute all slice geometry ----
     final sliceData = _computeSliceData(spent, total);
 
-    const centerRadius = 30.0;
-    const outerRadius = 52.0;
-    const labelDistance = 74.0;
+    final centerRadius = cp.donutCenterRadius;
+    final outerRadius = cp.donutOuterRadius;
+    final labelDistance = cp.donutLabelDistance;
 
     return Row(
       children: [
@@ -205,8 +205,8 @@ class _LegendColumn extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: cp.donutLegendDotSize,
+                    height: cp.donutLegendDotSize,
                     decoration: BoxDecoration(
                       color: s.color,
                       borderRadius: BorderRadius.circular(2),

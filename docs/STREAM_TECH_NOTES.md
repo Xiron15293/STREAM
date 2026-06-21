@@ -2,7 +2,19 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes closure candidate / QA stabilized + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+**Stato:** Hermes closure candidate / QA stabilized + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+
+## Update 2026-06-21 — V0.11j Advanced Chart Styles Settings Rollout
+
+- `PreferencesService.chartStyleNotifier` e `chart_style` non sono piu solo plumbing: `StreamApp` ricostruisce il `ThemeData` anche al cambio stile grafici e l'intera `context.$chart` riceve token coerenti per lo stile scelto
+- `lib/design/stream_chart_palette.dart` ora controlla non solo colori, ma anche superfici card, bordi, shadow, empty state, legenda, track/radius/bar width e parametri donut (`center/outer radius`, `labelDistance`, `legendDotSize`)
+- `ChartsScreen` applica lo stile alle card principali e ai widget chart (`StreamChartCard`, `StreamBarChart`, `StreamHorizontalBarChart`, `StreamDonutChart`, `ChartEmptyState`)
+- Audit bugfix incluso: la visibilita chart non era usata in modo uniforme per il render delle singole card; ora ogni chart passa da `_chartIsVisible(id)` e `hidden_chart_ids` convive correttamente con `chart_style`
+- `Dashboard` collega `Spese per categoria` ai token chart-style tramite card/background/border e mini progress bar, mantenendo invariati valori, percentuali e ordinamento
+- `PeriodHeatmapCard`, `AnnualHeatmapCard` e `MovementsHeatmapPreviewCard` usano superfici chart-style per il contenitore esterno senza cambiare logica heatmap o intensita celle
+- `SettingsScreen` espone opzioni `automatic`, `soft`, `technical`, `highContrast`, `editorial` con key stabili e descrizioni brevi lato UI
+- Regressione test emersa in full suite: `test/heatmap_theme_test.dart` verificava la vecchia surface generica; riallineato al nuovo token chart-style
+- Validazione finale: `68` file test, `1048` passati, `1` skipped
 
 ## Update 2026-06-21 — V0.11i-fix3 Account Detail Movement Priority UX
 
@@ -148,11 +160,11 @@
 - `final p = context.$palette;` aggiunto in 15 scopes
 - Nessuna modifica DB, analytics, modelli, logica business
 
-**V0.11j (future — Advanced Chart Styles):**
-- Non implementato in V0.11i
-- Dovrà introdurre 5 stili: automatic, soft, technical, highContrast, editorial
-- Dovrà aggiungere preferenza utente via PreferencesService
-- Dovrà mantenere V0.11g donut leader lines e V0.11h adaptive palette
+**V0.11j (implemented — Advanced Chart Styles):**
+- 5 stili reali: `automatic`, `soft`, `technical`, `highContrast`, `editorial`
+- Preferenza persistita in `SharedPreferences` tramite `PreferencesService.chartStyleNotifier`
+- Separazione esplicita da KPI style: `kpiStyleNotifier` continua a governare solo le KPI card
+- Leader lines, percentuali esterne, `sectionsSpace` e collision avoidance V0.11g preservati
 
 **TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
 
@@ -185,12 +197,12 @@
   - **Solid**: sfondo `color.withAlpha(0.15)` (income/expense per colore semantico)
   - **Split**: layout Row — label a sinistra, value in badge colorato a destra
   Cambio live senza riavvio (solo `ValueListenableBuilder`, non ThemeData).
-- **Stili grafici reali (V0.11c)**: `StreamChartPalette.applyStyle(StreamChartStyleId, palette)`:
-  - **automatic**: palette base invariata
-  - **soft**: grid alpha 0.08, donut/category colors alpha 0.85, axis/legend textMuted
-  - **technical**: grid alpha 0.30, axis/legend `textPrimary`, palette ordinata income/expense/primary
-  - **highContrast**: donut giallo/verde/rosso/ciano/viola, grid alpha 0.50, axis/legend bianco
-  - **editorial**: grid alpha 0.06, palette indaco/verde/rosso/teal/viola stabile
+- **Stili grafici reali (V0.11j)**: `StreamChartPalette.applyStyle(StreamChartStyleId, palette)`:
+  - **automatic**: comportamento coerente con il tema corrente, senza override estetici extra
+  - **soft**: card piu morbide, meno bordi, track piu leggere, raggi barre e donut piu generosi
+  - **technical**: griglia/assi piu leggibili, bordi piu presenti, barre piu compatte e struttura piu analitica
+  - **highContrast**: massimo contrasto su card, testo, legenda e palette donut
+  - **editorial**: card pulite con shadow controllata, meno rumore visivo e look piu presentabile
   `StreamApp` ascolta `themeIdNotifier` + `chartStyleNotifier` per ricostruire `ThemeData` con chart palette effettiva.
 
 **Temi implementati:**

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../design/stream_chart_palette.dart';
 import '../../design/stream_theme_extension.dart';
 import '../../design/stream_theme_palette.dart';
 import '../../theme.dart';
@@ -27,20 +28,21 @@ class StreamHorizontalBarChart extends StatelessWidget {
   final List<HorizontalBarData> bars;
   final String? legendLabel1;
   final String? legendLabel2;
-  final double barHeight;
+  final double? barHeight;
 
   const StreamHorizontalBarChart({
     super.key,
     required this.bars,
     this.legendLabel1,
     this.legendLabel2,
-    this.barHeight = 28,
+    this.barHeight,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
     final cp = context.$chart;
+    final resolvedBarHeight = barHeight ?? cp.horizontalBarHeight;
     if (bars.isEmpty) return const SizedBox.shrink();
     if (bars.every(
       (b) =>
@@ -75,7 +77,11 @@ class StreamHorizontalBarChart extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     legendLabel1!,
-                    style: TextStyle(fontSize: 11, color: cp.legendTextColor),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cp.legendTextColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(width: 16),
                 ],
@@ -85,7 +91,11 @@ class StreamHorizontalBarChart extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     legendLabel2!,
-                    style: TextStyle(fontSize: 11, color: cp.legendTextColor),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cp.legendTextColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ],
@@ -106,9 +116,10 @@ class StreamHorizontalBarChart extends StatelessWidget {
             secondaryFormattedValue: bar.secondaryFormattedValue,
             secondaryColor: bar.secondaryColor,
             secondaryPct: secondaryPct,
-            barHeight: barHeight,
+            barHeight: resolvedBarHeight,
             maxVal: maxVal,
             palette: p,
+            chartPalette: cp,
           );
         }),
       ],
@@ -140,6 +151,7 @@ class _SingleHorizontalBar extends StatelessWidget {
   final double barHeight;
   final double maxVal;
   final StreamThemePalette palette;
+  final StreamChartPalette chartPalette;
 
   const _SingleHorizontalBar({
     required this.label,
@@ -154,6 +166,7 @@ class _SingleHorizontalBar extends StatelessWidget {
     required this.barHeight,
     required this.maxVal,
     required this.palette,
+    required this.chartPalette,
   });
 
   @override
@@ -183,12 +196,10 @@ class _SingleHorizontalBar extends StatelessWidget {
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: palette.surfaceElevated.withValues(
-                              alpha: palette.brightness == Brightness.light
-                                  ? 0.55
-                                  : 0.82,
+                            color: chartPalette.horizontalTrackColor,
+                            borderRadius: BorderRadius.circular(
+                              chartPalette.horizontalBarRadius,
                             ),
-                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ),
@@ -201,7 +212,9 @@ class _SingleHorizontalBar extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               color: secondaryColor,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(
+                                chartPalette.horizontalBarRadius,
+                              ),
                             ),
                           ),
                         ),
@@ -213,7 +226,9 @@ class _SingleHorizontalBar extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             color: barColor,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(
+                              chartPalette.horizontalBarRadius,
+                            ),
                           ),
                         ),
                       ),

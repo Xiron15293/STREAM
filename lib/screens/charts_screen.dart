@@ -152,6 +152,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   Widget build(BuildContext context) {
     final p = context.$palette;
     return Scaffold(
+      key: const Key('charts_screen_root'),
       backgroundColor: p.canvas,
       appBar: AppBar(
         title: const Text('Grafici'),
@@ -326,8 +327,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       children: [
-        if (cashflow.isNotEmpty)
+        if (_chartIsVisible('movements_cashflow') && cashflow.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_movements_cashflow'),
             title: 'Entrate / Uscite nel tempo',
             height: 240,
             child: _LegendRow(
@@ -336,20 +338,25 @@ class _ChartsScreenState extends State<ChartsScreen> {
               child: StreamBarChart(series: cashflow),
             ),
           ),
-        if (countByDay.isNotEmpty)
+        if (_chartIsVisible('movements_daily_count') && countByDay.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_movements_daily_count'),
             title: 'Movimenti per giorno',
             height: 200,
             child: StreamBarChart(series: countByDay),
           ),
-        if (typeBreakdown.isNotEmpty)
+        if (_chartIsVisible('movements_type_distribution') &&
+            typeBreakdown.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_movements_type_distribution'),
             title: 'Distribuzione tipo movimento',
             height: 180,
             child: StreamDonutChart(slices: typeBreakdown),
           ),
-        if (topDays.isNotEmpty)
+        if (_chartIsVisible('movements_top_spending_days') &&
+            topDays.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_movements_top_spending_days'),
             title: 'Top giorni di spesa',
             height: 300,
             child: StreamHorizontalBarChart(
@@ -365,14 +372,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (weekday.isNotEmpty)
+        if (_chartIsVisible('movements_weekday_costs') && weekday.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_movements_weekday_costs'),
             title: 'Giorni della settimana più costosi',
             height: 200,
             child: StreamDonutChart(slices: weekday),
           ),
-        if (avgDaily > 0)
+        if (_chartIsVisible('movements_avg_daily_spend') && avgDaily > 0)
           StreamChartCard(
+            cardKey: const Key('chart_card_movements_avg_daily_spend'),
             title: 'Spesa media giornaliera',
             height: 60,
             child: Center(
@@ -423,8 +432,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       children: [
-        if (top.isNotEmpty)
+        if (_chartIsVisible('categories_top') && top.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_categories_top'),
             title: _categoryTypeFilter == MovementType.income
                 ? 'Top entrate per categoria'
                 : 'Top spese per categoria',
@@ -442,14 +452,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (composition.isNotEmpty)
+        if (_chartIsVisible('categories_composition') && composition.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_categories_composition'),
             title: 'Composizione categorie',
             height: 220,
             child: StreamDonutChart(slices: composition),
           ),
-        if (delta.isNotEmpty)
+        if (_chartIsVisible('categories_delta_vs_previous') && delta.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_categories_delta_vs_previous'),
             title: 'Categorie in crescita / calo vs periodo precedente',
             height: 280,
             child: StreamHorizontalBarChart(
@@ -505,8 +517,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       children: [
-        if (balances.isNotEmpty)
+        if (_chartIsVisible('accounts_balance') && balances.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_accounts_balance'),
             title: 'Saldo per conto',
             height: 300,
             child: StreamHorizontalBarChart(
@@ -522,14 +535,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (quota.isNotEmpty)
+        if (_chartIsVisible('accounts_balance_share') && quota.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_accounts_balance_share'),
             title: 'Quota saldo per conto',
             height: 220,
             child: StreamDonutChart(slices: quota),
           ),
-        if (flows.isNotEmpty)
+        if (_chartIsVisible('accounts_flows') && flows.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_accounts_flows'),
             title: 'Flussi per conto',
             height: 300,
             child: StreamHorizontalBarChart(
@@ -553,8 +568,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
               legendLabel2: 'Uscite',
             ),
           ),
-        if (outflow.isNotEmpty)
+        if (_chartIsVisible('accounts_outflow') && outflow.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_accounts_outflow'),
             title: 'Conti più usati per uscite',
             height: 280,
             child: StreamHorizontalBarChart(
@@ -570,8 +586,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (inflow.isNotEmpty)
+        if (_chartIsVisible('accounts_inflow') && inflow.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_accounts_inflow'),
             title: 'Conti più usati per entrate',
             height: 280,
             child: StreamHorizontalBarChart(
@@ -587,8 +604,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (activity.isNotEmpty)
+        if (_chartIsVisible('accounts_activity') && activity.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_accounts_activity'),
             title: 'Attività per conto',
             height: 280,
             child: StreamHorizontalBarChart(
@@ -632,8 +650,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       children: [
-        if (top.isNotEmpty)
+        if (_chartIsVisible('beneficiaries_top_amount') && top.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_beneficiaries_top_amount'),
             title: 'Top beneficiari per importo',
             height: 240,
             child: StreamDonutChart(
@@ -648,8 +667,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (freq.isNotEmpty)
+        if (_chartIsVisible('beneficiaries_frequency') && freq.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_beneficiaries_frequency'),
             title: 'Frequenza beneficiari',
             height: 240,
             child: StreamDonutChart(
@@ -664,8 +684,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   .toList(),
             ),
           ),
-        if (avg.isNotEmpty)
+        if (_chartIsVisible('beneficiaries_average') && avg.isNotEmpty)
           StreamChartCard(
+            cardKey: const Key('chart_card_beneficiaries_average'),
             title: 'Valore medio per beneficiario',
             height: 300,
             child: StreamHorizontalBarChart(
@@ -718,7 +739,7 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
+    final cp = context.$chart;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -740,7 +761,7 @@ class _LegendRow extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     labels[i],
-                    style: TextStyle(fontSize: 11, color: p.textSecondary),
+                    style: TextStyle(fontSize: 11, color: cp.legendTextColor),
                   ),
                 ],
               ),

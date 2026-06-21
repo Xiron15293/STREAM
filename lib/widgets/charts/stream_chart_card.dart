@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../design/stream_surface_tokens.dart';
 import '../../design/stream_theme_extension.dart';
 import '../../theme.dart';
 
@@ -7,26 +6,32 @@ class StreamChartCard extends StatelessWidget {
   final String title;
   final Widget child;
   final double height;
+  final Key? cardKey;
 
   const StreamChartCard({
     super.key,
     required this.title,
     required this.child,
     this.height = 220,
+    this.cardKey,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
+    final cp = context.$chart;
     return Container(
+      key: cardKey,
       margin: const EdgeInsets.only(bottom: StreamSpacing.md),
       padding: const EdgeInsets.all(StreamSpacing.lg),
       decoration: BoxDecoration(
-        color: surface.background,
-        borderRadius: BorderRadius.circular(StreamRadius.lg),
-        border: Border.all(color: surface.border, width: surface.borderWidth),
-        boxShadow: surface.shadows,
+        color: cp.cardBackground,
+        borderRadius: BorderRadius.circular(cp.cardRadius),
+        border: Border.all(
+          color: cp.cardBorderColor,
+          width: cp.cardBorderWidth,
+        ),
+        boxShadow: cp.cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

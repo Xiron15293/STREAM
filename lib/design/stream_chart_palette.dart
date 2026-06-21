@@ -8,6 +8,24 @@ class StreamChartPalette {
   final Color gridColor;
   final Color axisTextColor;
   final Color legendTextColor;
+  final Color cardBackground;
+  final Color cardBorderColor;
+  final double cardBorderWidth;
+  final double cardRadius;
+  final List<BoxShadow> cardShadows;
+  final Color emptyStateIconColor;
+  final Color emptyStateTextColor;
+  final Color legendAccentColor;
+  final Color horizontalTrackColor;
+  final double horizontalBarHeight;
+  final double horizontalBarRadius;
+  final double singleBarWidth;
+  final double groupedBarWidth;
+  final double barTopRadius;
+  final double donutCenterRadius;
+  final double donutOuterRadius;
+  final double donutLabelDistance;
+  final double donutLegendDotSize;
 
   const StreamChartPalette({
     required this.donutColors,
@@ -15,6 +33,24 @@ class StreamChartPalette {
     this.gridColor = const Color(0x20FFFFFF),
     this.axisTextColor = const Color(0xFF8E8E93),
     this.legendTextColor = const Color(0xFF8E8E93),
+    this.cardBackground = const Color(0xFF15171D),
+    this.cardBorderColor = const Color(0xFF1E2028),
+    this.cardBorderWidth = 1,
+    this.cardRadius = 16,
+    this.cardShadows = const [],
+    this.emptyStateIconColor = const Color(0xFF636366),
+    this.emptyStateTextColor = const Color(0xFF8E8E93),
+    this.legendAccentColor = const Color(0xFF8E8E93),
+    this.horizontalTrackColor = const Color(0xCC1E2028),
+    this.horizontalBarHeight = 28,
+    this.horizontalBarRadius = 4,
+    this.singleBarWidth = 14,
+    this.groupedBarWidth = 8,
+    this.barTopRadius = 3,
+    this.donutCenterRadius = 30,
+    this.donutOuterRadius = 52,
+    this.donutLabelDistance = 74,
+    this.donutLegendDotSize = 8,
   });
 
   StreamChartPalette applyStyle(
@@ -45,6 +81,26 @@ class StreamChartPalette {
       gridColor: isLight ? const Color(0x08000000) : const Color(0x08FFFFFF),
       axisTextColor: p.textMuted,
       legendTextColor: p.textMuted,
+      cardBackground: p.surfaceElevated.withValues(alpha: isLight ? 0.78 : 0.72),
+      cardBorderColor: Colors.transparent,
+      cardBorderWidth: 0,
+      cardRadius: 18,
+      cardShadows: const [],
+      emptyStateIconColor: p.textMuted,
+      emptyStateTextColor: p.textSecondary,
+      legendAccentColor: p.textMuted,
+      horizontalTrackColor: p.surfaceElevated.withValues(
+        alpha: isLight ? 0.42 : 0.68,
+      ),
+      horizontalBarHeight: 24,
+      horizontalBarRadius: 10,
+      singleBarWidth: 12,
+      groupedBarWidth: 7,
+      barTopRadius: 8,
+      donutCenterRadius: 34,
+      donutOuterRadius: 50,
+      donutLabelDistance: 76,
+      donutLegendDotSize: 7,
     );
   }
 
@@ -74,6 +130,26 @@ class StreamChartPalette {
       gridColor: isLight ? const Color(0x30000000) : const Color(0x30FFFFFF),
       axisTextColor: p.textPrimary,
       legendTextColor: p.textPrimary,
+      cardBackground: p.surface,
+      cardBorderColor: p.divider.withValues(alpha: 0.95),
+      cardBorderWidth: 1.3,
+      cardRadius: 14,
+      cardShadows: const [],
+      emptyStateIconColor: p.textPrimary,
+      emptyStateTextColor: p.textPrimary,
+      legendAccentColor: p.textPrimary,
+      horizontalTrackColor: p.surfaceElevated.withValues(
+        alpha: isLight ? 0.72 : 0.88,
+      ),
+      horizontalBarHeight: 22,
+      horizontalBarRadius: 3,
+      singleBarWidth: 12,
+      groupedBarWidth: 7,
+      barTopRadius: 2,
+      donutCenterRadius: 28,
+      donutOuterRadius: 54,
+      donutLabelDistance: 78,
+      donutLegendDotSize: 8,
     );
   }
 
@@ -102,6 +178,24 @@ class StreamChartPalette {
       gridColor: const Color(0x50FFFFFF),
       axisTextColor: Colors.white,
       legendTextColor: Colors.white,
+      cardBackground: Colors.black,
+      cardBorderColor: Colors.white,
+      cardBorderWidth: 1.5,
+      cardRadius: 14,
+      cardShadows: const [],
+      emptyStateIconColor: Colors.white,
+      emptyStateTextColor: Colors.white,
+      legendAccentColor: Colors.white,
+      horizontalTrackColor: const Color(0xFF2A2A2A),
+      horizontalBarHeight: 26,
+      horizontalBarRadius: 2,
+      singleBarWidth: 15,
+      groupedBarWidth: 9,
+      barTopRadius: 2,
+      donutCenterRadius: 26,
+      donutOuterRadius: 56,
+      donutLabelDistance: 82,
+      donutLegendDotSize: 9,
     );
   }
 
@@ -131,6 +225,32 @@ class StreamChartPalette {
       gridColor: isLight ? const Color(0x06000000) : const Color(0x06FFFFFF),
       axisTextColor: p.textSecondary,
       legendTextColor: p.textMuted,
+      cardBackground: p.surface,
+      cardBorderColor: p.divider.withValues(alpha: 0.24),
+      cardBorderWidth: 0.8,
+      cardRadius: 20,
+      cardShadows: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.16),
+          blurRadius: 18,
+          offset: const Offset(0, 10),
+        ),
+      ],
+      emptyStateIconColor: p.textSecondary,
+      emptyStateTextColor: p.textSecondary,
+      legendAccentColor: p.textSecondary,
+      horizontalTrackColor: p.surfaceElevated.withValues(
+        alpha: isLight ? 0.34 : 0.54,
+      ),
+      horizontalBarHeight: 20,
+      horizontalBarRadius: 999,
+      singleBarWidth: 10,
+      groupedBarWidth: 6,
+      barTopRadius: 999,
+      donutCenterRadius: 36,
+      donutOuterRadius: 48,
+      donutLabelDistance: 72,
+      donutLegendDotSize: 7,
     );
   }
 
@@ -160,6 +280,24 @@ class StreamChartPalette {
         gridColor: const Color(0x52FFFFFF),
         axisTextColor: p.textPrimary,
         legendTextColor: p.textPrimary,
+        cardBackground: p.surface,
+        cardBorderColor: p.divider,
+        cardBorderWidth: 1,
+        cardRadius: 16,
+        cardShadows: const [],
+        emptyStateIconColor: p.textMuted,
+        emptyStateTextColor: p.textSecondary,
+        legendAccentColor: p.textPrimary,
+        horizontalTrackColor: p.surfaceElevated.withValues(alpha: 0.88),
+        horizontalBarHeight: 28,
+        horizontalBarRadius: 4,
+        singleBarWidth: 14,
+        groupedBarWidth: 8,
+        barTopRadius: 3,
+        donutCenterRadius: 30,
+        donutOuterRadius: 52,
+        donutLabelDistance: 74,
+        donutLegendDotSize: 8,
       );
     }
 
@@ -182,6 +320,26 @@ class StreamChartPalette {
       gridColor: grid,
       axisTextColor: axis,
       legendTextColor: legend,
+      cardBackground: p.surface,
+      cardBorderColor: p.divider,
+      cardBorderWidth: 1,
+      cardRadius: 16,
+      cardShadows: const [],
+      emptyStateIconColor: p.textMuted,
+      emptyStateTextColor: p.textSecondary,
+      legendAccentColor: legend,
+      horizontalTrackColor: p.surfaceElevated.withValues(
+        alpha: isLight ? 0.55 : 0.82,
+      ),
+      horizontalBarHeight: 28,
+      horizontalBarRadius: 4,
+      singleBarWidth: 14,
+      groupedBarWidth: 8,
+      barTopRadius: 3,
+      donutCenterRadius: 30,
+      donutOuterRadius: 52,
+      donutLabelDistance: 74,
+      donutLegendDotSize: 8,
     );
   }
 

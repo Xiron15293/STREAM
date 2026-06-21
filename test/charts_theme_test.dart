@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stream_app/data/database.dart';
-import 'package:stream_app/design/stream_surface_tokens.dart';
+import 'package:stream_app/design/stream_kpi_style.dart';
+import 'package:stream_app/design/stream_theme_extension.dart';
 import 'package:stream_app/design/stream_theme_palette.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
@@ -64,7 +65,10 @@ void main() {
     tester,
   ) async {
     final palette = StreamThemePalette.of(StreamThemeId.minimalSand);
-    final surface = StreamSurfaceTokens.card(palette, elevated: true);
+    final chartPalette = StreamTheme.build(
+      palette,
+      chartStyle: StreamChartStyleId.automatic,
+    ).extension<StreamThemeExtension>()!.chartPalette;
     await pumpCharts(tester, StreamThemeId.minimalSand);
 
     final container = tester.widget<Container>(
@@ -76,8 +80,8 @@ void main() {
           .first,
     );
     final decoration = container.decoration as BoxDecoration;
-    expect(decoration.color, surface.background);
-    expect((decoration.border! as Border).top.color, surface.border);
+    expect(decoration.color, chartPalette.cardBackground);
+    expect((decoration.border! as Border).top.color, chartPalette.cardBorderColor);
   });
 
   testWidgets('chart empty state stays readable in High Contrast', (

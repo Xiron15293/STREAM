@@ -82,8 +82,11 @@ class StreamBarChart extends StatelessWidget {
             return BarChartRodData(
               toY: point?.value ?? 0.0,
               color: e.value.color,
-              width: series.length > 1 ? 8 : 14,
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(3), topRight: Radius.circular(3)),
+              width: series.length > 1 ? cp.groupedBarWidth : cp.singleBarWidth,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(cp.barTopRadius),
+                topRight: Radius.circular(cp.barTopRadius),
+              ),
             );
           }).toList();
           return BarChartGroupData(x: i, barRods: rods);

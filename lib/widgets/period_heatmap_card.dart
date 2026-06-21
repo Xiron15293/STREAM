@@ -59,16 +59,18 @@ class PeriodHeatmapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
+    final cp = context.$chart;
     return Container(
       key: const Key('period_heatmap_card'),
       padding: const EdgeInsets.all(StreamSpacing.lg),
       decoration: BoxDecoration(
-        color: surface.background,
-        borderRadius: BorderRadius.circular(StreamRadius.lg),
-        border: Border.all(color: surface.border, width: surface.borderWidth),
-        boxShadow: surface.shadows,
+        color: cp.cardBackground,
+        borderRadius: BorderRadius.circular(cp.cardRadius),
+        border: Border.all(
+          color: cp.cardBorderColor,
+          width: cp.cardBorderWidth,
+        ),
+        boxShadow: cp.cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
