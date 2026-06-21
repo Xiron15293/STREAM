@@ -53,6 +53,26 @@ void main() {
     expect(find.byKey(const Key('backup_ifinance_import_button')), findsOneWidget);
   });
 
+  testWidgets('BackupScreen riceve activeProfileId dal settings root', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        SettingsScreen(
+          db: AppDatabase(),
+          activeProfileId: 'profile_b',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ListTile, 'Backup & Restore'));
+    await tester.pumpAndSettle();
+
+    final backupScreen = tester.widget<BackupScreen>(find.byType(BackupScreen));
+    expect(backupScreen.activeProfileId, 'profile_b');
+  });
+
   testWidgets('voce Valuta appare e aggiorna la preferenza', (tester) async {
     await tester.pumpWidget(
       wrap(SettingsScreen(db: AppDatabase())),

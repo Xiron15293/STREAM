@@ -147,10 +147,16 @@ void main() {
       final validation = BackupService.validate(json);
       expect(validation.isValid, isTrue);
 
-      await BackupService.restore(db, validation.data!);
+      await BackupService.restore(
+        db,
+        validation.data!,
+        activeProfileId: 'profile_b',
+      );
 
       final restoredIds =
-          await PreferencesService.loadDashboardNetWorthAccountIds();
+          await PreferencesService.loadDashboardNetWorthAccountIds(
+            profileId: 'profile_b',
+          );
       // Only valid_acc should survive
       expect(restoredIds, {'valid_acc'});
       await sqlite.close();
@@ -180,10 +186,16 @@ void main() {
       final validation = BackupService.validate(json);
       expect(validation.isValid, isTrue);
 
-      await BackupService.restore(db, validation.data!);
+      await BackupService.restore(
+        db,
+        validation.data!,
+        activeProfileId: 'profile_b',
+      );
 
       final restoredIds =
-          await PreferencesService.loadDashboardNetWorthAccountIds();
+          await PreferencesService.loadDashboardNetWorthAccountIds(
+            profileId: 'profile_b',
+          );
       expect(restoredIds, isNull);
       expect(PreferencesService.netWorthAccountIdsNotifier.value, isNull);
       await sqlite.close();
