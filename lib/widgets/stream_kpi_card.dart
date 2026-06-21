@@ -140,7 +140,7 @@ class StreamKpiCard extends StatelessWidget {
           ),
           child: chrome.leftAccent
               ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: chrome.accentStripeWidth,

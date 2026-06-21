@@ -6,10 +6,22 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-21 — V0.11i-fix3
+- Verificata la nuova gerarchia movement-first del dettaglio conto: lista piu alta nel viewport, mini-summary compatto, toggle KPI dettagliati e empty state coerente
+- Corrette regressioni test/layout su `AccountsScreen` e sulla variante split di `StreamKpiCard`
+- Nuovo test `test/account_detail_summary_kpi_style_test.dart`; aggiornato `test/accounts_navigation_test.dart`
+- `flutter test`: **1038 passati / 1 skipped**
+- `flutter analyze`: nessun errore, solo info preesistenti fuori scope
+
+### Delta 2026-06-21 — V0.11i-fix2
+- Verificata la copertura degli stili KPI globali nei riepiloghi condivisi e nelle card legacy migrate
+- Nessuna regressione su formule, filtri o valori KPI; la differenza resta solo visiva
+- Validazione consolidata nella stessa full suite finale: **1038 passati / 1 skipped**
+
 ### Delta 2026-06-21 — V0.11i-fix1
 - Theme completion verificata per summary periodali, heatmap annuale/range, picker data, picker categoria/sottocategoria, rapidi/preferiti e flow add/edit movimento
 - Regressioni intercettate e corrette su `Material` dei bottom sheet e su aspettative test della annual heatmap
-- `flutter test`: **1036 passati / 1 skipped**
+- Verifica finale consolidata nella suite piu recente: **1038 passati / 1 skipped**
 - `flutter analyze`: nessun errore, solo info preesistenti fuori scope
 
 ### Delta 2026-06-20 — V0.11h
@@ -23,9 +35,8 @@
 **Stato:** Hermes candidate for closure / Hermes QA green
 
 ### Executive summary
-- 44+ file test Dart/Flutter
-- 960 test/casi dichiarati
-- 960 test verdi nel run finale
+- 62 file test Dart/Flutter
+- 1038 test/casi passati nel run finale
 - 1 skipped (preesistente)
 - 1.641+ scenari data-driven
 - 7.475+ controlli/logiche reali documentati
@@ -39,7 +50,7 @@
 - V0.11g Chart Readability: donut outside labels (leader lines + TextPainter + left/right alignment + 4% threshold) + chart visibility preferences
 - V0.11g-fix2+3: single source slice data, startDegreeOffset -90 alignment, legend widget extraction, 1015 test finali
 - V0.11g-fix3: sectionsSpace alignment in angle calculation, collision avoidance (min 16px vertical gap), pure layout function, 1022 test finali
-- V0.11i: categories_screen.dart StreamColors 49→0, palette tema unificata, 1026 test finali
+- V0.11i-fix2/fix3: KPI style coverage globale + account detail movement-priority UX, 1038 test finali
 - P0: 0 nuovi
 - P1: 0 nuovi
 - P2: 0 nuovi
@@ -68,7 +79,7 @@
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
 - `flutter test`: ok
-- Suite finale: `911` test verdi, `1` skipped
+- Suite finale: `1038` test verdi, `1` skipped
 
 ### Verifiche funzionali documentate
 - `MovementCard`: tap breve apre modifica; tap lungo e tre puntini aprono lo stesso `showMovementActionsSheet`
@@ -108,7 +119,7 @@
 
 ### Final state
 
-Hermes Extended QA Audit completato con `1.641` scenari data-driven e `7.475` controlli/logiche reali documentati. Suite finale verde: `911` passed, `1` skipped. Nessun nuovo P0/P1/P2 emerso nei flussi coperti.
+Hermes Extended QA Audit completato con `1.641` scenari data-driven e `7.475` controlli/logiche reali documentati. Suite finale verde: `1038` passed, `1` skipped. Nessun nuovo P0/P1/P2 emerso nei flussi coperti.
 
 ---
 

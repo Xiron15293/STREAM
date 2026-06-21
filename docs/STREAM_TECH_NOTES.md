@@ -2,7 +2,21 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes closure candidate / QA stabilized + movement actions sheet centralizzato + add/edit movement flow polish + movement theme completion + beneficiari manuali auditati + movement suggestion chips + currency preference + bugfix critico iFinance + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+**Stato:** Hermes closure candidate / QA stabilized + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+
+## Update 2026-06-21 — V0.11i-fix3 Account Detail Movement Priority UX
+
+- `AccountsScreen` account detail sheet riorganizzata con priorita alla lista movimenti: top area piu compatta, azioni 2x2 alleggerite e filtro periodo subito raggiungibile
+- Aggiunti mini-summary compatto e sezione `Riepilogo dettagliato` collassabile, chiusa di default quando esistono movimenti e aperta sugli empty state
+- KPI dettagliati continuano a usare il sistema globale di stile tramite `StreamKpiCard`; corretta anche la variante split per evitare constraint verticali infiniti nelle card con accent stripe
+- Nuove key stabili per test/UI automation del dettaglio conto; aggiornati test navigazione e aggiunto test dedicato agli stili KPI nel dettaglio account
+- Nessuna modifica a calcoli conto, TimeFilter, formattazione valuta o persistenza
+
+## Update 2026-06-21 — V0.11i-fix2 Global KPI Style Coverage
+
+- Copertura estesa degli stili KPI globali nei riepiloghi condivisi e nelle card legacy gia migrate al sistema tema/KPI
+- Consolidato l'uso di `StreamKpiCard` come base coerente per varianti `minimal`, `dense`, `glass`, `outline`, `solid`, `split`
+- Validazione assorbita nella full suite finale piu recente: `1038` passati, `1` skipped
 
 ## Update 2026-06-21 — V0.11i-fix1 Movement Flow Theme Completion
 

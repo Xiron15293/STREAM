@@ -6,16 +6,11 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
-- V0.11i-fix1 completata: il perimetro legacy dei movimenti ora reagisce chiaramente al tema corrente anche in summary periodali, heatmap, selector/picker e flow add/edit.
-- `PeriodSummaryCard`, `PeriodHeatmapCard`, `AnnualHeatmapCard`, `TimeFilterBar`, `MovementPicker`, `AddMovementFlow`, `MovementForm`, suggerimenti e sheet rapidi/preferiti usano palette/superfici dinamiche senza logica business cambiata.
-- QA locale aggiornata: `flutter test` full suite verde con `1036` passati e `1` skipped; `flutter analyze` resta info-only per warning storici fuori scope.
-- Residuo principale fuori sprint: warning analyzer legacy in `database.dart`, `backup_screen.dart`, `categories_screen.dart` e `theme_test.dart`, ma nessun errore bloccante nell’area movimenti.
-
-- V0.11h completata: card, summary chip e grafici reagiscono al tema corrente con differenze visive reali tra Classic, Forest, Minimal Sand e High Contrast.
-- `AccountsScreen`, `BeneficiariesScreen`, `CategoriesScreen`, `MovementCard`, `ChartsScreen` e chart widgets usano superfici derivate da palette invece di superfici statiche.
-- `AccountsScreen` interactive sheet non va in overflow su viewport stretti: il riepilogo alto scorre, mentre azioni e filtro periodo restano cliccabili.
-- QA locale aggiornata: `flutter test` full suite verde con `1026` passati e `1` skipped; `flutter analyze` resta info-only per warning storici soprattutto in `categories_screen.dart`.
-- Residuo principale tema: `lib/screens/categories_screen.dart` mantiene ancora `49` occorrenze `StreamColors` in flow secondari/dialog legacy, da chiudere in sprint dedicato.
+- V0.11i-fix3 completata: la sheet dettaglio conto ora e movement-first. Header, azioni, filtro periodo e mini-summary occupano meno spazio; il `Riepilogo dettagliato` e collassabile e la lista movimenti entra nel primo viewport molto prima.
+- V0.11i-fix2 completata: gli stili KPI globali hanno copertura coerente anche nei riepiloghi condivisi e nelle card legacy gia migrate al tema.
+- V0.11i-fix1 completata: summary periodali, heatmap, flow add/edit, picker e suggerimenti movimento usano superfici/palette dinamiche senza cambiare logica business.
+- QA locale aggiornata: `flutter analyze` resta info-only per warning storici fuori scope; `flutter test` full suite verde con `1038` passati e `1` skipped.
+- Residuo principale fuori sprint: warning analyzer legacy in `database.dart`, `backup_screen.dart`, `categories_screen.dart` e `theme_test.dart`, ma nessun errore bloccante nell’area Conti/Movimenti/KPI.
 
 - Profili separati e isolamento DB sono attivi e verificati.
 - Il flow guidato `+ Movimento` copre creazione e modifica con prefill per Entrata, Spesa e Trasferimento.
@@ -30,47 +25,20 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 - La schermata Movimenti usa la heatmap come vista utente principale per i periodi.
 - Le impostazioni heatmap espongono solo `Configura heatmap`.
 - Categorie e sottocategorie supportano safe edit, duplicate validation corretta e restore coerente.
-- Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`911` passati, `1` skipped).
+- Hermes Extended QA Audit completato: `1.641` scenari data-driven, `7.475` controlli/logiche, `test/qa_audit_matrix_test.dart` + stress/extensive + full suite verdi (`1038` passati, `1` skipped).
 - Hermes QA green / closure candidate: nessun nuovo P0/P1/P2 trovato nel perimetro dell’audit finale.
-
-## Stato Attuale — V0.11b (Theme Applied to Widgets + KPI + Charts)
-
-- **Helper theme**: `context.streamTheme`, `context.$palette`, `context.$chart` con fallback sicuro a palette Stream Classic
-- **Widget grafici migrati**: StreamChartCard, ChartEmptyState, StreamDonutChart, StreamHorizontalBarChart, StreamBarChart — tutti usano palette dinamica
-- **Dashboard migrata**: `_KpiCard` usa palette; stili KPI (minimal, dense, outline, solid, split) attivi con padding/bordi/sfondo variabili
-- **ChartsScreen**: chip sezione e legenda usano `context.$palette`
-- **TimeFilterBar**: label data usa palette
-- **StreamColors residue**: ~520 occorrenze in widget non prioritari (accounts, categories, backup, heatmap, calendar, movement_card, day_header) — migrazione completa come follow-up V0.12
-- **KPI styles visibili**: Minimal/Dense/Glass/Outline/Solid/Split hanno layout/sfondo/bordi diverso
-- **Chart styles reali**: V0.11c (automatic/soft/technical/highContrast/editorial con `applyStyle`)
-- **Chart palette effettiva** calcolata in `StreamTheme.build()` con chart style, ascoltata da `StreamApp`
-- **Budget non implementato**, resta futuro
-- **V0.11g**: donut outside labels + leader lines, chart visibility preferences (registry, hiddenChartIds, settings sheet)
-- **V0.11g-fix3**: sectionsSpace alignment (2° gap tra slice ora considerato), collision avoidance, pure layout function
-- **V0.11i**: categories_screen StreamColors 49→0, palette tema unificata, 1026 test verdi
-- **1026 test totali**, tutti verdi
 
 ## Focus consigliato
 
-1. QA manuale su device reale dei flow movimento su Classic, Forest, Minimal Sand e High Contrast
-2. Pulizia warning analyzer storici fuori scope tema movimenti
+1. QA manuale su device reale della nuova sheet account in viewport piccoli e su piu temi/KPI styles
+2. Pulizia warning analyzer storici fuori scope
 3. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService
-
-## Stato Attuale — V0.11f (Archive + Charts Shell + KPI Hero)
-
-- `ArchiveScreen` ora applica il tema sulla shell principale; `MovementsScreen` usa `canvas` dinamico
-- `MovementCard`, `MovementViewRenderer`, `DayHeader`, `MovementActionsSheet` usano palette tema per superfici, testi, divider, icone e danger action
-- `ChartsScreen` usa shell e metric colors coerenti con il tema corrente
-- Hero `Patrimonio` è collegato allo stile KPI: `dense` è compatto, `minimal` è più arioso, `solid/outline/glass/split` hanno differenze visive reali
-- Verifica locale aggiornata: `flutter analyze` pulito sui file toccati; `flutter test` full suite **1015 pass / 1 skipped**
-- Residui `StreamColors` fuori scope sprint: `categories_screen.dart` (`77`), `accounts_screen.dart` (`24`), `dashboard_screen.dart` (`9`)
-- `Package.resolved` può comparire come deleted: ripristinare con `git restore ios/.../Package.resolved` se necessario
 
 ## Prossimo Sprint Consigliato
 
 1. **V0.11j — Advanced Chart Styles** (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService, mantenendo V0.11g leader lines e V0.11h adaptive palette
 2. QA manuale su device reale per flussi più sensibili
-3. UI polish residui (accounts_screen, dashboard_screen) o Budget Foundation se priorità prodotto
+3. UI polish residui e progressiva pulizia analyzer/documentazione storica incoerente
 
 ## Regole Git
 

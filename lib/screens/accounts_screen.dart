@@ -773,6 +773,7 @@ class _AccountMovementsSheet extends StatefulWidget {
 
 class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
   late TimeFilter _filter;
+  bool? _detailsExpandedOverride;
 
   Account get _account {
     return widget.db.accounts.firstWhere(
@@ -835,6 +836,11 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
     if (mounted) setState(() {});
   }
 
+  void _toggleDetails() {
+    final shouldExpand = _detailsExpandedOverride ?? _accountMovements.isEmpty;
+    setState(() => _detailsExpandedOverride = !shouldExpand);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
@@ -856,223 +862,397 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
           initialBalance: account.initialBalance,
         );
         final hasMovements = movements.isNotEmpty;
+        final detailsExpanded = _detailsExpandedOverride ?? !hasMovements;
 
         return FractionallySizedBox(
           heightFactor: 1.0,
-          child: Padding(
-            key: const Key('account_interactive_sheet'),
-            padding: const EdgeInsets.fromLTRB(
-              StreamSpacing.lg,
-              StreamSpacing.lg,
-              StreamSpacing.lg,
-              StreamSpacing.md,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                KeyedSubtree(
-                  key: const Key('account_sheet_header'),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: Color(account.color).withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          StreamIconLibrary.getAccountIcon(account.iconKey),
-                          color: StreamSurfaceTokens.onAccent(
-                            Color(account.color).withValues(alpha: 0.92),
-                          ),
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: StreamSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Movimenti del conto',
-                              style: StreamTypography.captionBold.copyWith(
-                                color: p.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              account.name,
-                              key: const Key('account_movements_name'),
-                              style: StreamTypography.h2,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              account.archived ? 'Archiviato' : 'Attivo',
-                              style: StreamTypography.caption.copyWith(
-                                color: p.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        key: const Key('account_movements_close_button'),
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: StreamSpacing.md),
-                Flexible(
-                  fit: FlexFit.loose,
-                  child: SingleChildScrollView(
-                    child: KeyedSubtree(
-                      key: const Key('account_sheet_period_summary'),
-                      child: Wrap(
-                        spacing: StreamSpacing.sm,
-                        runSpacing: StreamSpacing.sm,
+          child: KeyedSubtree(
+            key: const Key('account_detail_sheet'),
+            child: Padding(
+              key: const Key('account_interactive_sheet'),
+              padding: const EdgeInsets.fromLTRB(
+                StreamSpacing.lg,
+                StreamSpacing.lg,
+                StreamSpacing.lg,
+                StreamSpacing.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           KeyedSubtree(
-                            key: const Key('account_movements_current_balance'),
-                            child: _StatChip(
-                              label: _balanceLabel(_filter),
-                              value: _formatMoney(periodEndBalance),
-                              key: const Key('account_sheet_balance_as_of'),
+                            key: const Key('account_sheet_header'),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: Color(account.color).withValues(
+                                      alpha: 0.16,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    StreamIconLibrary.getAccountIcon(
+                                      account.iconKey,
+                                    ),
+                                    color: StreamSurfaceTokens.onAccent(
+                                      Color(account.color).withValues(
+                                        alpha: 0.92,
+                                      ),
+                                    ),
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(width: StreamSpacing.md),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Movimenti del conto',
+                                        style:
+                                            StreamTypography.captionBold.copyWith(
+                                              color: p.textSecondary,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        account.name,
+                                        key: const Key(
+                                          'account_movements_name',
+                                        ),
+                                        style: StreamTypography.h2,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        account.archived
+                                            ? 'Archiviato'
+                                            : 'Attivo',
+                                        style: StreamTypography.caption.copyWith(
+                                          color: p.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  key: const Key(
+                                    'account_movements_close_button',
+                                  ),
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ],
                             ),
                           ),
-                          _StatChip(
-                            label: 'Saldo iniziale',
-                            value: _formatMoney(account.initialBalance),
-                            key: const Key('account_movements_initial_balance'),
+                          const SizedBox(height: StreamSpacing.md),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final buttonWidth =
+                                  (constraints.maxWidth - StreamSpacing.sm) / 2;
+                              return KeyedSubtree(
+                                key: const Key('account_detail_actions'),
+                                child: Wrap(
+                                  spacing: StreamSpacing.sm,
+                                  runSpacing: StreamSpacing.sm,
+                                  children: [
+                                    SizedBox(
+                                      width: buttonWidth,
+                                      child: _SheetActionButton(
+                                        key: const Key(
+                                          'account_sheet_add_movement_action',
+                                        ),
+                                        icon: Icons.add,
+                                        label: 'Movimento',
+                                        prominence: _ActionProminence.primary,
+                                        onPressed: () => _showAddMovement(),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: buttonWidth,
+                                      child: _SheetActionButton(
+                                        key: const Key(
+                                          'account_sheet_transfer_action',
+                                        ),
+                                        icon: Icons.compare_arrows,
+                                        label: 'Trasferisci',
+                                        prominence:
+                                            _ActionProminence.secondary,
+                                        onPressed: () => _showAddMovement(
+                                          initialType: MovementType.transfer,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: buttonWidth,
+                                      child: _SheetActionButton(
+                                        key: const Key(
+                                          'account_sheet_edit_action',
+                                        ),
+                                        icon: Icons.edit,
+                                        label: 'Modifica',
+                                        prominence: _ActionProminence.tertiary,
+                                        onPressed: widget.onEdit,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: buttonWidth,
+                                      child: !account.archived
+                                          ? _SheetActionButton(
+                                              key: const Key(
+                                                'account_sheet_archive_action',
+                                              ),
+                                              icon: Icons.archive_outlined,
+                                              label: 'Archivia',
+                                              prominence:
+                                                  _ActionProminence.tertiary,
+                                              onPressed: _archiveAccount,
+                                            )
+                                          : _SheetActionButton(
+                                              key: const Key(
+                                                'account_sheet_restore_action',
+                                              ),
+                                              icon: Icons.unarchive_outlined,
+                                              label: 'Ripristina',
+                                              prominence:
+                                                  _ActionProminence.tertiary,
+                                              onPressed: _restoreAccount,
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
+                          const SizedBox(height: StreamSpacing.md),
                           KeyedSubtree(
-                            key: const Key('account_movements_income'),
-                            child: _StatChip(
-                              label: 'Entrate periodo',
-                              value: _formatMoney(_filteredIncome),
-                              key: const Key('account_sheet_income'),
+                            key: const Key('account_detail_period_filter'),
+                            child: KeyedSubtree(
+                              key: const Key('account_movements_time_filter'),
+                              child: TimeFilterBar(
+                                activeFilter: _filter,
+                                onChanged: (value) =>
+                                    setState(() => _filter = value),
+                              ),
                             ),
                           ),
+                          const SizedBox(height: StreamSpacing.sm),
                           KeyedSubtree(
-                            key: const Key('account_movements_expenses'),
-                            child: _StatChip(
-                              label: 'Uscite periodo',
-                              value: _formatMoney(_filteredExpenses),
-                              key: const Key('account_sheet_expense'),
+                            key: const Key('account_detail_compact_summary'),
+                            child: _CompactAccountSummary(
+                              income: _filteredIncome,
+                              expenses: _filteredExpenses,
+                              balance: _filteredIncome -
+                                  _filteredExpenses +
+                                  _filteredTransfersNet,
                             ),
                           ),
+                          const SizedBox(height: StreamSpacing.xs),
                           KeyedSubtree(
-                            key: const Key('account_movements_transfers'),
-                            child: _StatChip(
-                              label: 'Trasferimenti netti',
-                              value: _formatMoney(_filteredTransfersNet),
-                              key: const Key('account_sheet_transfer_net'),
+                            key: const Key('account_sheet_period_summary'),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                InkWell(
+                                  key: const Key(
+                                    'account_detail_summary_toggle',
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    StreamRadius.md,
+                                  ),
+                                  onTap: _toggleDetails,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: StreamSpacing.xs,
+                                      vertical: StreamSpacing.xs,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          detailsExpanded
+                                              ? Icons.expand_less
+                                              : Icons.expand_more,
+                                          size: 18,
+                                          color: p.textSecondary,
+                                        ),
+                                        const SizedBox(
+                                          width: StreamSpacing.xs,
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            'Riepilogo dettagliato',
+                                            style: StreamTypography.captionBold
+                                                .copyWith(
+                                                  color: p.textSecondary,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                AnimatedSize(
+                                  duration: const Duration(milliseconds: 220),
+                                  alignment: Alignment.topCenter,
+                                  child: detailsExpanded
+                                      ? Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: StreamSpacing.xs,
+                                          ),
+                                          child: Wrap(
+                                            key: const Key(
+                                              'account_detail_summary_grid',
+                                            ),
+                                            spacing: StreamSpacing.sm,
+                                            runSpacing: StreamSpacing.sm,
+                                            children: [
+                                              KeyedSubtree(
+                                                key: const Key(
+                                                  'account_movements_current_balance',
+                                                ),
+                                                child: _StatChip(
+                                                  label: _balanceLabel(_filter),
+                                                  value: _formatMoney(
+                                                    periodEndBalance,
+                                                  ),
+                                                  key: const Key(
+                                                    'account_sheet_balance_as_of',
+                                                  ),
+                                                ),
+                                              ),
+                                              _StatChip(
+                                                label: 'Saldo iniziale',
+                                                value: _formatMoney(
+                                                  account.initialBalance,
+                                                ),
+                                                key: const Key(
+                                                  'account_movements_initial_balance',
+                                                ),
+                                              ),
+                                              KeyedSubtree(
+                                                key: const Key(
+                                                  'account_movements_income',
+                                                ),
+                                                child: _StatChip(
+                                                  label: 'Entrate periodo',
+                                                  value: _formatMoney(
+                                                    _filteredIncome,
+                                                  ),
+                                                  key: const Key(
+                                                    'account_sheet_income',
+                                                  ),
+                                                ),
+                                              ),
+                                              KeyedSubtree(
+                                                key: const Key(
+                                                  'account_movements_expenses',
+                                                ),
+                                                child: _StatChip(
+                                                  label: 'Uscite periodo',
+                                                  value: _formatMoney(
+                                                    _filteredExpenses,
+                                                  ),
+                                                  key: const Key(
+                                                    'account_sheet_expense',
+                                                  ),
+                                                ),
+                                              ),
+                                              KeyedSubtree(
+                                                key: const Key(
+                                                  'account_movements_transfers',
+                                                ),
+                                                child: _StatChip(
+                                                  label:
+                                                      'Trasferimenti netti',
+                                                  value: _formatMoney(
+                                                    _filteredTransfersNet,
+                                                  ),
+                                                  key: const Key(
+                                                    'account_sheet_transfer_net',
+                                                  ),
+                                                ),
+                                              ),
+                                              _StatChip(
+                                                label: 'Saldo inizio periodo',
+                                                value: _formatMoney(
+                                                  periodStartBalance,
+                                                ),
+                                                key: const Key(
+                                                  'account_movements_start_balance',
+                                                ),
+                                              ),
+                                              KeyedSubtree(
+                                                key: const Key(
+                                                  'account_movements_count',
+                                                ),
+                                                child: _StatChip(
+                                                  label: 'Movimenti',
+                                                  value: '${movements.length}',
+                                                  key: const Key(
+                                                    'account_sheet_movement_count',
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
                             ),
                           ),
-                          _StatChip(
-                            label: 'Saldo inizio periodo',
-                            value: _formatMoney(periodStartBalance),
-                            key: const Key('account_movements_start_balance'),
-                          ),
-                          KeyedSubtree(
-                            key: const Key('account_movements_count'),
-                            child: _StatChip(
-                              label: 'Movimenti',
-                              value: '${movements.length}',
-                              key: const Key('account_sheet_movement_count'),
-                            ),
-                          ),
+                          const SizedBox(height: StreamSpacing.sm),
                         ],
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: StreamSpacing.md),
-                Wrap(
-                  spacing: StreamSpacing.sm,
-                  runSpacing: StreamSpacing.sm,
-                  children: [
-                    _SheetActionButton(
-                      key: const Key('account_sheet_add_movement_action'),
-                      icon: Icons.add,
-                      label: 'Movimento',
-                      onPressed: () => _showAddMovement(),
-                    ),
-                    _SheetActionButton(
-                      key: const Key('account_sheet_transfer_action'),
-                      icon: Icons.compare_arrows,
-                      label: 'Trasferisci',
-                      onPressed: () =>
-                          _showAddMovement(initialType: MovementType.transfer),
-                    ),
-                    _SheetActionButton(
-                      key: const Key('account_sheet_edit_action'),
-                      icon: Icons.edit,
-                      label: 'Modifica',
-                      onPressed: widget.onEdit,
-                    ),
-                    if (!account.archived)
-                      _SheetActionButton(
-                        key: const Key('account_sheet_archive_action'),
-                        icon: Icons.archive_outlined,
-                        label: 'Archivia',
-                        onPressed: _archiveAccount,
-                      ),
-                    if (account.archived)
-                      _SheetActionButton(
-                        key: const Key('account_sheet_restore_action'),
-                        icon: Icons.unarchive_outlined,
-                        label: 'Ripristina',
-                        onPressed: _restoreAccount,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: StreamSpacing.md),
-                KeyedSubtree(
-                  key: const Key('account_movements_time_filter'),
-                  child: TimeFilterBar(
-                    activeFilter: _filter,
-                    onChanged: (value) => setState(() => _filter = value),
-                  ),
-                ),
-                const SizedBox(height: StreamSpacing.md),
-                Expanded(
-                  key: const Key('account_sheet_movements_list'),
-                  child: hasMovements
-                      ? GroupedMovementsList(
-                          movements: movements,
-                          db: widget.db,
-                          showNotes: true,
-                          onEdit: (m) => showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) =>
-                                MovementPicker(db: widget.db, prefill: m),
-                          ),
-                          onDuplicate: (m) async {
-                            final date = await showDuplicateDateSheet(context);
-                            if (date != null) {
-                              widget.db.duplicateMovement(m, date: date);
-                            }
-                          },
-                          onSaveAsFavorite: (m) =>
-                              widget.db.saveMovementAsFavorite(m),
-                          onAddQuick: (m) => widget.db.saveMovementAsQuick(m),
-                          onDelete: (m) => widget.db.deleteMovement(m.id),
-                        )
-                      : Center(
-                          child: Text(
-                            'Nessun movimento in questo periodo',
-                            style: StreamTypography.body.copyWith(
-                              color: p.textSecondary,
+                  Expanded(
+                    key: const Key('account_detail_movements_list'),
+                    child: hasMovements
+                        ? KeyedSubtree(
+                            key: const Key('account_sheet_movements_list'),
+                            child: GroupedMovementsList(
+                              movements: movements,
+                              db: widget.db,
+                              showNotes: true,
+                              onEdit: (m) => showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (_) =>
+                                    MovementPicker(db: widget.db, prefill: m),
+                              ),
+                              onDuplicate: (m) async {
+                                final date = await showDuplicateDateSheet(
+                                  context,
+                                );
+                                if (date != null) {
+                                  widget.db.duplicateMovement(m, date: date);
+                                }
+                              },
+                              onSaveAsFavorite: (m) =>
+                                  widget.db.saveMovementAsFavorite(m),
+                              onAddQuick: (m) =>
+                                  widget.db.saveMovementAsQuick(m),
+                              onDelete: (m) => widget.db.deleteMovement(m.id),
                             ),
-                            textAlign: TextAlign.center,
+                          )
+                        : KeyedSubtree(
+                            key: const Key('account_sheet_movements_list'),
+                            child: _AccountMovementsEmptyState(
+                              onAddMovement: () => _showAddMovement(),
+                            ),
                           ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -1095,28 +1275,66 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
   }
 }
 
+enum _ActionProminence { primary, secondary, tertiary }
+
 class _SheetActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
+  final _ActionProminence prominence;
 
   const _SheetActionButton({
     super.key,
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.prominence = _ActionProminence.primary,
   });
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      ),
+    final p = context.$palette;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(StreamRadius.md),
     );
+
+    switch (prominence) {
+      case _ActionProminence.primary:
+        return FilledButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(label),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(42),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            shape: shape,
+          ),
+        );
+      case _ActionProminence.secondary:
+        return FilledButton.tonalIcon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(label),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(42),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            shape: shape,
+          ),
+        );
+      case _ActionProminence.tertiary:
+        return OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(label),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(42),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            shape: shape,
+            foregroundColor: p.textPrimary,
+            side: BorderSide(color: p.divider),
+          ),
+        );
+    }
   }
 }
 
@@ -1136,6 +1354,132 @@ class _StatChip extends StatelessWidget {
       layout: StreamKpiLayout.stacked,
       width: 160,
       uppercaseTitle: false,
+    );
+  }
+}
+
+class _CompactAccountSummary extends StatelessWidget {
+  final double income;
+  final double expenses;
+  final double balance;
+
+  const _CompactAccountSummary({
+    required this.income,
+    required this.expenses,
+    required this.balance,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    final surface = StreamSurfaceTokens.card(p, muted: true);
+    final balanceColor = balance >= 0 ? p.income : p.expense;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: surface.background,
+        borderRadius: BorderRadius.circular(StreamRadius.md),
+        border: Border.all(
+          color: surface.border,
+          width: surface.borderWidth,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: StreamSpacing.md,
+        vertical: StreamSpacing.sm,
+      ),
+      child: Wrap(
+        spacing: StreamSpacing.md,
+        runSpacing: StreamSpacing.xs,
+        children: [
+          _CompactSummaryItem(
+            label: 'Entrate',
+            value: formatMovementCurrency(income),
+            color: p.income,
+          ),
+          _CompactSummaryItem(
+            label: 'Uscite',
+            value: formatMovementCurrency(expenses),
+            color: p.expense,
+          ),
+          _CompactSummaryItem(
+            label: 'Saldo',
+            value: formatMovementCurrency(balance, showPositiveSign: true),
+            color: balanceColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactSummaryItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _CompactSummaryItem({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    return RichText(
+      text: TextSpan(
+        style: StreamTypography.caption.copyWith(color: p.textSecondary),
+        children: [
+          TextSpan(text: '$label: '),
+          TextSpan(
+            text: value,
+            style: StreamTypography.captionBold.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountMovementsEmptyState extends StatelessWidget {
+  final VoidCallback onAddMovement;
+
+  const _AccountMovementsEmptyState({required this.onAddMovement});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.$palette;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: StreamSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 40, color: p.textMuted),
+            const SizedBox(height: StreamSpacing.md),
+            Text(
+              'Nessun movimento in questo periodo',
+              style: StreamTypography.bodyBold.copyWith(
+                color: p.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: StreamSpacing.xs),
+            Text(
+              'Puoi cambiare periodo oppure aggiungere subito un nuovo movimento.',
+              style: StreamTypography.caption.copyWith(color: p.textMuted),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: StreamSpacing.md),
+            FilledButton.icon(
+              onPressed: onAddMovement,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Aggiungi movimento'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

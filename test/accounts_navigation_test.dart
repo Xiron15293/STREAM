@@ -342,14 +342,32 @@ void main() {
         find.byKey(const Key('account_interactive_sheet')),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('account_sheet_header')), findsOneWidget);
+      expect(find.byKey(const Key('account_detail_sheet')), findsOneWidget);
+      expect(find.byKey(const Key('account_detail_actions')), findsOneWidget);
       expect(
-        find.byKey(const Key('account_sheet_balance_as_of')),
+        find.byKey(const Key('account_detail_period_filter')),
         findsOneWidget,
       );
       expect(
+        find.byKey(const Key('account_detail_compact_summary')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_detail_summary_toggle')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_detail_movements_list')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('account_sheet_header')), findsOneWidget);
+      expect(
         find.byKey(const Key('account_sheet_period_summary')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('account_detail_summary_grid')),
+        findsNothing,
       );
       expect(
         find.byKey(const Key('account_sheet_add_movement_action')),
@@ -377,6 +395,34 @@ void main() {
             .widget<Text>(find.byKey(const Key('account_movements_name')))
             .data,
         'Conto Principale QA',
+      );
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('account_detail_compact_summary')),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is RichText &&
+                widget.text.toPlainText().contains('Saldo: +20.00 €'),
+          ),
+        ),
+        findsOneWidget,
+      );
+      _expectMovementTitles(tester, [
+        'Entrata mese',
+        'Uscita mese',
+        'Trasferimento mese',
+      ]);
+
+      await tester.ensureVisible(
+        find.byKey(const Key('account_detail_summary_toggle')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('account_detail_summary_toggle')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('account_detail_summary_grid')),
+        findsOneWidget,
       );
 
       expect(
@@ -421,12 +467,6 @@ void main() {
         ),
         findsOneWidget,
       );
-
-      _expectMovementTitles(tester, [
-        'Entrata mese',
-        'Uscita mese',
-        'Trasferimento mese',
-      ]);
 
       final sheetFilter = find.byKey(
         const Key('account_movements_time_filter'),
@@ -530,6 +570,7 @@ void main() {
     await openAccountSheet(tester, 'acc_empty');
 
     expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
+    expect(find.byKey(const Key('account_detail_summary_grid')), findsOneWidget);
   });
 
   testWidgets(
@@ -572,6 +613,16 @@ void main() {
         'Conto Archiviato Click',
       );
       _expectMovementTitles(tester, ['Movimento storico']);
+      expect(
+        find.byKey(const Key('account_detail_summary_grid')),
+        findsNothing,
+      );
+      await tester.ensureVisible(
+        find.byKey(const Key('account_detail_summary_toggle')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('account_detail_summary_toggle')));
+      await tester.pumpAndSettle();
       expect(
         find.descendant(
           of: find.byKey(const Key('account_movements_count')),

@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11i-fix3 — Account Detail Movement Priority UX**
+  - Sheet `Movimenti del conto` riorganizzata per dare priorita visiva alla lista movimenti: header compatto, azioni piu leggere, filtro periodo sempre accessibile e prima card piu alta nel viewport
+  - Introdotto mini-summary compatto sopra la lista e sezione `Riepilogo dettagliato` collassabile, chiusa di default quando il periodo contiene movimenti e aperta automaticamente sugli empty state
+  - KPI dettagliati preservati senza cambiare formule, filtri, logica saldi o formattazione valuta; la griglia continua a rispettare gli stili KPI globali
+  - Aggiunte key stabili per test/UI automation: `account_detail_sheet`, `account_detail_actions`, `account_detail_period_filter`, `account_detail_compact_summary`, `account_detail_movements_list`, `account_detail_summary_toggle`, `account_detail_summary_grid`
+  - Nuovo test `test/account_detail_summary_kpi_style_test.dart`; aggiornati `test/accounts_navigation_test.dart` e verifiche su viewport/toggle KPI
+  - Verifica finale locale: `flutter analyze` info-only preesistente; `flutter test` full suite verde con `1038` passati e `1` skipped
+  - Nessuna modifica a DB/schema/migrazioni, analytics, filtri periodo o calcoli conto/movimenti
+
+- **V0.11i-fix2 — Global KPI Style Coverage**
+  - Estesa la copertura degli stili KPI globali ai riepiloghi condivisi e alle superfici legacy ancora non allineate, consolidando l'uso di `StreamKpiCard`/token tema nelle aree Conti, Dashboard e riepiloghi periodo
+  - Rifinite varianti `minimal`, `dense`, `glass`, `outline`, `solid`, `split` per mantenere differenze visive coerenti senza alterare metriche o logica dati
+  - Rafforzata la suite tema/KPI con test aggiuntivi su card e riepiloghi condivisi, poi assorbiti nella validazione finale `1038` passati / `1` skipped
+  - Nessuna modifica a DB, formule KPI, import/export o logica business
+
 - **V0.11i-fix1 — Movement Flow Theme Completion**
   - Completata la tematizzazione delle superfici legacy collegate ai movimenti: `PeriodSummaryCard`, `PeriodHeatmapCard`, `AnnualHeatmapCard`, preview heatmap, `TimeFilterBar`, flow add/edit movimento, picker rapidi/preferiti e selettori categoria/sottocategoria
   - Le heatmap annuali/range e i riepiloghi periodo usano ora superfici, bordi, shadow e stati attivi derivati da `StreamSurfaceTokens` e `context.$palette`
@@ -14,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `MovementForm`, `MovementPicker`, `AddMovementFlow`, `MovementCalculatorPad` e `MovementTextSuggestions` allineati alla palette corrente senza modificare logica movimenti, heatmap o TimeFilter
   - 7 nuovi test tema aggiunti: `test/period_summary_theme_test.dart`, `test/heatmap_theme_test.dart`, `test/time_filter_theme_test.dart`, `test/movement_flow_theme_test.dart`, `test/movement_edit_theme_test.dart`, `test/quick_movements_theme_test.dart`, `test/favorite_movements_theme_test.dart`
   - Test legacy aggiornati per il nuovo comportamento tema delle celle annual heatmap e per il bottone heatmap fuori viewport
-  - `flutter test` full suite finale verde: `1036` passati, `1` skipped
+  - Verifica finale consolidata nella suite completa piu recente: `1038` passati, `1` skipped
   - Nessuna modifica a DB/schema/migrazioni, backup/restore/import/export, analytics, KPI o calcoli movimenti
 
 - **V0.11h — Theme Adaptive Cards and Charts**

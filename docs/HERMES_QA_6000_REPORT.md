@@ -4,7 +4,9 @@
 
 ## Sintesi
 
-- Delta 2026-06-21: V0.11i-fix1 confermata con movement flow/theme completion, bottom sheet tematizzati e full suite finale **1036 passati / 1 skipped**
+- Delta 2026-06-21: V0.11i-fix3 confermata con account detail movement-priority UX, KPI dettagliati collassabili e full suite finale **1038 passati / 1 skipped**
+- Delta 2026-06-21: V0.11i-fix2 confermata con copertura KPI style globale allineata ai riepiloghi condivisi
+- Delta 2026-06-21: V0.11i-fix1 confermata con movement flow/theme completion, bottom sheet tematizzati e validazione finale consolidata nella stessa suite **1038 passati / 1 skipped**
 - Delta 2026-06-20: V0.11h confermata con superfici/card/chart theme-adaptive, full suite finale **1026 passati / 1 skipped**
 - Regressione emersa durante full suite su `AccountsScreen` interactive sheet risolta senza toccare logica dati
 - Analyzer locale invariato: solo info storici, nessun errore nuovo
@@ -14,7 +16,7 @@
 - Stress/extensive QA già esistenti: `test/qa_stress_test.dart`, `test/qa_extensive_test.dart`
 - Full suite finale: **verde**
 - Stato finale: **Hermes candidate for closure / Hermes QA green**
-- Executive summary: `44+` file test, `979` test/casi dichiarati, `979` passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
+- Executive summary: `62` file test, `1038` test/casi passati, `1` skipped, `1.641+` scenari, `7.475+` controlli/logiche
 - V0.10 Grafici Tab + V0.10.1 Chart Readability + V0.10.1c Donut/Scroll/Extra: **32** nuovi test
 - V0.11 Theme System foundation: **19** nuovi test
 - V0.11b Theme applied to widgets: widget grafici e Dashboard KPI migrati, helper fallback sicuro
@@ -23,7 +25,7 @@
 - V0.11g Chart Readability + Visibility Preferences (donut outside labels, leader lines, chart registry, hiddenChartIds)
 - V0.11g-fix2+3: single source slice data, startDegreeOffset -90 alignment, legend widget extraction
 - V0.11g-fix3: sectionsSpace alignment in angle calculation + collision avoidance, 1022 test finali
-- V0.11i: categories_screen.dart StreamColors 49→0, palette tema unificata, 1026 test finali
+- V0.11i-fix2/fix3: KPI style coverage globale + account detail movement-priority UX, 1038 test finali
 
 **V0.11c V0.11d V0.11g V0.11i completati:** chart style foundation, KPI styles reali, chart readability + visibility, categories legacy cleanup, 1026 test finali. V0.11j (Advanced Chart Styles selezionabili) è futuro.
 
@@ -31,9 +33,8 @@
 
 ### Test Dart / Flutter presenti
 
-- File test nel progetto: **44+** (+1 file charts_test.dart, +1 file theme_test.dart)
-- Test case Dart/Flutter dichiarati nei test: **990**
-- Test case Flutter/Dart passati nel run finale: **990**
+- File test nel progetto: **62**
+- Test case Flutter/Dart passati nel run finale: **1038**
 
 ### Matrix QA estesa
 
@@ -80,7 +81,7 @@
 - `flutter analyze`: ok, nessun errore nuovo, solo info preesistenti
 - `flutter test test/qa_audit_matrix_test.dart`: ok
 - `flutter test test/qa_stress_test.dart test/qa_extensive_test.dart`: ok
-- `flutter test`: ok (`911` passed, `1` skipped)
+- `flutter test`: ok (`1038` passed, `1` skipped)
 
 ## Note funzionali consolidate
 
