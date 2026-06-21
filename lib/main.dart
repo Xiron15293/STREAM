@@ -209,7 +209,11 @@ class _MainScaffoldState extends State<MainScaffold> {
       DashboardScreen(db: widget.db, activeProfileId: widget.activeProfileId),
       ArchiveScreen(db: widget.db),
       ChartsScreen(db: widget.db),
-      SettingsScreen(db: widget.db, onManageProfiles: widget.onManageProfiles),
+      SettingsScreen(
+        db: widget.db,
+        onManageProfiles: widget.onManageProfiles,
+        activeProfileId: widget.activeProfileId,
+      ),
     ];
 
     return Scaffold(

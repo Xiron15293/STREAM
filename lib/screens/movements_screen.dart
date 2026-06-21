@@ -24,7 +24,6 @@ class MovementsScreen extends StatefulWidget {
 
 class _MovementsScreenState extends State<MovementsScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
-  bool _showNotes = false;
   late TimeFilter _activeFilter;
   String _searchQuery = '';
   DateTime? _selectedDay;
@@ -32,7 +31,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
   late DateTime _visibleCalendarMonth;
   DateTime? _lastPickedDate;
   MovementType? _dayFilter;
-  late final VoidCallback _modeListener;
+  late final VoidCallback _showNotesListener;
 
   @override
   void initState() {
@@ -41,35 +40,23 @@ class _MovementsScreenState extends State<MovementsScreen> {
     _activeFilter = TimeFilter.month(now.year, now.month);
     _selectedDay = now;
     _visibleCalendarMonth = DateTime(now.year, now.month, 1);
-    _loadShowNotes();
-    _initViewMode();
+    PreferencesService.loadShowNotes();
     PreferencesService.loadHeatmapSettings();
-    _modeListener = () {
+    _showNotesListener = () {
       if (mounted) setState(() {});
     };
-    PreferencesService.movementsViewModeNotifier.addListener(_modeListener);
+    PreferencesService.showNotesNotifier.addListener(_showNotesListener);
   }
 
   @override
   void dispose() {
-    PreferencesService.movementsViewModeNotifier.removeListener(_modeListener);
+    PreferencesService.showNotesNotifier.removeListener(_showNotesListener);
     _searchCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _loadShowNotes() async {
-    final showNotes = await PreferencesService.loadShowNotes();
-    if (mounted) setState(() => _showNotes = showNotes);
-  }
-
-  Future<void> _initViewMode() async {
-    final mode = await PreferencesService.loadMovementsViewMode();
-    PreferencesService.movementsViewModeNotifier.value = mode;
-  }
-
   Future<void> _toggleShowNotes(bool value) async {
     await PreferencesService.saveShowNotes(value);
-    if (mounted) setState(() => _showNotes = value);
   }
 
   void _showSettings(BuildContext context) {
@@ -102,17 +89,19 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 ],
               ),
               const SizedBox(height: StreamSpacing.md),
-              SwitchListTile(
-                title: const Text('Mostra note nei movimenti'),
-                subtitle: const Text(
-                  'Visualizza la nota sotto ogni movimento nella lista',
+              ValueListenableBuilder<bool>(
+                valueListenable: PreferencesService.showNotesNotifier,
+                builder: (context, showNotes, _) => SwitchListTile(
+                  title: const Text('Mostra note nei movimenti'),
+                  subtitle: const Text(
+                    'Visualizza la nota sotto ogni movimento nella lista',
+                  ),
+                  value: showNotes,
+                  onChanged: (value) {
+                    setSheetState(() {});
+                    _toggleShowNotes(value);
+                  },
                 ),
-                value: _showNotes,
-                onChanged: (value) {
-                  _showNotes = value;
-                  setSheetState(() {});
-                  _toggleShowNotes(value);
-                },
               ),
             ],
           ),
@@ -129,10 +118,16 @@ class _MovementsScreenState extends State<MovementsScreen> {
       appBar: AppBar(
         title: const Text('Movimenti'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.tune, color: _showNotes ? p.primary : p.textMuted),
-            tooltip: 'Impostazioni lista',
-            onPressed: () => _showSettings(context),
+          ValueListenableBuilder<bool>(
+            valueListenable: PreferencesService.showNotesNotifier,
+            builder: (context, showNotes, _) => IconButton(
+              icon: Icon(
+                Icons.tune,
+                color: showNotes ? p.primary : p.textMuted,
+              ),
+              tooltip: 'Impostazioni lista',
+              onPressed: () => _showSettings(context),
+            ),
           ),
         ],
       ),
@@ -151,7 +146,6 @@ class _MovementsScreenState extends State<MovementsScreen> {
             accounts: widget.db.accounts,
           );
           final hasQuery = _searchQuery.trim().isNotEmpty;
-          final viewMode = PreferencesService.movementsViewModeNotifier.value;
 
           Widget body;
           if (allMovements.isEmpty) {
@@ -163,12 +157,13 @@ class _MovementsScreenState extends State<MovementsScreen> {
                   : _buildEmptyPeriod(context);
             } else {
               body = MovementViewRenderer(
-                viewMode: viewMode,
                 timeFilter: _activeFilter,
                 movements: searchFilteredMovements,
                 periodMovements: periodFilteredMovements,
                 db: widget.db,
-                showNotes: _showNotes || _searchQuery.trim().isNotEmpty,
+                showNotes:
+                    PreferencesService.showNotesNotifier.value ||
+                    _searchQuery.trim().isNotEmpty,
                 hasQuery: hasQuery,
                 selectedDay: _selectedDay,
                 selectedPeriodDay: _selectedPeriodDay,

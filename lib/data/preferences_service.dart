@@ -4,15 +4,12 @@ import '../design/stream_kpi_style.dart';
 import '../design/stream_theme_palette.dart';
 import '../utils/heatmap_utils.dart';
 
-enum MovementsViewMode { list, calendar, heatmap }
-
 enum AppCurrency { eur, usd, gbp, chf, jpy }
 
 class PreferencesService {
   static const _showNotesKey = 'show_notes';
   static const _lastBackupDateKey = 'last_backup_date';
   static const _categoryLayoutKey = 'category_layout';
-  static const _movementsViewModeKey = 'movements_view_mode';
   static const _currencyKey = 'app_currency';
   static const _themeIdKey = 'theme_id';
   static const _kpiStyleKey = 'kpi_style';
@@ -21,7 +18,6 @@ class PreferencesService {
   static const heatmapColorsKey = 'heatmap_colors';
 
   static const defaultCategoryLayout = 'cleanList';
-  static const defaultMovementsViewMode = MovementsViewMode.heatmap;
   static const defaultCurrency = AppCurrency.eur;
   static const defaultThemeId = 'streamClassic';
   static const defaultKpiStyle = 'automatic';
@@ -31,9 +27,6 @@ class PreferencesService {
   static final categoryLayoutNotifier = ValueNotifier<String>(
     defaultCategoryLayout,
   );
-  static final movementsViewModeNotifier = ValueNotifier<MovementsViewMode>(
-    defaultMovementsViewMode,
-  );
   static final heatmapSettingsNotifier = ValueNotifier<HeatmapSettings>(
     defaultHeatmapSettings,
   );
@@ -42,14 +35,19 @@ class PreferencesService {
   static final kpiStyleNotifier = ValueNotifier<String>(defaultKpiStyle);
   static final chartStyleNotifier = ValueNotifier<String>(defaultChartStyle);
 
+  static final showNotesNotifier = ValueNotifier<bool>(false);
+
   static Future<bool> loadShowNotes() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_showNotesKey) ?? false;
+    final value = prefs.getBool(_showNotesKey) ?? false;
+    showNotesNotifier.value = value;
+    return value;
   }
 
   static Future<void> saveShowNotes(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_showNotesKey, value);
+    showNotesNotifier.value = value;
   }
 
   static Future<String?> loadLastBackupDate() async {
@@ -71,27 +69,6 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_categoryLayoutKey, value);
     categoryLayoutNotifier.value = value;
-  }
-
-  static Future<MovementsViewMode> loadMovementsViewMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_movementsViewModeKey);
-    final mode = switch (value) {
-      'heatmap' || 'advancedHeatmap' => MovementsViewMode.heatmap,
-      'calendar' || 'list' || 'listHeatmap' => MovementsViewMode.heatmap,
-      _ => defaultMovementsViewMode,
-    };
-    movementsViewModeNotifier.value = mode;
-    return mode;
-  }
-
-  static Future<void> saveMovementsViewMode(MovementsViewMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _movementsViewModeKey,
-      MovementsViewMode.heatmap.name,
-    );
-    movementsViewModeNotifier.value = MovementsViewMode.heatmap;
   }
 
   static Future<AppCurrency> loadCurrency() async {
@@ -288,12 +265,11 @@ class PreferencesService {
     await resetChartVisibility();
   }
 
-  static Future<void> clearForReset() async {
+  static Future<void> clearForReset({String? activeProfileId}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_showNotesKey);
     await prefs.remove(_lastBackupDateKey);
     await prefs.remove(_categoryLayoutKey);
-    await prefs.remove(_movementsViewModeKey);
     await prefs.remove(_currencyKey);
     await prefs.remove(_themeIdKey);
     await prefs.remove(_kpiStyleKey);
@@ -301,16 +277,15 @@ class PreferencesService {
     await prefs.remove(_netWorthAccountIdsKey);
     await prefs.remove(_hiddenChartIdsKey);
 
-    final scopedNetWorthKeys = prefs
-        .getKeys()
-        .where((key) => key.startsWith(_netWorthAccountIdsKeyPrefix))
-        .toList(growable: false);
-    for (final key in scopedNetWorthKeys) {
-      await prefs.remove(key);
+    // Only remove the scoped key for the active profile, not all profiles
+    if (activeProfileId != null && activeProfileId.trim().isNotEmpty) {
+      await prefs.remove(
+        _dashboardNetWorthAccountIdsKey(profileId: activeProfileId),
+      );
     }
 
+    showNotesNotifier.value = false;
     categoryLayoutNotifier.value = defaultCategoryLayout;
-    movementsViewModeNotifier.value = defaultMovementsViewMode;
     currencyNotifier.value = defaultCurrency;
     themeIdNotifier.value = defaultThemeId;
     kpiStyleNotifier.value = defaultKpiStyle;

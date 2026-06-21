@@ -48,8 +48,16 @@ class BackupService {
     }
   }
 
-  static Future<String> exportToJson(AppDatabase db) async {
+  static Future<String> exportToJson(AppDatabase db, {String? profileId}) async {
     final showNotes = await PreferencesService.loadShowNotes();
+    final chartStyle = await PreferencesService.loadChartStyleId();
+    final kpiStyle = await PreferencesService.loadKpiStyleId();
+    final hiddenChartIds = await PreferencesService.loadHiddenChartIds();
+    final netWorthAccountIds =
+        await PreferencesService.loadDashboardNetWorthAccountIds(
+      profileId: profileId,
+    );
+    final categoryLayout = await PreferencesService.loadCategoryLayout();
     final data = BackupData(
       version: currentVersion,
       createdAt: DateTime.now().toIso8601String(),
@@ -60,7 +68,19 @@ class BackupService {
       movements: db.movements.toList(),
       quickMovements: db.quickMovements.toList(),
       favoriteMovements: db.favoriteMovements.toList(),
-      settings: BackupSettings(showNotes: showNotes),
+      settings: BackupSettings(
+        showNotes: showNotes,
+        chartStyle: chartStyle != PreferencesService.defaultChartStyle
+            ? chartStyle
+            : null,
+        kpiStyle:
+            kpiStyle != PreferencesService.defaultKpiStyle ? kpiStyle : null,
+        hiddenChartIds: hiddenChartIds.toList(),
+        netWorthAccountIds: netWorthAccountIds?.toList(),
+        categoryLayout: categoryLayout != PreferencesService.defaultCategoryLayout
+            ? categoryLayout
+            : null,
+      ),
     );
 
     const encoder = JsonEncoder.withIndent('  ');
@@ -332,7 +352,36 @@ class BackupService {
       );
 
       if (data.settings != null) {
-        await PreferencesService.saveShowNotes(data.settings!.showNotes);
+        final s = data.settings!;
+        await PreferencesService.saveShowNotes(s.showNotes);
+        if (s.chartStyle != null) {
+          await PreferencesService.saveChartStyleId(s.chartStyle!);
+        }
+        if (s.kpiStyle != null) {
+          await PreferencesService.saveKpiStyleId(s.kpiStyle!);
+        }
+        if (s.hiddenChartIds.isNotEmpty) {
+          await PreferencesService.saveHiddenChartIds(
+            s.hiddenChartIds.toSet(),
+          );
+        }
+        if (s.categoryLayout != null) {
+          await PreferencesService.saveCategoryLayout(s.categoryLayout!);
+        }
+        if (s.netWorthAccountIds != null && s.netWorthAccountIds!.isNotEmpty) {
+          final validIds = s.netWorthAccountIds!
+              .where((id) => snapshot.accounts.any((a) => a.id == id))
+              .toList();
+          if (validIds.isNotEmpty) {
+            await PreferencesService.saveDashboardNetWorthAccountIds(
+              validIds.toSet(),
+            );
+          } else {
+            await PreferencesService.clearDashboardNetWorthAccountSelection();
+          }
+        } else {
+          await PreferencesService.clearDashboardNetWorthAccountSelection();
+        }
       }
 
       db.notify();

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
-import '../data/preferences_service.dart';
 import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../design/stream_theme_palette.dart';
@@ -12,12 +11,10 @@ import '../screens/heatmap_settings_screen.dart';
 import '../theme.dart';
 import 'expense_heatmap.dart';
 import 'grouped_movements_list.dart';
-import 'movements_heatmap_preview_card.dart';
 import 'period_heatmap_card.dart';
 import 'period_summary_card.dart';
 
 class MovementViewRenderer extends StatelessWidget {
-  final MovementsViewMode viewMode;
   final TimeFilter timeFilter;
   final List<Movement> movements;
   final List<Movement> periodMovements;
@@ -38,7 +35,6 @@ class MovementViewRenderer extends StatelessWidget {
 
   const MovementViewRenderer({
     super.key,
-    required this.viewMode,
     required this.timeFilter,
     required this.movements,
     required this.periodMovements,
@@ -60,100 +56,10 @@ class MovementViewRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (viewMode) {
-      case MovementsViewMode.list:
-        return _buildListMode(context);
-      case MovementsViewMode.calendar:
-        return _buildPanelMode(
-          context,
-          layoutKey: const Key('movements_layout_calendar'),
-        );
-      case MovementsViewMode.heatmap:
-        return _buildPanelMode(
-          context,
-          layoutKey: const Key('movements_layout_heatmap'),
-          includeTypeFilters: true,
-        );
-    }
-  }
-
-  Widget _buildListMode(BuildContext context) {
-    final p = context.$palette;
-    final previewMonth = timeFilter.mode == TimeFilterMode.day
-        ? selectedDay ?? timeFilter.startDate
-        : timeFilter.startDate;
-
-    return GroupedMovementsList(
-      key: const Key('movements_layout_list'),
-      topWidget: Column(
-        children: [
-          if (timeFilter.mode == TimeFilterMode.year ||
-              timeFilter.mode == TimeFilterMode.week)
-            PeriodHeatmapCard(
-              timeFilter: timeFilter,
-              movements: movements,
-              selectedDay: selectedDay,
-              selectedPeriodDay: selectedPeriodDay,
-              onDaySelected: onDaySelected,
-              onClearSelectedDay: onClearSelectedDay,
-              compactHeader: true,
-              categories: db.categories,
-              subcategories: db.subcategories,
-              db: db,
-              onEdit: onEdit,
-              onDuplicate: onDuplicate,
-              onSaveAsFavorite: onSaveAsFavorite,
-              onAddQuick: onAddQuick,
-              onDelete: onDelete,
-              footerAction: OutlinedButton.icon(
-                key: const Key('movements_card_configure_heatmap_button'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const HeatmapSettingsScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.tune_rounded, size: 18),
-                label: const Text('Configura heatmap'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: StreamSpacing.lg,
-                    vertical: StreamSpacing.md,
-                  ),
-                  side: BorderSide(color: p.primary.withValues(alpha: 0.8)),
-                  foregroundColor: p.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(StreamRadius.md),
-                  ),
-                ),
-              ),
-            )
-          else
-            MovementsHeatmapPreviewCard(
-              allMovements: movements,
-              year: previewMonth.year,
-              month: previewMonth.month,
-              selectedDay: selectedDay,
-              onDaySelected: onDaySelected,
-              onOpenSettings: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const HeatmapSettingsScreen(),
-                  ),
-                );
-              },
-            ),
-        ],
-      ),
-      movements: movements,
-      db: db,
-      showNotes: showNotes,
-      onEdit: onEdit,
-      onDuplicate: onDuplicate,
-      onSaveAsFavorite: onSaveAsFavorite,
-      onAddQuick: onAddQuick,
-      onDelete: onDelete,
+    return _buildPanelMode(
+      context,
+      layoutKey: const Key('movements_layout_heatmap'),
+      includeTypeFilters: true,
     );
   }
 

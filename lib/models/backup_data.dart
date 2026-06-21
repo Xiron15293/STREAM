@@ -9,13 +9,44 @@ import 'favorite_movement.dart';
 
 class BackupSettings {
   final bool showNotes;
+  final String? chartStyle;
+  final String? kpiStyle;
+  final List<String> hiddenChartIds;
+  final List<String>? netWorthAccountIds;
+  final String? categoryLayout;
+  const BackupSettings({
+    required this.showNotes,
+    this.chartStyle,
+    this.kpiStyle,
+    this.hiddenChartIds = const [],
+    this.netWorthAccountIds,
+    this.categoryLayout,
+  });
 
-  const BackupSettings({required this.showNotes});
-
-  Map<String, dynamic> toJson() => {'showNotes': showNotes};
+  Map<String, dynamic> toJson() => {
+        'showNotes': showNotes,
+        if (chartStyle != null) 'chartStyle': chartStyle,
+        if (kpiStyle != null) 'kpiStyle': kpiStyle,
+        if (hiddenChartIds.isNotEmpty) 'hiddenChartIds': hiddenChartIds,
+        if (netWorthAccountIds != null && netWorthAccountIds!.isNotEmpty)
+          'netWorthAccountIds': netWorthAccountIds,
+        if (categoryLayout != null) 'categoryLayout': categoryLayout,
+      };
 
   static BackupSettings fromJson(Map<String, dynamic> json) {
-    return BackupSettings(showNotes: json['showNotes'] as bool? ?? false);
+    return BackupSettings(
+      showNotes: json['showNotes'] as bool? ?? false,
+      chartStyle: json['chartStyle'] as String?,
+      kpiStyle: json['kpiStyle'] as String?,
+      hiddenChartIds: (json['hiddenChartIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      netWorthAccountIds: (json['netWorthAccountIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      categoryLayout: json['categoryLayout'] as String?,
+    );
   }
 }
 

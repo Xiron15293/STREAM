@@ -16,12 +16,14 @@ class SettingsScreen extends StatelessWidget {
   final AppDatabase db;
   final Future<String> Function(AppDatabase db)? createPreResetBackup;
   final VoidCallback? onManageProfiles;
+  final String? activeProfileId;
 
   const SettingsScreen({
     super.key,
     required this.db,
     this.createPreResetBackup,
     this.onManageProfiles,
+    this.activeProfileId,
   });
 
   @override
@@ -311,7 +313,9 @@ class SettingsScreen extends StatelessWidget {
 
     try {
       await db.resetAllData();
-      await PreferencesService.clearForReset();
+      await PreferencesService.clearForReset(
+        activeProfileId: activeProfileId,
+      );
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
