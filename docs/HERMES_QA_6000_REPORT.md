@@ -94,6 +94,19 @@
 - **Repo hygiene**: `Package.resolved` puo ricomparire deleted dopo alcune run Flutter locali; ripristinato prima della chiusura patch
 - **Nessuna modifica DB/schema/import/export/saldi/calcoli**
 
+## Dati aggiornati V0.11l-a-fix1
+
+- **Test totali**: 1104 passed, ~1 skipped
+- **File test aggiornato**: `test/movements_account_category_filters_test.dart` (+4 nuovi casi: grouping Uscite/Entrate, selezione mista, reset all option, transfer behavior)
+- **Area coperta**: raggruppamento visivo categorie Uscite/Entrate nel bottom sheet filtro Movimenti, selezione mista ancora supportata, scroll handling nei test helper
+- **Nessuna modifica DB/schema/migrazioni/persistenza/logica filtro/saldi/calcoli/chart/KPI style**
+- **Regression suite mirata**:
+  - `test/preferences_reset_profile_scope_test.dart`
+  - `test/qa_movements_test.dart`
+  - `test/qa_extensive_test.dart`
+- **Full suite**: `flutter test` ok (`1104` passed, `~1` skipped)
+- **Analyze**: nessun warning/error nuovo; persistono `34` info legacy del repo
+
 ## Dati aggiornati V0.11l-a
 
 - **Test totali**: 1100 passed, ~1 skipped

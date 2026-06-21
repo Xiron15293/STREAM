@@ -1514,6 +1514,15 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 - `movements_category_filter_apply`
 - `movements_category_filter_cancel`
 
+### UI (V0.11l-a-fix1)
+- Le categorie nel bottom sheet sono raggruppate in sezioni "Uscite" (expense) ed "Entrate" (income)
+- Header sezioni: `StreamTypography.h3`
+- Se una sezione e vuota, l'header non viene mostrato
+- La lista scrollabile usa `ConstrainedBox(maxHeight: 55% viewport)` + `SingleChildScrollView` per viewport piccoli
+- Helper methods: `_expenseCategories()`, `_incomeCategories()`, `_buildCategoryOption(Category, Set<String>, VoidCallback, StreamThemePalette)`
+- Import aggiunto: `stream_theme_palette.dart` (per `StreamThemePalette` nel parametro)
+- Selezione mista expense+income ancora supportata; logica filtro invariata
+
 ## Tab Segmented single-line fix (V0.11k)
 - Label dei `SegmentedButton` in `TimeFilterBar` avvolte in `FittedBox(fit: BoxFit.scaleDown, child: Text(maxLines:1, softWrap:false))`
 - Previene wrapping di `Intervallo` su viewport stretti
@@ -1533,7 +1542,7 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 | Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 | V0.8.10 | Delta |
 |---------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
-| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | 711 | 742 | 759 |
+| Test | 492 | 575 | 575 | 579 | 625 | 619 | 625 | 627 | 664 | 664 | 672 | 689 | 711 | 742 | 1104 |
 | Analyze issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **0** | **0** | **0** |
 | DB version | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 9 | **9** | **10** | **10** |
 | Build APK release | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |

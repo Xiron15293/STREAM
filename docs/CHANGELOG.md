@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11l-a-fix1 — Group Movimenti Category Filter by Uscite and Entrate**
+  - Nel bottom sheet del filtro categorie di Movimenti, le categorie sono ora divise visivamente in due sezioni: Uscite (expense) ed Entrate (income)
+  - Mantenuta l'opzione "Tutte le categorie" in cima alla lista
+  - Le sezioni usano header `StreamTypography.h3` con label "Uscite" / "Entrate"
+  - Se una sezione è vuota, l'header non viene mostrato
+  - La lista categorie è racchiusa in `ConstrainedBox(maxHeight: 55%)` + `SingleChildScrollView` per evitare overflow su viewport piccoli
+  - Selezione mista (expense + income) ancora supportata — nessun cambio logica filtro
+  - Label chip invariata: "Tutte le categorie" / nome categoria / "N categorie selezionate"
+  - Nessun cambio a DB/schema/migrazioni, persistenza, saldi/movimenti/calcoli, chart/KPI style, filtro conti
+  - Nuove helper methods: `_expenseCategories()`, `_incomeCategories()`, `_buildCategoryOption()`
+  - Nuove key introdotte (immutate): `movements_category_filter_sheet`, `movements_category_filter_all_option`, `movements_category_filter_option_<categoryId>`, `movements_category_filter_apply`, `movements_category_filter_cancel`
+  - Nuovo import: `stream_theme_palette.dart` (per `StreamThemePalette` type nel parametro)
+  - Nuovi test: 4 test case (grouping, mixed selection, all option reset, transfer behavior unchanged)
+  - Test helper `selectCategories` aggiornato con scroll handling per raggiungere categorie income in fondo alla lista
+  - Verifica finale: `flutter test` full suite verde con `1104` passati e `~1` skipped
+  - `flutter analyze`: 0 errori, 0 warning (solo 34 info pre-esistenti)
+  - Repo hygiene: `Package.resolved` ripristinato pre-patch; `android/.kotlin/` assente
+
 - **V0.11k-fix5 — Profile-Safe Backup Restore Net Worth Preferences**
   - `BackupService.exportToJson()`, `restore()` e `createPreResetBackup()` ora accettano `activeProfileId` e usano la selezione conti Patrimonio solo nel perimetro del profilo corrente
   - `BackupScreen` riceve `activeProfileId` da `SettingsScreen` e lo propaga a export, pre-restore backup e restore

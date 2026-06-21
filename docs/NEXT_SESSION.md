@@ -6,6 +6,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11l-a-fix1 completata: nel bottom sheet del filtro categorie Movimenti, le categorie sono ora raggruppate visivamente in sezioni "Uscite" (expense) ed "Entrate" (income). Selezione mista ancora supportata. Nessun cambio logica/persistenza. `flutter test` full suite `1104` passati, `~1` skipped.
 - V0.11l-a completata: i filtri di conti e categorie sono ora scoped **solo** alla schermata Movimenti e persistono per profilo tramite `movements_filter_account_ids_<profileId>` e `movements_filter_category_ids_<profileId>`.
 - V0.11l-a completata anche sul reset: `clearForReset(activeProfileId: ...)` pulisce i filtri Movimenti del solo profilo corrente e riallinea i notifier in-memory.
 - QA locale aggiornata: `flutter test` full suite verde con `1100` passati e `~1` skipped; `flutter analyze` resta pulito da warning/error nuovi ma continua a mostrare `34` info pre-esistenti del repo.

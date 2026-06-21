@@ -164,7 +164,6 @@ void main() {
 
     final activeCategories = db.categories
         .where((category) => !category.archived)
-        .map((category) => category.id)
         .toList();
 
     if (categoryIds.isEmpty) {
@@ -177,12 +176,31 @@ void main() {
         find.byKey(const Key('movements_category_filter_all_option')),
       );
       await tester.pumpAndSettle();
-      for (final categoryId in activeCategories) {
-        if (categoryIds.contains(categoryId)) continue;
-        await tester.tap(
-          find.byKey(Key('movements_category_filter_option_$categoryId')),
-        );
+      // Deselect expense categories (visible at top)
+      for (final category in activeCategories) {
+        if (categoryIds.contains(category.id)) continue;
+        if (category.type == MovementType.expense) {
+          await tester.tap(
+            find.byKey(Key('movements_category_filter_option_${category.id}')),
+          );
+          await tester.pumpAndSettle();
+        }
+      }
+      // Scroll to show income categories
+      final scrollables = find.byType(Scrollable);
+      if (scrollables.evaluate().isNotEmpty) {
+        await tester.drag(scrollables.last, const Offset(0, -300));
         await tester.pumpAndSettle();
+      }
+      // Deselect income categories
+      for (final category in activeCategories) {
+        if (categoryIds.contains(category.id)) continue;
+        if (category.type == MovementType.income) {
+          await tester.tap(
+            find.byKey(Key('movements_category_filter_option_${category.id}')),
+          );
+          await tester.pumpAndSettle();
+        }
       }
     }
 
@@ -347,5 +365,108 @@ void main() {
       prefs.getStringList('movements_filter_category_ids_profile_a'),
       ['exp_1'],
     );
+  });
+
+  testWidgets(
+    'category filter sheet groups categories by Uscite and Entrate',
+    (tester) async {
+      final db = await seededDb();
+      await pumpMovements(tester, db, profileId: 'profile_a');
+
+      await tester.tap(
+        find.byKey(const Key('movements_category_filter_button')),
+      );
+      await tester.pumpAndSettle();
+
+      final sheet = find.byKey(
+        const Key('movements_category_filter_sheet'),
+      );
+      expect(
+        find.descendant(
+          of: sheet,
+          matching: find.text('Uscite'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: sheet,
+          matching: find.text('Entrate'),
+        ),
+        findsOneWidget,
+      );
+
+      expect(find.byKey(const Key('movements_category_filter_option_exp_1')),
+          findsOneWidget);
+      expect(find.byKey(const Key('movements_category_filter_option_exp_6')),
+          findsOneWidget);
+      expect(find.byKey(const Key('movements_category_filter_option_inc_1')),
+          findsOneWidget);
+      expect(find.byKey(const Key('movements_category_filter_option_inc_4')),
+          findsOneWidget);
+    },
+  );
+
+  testWidgets('can select mixed income and expense categories',
+      (tester) async {
+    final db = await seededDb();
+    await pumpMovements(tester, db, profileId: 'profile_a');
+
+    await selectCategories(tester, db, ['exp_1', 'inc_1']);
+
+    expect(
+      chipLabel(
+        const Key('movements_category_filter_button'),
+        '2 categorie selezionate',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Spesa Intesa'), findsOneWidget);
+    expect(find.text('Entrata Intesa'), findsOneWidget);
+    expect(find.text('Spesa Carta'), findsOneWidget);
+  });
+
+  testWidgets('all option still resets category filter', (tester) async {
+    final db = await seededDb();
+    await pumpMovements(tester, db, profileId: 'profile_a');
+
+    await selectCategories(tester, db, ['exp_1', 'inc_1']);
+    expect(
+      chipLabel(
+        const Key('movements_category_filter_button'),
+        '2 categorie selezionate',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const Key('movements_category_filter_button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('movements_category_filter_all_option')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('movements_category_filter_apply')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tutte le categorie'), findsOneWidget);
+    expect(find.text('Spesa Intesa'), findsOneWidget);
+    expect(find.text('Entrata Intesa'), findsOneWidget);
+    expect(find.text('Transfer A-B'), findsOneWidget);
+  });
+
+  testWidgets('transfer behavior unchanged with category filter',
+      (tester) async {
+    final db = await seededDb();
+    await pumpMovements(tester, db, profileId: 'profile_a');
+
+    await selectCategories(tester, db, ['exp_1']);
+
+    expect(find.text('Transfer A-B'), findsNothing);
+    expect(find.text('Spesa Intesa'), findsOneWidget);
+    expect(find.text('Spesa Carta'), findsOneWidget);
   });
 }

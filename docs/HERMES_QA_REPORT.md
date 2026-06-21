@@ -2560,6 +2560,30 @@ flutter test --no-pub    → 627/627 All tests passed
 
 ---
 
+## V0.11l-a-fix1 — Group Movimenti Category Filter by Uscite and Entrate
+
+### Executive Summary
+
+- UX improvement: nel bottom sheet del filtro categorie Movimenti, le categorie sono raggruppate visivamente in sezioni "Uscite" (expense) ed "Entrate" (income).
+- La distinzione sfrutta il campo `Category.type` (`MovementType.income` / `MovementType.expense`) gia presente nel modello.
+- Mantenuta opzione "Tutte le categorie" in cima alla lista.
+- Selezione mista expense+income ancora supportata.
+- Nessun cambio a DB/schema/migrazioni, persistenza, logica filtro, saldi/movimenti/calcoli.
+
+### Delta Changes
+| Area | File | Modifica |
+|-------|------|----------|
+| Movimenti UI | `lib/screens/movements_screen.dart` | raggruppamento categorie in sezioni Uscite/Entrate nel bottom sheet; helper methods `_expenseCategories()`, `_incomeCategories()`, `_buildCategoryOption()`; layout scrollabile con `ConstrainedBox` + `SingleChildScrollView`; nuovo import `stream_theme_palette.dart` |
+| Test aggiunti | `test/movements_account_category_filters_test.dart` | 4 nuovi test: grouping Uscite/Entrate, selezione mista, reset con "Tutte le categorie", transfer behavior; helper `selectCategories` aggiornato con scroll handling |
+
+### Test Results
+- `flutter test test/movements_account_category_filters_test.dart`: **13/13 PASS** (8 pre-esistenti + 5 nuovi)
+- `flutter test test/preferences_reset_profile_scope_test.dart`: PASS
+- `flutter test test/qa_movements_test.dart`: PASS
+- `flutter test test/qa_extensive_test.dart`: PASS
+- `flutter test`: **1104/1104 All tests passed** (`~1` skipped)
+- `flutter analyze`: nessun warning/error nuovo; restano **34 info pre-esistenti**
+
 ## V0.11l-a — Movimenti Scoped Filters
 
 ### Executive Summary

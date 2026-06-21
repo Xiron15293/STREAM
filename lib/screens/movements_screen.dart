@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/database.dart';
 import '../data/preferences_service.dart';
 import '../design/stream_theme_extension.dart';
+import '../design/stream_theme_palette.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../models/time_filter.dart';
@@ -216,6 +217,52 @@ class _MovementsScreenState extends State<MovementsScreen> {
     return '${selected.length} conti selezionati';
   }
 
+  List<Category> _expenseCategories(List<Category> categories) =>
+      categories.where((c) => c.type == MovementType.expense).toList();
+
+  List<Category> _incomeCategories(List<Category> categories) =>
+      categories.where((c) => c.type == MovementType.income).toList();
+
+  Widget _buildCategoryOption(Category category, Set<String> workingIds,
+      void Function(VoidCallback) setSheetState,
+      StreamThemePalette palette) {
+    final isSelected = workingIds.contains(category.id);
+    return InkWell(
+      key: Key('movements_category_filter_option_${category.id}'),
+      onTap: () {
+        setSheetState(() {
+          if (isSelected) {
+            workingIds.remove(category.id);
+          } else {
+            workingIds.add(category.id);
+          }
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.check_box
+                  : Icons.check_box_outline_blank,
+              color: palette.primary,
+              size: 22,
+            ),
+            const SizedBox(width: StreamSpacing.md),
+            Expanded(
+              child: Text(
+                category.name,
+                style: StreamTypography.bodyBold,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _categoryFilterLabel() {
     final activeCategories = widget.db.categories
         .where((category) => !category.archived)
@@ -408,6 +455,8 @@ class _MovementsScreenState extends State<MovementsScreen> {
     final activeCategories = widget.db.categories
         .where((category) => !category.archived)
         .toList();
+    final expenseCategories = _expenseCategories(activeCategories);
+    final incomeCategories = _incomeCategories(activeCategories);
     Set<String> workingIds = Set.from(
       _selectedCategoryFilterIds ??
           activeCategories.map((category) => category.id),
@@ -478,45 +527,43 @@ class _MovementsScreenState extends State<MovementsScreen> {
                       ),
                     ),
                     const Divider(),
-                    ...activeCategories.map((category) {
-                      final isSelected = workingIds.contains(category.id);
-                      return InkWell(
-                        key: Key(
-                          'movements_category_filter_option_${category.id}',
-                        ),
-                        onTap: () {
-                          setSheetState(() {
-                            if (isSelected) {
-                              workingIds.remove(category.id);
-                            } else {
-                              workingIds.add(category.id);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: p.primary,
-                                size: 22,
-                              ),
-                              const SizedBox(width: StreamSpacing.md),
-                              Expanded(
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.55,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (expenseCategories.isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, bottom: 4),
                                 child: Text(
-                                  category.name,
-                                  style: StreamTypography.bodyBold,
-                                  overflow: TextOverflow.ellipsis,
+                                  'Uscite',
+                                  style: StreamTypography.h3,
                                 ),
                               ),
+                              ...expenseCategories
+                                  .map((c) => _buildCategoryOption(
+                                      c, workingIds, setSheetState, p)),
                             ],
-                          ),
+                            if (incomeCategories.isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                child: Text(
+                                  'Entrate',
+                                  style: StreamTypography.h3,
+                                ),
+                              ),
+                              ...incomeCategories
+                                  .map((c) => _buildCategoryOption(
+                                      c, workingIds, setSheetState, p)),
+                            ],
+                          ],
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.lg),
                     Row(
                       children: [
