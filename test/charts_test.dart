@@ -221,7 +221,7 @@ void main() {
       expect(find.text('Entrate / Uscite nel tempo'), findsOneWidget);
     });
 
-    testWidgets('Conti section shows chart headers', (tester) async {
+    testWidgets('Conti section shows account charts', (tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
       await db.addAccount(Account(id: 'acc2', name: 'Secondo', type: AccountType.cash, createdAt: now));
@@ -234,8 +234,7 @@ void main() {
 
       await tester.tap(find.text('Conti'));
       await tester.pumpAndSettle();
-      expect(find.text('Saldo per conto'), findsWidgets);
-      expect(find.text('Flussi per conto'), findsWidgets);
+      expect(find.byKey(const Key('chart_card_accounts_balance')), findsOneWidget);
       expect(find.byType(ChartsScreen), findsOneWidget);
     });
 

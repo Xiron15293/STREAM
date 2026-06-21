@@ -121,20 +121,14 @@ class _MovementsScreenState extends State<MovementsScreen> {
         .toSet();
 
     final sanitizedAccountIds = accountIds == null || accountIds.isEmpty
-        ? null
+        ? accountIds
         : accountIds.intersection(activeAccountIds);
-    final normalizedAccountIds =
-        sanitizedAccountIds == null || sanitizedAccountIds.isEmpty
-        ? null
-        : sanitizedAccountIds;
+    final normalizedAccountIds = sanitizedAccountIds;
 
     final sanitizedCategoryIds = categoryIds == null || categoryIds.isEmpty
-        ? null
+        ? categoryIds
         : categoryIds.intersection(activeCategoryIds);
-    final normalizedCategoryIds =
-        sanitizedCategoryIds == null || sanitizedCategoryIds.isEmpty
-        ? null
-        : sanitizedCategoryIds;
+    final normalizedCategoryIds = sanitizedCategoryIds;
 
     try {
       if (!_sameIdSet(accountIds, normalizedAccountIds)) {
@@ -163,8 +157,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
   }
 
   bool _sameIdSet(Set<String>? a, Set<String>? b) {
-    if (a == null || a.isEmpty) return b == null || b.isEmpty;
-    if (b == null || b.isEmpty) return false;
+    if (a == null) return b == null;
+    if (b == null) return false;
+    if (a.isEmpty || b.isEmpty) return a.isEmpty && b.isEmpty;
     if (a.length != b.length) return false;
     return a.containsAll(b);
   }
@@ -172,7 +167,6 @@ class _MovementsScreenState extends State<MovementsScreen> {
   List<Movement> _applyMovementScopedFilters(List<Movement> movements) {
     return movements.where((movement) {
       final matchesAccount = _selectedAccountFilterIds == null ||
-          _selectedAccountFilterIds!.isEmpty ||
           _selectedAccountFilterIds!.contains(movement.accountId) ||
           (movement.destinationAccountId != null &&
               _selectedAccountFilterIds!.contains(
@@ -181,8 +175,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
 
       if (!matchesAccount) return false;
 
-      if (_selectedCategoryFilterIds == null ||
-          _selectedCategoryFilterIds!.isEmpty) {
+      if (_selectedCategoryFilterIds == null) {
         return true;
       }
 
@@ -205,9 +198,11 @@ class _MovementsScreenState extends State<MovementsScreen> {
               .where((account) => _selectedAccountFilterIds!.contains(account.id))
               .map((account) => account.id)
               .toList();
-    if (selected.isEmpty || selected.length == activeAccounts.length) {
+    if (_selectedAccountFilterIds == null ||
+        selected.length == activeAccounts.length) {
       return 'Tutti i conti';
     }
+    if (_selectedAccountFilterIds!.isEmpty) return 'Nessun conto';
     if (selected.length == 1) {
       final name = activeAccounts
           .firstWhere((account) => account.id == selected.first)
@@ -275,9 +270,11 @@ class _MovementsScreenState extends State<MovementsScreen> {
               )
               .map((category) => category.id)
               .toList();
-    if (selected.isEmpty || selected.length == activeCategories.length) {
+    if (_selectedCategoryFilterIds == null ||
+        selected.length == activeCategories.length) {
       return 'Tutte le categorie';
     }
+    if (_selectedCategoryFilterIds!.isEmpty) return 'Nessuna categoria';
     if (selected.length == 1) {
       final name = activeCategories
           .firstWhere((category) => category.id == selected.first)
@@ -337,8 +334,13 @@ class _MovementsScreenState extends State<MovementsScreen> {
                       key: const Key('movements_account_filter_all_option'),
                       onTap: () {
                         setSheetState(() {
-                          workingIds =
-                              activeAccounts.map((account) => account.id).toSet();
+                          if (workingIds.length == activeAccounts.length) {
+                            workingIds = <String>{};
+                          } else {
+                            workingIds = activeAccounts
+                                .map((account) => account.id)
+                                .toSet();
+                          }
                         });
                       },
                       child: Padding(
@@ -347,8 +349,8 @@ class _MovementsScreenState extends State<MovementsScreen> {
                           children: [
                             Icon(
                               workingIds.length == activeAccounts.length
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_unchecked,
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
                               color: p.primary,
                               size: 22,
                             ),
@@ -501,9 +503,13 @@ class _MovementsScreenState extends State<MovementsScreen> {
                       key: const Key('movements_category_filter_all_option'),
                       onTap: () {
                         setSheetState(() {
-                          workingIds = activeCategories
-                              .map((category) => category.id)
-                              .toSet();
+                          if (workingIds.length == activeCategories.length) {
+                            workingIds = <String>{};
+                          } else {
+                            workingIds = activeCategories
+                                .map((category) => category.id)
+                                .toSet();
+                          }
                         });
                       },
                       child: Padding(
@@ -512,8 +518,8 @@ class _MovementsScreenState extends State<MovementsScreen> {
                           children: [
                             Icon(
                               workingIds.length == activeCategories.length
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_unchecked,
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
                               color: p.primary,
                               size: 22,
                             ),

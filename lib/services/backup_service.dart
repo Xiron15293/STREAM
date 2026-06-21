@@ -76,6 +76,16 @@ class BackupService {
         : await PreferencesService.loadDashboardNetWorthAccountIds(
             profileId: resolvedProfileId,
           );
+    final chartsAccountFilterIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadChartsAccountFilterIds(
+            profileId: resolvedProfileId,
+          );
+    final chartsCategoryFilterIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadChartsCategoryFilterIds(
+            profileId: resolvedProfileId,
+          );
     final categoryLayout = await PreferencesService.loadCategoryLayout();
     final data = BackupData(
       version: currentVersion,
@@ -96,6 +106,8 @@ class BackupService {
             kpiStyle != PreferencesService.defaultKpiStyle ? kpiStyle : null,
         hiddenChartIds: hiddenChartIds.toList(),
         netWorthAccountIds: netWorthAccountIds?.toList(),
+        chartsAccountFilterIds: chartsAccountFilterIds?.toList(),
+        chartsCategoryFilterIds: chartsCategoryFilterIds?.toList(),
         categoryLayout: categoryLayout != PreferencesService.defaultCategoryLayout
             ? categoryLayout
             : null,
@@ -424,8 +436,40 @@ class BackupService {
               profileId: resolvedProfileId,
             );
           }
+
+          if (s.chartsAccountFilterIds != null) {
+            final validChartAccountIds = s.chartsAccountFilterIds!
+                .where((id) => snapshot.accounts.any((a) => a.id == id))
+                .toSet();
+            await PreferencesService.saveChartsAccountFilterIds(
+              validChartAccountIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveChartsAccountFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
+
+          if (s.chartsCategoryFilterIds != null) {
+            final validChartCategoryIds = s.chartsCategoryFilterIds!
+                .where((id) => snapshot.categories.any((c) => c.id == id))
+                .toSet();
+            await PreferencesService.saveChartsCategoryFilterIds(
+              validChartCategoryIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveChartsCategoryFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
         } else {
           PreferencesService.netWorthAccountIdsNotifier.value = null;
+          PreferencesService.chartsAccountFilterIdsNotifier.value = null;
+          PreferencesService.chartsCategoryFilterIdsNotifier.value = null;
         }
       }
 

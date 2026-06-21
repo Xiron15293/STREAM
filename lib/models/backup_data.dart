@@ -13,6 +13,8 @@ class BackupSettings {
   final String? kpiStyle;
   final List<String> hiddenChartIds;
   final List<String>? netWorthAccountIds;
+  final List<String>? chartsAccountFilterIds;
+  final List<String>? chartsCategoryFilterIds;
   final String? categoryLayout;
   const BackupSettings({
     required this.showNotes,
@@ -20,6 +22,8 @@ class BackupSettings {
     this.kpiStyle,
     this.hiddenChartIds = const [],
     this.netWorthAccountIds,
+    this.chartsAccountFilterIds,
+    this.chartsCategoryFilterIds,
     this.categoryLayout,
   });
 
@@ -30,6 +34,10 @@ class BackupSettings {
         if (hiddenChartIds.isNotEmpty) 'hiddenChartIds': hiddenChartIds,
         if (netWorthAccountIds != null && netWorthAccountIds!.isNotEmpty)
           'netWorthAccountIds': netWorthAccountIds,
+        if (chartsAccountFilterIds != null)
+          'chartsAccountFilterIds': chartsAccountFilterIds,
+        if (chartsCategoryFilterIds != null)
+          'chartsCategoryFilterIds': chartsCategoryFilterIds,
         if (categoryLayout != null) 'categoryLayout': categoryLayout,
       };
 
@@ -45,6 +53,13 @@ class BackupSettings {
       netWorthAccountIds: (json['netWorthAccountIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      chartsAccountFilterIds: (json['chartsAccountFilterIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      chartsCategoryFilterIds:
+          (json['chartsCategoryFilterIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       categoryLayout: json['categoryLayout'] as String?,
     );
   }

@@ -17,6 +17,10 @@ void main() {
       'dashboard_net_worth_account_ids': ['cash'],
       'dashboard_net_worth_account_ids_profile_a': ['cash', 'intesa'],
       'dashboard_net_worth_account_ids_profile_b': ['house'],
+      'charts_filter_account_ids_profile_a': ['cash'],
+      'charts_filter_account_ids_profile_b': ['house'],
+      'charts_filter_category_ids_profile_a': ['exp_1'],
+      'charts_filter_category_ids_profile_b': ['inc_1'],
       'hidden_chart_ids': ['movements_cashflow'],
     });
     PreferencesService.categoryLayoutNotifier.value = 'treemap';
@@ -26,6 +30,8 @@ void main() {
     PreferencesService.chartStyleNotifier.value = 'technical';
     PreferencesService.hiddenChartIdsNotifier.value = {'movements_cashflow'};
     PreferencesService.netWorthAccountIdsNotifier.value = {'cash'};
+    PreferencesService.chartsAccountFilterIdsNotifier.value = {'cash'};
+    PreferencesService.chartsCategoryFilterIdsNotifier.value = {'exp_1'};
     PreferencesService.showNotesNotifier.value = true;
   });
 
@@ -54,6 +60,16 @@ void main() {
         prefs.containsKey('dashboard_net_worth_account_ids_profile_b'),
         isTrue,
       );
+      expect(prefs.containsKey('charts_filter_account_ids_profile_a'), isTrue);
+      expect(prefs.containsKey('charts_filter_account_ids_profile_b'), isTrue);
+      expect(
+        prefs.containsKey('charts_filter_category_ids_profile_a'),
+        isTrue,
+      );
+      expect(
+        prefs.containsKey('charts_filter_category_ids_profile_b'),
+        isTrue,
+      );
 
       expect(PreferencesService.showNotesNotifier.value, false);
       expect(PreferencesService.categoryLayoutNotifier.value, 'cleanList');
@@ -66,6 +82,8 @@ void main() {
       expect(PreferencesService.chartStyleNotifier.value, 'automatic');
       expect(PreferencesService.hiddenChartIdsNotifier.value, isEmpty);
       expect(PreferencesService.netWorthAccountIdsNotifier.value, isNull);
+      expect(PreferencesService.chartsAccountFilterIdsNotifier.value, isNull);
+      expect(PreferencesService.chartsCategoryFilterIdsNotifier.value, isNull);
     },
   );
 
@@ -88,9 +106,21 @@ void main() {
         prefs.containsKey('dashboard_net_worth_account_ids_profile_b'),
         isFalse,
       );
+      expect(prefs.containsKey('charts_filter_account_ids_profile_a'), isTrue);
+      expect(prefs.containsKey('charts_filter_account_ids_profile_b'), isFalse);
+      expect(
+        prefs.containsKey('charts_filter_category_ids_profile_a'),
+        isTrue,
+      );
+      expect(
+        prefs.containsKey('charts_filter_category_ids_profile_b'),
+        isFalse,
+      );
 
       expect(PreferencesService.showNotesNotifier.value, false);
       expect(PreferencesService.netWorthAccountIdsNotifier.value, isNull);
+      expect(PreferencesService.chartsAccountFilterIdsNotifier.value, isNull);
+      expect(PreferencesService.chartsCategoryFilterIdsNotifier.value, isNull);
     },
   );
 }

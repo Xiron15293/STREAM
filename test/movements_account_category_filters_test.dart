@@ -130,17 +130,25 @@ void main() {
         .where((account) => !account.archived)
         .map((account) => account.id)
         .toList();
+    final allOption = find.byKey(const Key('movements_account_filter_all_option'));
+
+    final allIsSelected = find.descendant(
+      of: allOption,
+      matching: find.byIcon(Icons.check_box),
+    ).evaluate().isNotEmpty;
 
     if (accountIds.isEmpty) {
-      await tester.tap(
-        find.byKey(const Key('movements_account_filter_all_option')),
-      );
+      await tester.tap(allOption);
       await tester.pumpAndSettle();
+      if (!allIsSelected) {
+        await tester.tap(allOption);
+        await tester.pumpAndSettle();
+      }
     } else {
-      await tester.tap(
-        find.byKey(const Key('movements_account_filter_all_option')),
-      );
-      await tester.pumpAndSettle();
+      if (!allIsSelected) {
+        await tester.tap(allOption);
+        await tester.pumpAndSettle();
+      }
       for (final accountId in activeAccounts) {
         if (accountIds.contains(accountId)) continue;
         await tester.tap(
@@ -165,17 +173,24 @@ void main() {
     final activeCategories = db.categories
         .where((category) => !category.archived)
         .toList();
+    final allOption = find.byKey(const Key('movements_category_filter_all_option'));
+    final allIsSelected = find.descendant(
+      of: allOption,
+      matching: find.byIcon(Icons.check_box),
+    ).evaluate().isNotEmpty;
 
     if (categoryIds.isEmpty) {
-      await tester.tap(
-        find.byKey(const Key('movements_category_filter_all_option')),
-      );
+      await tester.tap(allOption);
       await tester.pumpAndSettle();
+      if (!allIsSelected) {
+        await tester.tap(allOption);
+        await tester.pumpAndSettle();
+      }
     } else {
-      await tester.tap(
-        find.byKey(const Key('movements_category_filter_all_option')),
-      );
-      await tester.pumpAndSettle();
+      if (!allIsSelected) {
+        await tester.tap(allOption);
+        await tester.pumpAndSettle();
+      }
       // Deselect expense categories (visible at top)
       for (final category in activeCategories) {
         if (categoryIds.contains(category.id)) continue;

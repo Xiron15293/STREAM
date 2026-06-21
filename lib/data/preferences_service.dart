@@ -189,6 +189,9 @@ class PreferencesService {
       'movements_filter_account_ids_';
   static const _movementsCategoryFilterIdsKeyPrefix =
       'movements_filter_category_ids_';
+  static const _chartsAccountFilterIdsKeyPrefix = 'charts_filter_account_ids_';
+  static const _chartsCategoryFilterIdsKeyPrefix =
+      'charts_filter_category_ids_';
   static const _hiddenChartIdsKey = 'hidden_chart_ids';
 
   static final netWorthAccountIdsNotifier = ValueNotifier<Set<String>?>(null);
@@ -196,6 +199,12 @@ class PreferencesService {
     null,
   );
   static final movementsCategoryFilterIdsNotifier = ValueNotifier<Set<String>?>(
+    null,
+  );
+  static final chartsAccountFilterIdsNotifier = ValueNotifier<Set<String>?>(
+    null,
+  );
+  static final chartsCategoryFilterIdsNotifier = ValueNotifier<Set<String>?>(
     null,
   );
   static final hiddenChartIdsNotifier = ValueNotifier<Set<String>>({});
@@ -215,6 +224,14 @@ class PreferencesService {
     return '$_movementsCategoryFilterIdsKeyPrefix${profileId.trim()}';
   }
 
+  static String _chartsAccountFilterIdsKey({required String profileId}) {
+    return '$_chartsAccountFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _chartsCategoryFilterIdsKey({required String profileId}) {
+    return '$_chartsCategoryFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
   static Future<Set<String>?> loadDashboardNetWorthAccountIds({
     String? profileId,
   }) async {
@@ -228,14 +245,17 @@ class PreferencesService {
   }
 
   static Future<void> saveDashboardNetWorthAccountIds(
-    Set<String> ids, {
+    Set<String>? ids, {
     String? profileId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _dashboardNetWorthAccountIdsKey(profileId: profileId),
-      ids.toList(),
-    );
+    final key = _dashboardNetWorthAccountIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      netWorthAccountIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
     netWorthAccountIdsNotifier.value = ids;
   }
 
@@ -255,8 +275,7 @@ class PreferencesService {
       _movementsAccountFilterIdsKey(profileId: profileId),
     );
     final result = list?.toSet();
-    movementsAccountFilterIdsNotifier.value =
-        result == null || result.isEmpty ? null : result;
+    movementsAccountFilterIdsNotifier.value = result;
     return movementsAccountFilterIdsNotifier.value;
   }
 
@@ -266,14 +285,13 @@ class PreferencesService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final key = _movementsAccountFilterIdsKey(profileId: profileId);
-    final normalized = ids == null || ids.isEmpty ? null : ids;
-    if (normalized == null) {
+    if (ids == null) {
       await prefs.remove(key);
       movementsAccountFilterIdsNotifier.value = null;
       return;
     }
-    await prefs.setStringList(key, normalized.toList());
-    movementsAccountFilterIdsNotifier.value = normalized;
+    await prefs.setStringList(key, ids.toList());
+    movementsAccountFilterIdsNotifier.value = ids;
   }
 
   static Future<Set<String>?> loadMovementsCategoryFilterIds({
@@ -284,8 +302,7 @@ class PreferencesService {
       _movementsCategoryFilterIdsKey(profileId: profileId),
     );
     final result = list?.toSet();
-    movementsCategoryFilterIdsNotifier.value =
-        result == null || result.isEmpty ? null : result;
+    movementsCategoryFilterIdsNotifier.value = result;
     return movementsCategoryFilterIdsNotifier.value;
   }
 
@@ -295,14 +312,67 @@ class PreferencesService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final key = _movementsCategoryFilterIdsKey(profileId: profileId);
-    final normalized = ids == null || ids.isEmpty ? null : ids;
-    if (normalized == null) {
+    if (ids == null) {
       await prefs.remove(key);
       movementsCategoryFilterIdsNotifier.value = null;
       return;
     }
-    await prefs.setStringList(key, normalized.toList());
-    movementsCategoryFilterIdsNotifier.value = normalized;
+    await prefs.setStringList(key, ids.toList());
+    movementsCategoryFilterIdsNotifier.value = ids;
+  }
+
+  static Future<Set<String>?> loadChartsAccountFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _chartsAccountFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    chartsAccountFilterIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveChartsAccountFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _chartsAccountFilterIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      chartsAccountFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
+    chartsAccountFilterIdsNotifier.value = ids;
+  }
+
+  static Future<Set<String>?> loadChartsCategoryFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _chartsCategoryFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    chartsCategoryFilterIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveChartsCategoryFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _chartsCategoryFilterIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      chartsCategoryFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
+    chartsCategoryFilterIdsNotifier.value = ids;
   }
 
   static Future<Set<String>> loadHiddenChartIds() async {
@@ -364,6 +434,10 @@ class PreferencesService {
       await prefs.remove(
         _movementsCategoryFilterIdsKey(profileId: activeProfileId),
       );
+      await prefs.remove(_chartsAccountFilterIdsKey(profileId: activeProfileId));
+      await prefs.remove(
+        _chartsCategoryFilterIdsKey(profileId: activeProfileId),
+      );
     }
 
     showNotesNotifier.value = false;
@@ -376,5 +450,7 @@ class PreferencesService {
     netWorthAccountIdsNotifier.value = null;
     movementsAccountFilterIdsNotifier.value = null;
     movementsCategoryFilterIdsNotifier.value = null;
+    chartsAccountFilterIdsNotifier.value = null;
+    chartsCategoryFilterIdsNotifier.value = null;
   }
 }

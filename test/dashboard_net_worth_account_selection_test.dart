@@ -159,7 +159,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('all invalid ids fall back to Tutti i conti', (tester) async {
+  testWidgets('all invalid ids become Nessun conto', (tester) async {
     final db = await seededDb(withArchived: true);
     await PreferencesService.saveDashboardNetWorthAccountIds({
       'missing',
@@ -168,8 +168,15 @@ void main() {
 
     await pumpDashboard(tester, db);
 
-    expect(heroText('Tutti i conti'), findsOneWidget);
-    expect(PreferencesService.netWorthAccountIdsNotifier.value, isNull);
+    expect(heroText('Nessun conto'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('dashboard_hero_networth_card')),
+        matching: find.text('Nessun conto selezionato'),
+      ),
+      findsOneWidget,
+    );
+    expect(PreferencesService.netWorthAccountIdsNotifier.value, isEmpty);
     expect(tester.takeException(), isNull);
   });
 }

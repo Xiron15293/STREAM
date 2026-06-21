@@ -96,6 +96,33 @@ void main() {
       await sqlite.close();
     });
 
+    test('backup includes charts filters per profile including empty none-state',
+        () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+      await PreferencesService.saveChartsAccountFilterIds(
+        <String>{},
+        profileId: 'profile_test',
+      );
+      await PreferencesService.saveChartsCategoryFilterIds(
+        {'exp_1', 'inc_1'},
+        profileId: 'profile_test',
+      );
+
+      final json = await BackupService.exportToJson(
+        db,
+        profileId: 'profile_test',
+      );
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      final settings = parsed['settings'] as Map;
+
+      expect(settings['chartsAccountFilterIds'], <String>[]);
+      expect(settings['chartsCategoryFilterIds'], ['exp_1', 'inc_1']);
+      await sqlite.close();
+    });
+
     test('backup includes categoryLayout', () async {
       final sqlite = SQLiteService();
       await sqlite.open(path: inMemoryDatabasePath);
@@ -126,6 +153,8 @@ void main() {
       expect(settings['kpiStyle'], isNull);
       expect(settings['hiddenChartIds'], isNull);
       expect(settings['netWorthAccountIds'], isNull);
+      expect(settings['chartsAccountFilterIds'], isNull);
+      expect(settings['chartsCategoryFilterIds'], isNull);
       expect(settings['categoryLayout'], isNull);
       await sqlite.close();
     });

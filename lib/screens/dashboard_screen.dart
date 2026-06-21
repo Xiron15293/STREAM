@@ -61,9 +61,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Account> _getFilteredAccounts(List<Account> activeAccounts) {
-    if (_selectedAccountIds == null || _selectedAccountIds!.isEmpty) {
+    if (_selectedAccountIds == null) {
       return activeAccounts;
     }
+    if (_selectedAccountIds!.isEmpty) return [];
     return activeAccounts
         .where((a) => _selectedAccountIds!.contains(a.id))
         .toList();
@@ -76,8 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final validIds = activeAccounts.map((account) => account.id).toSet();
     final sanitized = current.intersection(validIds);
-    final shouldClear =
-        sanitized.isEmpty || sanitized.length == activeAccounts.length;
+    final shouldClear = sanitized.length == activeAccounts.length;
     final nextSelection = shouldClear ? null : sanitized;
 
     if (setEquals(current, nextSelection)) return;
@@ -247,11 +247,10 @@ class _BalanceHero extends StatelessWidget {
     final activeCount = allAccounts.length;
 
     if (selectedAccountIds == null ||
-        selectedAccountIds!.isEmpty ||
-        validSelectedCount == 0 ||
         validSelectedCount == activeCount) {
       return 'Tutti i conti';
     }
+    if (selectedAccountIds!.isEmpty) return 'Nessun conto';
     if (validSelectedCount == 1) return '1 conto selezionato';
     return '$validSelectedCount conti selezionati';
   }
@@ -301,7 +300,11 @@ class _BalanceHero extends StatelessWidget {
                       key: const Key('dashboard_net_worth_all_accounts_option'),
                       onTap: () {
                         setSheetState(() {
-                          workingIds = activeAccounts.map((a) => a.id).toSet();
+                          if (workingIds.length == activeAccounts.length) {
+                            workingIds = <String>{};
+                          } else {
+                            workingIds = activeAccounts.map((a) => a.id).toSet();
+                          }
                         });
                       },
                       child: Padding(
@@ -310,8 +313,8 @@ class _BalanceHero extends StatelessWidget {
                           children: [
                             Icon(
                               workingIds.length == activeAccounts.length
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_unchecked,
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
                               color: p.primary,
                               size: 22,
                             ),
@@ -405,20 +408,12 @@ class _BalanceHero extends StatelessWidget {
                                   ? null
                                   : workingIds;
                               onAccountSelectionChanged(finalIds);
-                              if (finalIds == null) {
-                                unawaited(
-                                  PreferencesService.clearDashboardNetWorthAccountSelection(
-                                    profileId: activeProfileId,
-                                  ),
-                                );
-                              } else {
-                                unawaited(
-                                  PreferencesService.saveDashboardNetWorthAccountIds(
-                                    finalIds,
-                                    profileId: activeProfileId,
-                                  ),
-                                );
-                              }
+                              unawaited(
+                                PreferencesService.saveDashboardNetWorthAccountIds(
+                                  finalIds,
+                                  profileId: activeProfileId,
+                                ),
+                              );
                               Navigator.of(context).pop();
                             },
                             child: const Text('Applica'),
@@ -610,6 +605,13 @@ class _HeroStacked extends StatelessWidget {
           'Situazione attuale, non filtrata dal periodo',
           style: StreamTypography.caption.copyWith(color: subtitleColor),
         ),
+        if (activeAccounts.isEmpty && accounts.isEmpty) ...[
+          const SizedBox(height: StreamSpacing.sm),
+          Text(
+            'Nessun conto selezionato',
+            style: StreamTypography.captionBold.copyWith(color: subtitleColor),
+          ),
+        ],
         if (visible.isNotEmpty) ...[
           const SizedBox(height: StreamSpacing.md),
           Wrap(
@@ -694,6 +696,13 @@ class _HeroSplit extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        if (activeAccounts.isEmpty && accounts.isEmpty) ...[
+          const SizedBox(height: StreamSpacing.sm),
+          Text(
+            'Nessun conto selezionato',
+            style: StreamTypography.captionBold.copyWith(color: p.textSecondary),
+          ),
+        ],
         if (visible.isNotEmpty) ...[
           const SizedBox(height: StreamSpacing.md),
           Wrap(

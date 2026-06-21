@@ -102,6 +102,82 @@ void main() {
       await sqlite.close();
     });
 
+    test('restore applies charts filters and preserves empty none-state',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+
+      final acc = Account(
+        id: 'valid_acc',
+        name: 'Valid',
+        type: AccountType.bank,
+        createdAt: DateTime.now(),
+      );
+      await db.addAccount(acc);
+
+      final json = jsonEncode({
+        'version': 2,
+        'createdAt': '2026-06-01T00:00:00',
+        'accounts': [
+          {
+            'id': 'valid_acc',
+            'name': 'Valid',
+            'type': 'bank',
+            'initialBalance': 0.0,
+            'iconKey': 'account_balance',
+            'color': 4278230352,
+            'archived': false,
+            'createdAt': '2026-01-01T00:00:00.000',
+            'updatedAt': '2026-01-01T00:00:00.000',
+          }
+        ],
+        'categories': [
+          {
+            'id': 'exp_1',
+            'name': 'Spesa',
+            'type': 'expense',
+            'color': 4278190335,
+            'iconKey': 'shopping_cart',
+            'archived': false,
+          }
+        ],
+        'movements': [],
+        'quickMovements': [],
+        'favoriteMovements': [],
+        'settings': {
+          'showNotes': false,
+          'chartsAccountFilterIds': <String>[],
+          'chartsCategoryFilterIds': ['exp_1', 'ghost'],
+        },
+      });
+
+      final validation = BackupService.validate(json);
+      expect(validation.isValid, isTrue);
+
+      await BackupService.restore(
+        db,
+        validation.data!,
+        activeProfileId: 'profile_b',
+      );
+
+      expect(
+        await PreferencesService.loadChartsAccountFilterIds(
+          profileId: 'profile_b',
+        ),
+        <String>{},
+      );
+      expect(
+        await PreferencesService.loadChartsCategoryFilterIds(
+          profileId: 'profile_b',
+        ),
+        {'exp_1'},
+      );
+      await sqlite.close();
+    });
+
     test('restore sanitizes invalid netWorthAccountIds', () async {
       SharedPreferences.setMockInitialValues({});
       final sqlite = SQLiteService();

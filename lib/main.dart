@@ -211,7 +211,10 @@ class _MainScaffoldState extends State<MainScaffold> {
         db: widget.db,
         activeProfileId: widget.activeProfileId,
       ),
-      ChartsScreen(db: widget.db),
+      ChartsScreen(
+        db: widget.db,
+        activeProfileId: widget.activeProfileId,
+      ),
       SettingsScreen(
         db: widget.db,
         onManageProfiles: widget.onManageProfiles,
