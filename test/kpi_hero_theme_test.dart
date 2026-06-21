@@ -141,7 +141,7 @@ void main() {
       size: const Size(320, 480),
     );
 
-    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.drag(find.byKey(const Key('dashboard_scroll_view')), const Offset(0, -300));
     await tester.pumpAndSettle();
 
     expect(

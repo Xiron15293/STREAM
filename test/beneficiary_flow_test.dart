@@ -146,9 +146,11 @@ void main() {
 
         expect(find.text('Mario Rossi'), findsOneWidget);
         expect(find.text('0 movimenti'), findsOneWidget);
-        expect(find.text('Entrate 0.00 €'), findsOneWidget);
-        expect(find.text('Uscite 0.00 €'), findsOneWidget);
-        expect(find.text('Saldo 0.00 €'), findsOneWidget);
+        expect(find.text('Entrate'), findsOneWidget);
+        expect(find.text('Uscite'), findsOneWidget);
+        expect(find.text('Saldo'), findsOneWidget);
+        // KPI values are rendered as separate Text widgets by StreamKpiCard
+        expect(find.text('0.00 €'), findsNWidgets(3));
         expect(db.beneficiaryProfiles, hasLength(1));
         expect(db.beneficiaryProfiles.first.key, 'mario rossi');
       },

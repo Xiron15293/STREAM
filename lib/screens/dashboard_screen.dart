@@ -100,6 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   : null;
 
               return SingleChildScrollView(
+                key: const Key('dashboard_scroll_view'),
                 padding: const EdgeInsets.fromLTRB(
                   StreamSpacing.lg,
                   StreamSpacing.lg,
