@@ -2468,6 +2468,26 @@ flutter test --no-pub    → 627/627 All tests passed
 
 ---
 
+## V0.11k-fix1 — Archive Top Tabs Single-Line Labels
+
+### Executive Summary
+- Le label `Movimenti`, `Conti`, `Categorie`, `Benefic.` nel `SegmentedButton` dell'Archivio non vanno piu a capo.
+- Causa: `Text` senza `maxLines`/`softWrap` dentro `ButtonSegment`.
+- Fix: `FittedBox(fit: BoxFit.scaleDown)` + `Row(icon size:14, Text(maxLines:1, softWrap:false))`.
+- Nessun cambio routing/index tab, DB/schema, calcoli, KPI, chart style.
+
+### Delta Changes
+| Area | File | Modifica |
+|-------|------|----------|
+| Tab fix | `lib/screens/archive_screen.dart` | Label avvolte in `FittedBox` + Row con icona 14px; `icon` → `SizedBox.shrink()` |
+| Test | `test/archive_top_tabs_single_line_test.dart` | 3 test (segment count, keys, tab switch) |
+
+### Test Results
+- `flutter test`: **1062/1062 All tests passed** (~1 skipped)
+- `flutter analyze`: 0 errors, 0 warnings
+
+---
+
 ## V0.11k — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
 
 ### Executive Summary

@@ -6,6 +6,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11k-fix1 completata: Archive top tabs single-line — le label `Movimenti`, `Conti`, `Categorie`, `Benefic.` nel `SegmentedButton` dell'Archivio non vanno piu a capo grazie a `FittedBox` + `Text(maxLines:1, softWrap:false)`.
 - V0.11k completata: Dashboard Net Worth Account Selection — l'utente puo selezionare quali conti attivi includere nel patrimonio Dashboard tramite bottom sheet con checkbox. Default "Tutti i conti". Preferenza salvata via PreferencesService. Healing automatico per conti archiviati/eliminati. Pill conti hero mostrano solo conti selezionati (max 3 + "+N altri").
 - V0.11k fix tab: label SegmentedButton (`Giorno`, `Sett.`, `Mese`, `Anno`, `Intervallo`) non vanno piu a capo grazie a `FittedBox`.
 - V0.11k fix form: pulsanti bottom `Salva`/`Trasferisci` rimossi; azione primaria e l'icona check in alto.
@@ -33,7 +34,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 ## Focus consigliato
 
 1. QA manuale selezione conti Dashboard: verifica comportamento con conti archiviati/eliminati, multi-profilo
-2. Verifica visiva tab `Intervallo` non va a capo su viewport stretti (320px)
+2. Verifica visiva tab Archivio (`Movimenti`, `Categorie`, `Benefic.`) su viewport stretti
 3. Verifica form movimento/trasferimento: azioni top funzionano, nessun bottom button residuo
 
 ## Prossimo Sprint Consigliato

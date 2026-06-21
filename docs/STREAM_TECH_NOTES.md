@@ -1456,6 +1456,12 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 - Label dei `SegmentedButton` in `TimeFilterBar` avvolte in `FittedBox(fit: BoxFit.scaleDown, child: Text(maxLines:1, softWrap:false))`
 - Previene wrapping di `Intervallo` su viewport stretti
 
+## Archive Top Tabs Single-Line (V0.11k-fix1)
+- `lib/screens/archive_screen.dart`: `SegmentedButton<int>` con 4 segmenti (`Movimenti`, `Conti`, `Categorie`, `Benefic.`).
+- Ogni `ButtonSegment.label` ora contiene `FittedBox(fit: BoxFit.scaleDown, child: Row(children: [Icon(size:14), Text(maxLines:1, softWrap:false)]))`.
+- `icon` parameter del `ButtonSegment` impostato a `SizedBox.shrink()` (icona gia dentro il label).
+- Previene wrapping di `Movimenti`, `Categorie`, `Benefic.` su viewport stretti.
+
 ## Form azioni unificate (V0.11k)
 - `AddMovementFlow`: rimosso `FilledButton` bottom (`movement_submit_button`). L'azione primaria rimane `movement_submit_top_button` nell'header.
 - `MovementForm`: aggiunto `movement_form_save_action` in alto, rimosso `FilledButton` bottom `Salva`.

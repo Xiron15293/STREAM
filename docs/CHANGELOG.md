@@ -1504,6 +1504,24 @@ Nessun bug prodotto confermato nel reset. I failure erano dovuti a finder fragil
 
 ---
 
+## [0.11k-fix1] - 2026-06-21 — Archive Top Tabs Single-Line Labels
+
+### Fixed
+- **Archive top tabs single-line**: Le label `Movimenti`, `Conti`, `Categorie`, `Benefic.` nel `SegmentedButton` dell'Archivio non vanno più a capo su viewport stretti.
+  - Causa: `Text` senza `maxLines`/`softWrap` dentro `ButtonSegment` con icona + testo.
+  - Fix: label avvolta in `FittedBox(fit: BoxFit.scaleDown)` con `Row` contenente icona (14px) e `Text(maxLines:1, softWrap:false, overflow:TextOverflow.visible)`.
+  - `icon` parameter su `ButtonSegment` rimosso (ora dentro il label).
+
+### Added
+- `test/archive_top_tabs_single_line_test.dart`: 3 test (segment count, section keys, tab switch).
+
+### QA
+- 1062 test pass, ~1 skipped
+- flutter analyze: 0 errors, 0 warnings
+- Nessun cambio DB/schema/import/export/calcoli/KPI/chart style
+
+---
+
 ## [0.1.0] - 2026-06-05
 
 ### Added

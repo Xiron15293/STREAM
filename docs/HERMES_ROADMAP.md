@@ -848,4 +848,22 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 > **Test**: 1059/1059 pass | `flutter analyze` 0 errori
 > **File modificati**: `preferences_service.dart`, `dashboard_screen.dart`, `time_filter_bar.dart`, `add_movement_flow.dart`, `movement_form.dart`, `calculator_test_helpers.dart`, `add_movement_flow_test.dart`, `movement_edit_theme_test.dart`, `calculator_amount_pad_test.dart`, docs
 
+## V0.11k-fix1 — Archive Top Tabs Single-Line Labels
+
+> **Data**: 2026-06-21
+> **Tipo**: UI fix
+> **Stato**: ✅ Completata
+> **Interventi**: Label `Movimenti`, `Conti`, `Categorie`, `Benefic.` nel `SegmentedButton` Archivio ora restano su una riga grazie a `FittedBox(fit: BoxFit.scaleDown)`
+> **Test**: 1062/1062 pass | `flutter analyze` 0 errori
+> **File modificati**: `archive_screen.dart`, `archive_top_tabs_single_line_test.dart`, docs
+
+## V0.11k — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
+
+> **Data**: 2026-06-21
+> **Tipo**: Feature + UI fix
+> **Stato**: ✅ Completata
+> **Interventi**: Selezione multipla conti per patrimonio Dashboard, fix wrapping tab SegmentedButton, azioni form movimento/trasferimento unificate (check top, no bottom button)
+> **Test**: 1059/1059 pass | `flutter analyze` 0 errori
+> **File modificati**: `preferences_service.dart`, `dashboard_screen.dart`, `time_filter_bar.dart`, `add_movement_flow.dart`, `movement_form.dart`, `calculator_test_helpers.dart`, `add_movement_flow_test.dart`, `movement_edit_theme_test.dart`, `calculator_amount_pad_test.dart`, docs
+
 Vedi `CHANGELOG.md` per dettaglio completo di V0.5.x, V0.4.x, V0.3.x, V0.2, V0.1.

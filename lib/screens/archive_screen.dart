@@ -55,9 +55,24 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                             : i == 2
                             ? const Key('archive_section_categories')
                             : const Key('archive_section_beneficiaries'),
-                        child: Text(_sections[i]),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_icons[i], size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                _sections[i],
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.visible,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      icon: Icon(_icons[i], size: 18),
+                      icon: const SizedBox.shrink(),
                     );
                   }),
                   selected: {_selectedSection},

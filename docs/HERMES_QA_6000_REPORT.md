@@ -80,6 +80,12 @@
 - P2 nuovi confermati a livello app: **0**
 - P3 / tech debt: **info analyzer preesistenti**
 
+## Dati aggiornati V0.11k-fix1
+
+- **Test totali**: 1062 passed, ~1 skipped (+3 new: archive top tabs single-line)
+- **Nuovo test**: `test/archive_top_tabs_single_line_test.dart` (3 casi)
+- **Nessuna modifica DB/schema/import/export/calcoli/KPI/chart style**
+
 ## Dati aggiornati V0.11k
 
 - **Test totali**: 1059 passed, ~1 skipped
