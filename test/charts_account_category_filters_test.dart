@@ -128,7 +128,9 @@ void main() {
   }
 
   Future<void> openSection(WidgetTester tester, String label) async {
-    await tester.tap(find.text(label).first);
+    final finder = find.text(label).first;
+    await tester.ensureVisible(finder);
+    await tester.tap(finder, warnIfMissed: false);
     await tester.pumpAndSettle();
   }
 
@@ -220,45 +222,85 @@ void main() {
     expect(find.text('Tutte le categorie'), findsOneWidget);
   });
 
-  testWidgets('account filter changes accounts charts data', (tester) async {
+  testWidgets('charts contextual filters visibility matches section', (
+    tester,
+  ) async {
     final db = await seededDb();
     await pumpCharts(tester, db);
+
+    expect(find.byKey(const Key('charts_account_filter_button')), findsOneWidget);
+    expect(find.byKey(const Key('charts_category_filter_button')), findsOneWidget);
+
+    await openSection(tester, 'Categorie');
+    expect(find.byKey(const Key('charts_account_filter_button')), findsOneWidget);
+    expect(find.byKey(const Key('charts_category_filter_button')), findsNothing);
+
     await openSection(tester, 'Conti');
+    expect(find.byKey(const Key('charts_account_filter_button')), findsNothing);
+    expect(find.byKey(const Key('charts_category_filter_button')), findsOneWidget);
 
-    expect(find.text('Intesa'), findsWidgets);
-    expect(find.text('Cash'), findsWidgets);
-
-    await selectChartAccounts(tester, ['acc_a']);
-
-    expect(find.text('Intesa'), findsWidgets);
-    expect(find.text('Cash'), findsNothing);
+    await openSection(tester, 'Beneficiari');
+    expect(find.byKey(const Key('charts_account_filter_button')), findsOneWidget);
+    expect(find.byKey(const Key('charts_category_filter_button')), findsOneWidget);
   });
 
-  testWidgets('category filter changes categories charts data', (tester) async {
+  testWidgets('account filter changes categories charts data', (tester) async {
     final db = await seededDb();
     await pumpCharts(tester, db);
+    await selectChartAccounts(tester, ['acc_a']);
     await openSection(tester, 'Categorie');
-
-    expect(find.text('Spesa'), findsWidgets);
-    expect(find.text('Auto'), findsWidgets);
-
-    await selectChartCategories(tester, ['exp_1']);
 
     expect(find.text('Spesa'), findsWidgets);
     expect(find.text('Auto'), findsNothing);
   });
 
+  testWidgets('category filter changes beneficiaries charts data', (tester) async {
+    final db = await seededDb();
+    await pumpCharts(tester, db);
+    await selectChartCategories(tester, ['exp_1']);
+    await openSection(tester, 'Beneficiari');
+
+    expect(find.text('Coop'), findsWidgets);
+    expect(find.text('Bar'), findsWidgets);
+    expect(find.text('Benzina'), findsNothing);
+  });
+
   testWidgets('account plus category filter uses AND', (tester) async {
     final db = await seededDb();
     await pumpCharts(tester, db);
-    await openSection(tester, 'Categorie');
-    await tester.tap(find.text('Entrate'));
-    await tester.pumpAndSettle();
-
     await selectChartAccounts(tester, ['acc_b']);
     await selectChartCategories(tester, ['inc_1']);
+    await openSection(tester, 'Movimenti');
 
     expect(find.text('Nessun movimento nel periodo selezionato'), findsOneWidget);
+  });
+
+  testWidgets('hidden account filter does not affect accounts charts', (
+    tester,
+  ) async {
+    final db = await seededDb();
+    await pumpCharts(tester, db);
+    await selectChartAccounts(tester, ['acc_a']);
+
+    await openSection(tester, 'Conti');
+
+    expect(find.byKey(const Key('charts_account_filter_button')), findsNothing);
+    expect(find.text('Intesa'), findsWidgets);
+    expect(find.text('Cash'), findsWidgets);
+  });
+
+  testWidgets('hidden category filter does not affect categories charts', (
+    tester,
+  ) async {
+    final db = await seededDb();
+    await pumpCharts(tester, db);
+    await selectChartCategories(tester, ['exp_1']);
+
+    await openSection(tester, 'Categorie');
+
+    expect(find.byKey(const Key('charts_category_filter_button')), findsNothing);
+    expect(find.text('Spesa'), findsWidgets);
+    expect(find.text('Auto'), findsWidgets);
   });
 
   testWidgets('deselect all accounts shows charts empty state', (tester) async {
@@ -292,6 +334,24 @@ void main() {
     expect(find.byKey(const Key('chart_card_movements_cashflow')), findsNothing);
     expect(PreferencesService.hiddenChartIdsNotifier.value, {'movements_cashflow'});
     expect(PreferencesService.chartStyleNotifier.value, 'technical');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('small viewport charts sections do not overflow', (tester) async {
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final db = await seededDb();
+    await pumpCharts(tester, db);
+
+    await openSection(tester, 'Movimenti');
+    expect(tester.takeException(), isNull);
+
+    await openSection(tester, 'Categorie');
+    expect(tester.takeException(), isNull);
+
+    await openSection(tester, 'Conti');
     expect(tester.takeException(), isNull);
   });
 }

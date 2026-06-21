@@ -271,26 +271,28 @@ class _ChartsScreenState extends State<ChartsScreen> {
                       spacing: StreamSpacing.sm,
                       runSpacing: StreamSpacing.sm,
                       children: [
-                        ActionChip(
-                          key: const Key('charts_account_filter_button'),
-                          avatar: const Icon(Icons.account_balance, size: 18),
-                          label: Text(
-                            _accountFilterLabel(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        if (_showsAccountFilterForSection(_section))
+                          ActionChip(
+                            key: const Key('charts_account_filter_button'),
+                            avatar: const Icon(Icons.account_balance, size: 18),
+                            label: Text(
+                              _accountFilterLabel(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onPressed: () => _showAccountFilterSheet(context),
                           ),
-                          onPressed: () => _showAccountFilterSheet(context),
-                        ),
-                        ActionChip(
-                          key: const Key('charts_category_filter_button'),
-                          avatar: const Icon(Icons.category, size: 18),
-                          label: Text(
-                            _categoryFilterLabel(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        if (_showsCategoryFilterForSection(_section))
+                          ActionChip(
+                            key: const Key('charts_category_filter_button'),
+                            avatar: const Icon(Icons.category, size: 18),
+                            label: Text(
+                              _categoryFilterLabel(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onPressed: () => _showCategoryFilterSheet(context),
                           ),
-                          onPressed: () => _showCategoryFilterSheet(context),
-                        ),
                       ],
                     ),
                   ],
@@ -365,10 +367,13 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   Widget _buildSection() {
-    if (_selectedAccountFilterIds != null && _selectedAccountFilterIds!.isEmpty) {
+    if (_showsAccountFilterForSection(_section) &&
+        _selectedAccountFilterIds != null &&
+        _selectedAccountFilterIds!.isEmpty) {
       return const ChartEmptyState(message: 'Nessun conto selezionato');
     }
-    if (_selectedCategoryFilterIds != null &&
+    if (_showsCategoryFilterForSection(_section) &&
+        _selectedCategoryFilterIds != null &&
         _selectedCategoryFilterIds!.isEmpty) {
       return const ChartEmptyState(message: 'Nessuna categoria selezionata');
     }
@@ -400,7 +405,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   Widget _buildMovementsSection() {
-    final movements = _applyChartScopedFilters(widget.db.movements);
+    final movements = _applyChartScopedFilters(
+      widget.db.movements,
+      applyAccountFilter: true,
+      applyCategoryFilter: true,
+    );
     final filtered = movements.filterByTime(_filter);
     if (_visibleChartsFor('movements').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
@@ -427,7 +436,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
             child: _LegendRow(
               colors: [context.$palette.income, context.$palette.expense],
               labels: ['Entrate', 'Uscite'],
-              child: StreamBarChart(series: cashflow),
+              child: StreamBarChart(series: cashflow, currencyAxis: true),
             ),
           ),
         if (_chartIsVisible('movements_daily_count') && countByDay.isNotEmpty)
@@ -450,7 +459,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_movements_top_spending_days'),
             title: 'Top giorni di spesa',
-            height: 300,
+            height: _horizontalChartCardHeight(topDays[0].points.length),
             child: StreamHorizontalBarChart(
               bars: topDays[0].points
                   .map(
@@ -492,7 +501,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   Widget _buildCategoriesSection() {
-    final movements = _applyChartScopedFilters(widget.db.movements);
+    final movements = _applyChartScopedFilters(
+      widget.db.movements,
+      applyAccountFilter: true,
+      applyCategoryFilter: false,
+    );
     final categories = widget.db.categories;
     final filtered = movements.filterByTime(_filter);
     if (_visibleChartsFor('categories').isEmpty) return _noVisibleCharts();
@@ -530,7 +543,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
             title: _categoryTypeFilter == MovementType.income
                 ? 'Top entrate per categoria'
                 : 'Top spese per categoria',
-            height: 300,
+            height: _horizontalChartCardHeight(top[0].points.length),
             child: StreamHorizontalBarChart(
               bars: top[0].points
                   .map(
@@ -555,7 +568,10 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_categories_delta_vs_previous'),
             title: 'Categorie in crescita / calo vs periodo precedente',
-            height: 280,
+            height: _horizontalChartCardHeight(
+              delta.expand((series) => series.points).length,
+              hasLegend: true,
+            ),
             child: StreamHorizontalBarChart(
               bars: delta
                   .expand((series) => series.points)
@@ -585,9 +601,13 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   Widget _buildAccountsSection() {
-    final movements = _applyChartScopedFilters(widget.db.movements);
+    final movements = _applyChartScopedFilters(
+      widget.db.movements,
+      applyAccountFilter: false,
+      applyCategoryFilter: true,
+    );
     final accounts = widget.db.accounts;
-    final active = _getScopedAccounts(accounts);
+    final active = _getScopedAccounts(accounts, applyAccountFilter: false);
     final filtered = movements.filterByTime(_filter);
     if (_visibleChartsFor('accounts').isEmpty) return _noVisibleCharts();
     if (active.isEmpty) {
@@ -613,7 +633,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_accounts_balance'),
             title: 'Saldo per conto',
-            height: 300,
+            height: _horizontalChartCardHeight(balances.length),
             child: StreamHorizontalBarChart(
               bars: balances
                   .map(
@@ -638,7 +658,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_accounts_flows'),
             title: 'Flussi per conto',
-            height: 300,
+            height: _horizontalChartCardHeight(flows[0].points.length, hasLegend: true),
             child: StreamHorizontalBarChart(
               bars: flows[0].points.asMap().entries.map((e) {
                 final expensePoint = flows.length > 1
@@ -664,7 +684,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_accounts_outflow'),
             title: 'Conti più usati per uscite',
-            height: 280,
+            height: _horizontalChartCardHeight(outflow[0].points.length),
             child: StreamHorizontalBarChart(
               bars: outflow[0].points
                   .map(
@@ -682,7 +702,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_accounts_inflow'),
             title: 'Conti più usati per entrate',
-            height: 280,
+            height: _horizontalChartCardHeight(inflow[0].points.length),
             child: StreamHorizontalBarChart(
               bars: inflow[0].points
                   .map(
@@ -700,7 +720,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_accounts_activity'),
             title: 'Attività per conto',
-            height: 280,
+            height: _horizontalChartCardHeight(activity[0].points.length),
             child: StreamHorizontalBarChart(
               bars: activity[0].points
                   .map(
@@ -719,7 +739,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
   }
 
   Widget _buildBeneficiariesSection() {
-    final movements = _applyChartScopedFilters(widget.db.movements);
+    final movements = _applyChartScopedFilters(
+      widget.db.movements,
+      applyAccountFilter: true,
+      applyCategoryFilter: true,
+    );
     final filtered = movements.filterByTime(_filter);
     if (_visibleChartsFor('beneficiaries').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
@@ -780,7 +804,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_beneficiaries_average'),
             title: 'Valore medio per beneficiario',
-            height: 300,
+            height: _horizontalChartCardHeight(avg[0].points.length),
             child: StreamHorizontalBarChart(
               bars: avg[0].points
                   .map(
@@ -898,9 +922,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return setEquals(a, b);
   }
 
-  List<Movement> _applyChartScopedFilters(List<Movement> movements) {
+  List<Movement> _applyChartScopedFilters(
+    List<Movement> movements, {
+    required bool applyAccountFilter,
+    required bool applyCategoryFilter,
+  }) {
     return movements.where((movement) {
-      final matchesAccount = _selectedAccountFilterIds == null ||
+      final matchesAccount = !applyAccountFilter ||
+          _selectedAccountFilterIds == null ||
           _selectedAccountFilterIds!.contains(movement.accountId) ||
           (movement.destinationAccountId != null &&
               _selectedAccountFilterIds!.contains(
@@ -908,7 +937,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
               ));
       if (!matchesAccount) return false;
 
-      if (_selectedCategoryFilterIds == null) return true;
+      if (!applyCategoryFilter || _selectedCategoryFilterIds == null) {
+        return true;
+      }
 
       if (movement.isTransfer) {
         return movement.categoryId.isNotEmpty &&
@@ -919,12 +950,47 @@ class _ChartsScreenState extends State<ChartsScreen> {
     }).toList();
   }
 
-  List<Account> _getScopedAccounts(List<Account> accounts) {
+  List<Account> _getScopedAccounts(
+    List<Account> accounts, {
+    required bool applyAccountFilter,
+  }) {
     final active = accounts.where((account) => !account.archived).toList();
-    if (_selectedAccountFilterIds == null) return active;
+    if (!applyAccountFilter || _selectedAccountFilterIds == null) return active;
     return active
         .where((account) => _selectedAccountFilterIds!.contains(account.id))
         .toList();
+  }
+
+  bool _showsAccountFilterForSection(_ChartSection section) {
+    switch (section) {
+      case _ChartSection.movements:
+      case _ChartSection.categories:
+      case _ChartSection.beneficiaries:
+        return true;
+      case _ChartSection.accounts:
+        return false;
+    }
+  }
+
+  bool _showsCategoryFilterForSection(_ChartSection section) {
+    switch (section) {
+      case _ChartSection.movements:
+      case _ChartSection.accounts:
+      case _ChartSection.beneficiaries:
+        return true;
+      case _ChartSection.categories:
+        return false;
+    }
+  }
+
+  double _horizontalChartCardHeight(int itemCount, {bool hasLegend = false}) {
+    if (itemCount <= 0) return hasLegend ? 108 : 88;
+    const rowHeight = 32.0;
+    final rows = itemCount.clamp(1, 10);
+    final legendHeight = hasLegend ? 28.0 : 0.0;
+    final base = 28.0 + legendHeight + (rows * rowHeight);
+    final clamped = base.clamp(140.0, 420.0);
+    return clamped.toDouble();
   }
 
   String _accountFilterLabel() {
@@ -1365,28 +1431,31 @@ class _LegendRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
           children: List.generate(colors.length, (i) {
-            return Padding(
-              padding: EdgeInsets.only(right: i < colors.length - 1 ? 16 : 0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: colors[i],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: colors[i],
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
+                ),
+                const SizedBox(width: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Text(
                     labels[i],
                     style: TextStyle(fontSize: 11, color: cp.legendTextColor),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }),
         ),

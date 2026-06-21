@@ -5,7 +5,7 @@ import '../../theme.dart';
 class StreamChartCard extends StatelessWidget {
   final String title;
   final Widget child;
-  final double height;
+  final double? height;
   final Key? cardKey;
 
   const StreamChartCard({
@@ -41,7 +41,7 @@ class StreamChartCard extends StatelessWidget {
             style: StreamTypography.h3.copyWith(color: p.textPrimary),
           ),
           const SizedBox(height: StreamSpacing.md),
-          SizedBox(height: height, child: child),
+          if (height != null) SizedBox(height: height, child: child) else child,
         ],
       ),
     );

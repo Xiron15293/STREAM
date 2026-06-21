@@ -12,6 +12,9 @@ import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/charts_screen.dart';
 import 'package:stream_app/utils/analytics_metrics.dart';
 import 'package:stream_app/widgets/charts/stream_donut_chart.dart';
+import 'package:stream_app/widgets/charts/stream_bar_chart.dart';
+import 'package:stream_app/widgets/charts/stream_chart_card.dart';
+import 'package:stream_app/widgets/charts/stream_horizontal_bar_chart.dart';
 import 'package:stream_app/data/preferences_service.dart';
 
 void main() {
@@ -257,6 +260,161 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: ChartsScreen(db: db))));
       await tester.pumpAndSettle();
       expect(find.byType(ChartsScreen), findsOneWidget);
+    });
+
+    testWidgets('adaptive chart card height grows with more horizontal rows', (
+      tester,
+    ) async {
+      final fewBars = List.generate(
+        2,
+        (i) => HorizontalBarData(
+          label: 'A$i',
+          value: (i + 1) * 10,
+          formattedValue: '${(i + 1) * 10}',
+          barColor: Colors.blue,
+        ),
+      );
+      final manyBars = List.generate(
+        10,
+        (i) => HorizontalBarData(
+          label: 'B$i',
+          value: (i + 1) * 10,
+          formattedValue: '${(i + 1) * 10}',
+          barColor: Colors.green,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ListView(
+            children: [
+              StreamChartCard(
+                cardKey: const Key('few_card'),
+                title: 'Few',
+                height: 140,
+                child: StreamHorizontalBarChart(bars: fewBars),
+              ),
+              StreamChartCard(
+                cardKey: const Key('many_card'),
+                title: 'Many',
+                height: 360,
+                child: StreamHorizontalBarChart(bars: manyBars),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSize(find.byKey(const Key('many_card'))).height,
+        greaterThan(tester.getSize(find.byKey(const Key('few_card'))).height),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('horizontal chart keeps row values unique and aligned', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StreamChartCard(
+              title: 'Flows',
+              height: 220,
+              child: StreamHorizontalBarChart(
+                legendLabel1: 'Entrate',
+                legendLabel2: 'Uscite',
+                bars: [
+                  HorizontalBarData(
+                    label: 'Intesa molto lunga lunga',
+                    value: 70,
+                    formattedValue: '+70 €',
+                    barColor: Colors.green,
+                    secondaryValue: 20,
+                    secondaryFormattedValue: '+20 €',
+                    secondaryColor: Colors.red,
+                  ),
+                  HorizontalBarData(
+                    label: 'Cash',
+                    value: 15,
+                    formattedValue: '+15 €',
+                    barColor: Colors.green,
+                    secondaryValue: 35,
+                    secondaryFormattedValue: '+35 €',
+                    secondaryColor: Colors.red,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('+70 €'), findsOneWidget);
+      expect(find.text('+20 €'), findsOneWidget);
+      expect(find.text('+15 €'), findsOneWidget);
+      expect(find.text('+35 €'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('StreamBarChart axis', () {
+    testWidgets('does not render duplicate max tick labels', (tester) async {
+      final series = [
+        ChartSeries(
+          label: 'Entrate',
+          color: Colors.green,
+          points: const [
+            ChartPoint(label: 'A', value: 10, color: Colors.green),
+          ],
+        ),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 240,
+              child: StreamBarChart(series: series),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('10'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('does not truncate equal values into duplicate axis labels', (
+      tester,
+    ) async {
+      final series = [
+        ChartSeries(
+          label: 'Movimenti',
+          color: Colors.blue,
+          points: const [
+            ChartPoint(label: 'A', value: 0.6, color: Colors.blue),
+            ChartPoint(label: 'B', value: 0.6, color: Colors.blue),
+          ],
+        ),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 240,
+              child: StreamBarChart(series: series),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('0.6'), findsOneWidget);
+      expect(find.text('0'), findsNothing);
+      expect(tester.takeException(), isNull);
     });
   });
 
