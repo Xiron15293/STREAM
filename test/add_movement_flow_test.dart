@@ -1079,7 +1079,7 @@ void main() {
       await _tapPadKey(tester, 'movement_pad_0');
       await _tapVisible(
         tester,
-        find.byKey(const Key('movement_submit_button')),
+        find.byKey(const Key('movement_submit_top_button')),
       );
 
       expect(db.movements, hasLength(2));
@@ -1195,7 +1195,7 @@ void main() {
       expect(_amountDisplayText(tester), '10+5');
       await _tapVisible(
         tester,
-        find.byKey(const Key('movement_submit_button')),
+        find.byKey(const Key('movement_submit_top_button')),
       );
 
       expect(db.movements, hasLength(1));
@@ -1247,7 +1247,7 @@ void main() {
       expect(_amountDisplayText(tester), '20-5');
       await _tapVisible(
         tester,
-        find.byKey(const Key('movement_submit_button')),
+        find.byKey(const Key('movement_submit_top_button')),
       );
 
       expect(db.movements, hasLength(1));
@@ -1303,7 +1303,7 @@ void main() {
         expect(_amountDisplayText(tester), '25');
         await _tapVisible(
           tester,
-          find.byKey(const Key('movement_submit_button')),
+          find.byKey(const Key('movement_submit_top_button')),
         );
 
         expect(db.movements, hasLength(1));

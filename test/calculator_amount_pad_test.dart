@@ -449,8 +449,7 @@ void main() {
       expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
       expect(find.text('10'), findsWidgets);
       await _replaceAmountWithPad(tester, ['1', '0', '+', '7']);
-      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Salva'));
-      await tester.tap(find.widgetWithText(FilledButton, 'Salva'));
+      await submitMovement(tester);
       await tester.pumpAndSettle();
 
       expect(db.movements.single.amount, 17);

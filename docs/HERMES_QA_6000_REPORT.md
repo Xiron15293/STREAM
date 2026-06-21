@@ -80,6 +80,13 @@
 - P2 nuovi confermati a livello app: **0**
 - P3 / tech debt: **info analyzer preesistenti**
 
+## Dati aggiornati V0.11k
+
+- **Test totali**: 1059 passed, ~1 skipped
+- **File test**: ~68
+- **Nuove feature testate**: Dashboard Net Worth Account Selection (selezione conti, bottom sheet, healing), tab single-line, form azioni unificate
+- **Nessuna modifica DB/schema/import/export/calcoli/KPI/chart style**
+
 ## Risultati di esecuzione
 
 - `flutter analyze`: ok, nessun errore nuovo, solo info preesistenti

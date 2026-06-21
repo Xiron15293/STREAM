@@ -1472,6 +1472,38 @@ Nessun bug prodotto confermato nel reset. I failure erano dovuti a finder fragil
 
 ---
 
+## [0.11k] - 2026-06-21 — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
+
+### Added
+- **Dashboard Net Worth Account Selection**: L'utente può scegliere quali conti attivi includere nel patrimonio Dashboard
+  - Default: Tutti i conti (comportamento invariato)
+  - Selezione multipla tramite bottom sheet con checkbox
+  - Bottone filtro compatto nella hero con label dinamica ("Tutti i conti" / "N conti selezionati")
+  - Pill conti nella hero mostrano solo i conti selezionati (max 3 + "+N altri")
+  - Preferenza salvata via `PreferencesService` (chiave `dashboard_net_worth_account_ids`)
+  - Healing automatico: conti archiviati/eliminati vengono ignorati; se nessun conto valido resta, torna a Tutti i conti
+  - Key testabili: `dashboard_net_worth_account_filter_button`, `dashboard_net_worth_all_accounts_option`, `dashboard_net_worth_account_option_<id>`, `dashboard_net_worth_account_filter_apply`, `dashboard_net_worth_account_filter_cancel`
+- **Segmented tabs single-line**: Label dei segmented button (`Giorno`, `Sett.`, `Mese`, `Anno`, `Intervallo`) non vanno più a capo grazie a `FittedBox(fit: BoxFit.scaleDown, child: Text(maxLines:1, softWrap:false))`
+- **Form movimento/trasferimento azioni unificate**: Pulsanti bottom `Salva`/`Trasferisci`/`Aggiorna` rimossi; azione primaria ora è l'icona check in alto a destra (`movement_submit_top_button` / `movement_form_save_action`)
+
+### Changed
+- `lib/widgets/time_filter_bar.dart`: label avvolte in `FittedBox` per evitare wrapping
+- `lib/widgets/add_movement_flow.dart`: rimosso `FilledButton` bottom `movement_submit_button`; azione tramite `movement_submit_top_button` già esistente
+- `lib/widgets/movement_form.dart`: aggiunto `movement_form_save_action` in alto, rimosso `FilledButton` bottom `Salva`
+- `test/helpers/calculator_test_helpers.dart`: `submitMovement()` ora prova `movement_submit_top_button` e `movement_form_save_action` prima del fallback legacy
+
+### Fixed
+- Conti duplicati nella hero Dashboard: ogni conto appare al massimo una volta (max 3 pill + "+N altri")
+- Sticky amount nel form movimento dopo rimozione bottom button: padding 80px assicura scroll sufficiente per attivare sticky header
+
+### QA
+- 1059 test pass, ~1 skipped
+- flutter analyze: 0 errors, 0 warnings
+- Nessun DB/schema/migrazione/import/export modificato
+- Nessun cambiamento a calcoli/KPI/analytics/chart style
+
+---
+
 ## [0.1.0] - 2026-06-05
 
 ### Added

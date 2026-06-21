@@ -2466,11 +2466,43 @@ flutter test --no-pub    → 627/627 All tests passed
 - 5 test invariati in numero (chip giorno, clear callback, semester grid, cross-year, partial semester)
 - Nessun test aggiunto/rimosso
 
+---
+
+## V0.11k — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
+
+### Executive Summary
+
+- **Dashboard Net Worth Account Selection**: L'utente puo selezionare quali conti attivi includere nel patrimonio Dashboard tramite bottom sheet con checkbox. Default "Tutti i conti". Preferenza salvata via `PreferencesService`. Healing automatico: conti archiviati/eliminati ignorati; se nessun conto valido resta, torna a Tutti i conti.
+- **Tab single-line fix**: Label `SegmentedButton` (`Giorno`, `Sett.`, `Mese`, `Anno`, `Intervallo`) non vanno piu a capo grazie a `FittedBox`.
+- **Form azioni unificate**: Pulsanti bottom `Salva`/`Trasferisci` rimossi da `AddMovementFlow` e `MovementForm`. Azione primaria: icona check in alto.
+- **Nessun cambio DB/schema/migrazioni/import/export/calcoli/KPI/chart style**
+
+### Delta Changes
+
+| Area | File | Modifica |
+|-------|------|----------|
+| Preferenza | `lib/data/preferences_service.dart` | Aggiunti `netWorthAccountIdsNotifier`, `loadDashboardNetWorthAccountIds`, `saveDashboardNetWorthAccountIds`, `clearDashboardNetWorthAccountSelection` |
+| Dashboard | `lib/screens/dashboard_screen.dart` | `_BalanceHero` ora accetta `allAccounts`, `selectedAccountIds`, `onAccountSelectionChanged`. Bottone filtro + bottom sheet selezione conti. Calcolo patrimonio usa solo conti selezionati. |
+| Tab fix | `lib/widgets/time_filter_bar.dart` | Label avvolte in `FittedBox` |
+| Form fix | `lib/widgets/add_movement_flow.dart` | Rimosso `movement_submit_button` bottom |
+| Form fix | `lib/widgets/movement_form.dart` | Aggiunto `movement_form_save_action`, rimosso bottom `Salva` |
+| Test helper | `test/helpers/calculator_test_helpers.dart` | `submitMovement()` fallback multi-key |
+| Test fix | `test/add_movement_flow_test.dart` | `movement_submit_button` → `movement_submit_top_button` |
+| Test fix | `test/movement_edit_theme_test.dart` | `movement_submit_button` → `movement_submit_top_button` |
+| Test fix | `test/calculator_amount_pad_test.dart` | Usa `submitMovement()` helper |
+
+### Test Results
+
+- `flutter test`: **1059/1059 All tests passed** (~1 skipped)
+- `flutter analyze`: 0 errors, 0 warnings, info pre-esistenti
+- Nessun commit/push
+
 ### Verifica locale finale
 
 - `flutter analyze --no-pub`: **PASS** — 0 errors, 0 warnings, 27 info pre-esistenti
-- `flutter test --no-pub`: **747/747 All tests passed**
+- `flutter test --no-pub`: **1059/1059 All tests passed**
 - Nessun DB/schema/migrazione modificato
 - Backup/restore/import/reset non modificati
+- Chart style / KPI style / analytics / calcoli non modificati
 - Nessuno skip aggiunto
 - Nessun commit/push

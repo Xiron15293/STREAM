@@ -1426,6 +1426,41 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 
 **Perché non `builtInKotlin=true`**: Flutter applicherebbe KGP a `flutter_plugin_android_lifecycle` (puro Java), e AGP 9.0.1 rifiuta KGP su progetti Java con `builtInKotlin=true`.
 
+## Dashboard Net Worth Account Selection (V0.11k)
+
+### Preferenza
+- Chiave: `dashboard_net_worth_account_ids` (SharedPreferences)
+- Tipo: `List<String>` (serializzata come `Set<String>?`)
+- null/assente/empty = Tutti i conti
+- Notifier: `PreferencesService.netWorthAccountIdsNotifier`
+- Metodi: `loadDashboardNetWorthAccountIds()`, `saveDashboardNetWorthAccountIds()`, `clearDashboardNetWorthAccountSelection()`
+
+### Calcolo patrimonio
+- In `_DashboardScreenState.build()`: i `selectedAccounts` sostituiscono `activeAccounts`
+- `accountsBalance` = somma di `db.getAccountBalance(a)` per ogni conto selezionato
+- Pill conti hero (`_HeroStacked`/`_HeroSplit`) ricevono solo i conti selezionati
+
+### Healing
+- Conti archiviati o eliminati vengono esclusi dalla selezione
+- Se nessun conto valido resta selezionato → torna a Tutti i conti
+
+### Key testabili
+- `dashboard_net_worth_account_filter_button` — bottone filtro nella hero
+- `dashboard_net_worth_account_filter_sheet` — bottom sheet selezione
+- `dashboard_net_worth_all_accounts_option` — opzione Tutti i conti
+- `dashboard_net_worth_account_option_<id>` — checkbox per ogni conto
+- `dashboard_net_worth_account_filter_apply` — Applica
+- `dashboard_net_worth_account_filter_cancel` — Annulla
+
+## Tab Segmented single-line fix (V0.11k)
+- Label dei `SegmentedButton` in `TimeFilterBar` avvolte in `FittedBox(fit: BoxFit.scaleDown, child: Text(maxLines:1, softWrap:false))`
+- Previene wrapping di `Intervallo` su viewport stretti
+
+## Form azioni unificate (V0.11k)
+- `AddMovementFlow`: rimosso `FilledButton` bottom (`movement_submit_button`). L'azione primaria rimane `movement_submit_top_button` nell'header.
+- `MovementForm`: aggiunto `movement_form_save_action` in alto, rimosso `FilledButton` bottom `Salva`.
+- `submitMovement()` helper in `calculator_test_helpers.dart`: fallback `movement_submit_top_button` → `movement_form_save_action` → legacy FilledButton text.
+
 ## Metriche
 
 | Metrica | V0.6.4 | V0.7.0 | V0.7.1 | V0.8.0 | V0.8.1 | V0.8.2 | V0.8.3 | V0.8.4 | V0.8.5 | V0.8.6 | V0.8.7 | V0.8.8 | V0.8.9 | V0.8.10 | Delta |

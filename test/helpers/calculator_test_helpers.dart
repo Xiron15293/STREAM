@@ -173,10 +173,20 @@ Future<void> enterMovementNote(
 }
 
 Future<void> submitMovement(WidgetTester tester, {String label = 'Salva'}) async {
-  final keyed = find.byKey(const Key('movement_submit_button'));
-  if (keyed.evaluate().isNotEmpty) {
-    await tapVisible(tester, keyed);
+  const keys = [
+    Key('movement_submit_top_button'),
+    Key('movement_form_save_action'),
+  ];
+  for (final key in keys) {
+    final keyed = find.byKey(key);
+    if (keyed.evaluate().isNotEmpty) {
+      await tapVisible(tester, keyed);
+      return;
+    }
+  }
+  final legacy = find.widgetWithText(FilledButton, label);
+  if (legacy.evaluate().isNotEmpty) {
+    await tapVisible(tester, legacy);
     return;
   }
-  await tapVisible(tester, find.widgetWithText(FilledButton, label));
 }

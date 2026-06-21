@@ -126,23 +126,42 @@ class TimeFilterBar extends StatelessWidget {
             segments: [
               const ButtonSegment(
                 value: TimeFilterMode.day,
-                label: Text('Giorno'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Giorno', maxLines: 1, softWrap: false),
+                ),
               ),
               const ButtonSegment(
                 value: TimeFilterMode.week,
-                label: Text('Sett.'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Sett.', maxLines: 1, softWrap: false),
+                ),
               ),
               const ButtonSegment(
                 value: TimeFilterMode.month,
-                label: Text('Mese'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Mese', maxLines: 1, softWrap: false),
+                ),
               ),
               const ButtonSegment(
                 value: TimeFilterMode.year,
-                label: Text('Anno'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Anno', maxLines: 1, softWrap: false),
+                ),
               ),
               ButtonSegment(
                 value: TimeFilterMode.customRange,
-                label: Text(customRangeLabel ?? 'Intervallo'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    customRangeLabel ?? 'Intervallo',
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
               ),
             ],
             selected: {activeFilter.mode},

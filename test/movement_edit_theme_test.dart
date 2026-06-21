@@ -57,7 +57,7 @@ void main() {
 
     expect(find.text('Modifica movimento'), findsOneWidget);
     expect(find.byKey(const Key('movement_amount_display')), findsOneWidget);
-    expect(find.byKey(const Key('movement_submit_button')), findsOneWidget);
+    expect(find.byKey(const Key('movement_submit_top_button')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -258,6 +258,19 @@ class _MovementFormState extends State<MovementForm> {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
+                    key: const Key('movement_form_cancel_action'),
+                  ),
+                  IconButton.filled(
+                    key: const Key('movement_form_save_action'),
+                    onPressed: _submit,
+                    icon: Icon(
+                      _type == MovementType.transfer
+                          ? Icons.compare_arrows_rounded
+                          : Icons.check_rounded,
+                    ),
+                    tooltip: _type == MovementType.transfer
+                        ? 'Trasferisci'
+                        : 'Salva',
                   ),
                 ],
               ),
@@ -450,10 +463,6 @@ class _MovementFormState extends State<MovementForm> {
                 limit: 4,
               ),
               const SizedBox(height: StreamSpacing.lg),
-              FilledButton(
-                onPressed: _submit,
-                child: Text(widget.prefill != null ? 'Aggiorna' : 'Salva'),
-              ),
             ],
           ),
         );

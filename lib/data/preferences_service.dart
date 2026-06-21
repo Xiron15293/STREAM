@@ -201,9 +201,31 @@ class PreferencesService {
     chartStyleNotifier.value = value;
   }
 
+  static const _netWorthAccountIdsKey = 'dashboard_net_worth_account_ids';
   static const _hiddenChartIdsKey = 'hidden_chart_ids';
 
+  static final netWorthAccountIdsNotifier = ValueNotifier<Set<String>?>(null);
   static final hiddenChartIdsNotifier = ValueNotifier<Set<String>>({});
+
+  static Future<Set<String>?> loadDashboardNetWorthAccountIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_netWorthAccountIdsKey);
+    final result = list?.toSet();
+    netWorthAccountIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveDashboardNetWorthAccountIds(Set<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_netWorthAccountIdsKey, ids.toList());
+    netWorthAccountIdsNotifier.value = ids;
+  }
+
+  static Future<void> clearDashboardNetWorthAccountSelection() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_netWorthAccountIdsKey);
+    netWorthAccountIdsNotifier.value = null;
+  }
 
   static Future<Set<String>> loadHiddenChartIds() async {
     final prefs = await SharedPreferences.getInstance();
@@ -251,6 +273,7 @@ class PreferencesService {
     await prefs.remove(_themeIdKey);
     await prefs.remove(_kpiStyleKey);
     await prefs.remove(_chartStyleKey);
+    await prefs.remove(_netWorthAccountIdsKey);
     await prefs.remove(_hiddenChartIdsKey);
   }
 }

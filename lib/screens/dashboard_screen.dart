@@ -27,12 +27,30 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late TimeFilter _filter;
+  Set<String>? _selectedAccountIds;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _filter = TimeFilter.month(now.year, now.month);
+    _loadAccountSelection();
+  }
+
+  Future<void> _loadAccountSelection() async {
+    final ids = await PreferencesService.loadDashboardNetWorthAccountIds();
+    if (mounted) {
+      setState(() => _selectedAccountIds = ids);
+    }
+  }
+
+  List<Account> _getFilteredAccounts(List<Account> activeAccounts) {
+    if (_selectedAccountIds == null || _selectedAccountIds!.isEmpty) {
+      return activeAccounts;
+    }
+    return activeAccounts
+        .where((a) => _selectedAccountIds!.contains(a.id))
+        .toList();
   }
 
   void _onFilterChanged(TimeFilter filter) {
@@ -86,10 +104,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final previousExpenses = sumExpenses(previousMovements);
               final filteredBalance = netIncomeExpense(filteredMovements);
               final filteredCount = filteredMovements.length;
-              final accountsBalance = widget.db.totalAccountsBalance;
               final activeAccounts = widget.db.accounts
                   .where((a) => !a.archived)
                   .toList();
+              final selectedAccounts = _getFilteredAccounts(activeAccounts);
+              final accountsBalance = selectedAccounts.fold<double>(
+                0.0,
+                (sum, a) => sum + widget.db.getAccountBalance(a),
+              );
               final categoryExpenses = _buildCategoryExpenses(
                 filteredMovements,
                 widget.db.categories,
@@ -115,8 +137,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: StreamSpacing.md),
                     _BalanceHero(
                       accountsBalance: accountsBalance,
-                      accounts: activeAccounts,
+                      accounts: selectedAccounts,
+                      allAccounts: activeAccounts,
+                      selectedAccountIds: _selectedAccountIds,
                       db: widget.db,
+                      onAccountSelectionChanged: (ids) {
+                        setState(() => _selectedAccountIds = ids);
+                      },
                     ),
                     const SizedBox(height: StreamSpacing.lg),
                     _KpiGrid(
@@ -148,13 +175,179 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _BalanceHero extends StatelessWidget {
   final double accountsBalance;
   final List<Account> accounts;
+  final List<Account> allAccounts;
+  final Set<String>? selectedAccountIds;
   final AppDatabase db;
+  final ValueChanged<Set<String>?> onAccountSelectionChanged;
 
   const _BalanceHero({
     required this.accountsBalance,
     required this.accounts,
+    required this.allAccounts,
+    required this.selectedAccountIds,
     required this.db,
+    required this.onAccountSelectionChanged,
   });
+
+  String _selectionLabel() {
+    if (selectedAccountIds == null || selectedAccountIds!.isEmpty) {
+      return 'Tutti i conti';
+    }
+    final count = selectedAccountIds!.length;
+    if (count == 1) return '1 conto selezionato';
+    return '$count conti selezionati';
+  }
+
+  void _showAccountFilterSheet(BuildContext context) {
+    final p = context.$palette;
+    final activeAccounts = allAccounts;
+    Set<String> workingIds = Set.from(selectedAccountIds ?? activeAccounts.map((a) => a.id));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: StreamSpacing.lg,
+                  right: StreamSpacing.lg,
+                  top: StreamSpacing.lg,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + StreamSpacing.lg,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Seleziona conti per Patrimonio',
+                          style: StreamTypography.h3,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: StreamSpacing.md),
+                    InkWell(
+                      key: const Key('dashboard_net_worth_all_accounts_option'),
+                      onTap: () {
+                        setSheetState(() {
+                          workingIds = activeAccounts.map((a) => a.id).toSet();
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              workingIds.length == activeAccounts.length
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              color: p.primary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: StreamSpacing.md),
+                            Text('Tutti i conti', style: StreamTypography.bodyBold),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    ...activeAccounts.map((account) {
+                      final isSelected = workingIds.contains(account.id);
+                      return InkWell(
+                        key: Key('dashboard_net_worth_account_option_${account.id}'),
+                        onTap: () {
+                          setSheetState(() {
+                            if (isSelected) {
+                              workingIds.remove(account.id);
+                            } else {
+                              workingIds.add(account.id);
+                            }
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                                color: p.primary,
+                                size: 22,
+                              ),
+                              const SizedBox(width: StreamSpacing.md),
+                              Icon(
+                                StreamIconLibrary.getAccountIcon(account.iconKey),
+                                size: 18,
+                                color: Color(account.color),
+                              ),
+                              const SizedBox(width: StreamSpacing.sm),
+                              Expanded(
+                                child: Text(
+                                  account.name,
+                                  style: StreamTypography.bodyBold,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                formatMovementCurrency(
+                                  db.getAccountBalance(account),
+                                  showPositiveSign: true,
+                                ),
+                                style: StreamTypography.captionBold.copyWith(
+                                  color: p.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: StreamSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            key: const Key('dashboard_net_worth_account_filter_cancel'),
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Annulla'),
+                          ),
+                        ),
+                        const SizedBox(width: StreamSpacing.md),
+                        Expanded(
+                          child: FilledButton(
+                            key: const Key('dashboard_net_worth_account_filter_apply'),
+                            onPressed: () {
+                              final finalIds = workingIds.length == activeAccounts.length
+                                  ? null
+                                  : workingIds;
+                              onAccountSelectionChanged(finalIds);
+                              PreferencesService.saveDashboardNetWorthAccountIds(
+                                finalIds ?? <String>{},
+                              );
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('Applica'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +359,6 @@ class _BalanceHero extends StatelessWidget {
     final valueColor = accountsBalance >= 0 ? p.income : p.expense;
     final isDense = effectiveStyle == StreamKpiStyleId.dense;
 
-    // Use shared chrome resolver for consistent KPI style rendering.
     final chrome = resolveKpiChrome(
       p,
       valueColor,
@@ -226,7 +418,48 @@ class _BalanceHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Patrimonio netto', style: chrome.titleStyle),
+          Row(
+            children: [
+              Expanded(
+                child: Text('Patrimonio netto', style: chrome.titleStyle),
+              ),
+              GestureDetector(
+                key: const Key('dashboard_net_worth_account_filter_button'),
+                onTap: () => _showAccountFilterSheet(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StreamSpacing.sm,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: p.surfaceElevated.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(StreamRadius.full),
+                    border: Border.all(
+                      color: p.divider.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.tune, size: 12, color: p.textSecondary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          _selectionLabel(),
+                          style: StreamTypography.micro.copyWith(
+                            color: p.textSecondary,
+                            fontSize: 9,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
           SizedBox(height: chrome.valueSpacing),
           content,
         ],

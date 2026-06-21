@@ -6,16 +6,13 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11k completata: Dashboard Net Worth Account Selection — l'utente puo selezionare quali conti attivi includere nel patrimonio Dashboard tramite bottom sheet con checkbox. Default "Tutti i conti". Preferenza salvata via PreferencesService. Healing automatico per conti archiviati/eliminati. Pill conti hero mostrano solo conti selezionati (max 3 + "+N altri").
+- V0.11k fix tab: label SegmentedButton (`Giorno`, `Sett.`, `Mese`, `Anno`, `Intervallo`) non vanno piu a capo grazie a `FittedBox`.
+- V0.11k fix form: pulsanti bottom `Salva`/`Trasferisci` rimossi; azione primaria e l'icona check in alto.
 - V0.11j-fix4 completata: hero Patrimonio senza duplicazione conti, lista pill compatta con `+N altri`, titolo semplificato e layout pill piu robusto su viewport stretti.
 - V0.11j-fix4 completata anche sul lato KPI: `Automatico` non e piu un clone di `Minimal`, ma una scelta consigliata dal tema via `resolveEffectiveKpiStyle(...)`; in Aurora la hero usa davvero il layout split.
-- V0.11j completata: lo `chart_style` scelto in Impostazioni ora cambia davvero card, barre, donut, legenda, empty state e superfici heatmap collegate ai grafici senza toccare dati o calcoli.
-- Fix di audit incluso in V0.11j: le chart visibility preferences ora filtrano davvero il render di ogni card singola, quindi cambiare stile non riattiva grafici nascosti e nascondere un grafico non resetta lo stile.
-- V0.11i-fix3 completata: la sheet dettaglio conto ora e movement-first. Header, azioni, filtro periodo e mini-summary occupano meno spazio; il `Riepilogo dettagliato` e collassabile e la lista movimenti entra nel primo viewport molto prima.
-- V0.11i-fix2 completata: gli stili KPI globali hanno copertura coerente anche nei riepiloghi condivisi e nelle card legacy gia migrate al tema.
-- V0.11i-fix1 completata: summary periodali, heatmap, flow add/edit, picker e suggerimenti movimento usano superfici/palette dinamiche senza cambiare logica business.
-- V0.11j-fix1 completata: Hero KPI Cards con `StreamKpiEmphasis` (normal/hero), High Contrast hero giallo/nero, key stabili per tutte le schermate. KPI style e Chart style restano separati. `flutter test`: 1053 passati, ~1 skipped.
-- QA locale aggiornata: `flutter analyze` resta info-only per warning storici fuori scope; `flutter test` full suite verde con `1059` passati e `~1` skipped.
-- Residuo principale fuori sprint: warning analyzer legacy in `database.dart`, `backup_screen.dart`, `categories_screen.dart` e `theme_test.dart`, ma nessun errore bloccante nell’area Conti/Movimenti/KPI.
+- V0.11j-fix1 completata: Hero KPI Cards con `StreamKpiEmphasis` (normal/hero), High Contrast hero giallo/nero, key stabili per tutte le schermate.
+- QA locale aggiornata: `flutter test` full suite verde con `1059` passati e `~1` skipped.
 
 - Profili separati e isolamento DB sono attivi e verificati.
 - Il flow guidato `+ Movimento` copre creazione e modifica con prefill per Entrata, Spesa e Trasferimento.
@@ -35,15 +32,15 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale multi-tema su combinazioni `theme + kpi_style automatic/minimal + chart_style + hidden_chart_ids` in Dashboard, Grafici e heatmap
-2. Pulizia warning analyzer storici fuori scope
-3. Verifica visuale finale su device reale della hero Patrimonio con nomi conto lunghi e tanti conti attivi
+1. QA manuale selezione conti Dashboard: verifica comportamento con conti archiviati/eliminati, multi-profilo
+2. Verifica visiva tab `Intervallo` non va a capo su viewport stretti (320px)
+3. Verifica form movimento/trasferimento: azioni top funzionano, nessun bottom button residuo
 
 ## Prossimo Sprint Consigliato
 
-1. Pulizia warning analyzer/documentazione storica incoerente dopo la chiusura V0.11j
-2. QA manuale su device reale per flussi più sensibili
-3. UI polish residui sulle combinazioni tema/grafici
+1. QA manuale su device reale per selezione conti patrimonio
+2. Eventuali test di integrazione per account selection (multi-profilo)
+3. UI polish residui
 
 ## Regole Git
 

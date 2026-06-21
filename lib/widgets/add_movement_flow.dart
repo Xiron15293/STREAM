@@ -310,10 +310,6 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
     }
   }
 
-  String _submitLabel() {
-    return _type == MovementType.transfer ? 'Trasferisci' : 'Salva';
-  }
-
   String _submitTooltip() {
     return _type == MovementType.transfer
         ? 'Conferma trasferimento'
@@ -995,13 +991,7 @@ class _AddMovementFlowState extends State<AddMovementFlow> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: StreamSpacing.lg),
-                      FilledButton(
-                        key: const Key('movement_submit_button'),
-                        onPressed: _submit,
-                        child: Text(_submitLabel()),
-                      ),
-                      const SizedBox(height: StreamSpacing.md),
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),

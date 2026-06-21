@@ -839,4 +839,13 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 
 ---
 
+## V0.11k — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
+
+> **Data**: 2026-06-21
+> **Tipo**: Feature + UI fix
+> **Stato**: ✅ Completata
+> **Interventi**: Selezione multipla conti per patrimonio Dashboard, fix wrapping tab SegmentedButton, azioni form movimento/trasferimento unificate (check top, no bottom button)
+> **Test**: 1059/1059 pass | `flutter analyze` 0 errori
+> **File modificati**: `preferences_service.dart`, `dashboard_screen.dart`, `time_filter_bar.dart`, `add_movement_flow.dart`, `movement_form.dart`, `calculator_test_helpers.dart`, `add_movement_flow_test.dart`, `movement_edit_theme_test.dart`, `calculator_amount_pad_test.dart`, docs
+
 Vedi `CHANGELOG.md` per dettaglio completo di V0.5.x, V0.4.x, V0.3.x, V0.2, V0.1.
