@@ -2488,6 +2488,37 @@ flutter test --no-pub    → 627/627 All tests passed
 
 ---
 
+## V0.11k-fix5 — Profile-Safe Backup Restore Net Worth Preferences
+
+### Executive Summary
+
+- Chiuso il P1 audit su backup/restore preferenze Patrimonio: `netWorthAccountIds` non puo piu finire sulla chiave globale legacy durante restore.
+- `activeProfileId` viene passato da `SettingsScreen` a `BackupScreen` e quindi a `BackupService` per export, pre-restore backup e restore.
+- Il restore sanitizza gli ID contro i conti validi post-restore e, se tutti invalidi, riporta il profilo corrente a `Tutti i conti`.
+- Con `activeProfileId == null` il fallback e sicuro: nessuna chiave globale legacy viene creata.
+
+### Delta Changes
+| Area | File | Modifica |
+|-------|------|----------|
+| Backup service | `lib/services/backup_service.dart` | `exportToJson`, `restore`, `createPreResetBackup` accettano `activeProfileId`; restore profile-scoped e fallback sicuro |
+| Backup UI | `lib/screens/backup_screen.dart` | Propagazione `activeProfileId` a export, pre-restore backup e restore |
+| Settings wiring | `lib/screens/settings_screen.dart` | `BackupScreen(activeProfileId: ...)` e pre-reset backup default scoped |
+| Regression test | `test/backup_restore_net_worth_profile_scope_test.dart` | export scoped, restore scoped, no legacy key, invalid ids, null fallback |
+| Wiring test | `test/backup_screen_profile_id_test.dart` | verifica propagazione `activeProfileId` in export/pre-restore/restore |
+
+### Test Results
+- `flutter test test/backup_preferences_test.dart`: PASS
+- `flutter test test/restore_preferences_test.dart`: PASS
+- `flutter test test/preferences_reset_profile_scope_test.dart`: PASS
+- `flutter test test/dashboard_net_worth_profile_scope_test.dart`: PASS
+- `flutter test test/backup_service_test.dart`: PASS
+- `flutter test test/backup_restore_net_worth_profile_scope_test.dart`: PASS
+- `flutter test test/backup_screen_profile_id_test.dart`: PASS
+- `flutter test`: **1091/1091 All tests passed** (`~1` skipped)
+- Repo hygiene: `Package.resolved` ricompare ancora come deleted in alcune run Flutter locali; ripristinato prima della chiusura patch
+
+---
+
 ## V0.11k — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
 
 ### Executive Summary

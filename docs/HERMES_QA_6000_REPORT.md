@@ -86,6 +86,14 @@
 - **Nuovo test**: `test/archive_top_tabs_single_line_test.dart` (3 casi)
 - **Nessuna modifica DB/schema/import/export/calcoli/KPI/chart style**
 
+## Dati aggiornati V0.11k-fix5
+
+- **Test totali**: 1091 passed, ~1 skipped
+- **Nuovi test**: `test/backup_restore_net_worth_profile_scope_test.dart`, `test/backup_screen_profile_id_test.dart`
+- **Fix testati**: backup/restore Patrimonio profile-safe, nessuna chiave globale legacy creata, fallback sicuro con `activeProfileId == null`
+- **Repo hygiene**: `Package.resolved` puo ricomparire deleted dopo alcune run Flutter locali; ripristinato prima della chiusura patch
+- **Nessuna modifica DB/schema/import/export/saldi/calcoli**
+
 ## Dati aggiornati V0.11k
 
 - **Test totali**: 1059 passed, ~1 skipped

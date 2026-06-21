@@ -51,7 +51,12 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: 'Apri la schermata di esportazione e ripristino',
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => BackupScreen(db: db)),
+                      MaterialPageRoute(
+                        builder: (_) => BackupScreen(
+                          db: db,
+                          activeProfileId: activeProfileId,
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -271,7 +276,14 @@ class SettingsScreen extends StatelessWidget {
     if (typedOk != true || !context.mounted) return;
 
     try {
-      await (createPreResetBackup ?? BackupService.createPreResetBackup)(db);
+      if (createPreResetBackup != null) {
+        await createPreResetBackup!(db);
+      } else {
+        await BackupService.createPreResetBackup(
+          db,
+          activeProfileId: activeProfileId,
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
       final proceed = await showDialog<bool>(

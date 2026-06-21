@@ -857,6 +857,15 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 > **Test**: 1062/1062 pass | `flutter analyze` 0 errori
 > **File modificati**: `archive_screen.dart`, `archive_top_tabs_single_line_test.dart`, docs
 
+## V0.11k-fix5 — Profile-Safe Backup Restore Net Worth Preferences
+
+> **Data**: 2026-06-21
+> **Tipo**: Hardening fix
+> **Stato**: ✅ Completata
+> **Interventi**: `BackupScreen` riceve `activeProfileId`; export, pre-restore backup e restore Patrimonio usano chiavi scoped `dashboard_net_worth_account_ids_<profileId>`; nessuna chiave globale legacy creata dal restore; fallback sicuro con `activeProfileId == null`
+> **Test**: 1091/1091 pass (`~1` skipped)
+> **File modificati**: `backup_service.dart`, `backup_screen.dart`, `settings_screen.dart`, `restore_preferences_test.dart`, `settings_profiles_visibility_test.dart`, `backup_restore_net_worth_profile_scope_test.dart`, `backup_screen_profile_id_test.dart`, docs
+
 ## V0.11k — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
 
 > **Data**: 2026-06-21

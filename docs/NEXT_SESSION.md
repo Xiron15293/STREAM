@@ -6,6 +6,9 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11k-fix5 completata: backup/restore Patrimonio Dashboard ora e profile-safe end-to-end; `activeProfileId` passa da `SettingsScreen` a `BackupScreen` e poi a `BackupService` per export, pre-restore backup e restore.
+- V0.11k-fix5 completata anche sul fallback sicuro: se `activeProfileId` e nullo, il restore non crea o usa la chiave legacy `dashboard_net_worth_account_ids`.
+- QA locale aggiornata: `flutter test` full suite verde con `1091` passati e `~1` skipped; `Package.resolved` puo ancora comparire deleted dopo alcune run Flutter locali ma viene ripristinato senza commit.
 - V0.11k-fix2 completata: la selezione conti Patrimonio Dashboard e ora profile-scoped, sanificata contro i conti validi del profilo corrente e ricaricata correttamente al cambio profilo.
 - V0.11k-fix2 completata anche sul reset runtime: `clearForReset()` riallinea SharedPreferences e notifier in-memory per tema, KPI, chart style, chart visibility, layout categorie, vista movimenti e filtro conti patrimonio.
 - QA locale aggiornata: `flutter test` full suite verde con `1068` passati e `~1` skipped; `android/.kotlin/` non si e ripresentato dopo i test.
@@ -36,9 +39,9 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale selezione conti Dashboard: verifica comportamento con conti archiviati/eliminati e cambio profilo su device reale
-2. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
-3. Verifica visiva tab Archivio (`Movimenti`, `Categorie`, `Benefic.`) su viewport stretti
+1. QA manuale backup/restore multi-profilo su device reale: export da profilo B, restore su profilo B, verifica assenza bleed su profilo A
+2. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+3. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
 
 ## Prossimo Sprint Consigliato
 

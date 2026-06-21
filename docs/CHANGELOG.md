@@ -7,12 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11k-fix5 — Profile-Safe Backup Restore Net Worth Preferences**
+  - `BackupService.exportToJson()`, `restore()` e `createPreResetBackup()` ora accettano `activeProfileId` e usano la selezione conti Patrimonio solo nel perimetro del profilo corrente
+  - `BackupScreen` riceve `activeProfileId` da `SettingsScreen` e lo propaga a export, pre-restore backup e restore
+  - Il restore di `netWorthAccountIds` salva o pulisce solo la chiave scoped `dashboard_net_worth_account_ids_<profileId>`; non crea piu la chiave globale legacy
+  - Fallback sicuro: se `activeProfileId` e nullo, il restore non scrive preferenze patrimonio e riallinea solo il notifier runtime a `null`
+  - Gli ID ripristinati continuano a essere sanificati contro i conti validi post-restore; se tutti invalidi, il profilo torna a `Tutti i conti`
+  - Nuovi test: `test/backup_restore_net_worth_profile_scope_test.dart`, `test/backup_screen_profile_id_test.dart`
+  - Test aggiornati: `test/restore_preferences_test.dart`, `test/settings_profiles_visibility_test.dart`
+  - Verifica finale locale: `flutter test` full suite verde con `1091` passati e `~1` skipped
+  - Repo hygiene: `Package.resolved` viene ancora marcato deleted da alcune run Flutter locali; ripristinato prima della chiusura patch, `android/.kotlin/` assente
+  - Nessuna modifica a DB/schema/migrazioni, saldi/movimenti/calcoli o feature filtri conti/categorie
+
 - **V0.11k-fix2 — Profile-Safe Net Worth Preferences and Reset Runtime Notifiers**
   - La selezione conti del Patrimonio Dashboard ora e sicura per profilo: la preferenza usa chiavi scoped `dashboard_net_worth_account_ids_<profileId>` invece di applicare ciecamente una selezione globale
   - `DashboardScreen` ricarica la selezione quando cambia `activeProfileId`, evitando eredita stale tra profili anche se il widget resta montato
   - La label filtro Patrimonio e i pill della hero si basano solo sui conti validi attivi/non archiviati del profilo corrente, non sugli ID raw salvati
   - Gli ID selezionati vengono sanificati contro i conti correnti; se dopo sanitize non resta nulla, la preferenza viene pulita e la UI torna a `Tutti i conti`
-  - `PreferencesService.clearForReset()` riallinea anche i runtime notifier principali ai default progetto (`themeIdNotifier`, `kpiStyleNotifier`, `chartStyleNotifier`, `hiddenChartIdsNotifier`, `netWorthAccountIdsNotifier`, `movementsViewModeNotifier`, `categoryLayoutNotifier`)
+  - `PreferencesService.clearForReset()` riallinea anche i runtime notifier principali ai default progetto (`themeIdNotifier`, `kpiStyleNotifier`, `chartStyleNotifier`, `hiddenChartIdsNotifier`, `netWorthAccountIdsNotifier`, `categoryLayoutNotifier`); il riferimento storico a `movementsViewModeNotifier` e stato rimosso perche la preferenza non esiste piu
   - Nuovi test: `test/dashboard_net_worth_account_selection_test.dart`, `test/dashboard_net_worth_profile_scope_test.dart`, `test/preferences_reset_notifiers_test.dart`
   - Regressioni verificate: `dashboard_filtered_test`, `qa_extensive_test` e full suite verde con `1068` passati e `~1` skipped
   - Repo hygiene: `android/.kotlin/` non si e ripresentato dopo i test, quindi nessuna modifica a `.gitignore`

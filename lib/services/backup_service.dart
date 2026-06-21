@@ -32,6 +32,16 @@ class ValidationResult {
 class BackupService {
   static const int currentVersion = 2;
 
+  static String? _resolveProfileId({
+    String? activeProfileId,
+    String? profileId,
+  }) {
+    final candidate = activeProfileId ?? profileId;
+    if (candidate == null) return null;
+    final trimmed = candidate.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
   static Future<String> _backupDirPath() async {
     try {
       final dir = Directory(p.join(await getDatabasesPath(), 'backups'));
@@ -48,15 +58,24 @@ class BackupService {
     }
   }
 
-  static Future<String> exportToJson(AppDatabase db, {String? profileId}) async {
+  static Future<String> exportToJson(
+    AppDatabase db, {
+    String? activeProfileId,
+    String? profileId,
+  }) async {
     final showNotes = await PreferencesService.loadShowNotes();
     final chartStyle = await PreferencesService.loadChartStyleId();
     final kpiStyle = await PreferencesService.loadKpiStyleId();
     final hiddenChartIds = await PreferencesService.loadHiddenChartIds();
-    final netWorthAccountIds =
-        await PreferencesService.loadDashboardNetWorthAccountIds(
+    final resolvedProfileId = _resolveProfileId(
+      activeProfileId: activeProfileId,
       profileId: profileId,
     );
+    final netWorthAccountIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadDashboardNetWorthAccountIds(
+            profileId: resolvedProfileId,
+          );
     final categoryLayout = await PreferencesService.loadCategoryLayout();
     final data = BackupData(
       version: currentVersion,
@@ -87,9 +106,17 @@ class BackupService {
     return encoder.convert(data.toJson());
   }
 
-  static Future<String> createPreResetBackup(AppDatabase db) async {
+  static Future<String> createPreResetBackup(
+    AppDatabase db, {
+    String? activeProfileId,
+    String? profileId,
+  }) async {
     final dirPath = await _backupDirPath();
-    final json = await exportToJson(db);
+    final json = await exportToJson(
+      db,
+      activeProfileId: activeProfileId,
+      profileId: profileId,
+    );
     final now = DateTime.now();
     final filename =
         'backup_pre_reset_${now.year}_${now.month.toString().padLeft(2, '0')}_${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}_${now.minute.toString().padLeft(2, '0')}.json';
@@ -268,7 +295,12 @@ class BackupService {
     return null; // valid
   }
 
-  static Future<void> restore(AppDatabase db, BackupData data) async {
+  static Future<void> restore(
+    AppDatabase db,
+    BackupData data, {
+    String? activeProfileId,
+    String? profileId,
+  }) async {
     final snapshot = _buildSnapshot(data);
     final sqlite = db.sqliteService;
 
@@ -368,19 +400,32 @@ class BackupService {
         if (s.categoryLayout != null) {
           await PreferencesService.saveCategoryLayout(s.categoryLayout!);
         }
-        if (s.netWorthAccountIds != null && s.netWorthAccountIds!.isNotEmpty) {
-          final validIds = s.netWorthAccountIds!
-              .where((id) => snapshot.accounts.any((a) => a.id == id))
-              .toList();
-          if (validIds.isNotEmpty) {
-            await PreferencesService.saveDashboardNetWorthAccountIds(
-              validIds.toSet(),
-            );
+        final resolvedProfileId = _resolveProfileId(
+          activeProfileId: activeProfileId,
+          profileId: profileId,
+        );
+        if (resolvedProfileId != null) {
+          if (s.netWorthAccountIds != null && s.netWorthAccountIds!.isNotEmpty) {
+            final validIds = s.netWorthAccountIds!
+                .where((id) => snapshot.accounts.any((a) => a.id == id))
+                .toList();
+            if (validIds.isNotEmpty) {
+              await PreferencesService.saveDashboardNetWorthAccountIds(
+                validIds.toSet(),
+                profileId: resolvedProfileId,
+              );
+            } else {
+              await PreferencesService.clearDashboardNetWorthAccountSelection(
+                profileId: resolvedProfileId,
+              );
+            }
           } else {
-            await PreferencesService.clearDashboardNetWorthAccountSelection();
+            await PreferencesService.clearDashboardNetWorthAccountSelection(
+              profileId: resolvedProfileId,
+            );
           }
         } else {
-          await PreferencesService.clearDashboardNetWorthAccountSelection();
+          PreferencesService.netWorthAccountIdsNotifier.value = null;
         }
       }
 

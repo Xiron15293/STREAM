@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
@@ -9,12 +10,31 @@ import '../data/preferences_service.dart';
 import '../services/backup_service.dart';
 import '../services/ifinance_csv_import_service.dart';
 import '../services/one_money_csv_import_service.dart';
+import '../models/backup_data.dart';
 import '../theme.dart';
+
+typedef BackupJsonExporter =
+    Future<String> Function(AppDatabase db, {String? activeProfileId});
+typedef BackupDataRestorer =
+    Future<void> Function(
+      AppDatabase db,
+      BackupData data, {
+      String? activeProfileId,
+    });
 
 class BackupScreen extends StatefulWidget {
   final AppDatabase db;
+  final String? activeProfileId;
+  final BackupJsonExporter? exportBackupJson;
+  final BackupDataRestorer? restoreBackupData;
 
-  const BackupScreen({super.key, required this.db});
+  const BackupScreen({
+    super.key,
+    required this.db,
+    this.activeProfileId,
+    this.exportBackupJson,
+    this.restoreBackupData,
+  });
 
   @override
   State<BackupScreen> createState() => _BackupScreenState();
@@ -27,6 +47,30 @@ class _BackupScreenState extends State<BackupScreen> {
   String? _lastExportPath;
   List<String> _backupFiles = [];
   String? _importError;
+
+  Future<String> _exportJson() {
+    return (widget.exportBackupJson ?? BackupService.exportToJson)(
+      widget.db,
+      activeProfileId: widget.activeProfileId,
+    );
+  }
+
+  Future<void> _restoreBackup(BackupData data) {
+    return (widget.restoreBackupData ?? BackupService.restore)(
+      widget.db,
+      data,
+      activeProfileId: widget.activeProfileId,
+    );
+  }
+
+  @visibleForTesting
+  Future<String> exportJsonForTesting() => _exportJson();
+
+  @visibleForTesting
+  Future<String> preRestoreJsonForTesting() => _exportJson();
+
+  @visibleForTesting
+  Future<void> restoreBackupForTesting(BackupData data) => _restoreBackup(data);
 
   @override
   void initState() {
@@ -76,7 +120,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
     try {
       final dirPath = await _backupDirPath();
-      final json = await BackupService.exportToJson(widget.db);
+      final json = await _exportJson();
       final now = DateTime.now();
       final filename =
           'backup_${now.year}_${now.month.toString().padLeft(2, '0')}_${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}_${now.minute.toString().padLeft(2, '0')}.json';
@@ -115,7 +159,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
   Future<String> createPreRestoreBackup() async {
     final dirPath = await _backupDirPath();
-    final json = await BackupService.exportToJson(widget.db);
+    final json = await _exportJson();
     final now = DateTime.now();
     final filename =
         'backup_pre_restore_${now.year}_${now.month.toString().padLeft(2, '0')}_${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}_${now.minute.toString().padLeft(2, '0')}.json';
@@ -320,7 +364,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
     try {
       await createPreRestoreBackup();
-      await BackupService.restore(widget.db, data);
+      await _restoreBackup(data);
 
       if (mounted) {
         setState(() => _importing = false);

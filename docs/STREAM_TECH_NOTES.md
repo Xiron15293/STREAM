@@ -1429,11 +1429,18 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 ## Dashboard Net Worth Account Selection (V0.11k)
 
 ### Preferenza
-- Chiave: `dashboard_net_worth_account_ids` (SharedPreferences)
+- Chiave scoped: `dashboard_net_worth_account_ids_<profileId>` (SharedPreferences)
+- La chiave globale legacy `dashboard_net_worth_account_ids` non deve piu essere creata dai flussi di backup/restore Patrimonio
 - Tipo: `List<String>` (serializzata come `Set<String>?`)
 - null/assente/empty = Tutti i conti
 - Notifier: `PreferencesService.netWorthAccountIdsNotifier`
 - Metodi: `loadDashboardNetWorthAccountIds()`, `saveDashboardNetWorthAccountIds()`, `clearDashboardNetWorthAccountSelection()`
+
+### Backup/restore profile-safe (V0.11k-fix5)
+- `BackupService.exportToJson(..., activeProfileId:)` legge `netWorthAccountIds` solo dal profilo corrente
+- `BackupService.restore(..., activeProfileId:)` salva o pulisce `netWorthAccountIds` solo sul profilo corrente dopo sanitize contro i conti validi post-restore
+- `BackupScreen` riceve `activeProfileId` da `SettingsScreen` e lo propaga a export, pre-restore backup e restore
+- Fallback sicuro: se `activeProfileId` e nullo, il restore non tocca chiavi patrimonio persistite e riallinea solo `netWorthAccountIdsNotifier` a `null`
 
 ### Calcolo patrimonio
 - In `_DashboardScreenState.build()`: i `selectedAccounts` sostituiscono `activeAccounts`
