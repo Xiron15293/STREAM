@@ -7,6 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11j-fix2 — Make KPI Styles Visually Distinct**
+  - Riscritto `resolveKpiChrome()` in `stream_kpi_card.dart` con differenze visive forti per ogni stile KPI: minimal (sobrio), dense (compatto), glass (translucido), outline (bordo spesso), solid (sfondo pieno), split (fascia colore)
+  - Dashboard `_BalanceHero` ora usa lo stesso `resolveKpiChrome()` invece di duplicare la logica — chrome e layout coerenti con StreamKpiCard
+  - High Contrast: ogni stile KPI ha una variante hero specifica (giallo/nero, nero/giallo, giallo vetro, ecc.) invece dello stesso giallo piatto
+  - Pill dei conti nella hero Patrimonio si adattano automaticamente allo sfondo del chrome (bianco se bg scuro, nero se bg chiaro)
+  - `StreamKpiChrome` reso pubblico per condivisione tra widget e Dashboard
+  - `resolveKpiChrome()` reso pubblico (senza underscore) per uso cross-file
+  - KPI style e Chart style restano separati
+  - `flutter analyze`: 0 error, 0 warning
+  - `flutter test`: 1053/1053, ~1 skipped
+  - Nessuna modifica a DB/schema/migrazioni, import/export, analytics, KPI, calcoli o filtri periodo
+
+- **V0.11j-fix1 — Hero KPI Cards and Strong Theme Differentiation**
+  - Aggiunto `StreamKpiEmphasis` (`normal` / `hero`) per distinguere hero/key card dai normali KPI
+  - `_resolveChrome` aggiornato: hero emphasis produce sfondo giallo `#FFFF00` con testo nero in High Contrast, bordo bianco 1.5px
+  - Per altri temi: hero usa `surfaceElevated` + gradient accento + bordo accento 1.2px
+  - Dashboard `_BalanceHero` con override High Contrast (giallo/nero) per riconoscimento immediato
+  - Key stabili aggiunte: `dashboard_hero_kpi`, `movements_summary_kpi_grid`, `accounts_hero_kpi`, `account_detail_hero_kpi`, `categories_hero_kpi`, `beneficiaries_hero_kpi`, `heatmap_summary_kpi`
+  - Settings, MovementCard, liste, picker, form e chart card NON trasformati in KPI card
+  - KPI style e Chart style restano separati e indipendenti
+  - Nuovo test: `test/stream_kpi_card_theme_emphasis_test.dart` (5 test: emphasis, tutti gli stili, HC hero)
+  - Key aggiornate in test esistenti: `period_summary_key` → `heatmap_summary_kpi`, `account_period_summary` → `accounts_hero_kpi`, `period_heatmap_card` → `heatmap_summary_kpi`
+  - `flutter analyze`: 0 error, 0 warning
+  - `flutter test`: 1053/1053, ~1 skipped
+  - Nessuna modifica a DB/schema/migrazioni, import/export, analytics, KPI, calcoli o filtri periodo
+
 - **V0.11j — Advanced Chart Styles Settings Rollout**
   - Lo `chart_style` esistente in `PreferencesService` e ora collegato davvero ai grafici tramite `chartStyleNotifier`, rebuild live di `StreamApp` e applicazione reale dei token visuali in `StreamChartPalette`
   - `StreamChartPalette` estesa oltre i soli colori: superfici card, bordi, shadow, empty state, legenda, spessori/raggi barre, track orizzontali e geometria donut ora cambiano per stile

@@ -54,13 +54,13 @@ void main() {
     final surface = StreamSurfaceTokens.card(palette, elevated: true);
     await pumpSummary(tester, StreamThemeId.midnight);
 
-    expect(find.byKey(const Key('period_summary_card')), findsOneWidget);
+    expect(find.byKey(const Key('heatmap_summary_kpi')), findsOneWidget);
     expect(find.text('Entrate del giorno'), findsOneWidget);
     expect(find.text('Uscite del giorno'), findsOneWidget);
     expect(find.text('Saldo del giorno'), findsOneWidget);
 
     final container = tester.widget<Container>(
-      find.byKey(const Key('period_summary_card')),
+      find.byKey(const Key('heatmap_summary_kpi')),
     );
     final decoration = container.decoration as BoxDecoration;
     expect(decoration.color, surface.background);

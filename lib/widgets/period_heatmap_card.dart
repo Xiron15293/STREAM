@@ -61,7 +61,7 @@ class PeriodHeatmapCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cp = context.$chart;
     return Container(
-      key: const Key('period_heatmap_card'),
+      key: const Key('heatmap_summary_kpi'),
       padding: const EdgeInsets.all(StreamSpacing.lg),
       decoration: BoxDecoration(
         color: cp.cardBackground,

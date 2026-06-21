@@ -172,6 +172,7 @@ class MovementViewRenderer extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
         child: Column(
+          key: const Key('movements_summary_kpi_grid'),
           children: [
             PeriodSummaryCard(timeFilter: timeFilter, movements: movements),
             const SizedBox(height: StreamSpacing.md),

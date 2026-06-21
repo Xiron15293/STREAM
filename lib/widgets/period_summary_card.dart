@@ -32,7 +32,7 @@ class PeriodSummaryCard extends StatelessWidget {
         : p.textPrimary;
 
     return Container(
-      key: const Key('period_summary_card'),
+      key: const Key('heatmap_summary_kpi'),
       padding: const EdgeInsets.all(StreamSpacing.md),
       decoration: BoxDecoration(
         color: surface.background,

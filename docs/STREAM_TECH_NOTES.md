@@ -166,6 +166,14 @@
 - Separazione esplicita da KPI style: `kpiStyleNotifier` continua a governare solo le KPI card
 - Leader lines, percentuali esterne, `sectionsSpace` e collision avoidance V0.11g preservati
 
+**V0.11j-fix1 (Hero KPI Cards and Strong Theme Differentiation):**
+- `StreamKpiEmphasis` (`normal` / `hero`) per ero/key card vs normali KPI
+- High Contrast: hero card con sfondo giallo `#FFFF00`, testo nero, bordo bianco 1.5px
+- Altri temi: hero card con `surfaceElevated` + gradient accento + bordo accento 1.2px
+- Dashboard `_BalanceHero` override High Contrast
+- Key stabili su tutte le schermate: `dashboard_hero_kpi`, `accounts_hero_kpi`, `categories_hero_kpi`, `beneficiaries_hero_kpi`, `heatmap_summary_kpi`, ecc.
+- Settings, MovementCard, liste, picker, form, chart card NON trasformati in KPI card
+
 **TimeFilter rispettato:** ogni funzione in analytics_metrics accetta `TimeFilter` e filtra con `filterByTime()`. La screen ha `TimeFilterBar` con `customRangeLabel: 'Range'`.
 
 **CurrencyFormatter:** i valori precisi su barre usano `formatMovementCurrency()` dalla valuta globale.

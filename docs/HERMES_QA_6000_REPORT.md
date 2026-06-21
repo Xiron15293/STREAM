@@ -8,6 +8,7 @@
 - Delta 2026-06-21: V0.11i-fix3 confermata con account detail movement-priority UX, KPI dettagliati collassabili e full suite finale **1038 passati / 1 skipped**
 - Delta 2026-06-21: V0.11i-fix2 confermata con copertura KPI style globale allineata ai riepiloghi condivisi
 - Delta 2026-06-21: V0.11i-fix1 confermata con movement flow/theme completion, bottom sheet tematizzati e validazione finale consolidata nella stessa suite **1038 passati / 1 skipped**
+- Delta 2026-06-21: V0.11j-fix1 Hero KPI Cards (StreamKpiEmphasis, High Contrast giallo/nero, key stabili), **1053 passati / 1 skipped**
 - Delta 2026-06-20: V0.11h confermata con superfici/card/chart theme-adaptive, full suite finale **1026 passati / 1 skipped**
 - Regressione emersa durante full suite su `AccountsScreen` interactive sheet risolta senza toccare logica dati
 - Analyzer locale invariato: solo info storici, nessun errore nuovo

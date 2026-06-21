@@ -3403,6 +3403,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                 KeyedSubtree(
                   key: const Key('category_sheet_period_summary'),
                   child: Wrap(
+                    key: const Key('categories_hero_kpi'),
                     spacing: 8,
                     runSpacing: 8,
                     children: [

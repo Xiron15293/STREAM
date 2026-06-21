@@ -394,6 +394,7 @@ class _BeneficiaryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: StreamSpacing.xs),
                       Wrap(
+                        key: const Key('beneficiaries_hero_kpi'),
                         spacing: StreamSpacing.sm,
                         runSpacing: StreamSpacing.xs,
                         children: [

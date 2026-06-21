@@ -32,6 +32,15 @@
 - Verifica finale consolidata nella suite piu recente: **1038 passati / 1 skipped**
 - `flutter analyze`: nessun errore, solo info preesistenti fuori scope
 
+### Delta 2026-06-21 — V0.11j-fix1
+- Hero/KPI card differenziate: `StreamKpiEmphasis` (normal/hero), High Contrast hero giallo/nero
+- Dashboard `_BalanceHero` override High Contrast
+- Key stabili aggiunte su Dashboard, Movimenti, Conti, Categorie, Beneficiari, Heatmap
+- Settings, MovementCard, liste, picker, form, chart card NON trasformati in KPI card
+- KPI style e Chart style restano separati
+- `flutter test`: **1053 passati / 1 skipped**
+- `flutter analyze`: 0 error, 0 warning
+
 ### Delta 2026-06-20 — V0.11h
 - Theme-adaptive cards/charts verificati su Conti, Beneficiari, Categorie, Movimenti e Grafici
 - Regressione individuata e corretta nel foglio interattivo Conti su viewport piccoli

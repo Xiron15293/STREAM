@@ -62,7 +62,7 @@ void main() {
     await pumpHeatmap(tester, StreamThemeId.forest);
 
     final container = tester.widget<Container>(
-      find.byKey(const Key('period_heatmap_card')),
+      find.byKey(const Key('heatmap_summary_kpi')),
     );
     final decoration = container.decoration as BoxDecoration;
     expect(decoration.color, chartPalette.cardBackground);

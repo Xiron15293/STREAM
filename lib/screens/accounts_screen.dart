@@ -670,7 +670,7 @@ class _AccountPeriodSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.$palette;
     return Wrap(
-      key: const Key('account_period_summary'),
+      key: const Key('accounts_hero_kpi'),
       spacing: StreamSpacing.sm,
       runSpacing: StreamSpacing.sm,
       children: [
@@ -1376,6 +1376,7 @@ class _CompactAccountSummary extends StatelessWidget {
     final balanceColor = balance >= 0 ? p.income : p.expense;
 
     return Container(
+      key: const Key('account_detail_hero_kpi'),
       decoration: BoxDecoration(
         color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.md),

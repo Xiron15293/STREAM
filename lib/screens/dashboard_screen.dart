@@ -165,139 +165,98 @@ class _BalanceHero extends StatelessWidget {
     final valueColor = accountsBalance >= 0 ? p.income : p.expense;
     final isDense = kpiStyle == StreamKpiStyleId.dense;
 
-    Decoration decoration;
-    EdgeInsets padding;
-    TextStyle valueStyle;
-    Widget content;
+    // Use shared chrome resolver for consistent KPI style rendering.
+    final chrome = resolveKpiChrome(
+      p,
+      valueColor,
+      kpiStyle,
+      StreamKpiDensity.regular,
+      StreamKpiEmphasis.hero,
+    );
 
-    switch (kpiStyle) {
-      case StreamKpiStyleId.dense:
-        padding = const EdgeInsets.symmetric(
-          horizontal: StreamSpacing.lg,
-          vertical: StreamSpacing.md,
-        );
-        valueStyle = StreamTypography.h1.copyWith(color: valueColor, height: 1);
-        decoration = BoxDecoration(
-          color: p.surfaceElevated,
-          borderRadius: BorderRadius.circular(StreamRadius.lg),
-          border: Border.all(color: p.divider),
-        );
-        content = Row(
-          key: const Key('dashboard_hero_kpi_style_dense'),
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: _HeroHeading(accountsBalance: accountsBalance)),
-            const SizedBox(width: StreamSpacing.md),
-            Flexible(
-              child: Text(
-                formatMovementCurrency(accountsBalance, showPositiveSign: true),
-                key: const Key('dashboard_hero_networth_value'),
-                textAlign: TextAlign.right,
-                style: valueStyle,
-                overflow: TextOverflow.ellipsis,
-              ),
+    // Pill background and text colors adapt to the chrome background.
+    final isLightBg = chrome.backgroundColor.computeLuminance() > 0.5;
+    final pillBg = isLightBg
+        ? Colors.black.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.15);
+    final pillTextColor = isLightBg ? Colors.black87 : Colors.white;
+
+    Widget content;
+    if (isDense) {
+      content = Row(
+        key: const Key('dashboard_hero_kpi_style_dense'),
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(child: _HeroHeading(accountsBalance: accountsBalance)),
+          const SizedBox(width: StreamSpacing.md),
+          Flexible(
+            child: Text(
+              formatMovementCurrency(accountsBalance, showPositiveSign: true),
+              key: const Key('dashboard_hero_networth_value'),
+              textAlign: TextAlign.right,
+              style: chrome.valueStyle,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        );
-      case StreamKpiStyleId.glass:
-        padding = const EdgeInsets.all(StreamSpacing.xl);
-        valueStyle = StreamTypography.display.copyWith(color: valueColor);
-        decoration = BoxDecoration(
-          color: p.surfaceElevated.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(StreamRadius.xl),
-          border: Border.all(color: p.divider.withValues(alpha: 0.55)),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              p.primary.withValues(alpha: 0.18),
-              p.surface.withValues(alpha: 0.9),
-            ],
           ),
-        );
-        content = _HeroStacked(
-          accounts: accounts,
-          db: db,
-          valueStyle: valueStyle,
-          accountsBalance: accountsBalance,
-        );
-      case StreamKpiStyleId.outline:
-        padding = const EdgeInsets.all(StreamSpacing.xl);
-        valueStyle = StreamTypography.display.copyWith(color: valueColor);
-        decoration = BoxDecoration(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(StreamRadius.xl),
-          border: Border.all(
-            color: p.primary.withValues(alpha: 0.55),
-            width: 1.4,
-          ),
-        );
-        content = _HeroStacked(
-          accounts: accounts,
-          db: db,
-          valueStyle: valueStyle,
-          accountsBalance: accountsBalance,
-        );
-      case StreamKpiStyleId.solid:
-        padding = const EdgeInsets.all(StreamSpacing.xl);
-        valueStyle = StreamTypography.display.copyWith(color: p.textPrimary);
-        decoration = BoxDecoration(
-          color: p.primary.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(StreamRadius.xl),
-        );
-        content = KeyedSubtree(
-          key: const Key('dashboard_hero_kpi_style_solid'),
-          child: _HeroStacked(
-            accounts: accounts,
-            db: db,
-            valueStyle: valueStyle,
-            accountsBalance: accountsBalance,
-            forcePrimaryForeground: true,
-          ),
-        );
-      case StreamKpiStyleId.split:
-        padding = const EdgeInsets.all(StreamSpacing.xl);
-        valueStyle = StreamTypography.amountLarge.copyWith(color: valueColor);
-        decoration = BoxDecoration(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(StreamRadius.xl),
-          border: Border.all(color: p.divider),
-        );
-        content = _HeroSplit(
-          accounts: accounts,
-          db: db,
-          valueStyle: valueStyle,
-          accountsBalance: accountsBalance,
-        );
-      case StreamKpiStyleId.automatic:
-      case StreamKpiStyleId.minimal:
-        padding = const EdgeInsets.all(StreamSpacing.xl);
-        valueStyle = StreamTypography.amountLarge.copyWith(color: valueColor);
-        decoration = BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [p.primary.withValues(alpha: 0.18), p.surface],
-          ),
-          borderRadius: BorderRadius.circular(StreamRadius.xl),
-          border: Border.all(color: p.divider),
-        );
-        content = _HeroStacked(
-          accounts: accounts,
-          db: db,
-          valueStyle: valueStyle,
-          accountsBalance: accountsBalance,
-        );
+        ],
+      );
+    } else if (kpiStyle == StreamKpiStyleId.split) {
+      content = _HeroSplit(
+        accounts: accounts,
+        db: db,
+        valueStyle: chrome.valueStyle,
+        accountsBalance: accountsBalance,
+      );
+    } else {
+      content = _HeroStacked(
+        accounts: accounts,
+        db: db,
+        valueStyle: chrome.valueStyle,
+        accountsBalance: accountsBalance,
+        forcePrimaryForeground: chrome.backgroundColor.computeLuminance() < 0.3,
+      );
     }
 
     return AnimatedContainer(
       key: const Key('dashboard_hero_networth_card'),
-      duration: const Duration(milliseconds: 220),
-      padding: padding,
-      decoration: decoration,
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: isDense ? p.textPrimary : null),
-        child: content,
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: chrome.padding,
+      decoration: BoxDecoration(
+        color: chrome.backgroundColor,
+        gradient: chrome.gradient,
+        borderRadius: BorderRadius.circular(chrome.radius),
+        border: chrome.border,
+        boxShadow: chrome.shadows.isEmpty ? null : chrome.shadows,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Patrimonio netto', style: chrome.titleStyle),
+          SizedBox(height: chrome.valueSpacing),
+          content,
+          if (!isDense && kpiStyle != StreamKpiStyleId.split) ...[
+            SizedBox(height: chrome.valueSpacing),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: accounts.where((a) => !a.archived).take(5).map((account) {
+                final bal = db.getAccountBalance(account);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: pillBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${account.name} ${formatMovementCurrency(bal, showPositiveSign: true)}',
+                    style: TextStyle(fontSize: 10, color: pillTextColor),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ],
       ),
     );
   }

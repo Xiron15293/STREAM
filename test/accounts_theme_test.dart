@@ -40,7 +40,7 @@ void main() {
     await pumpScreen(tester, StreamThemeId.midnight);
     expect(find.text('Conto tema'), findsOneWidget);
     expect(
-      find.byKey(const Key('account_period_summary')),
+      find.byKey(const Key('accounts_hero_kpi')),
       findsAtLeastNWidgets(1),
     );
     expect(tester.takeException(), isNull);
