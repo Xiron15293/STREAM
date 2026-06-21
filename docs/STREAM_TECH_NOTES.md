@@ -1459,6 +1459,61 @@ KGP applicato al subprogetto `file_picker` **prima** della sua evaluation (il bl
 - `dashboard_net_worth_account_filter_apply` — Applica
 - `dashboard_net_worth_account_filter_cancel` — Annulla
 
+## Movimenti Scoped Filters (V0.11l-a)
+
+### Preferenze
+- Chiavi scoped:
+  - `movements_filter_account_ids_<profileId>`
+  - `movements_filter_category_ids_<profileId>`
+- Tipo: `List<String>` persistita come `Set<String>?`
+- `null` / assente / insieme vuoto = nessun filtro attivo
+- Notifier:
+  - `PreferencesService.movementsAccountFilterIdsNotifier`
+  - `PreferencesService.movementsCategoryFilterIdsNotifier`
+- Metodi:
+  - `loadMovementsAccountFilterIds({required profileId})`
+  - `saveMovementsAccountFilterIds(Set<String>? ids, {required profileId})`
+  - `loadMovementsCategoryFilterIds({required profileId})`
+  - `saveMovementsCategoryFilterIds(Set<String>? ids, {required profileId})`
+
+### Wiring
+- `MainScaffold` passa `activeProfileId` a `ArchiveScreen`
+- `ArchiveScreen` passa `activeProfileId` a `MovementsScreen`
+- `MovementsScreen` carica i filtri scoped in `initState()` e al cambio profilo in `didUpdateWidget()`
+
+### Regole filtro
+- Conti:
+  - entrata/uscita passa se `movement.accountId` appartiene all'insieme selezionato
+  - transfer passa se il set selezionato contiene `accountId` (origine) **oppure** `destinationAccountId` (destinazione)
+- Categorie:
+  - entrata/uscita passa se `movement.categoryId` appartiene all'insieme selezionato
+  - transfer con `categoryId` vuoto viene escluso quando il filtro categorie e attivo
+- Composizione:
+  - filtro conti e filtro categorie si combinano in `AND`
+  - nessun impatto su Dashboard, Grafici, Calendario o altre schermate
+
+### Sanitize / reset
+- Gli ID non piu validi o archiviati vengono rimossi automaticamente dalla preferenza del profilo corrente
+- `clearForReset(activeProfileId: ...)` elimina solo:
+  - `movements_filter_account_ids_<activeProfileId>`
+  - `movements_filter_category_ids_<activeProfileId>`
+- Reset senza `activeProfileId` non tocca le chiavi scoped di altri profili
+
+### Key testabili
+- `movements_filters_section`
+- `movements_account_filter_button`
+- `movements_category_filter_button`
+- `movements_account_filter_sheet`
+- `movements_account_filter_all_option`
+- `movements_account_filter_option_<accountId>`
+- `movements_account_filter_apply`
+- `movements_account_filter_cancel`
+- `movements_category_filter_sheet`
+- `movements_category_filter_all_option`
+- `movements_category_filter_option_<categoryId>`
+- `movements_category_filter_apply`
+- `movements_category_filter_cancel`
+
 ## Tab Segmented single-line fix (V0.11k)
 - Label dei `SegmentedButton` in `TimeFilterBar` avvolte in `FittedBox(fit: BoxFit.scaleDown, child: Text(maxLines:1, softWrap:false))`
 - Previene wrapping di `Intervallo` su viewport stretti

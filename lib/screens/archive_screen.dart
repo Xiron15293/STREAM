@@ -8,8 +8,9 @@ import 'beneficiaries_screen.dart';
 
 class ArchiveScreen extends StatefulWidget {
   final AppDatabase db;
+  final String? activeProfileId;
 
-  const ArchiveScreen({super.key, required this.db});
+  const ArchiveScreen({super.key, required this.db, this.activeProfileId});
 
   @override
   State<ArchiveScreen> createState() => _ArchiveScreenState();
@@ -91,6 +92,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                   MovementsScreen(
                     key: const Key('archive_movements_screen'),
                     db: widget.db,
+                    activeProfileId: widget.activeProfileId,
                   ),
                   AccountsScreen(
                     key: const Key('archive_accounts_screen'),

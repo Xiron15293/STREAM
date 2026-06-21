@@ -2557,3 +2557,34 @@ flutter test --no-pub    → 627/627 All tests passed
 - Chart style / KPI style / analytics / calcoli non modificati
 - Nessuno skip aggiunto
 - Nessun commit/push
+
+---
+
+## V0.11l-a — Movimenti Scoped Filters
+
+### Executive Summary
+
+- Aggiunti filtri scoped solo alla schermata Movimenti per conti e categorie.
+- Persistenza profile-safe via SharedPreferences su chiavi `movements_filter_account_ids_<profileId>` e `movements_filter_category_ids_<profileId>`.
+- I trasferimenti restano inclusi dal filtro conti quando matchano origine o destinazione; il filtro categorie esclude i trasferimenti uncategorized quando attivo.
+- Il reset profilo pulisce solo i filtri Movimenti del profilo corrente.
+
+### Delta Changes
+| Area | File | Modifica |
+|-------|------|----------|
+| Preferenze | `lib/data/preferences_service.dart` | nuovi notifier/metodi/load-save per filtri Movimenti scoped + clearForReset profile-safe |
+| Wiring Archivio | `lib/main.dart`, `lib/screens/archive_screen.dart` | propagazione `activeProfileId` fino a `MovementsScreen` |
+| Movimenti UI | `lib/screens/movements_screen.dart` | sezione `Filtri`, bottom sheet conti/categorie, sanitize live, applicazione logica AND |
+| New tests | `test/movements_account_category_filters_test.dart` | default, transfer semantics, AND logic, label, scope, sanitize |
+| Regression fix | `test/qa_movements_test.dart`, `test/add_movement_flow_test.dart` | assert robuste basate su key invece che su testo condiviso |
+
+### Test Results
+- `flutter test test/movements_account_category_filters_test.dart`: PASS
+- `flutter test test/preferences_reset_profile_scope_test.dart`: PASS
+- `flutter test test/dashboard_net_worth_profile_scope_test.dart`: PASS
+- `flutter test test/movements_view_modes_test.dart`: PASS
+- `flutter test test/show_notes_live_preference_test.dart`: PASS
+- `flutter test test/qa_movements_test.dart`: PASS
+- `flutter test test/qa_extensive_test.dart`: PASS
+- `flutter test`: **1100/1100 All tests passed** (`~1` skipped)
+- `flutter analyze`: nessun warning/error nuovo; restano **34 info pre-esistenti**

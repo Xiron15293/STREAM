@@ -1426,7 +1426,7 @@ void main() {
     await tester.tap(find.text('Trasferimento'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tutte le categorie'), findsNothing);
+    expect(find.byKey(const Key('add_movement_category_step')), findsNothing);
     expect(find.text('Conto origine'), findsOneWidget);
     expect(find.text('Conto destinazione'), findsOneWidget);
     await tapVisible(

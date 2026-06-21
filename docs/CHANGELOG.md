@@ -1496,6 +1496,42 @@ Nessun bug prodotto confermato nel reset. I failure erano dovuti a finder fragil
 
 ---
 
+## [0.11l-a] - 2026-06-21 — Movimenti Scoped Filters
+
+### Added
+- **Scoped filters solo per Movimenti**: nuova sezione `Filtri` nella schermata Movimenti con due `ActionChip` dedicati a conti e categorie.
+  - Filtro conti: include entrate/uscite per `accountId` selezionato e include i trasferimenti se origine **o** destinazione appartengono ai conti selezionati.
+  - Filtro categorie: filtra entrate/uscite per `categoryId`; i trasferimenti senza categoria restano esclusi quando il filtro categorie è attivo.
+  - Logica combinata in `AND` tra filtro conti e filtro categorie.
+- **Preferenze profile-scoped per Movimenti**:
+  - `movements_filter_account_ids_<profileId>`
+  - `movements_filter_category_ids_<profileId>`
+- **Sanitize automatico**: account/categorie archiviati o non più validi vengono rimossi automaticamente dalla selezione persistita del profilo corrente.
+- **Nuovi test dedicati**: `test/movements_account_category_filters_test.dart` copre default, label dinamiche, AND logic, transfer semantics, profile scope e sanitize degli ID invalidi.
+
+### Changed
+- `MovementsScreen` ora riceve e usa `activeProfileId` per caricare/salvare i filtri scoped del profilo attivo.
+- `ArchiveScreen` e `MainScaffold` propagano `activeProfileId` fino alla tab Movimenti dell'Archivio.
+- `clearForReset(activeProfileId: ...)` pulisce anche i filtri Movimenti del solo profilo corrente, senza toccare altri profili.
+- Quando un periodo contiene movimenti ma i filtri scoped azzerano il risultato, la schermata continua a usare il renderer standard per mostrare correttamente lo stato vuoto "da filtro" senza degradare il comportamento della heatmap.
+
+### Fixed
+- Regressione test/UI: alcuni test che verificavano l'assenza del testo `Tutte le categorie` sono stati resi robusti rispetto al nuovo chip filtro della schermata sottostante usando key strutturali del flow movimento.
+
+### QA
+- `flutter test test/movements_account_category_filters_test.dart`: PASS
+- `flutter test test/preferences_reset_profile_scope_test.dart`: PASS
+- `flutter test test/dashboard_net_worth_profile_scope_test.dart`: PASS
+- `flutter test test/movements_view_modes_test.dart`: PASS
+- `flutter test test/show_notes_live_preference_test.dart`: PASS
+- `flutter test test/qa_movements_test.dart`: PASS
+- `flutter test test/qa_extensive_test.dart`: PASS
+- `flutter test`: **1100/1100 All tests passed** (`~1` skipped)
+- `flutter analyze`: nessun warning/error nuovo; restano **34 info pre-esistenti** del repo
+- Repo hygiene: `Package.resolved` può ancora comparire deleted dopo alcune run Flutter locali; ripristinato prima della chiusura patch
+
+---
+
 ## [0.11k] - 2026-06-21 — Dashboard Net Worth Account Selection + Fix UI Tabs + Unified Form Actions
 
 ### Added

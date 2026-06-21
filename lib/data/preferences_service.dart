@@ -185,9 +185,19 @@ class PreferencesService {
   static const _netWorthAccountIdsKey = 'dashboard_net_worth_account_ids';
   static const _netWorthAccountIdsKeyPrefix =
       'dashboard_net_worth_account_ids_';
+  static const _movementsAccountFilterIdsKeyPrefix =
+      'movements_filter_account_ids_';
+  static const _movementsCategoryFilterIdsKeyPrefix =
+      'movements_filter_category_ids_';
   static const _hiddenChartIdsKey = 'hidden_chart_ids';
 
   static final netWorthAccountIdsNotifier = ValueNotifier<Set<String>?>(null);
+  static final movementsAccountFilterIdsNotifier = ValueNotifier<Set<String>?>(
+    null,
+  );
+  static final movementsCategoryFilterIdsNotifier = ValueNotifier<Set<String>?>(
+    null,
+  );
   static final hiddenChartIdsNotifier = ValueNotifier<Set<String>>({});
 
   static String _dashboardNetWorthAccountIdsKey({String? profileId}) {
@@ -195,6 +205,14 @@ class PreferencesService {
       return _netWorthAccountIdsKey;
     }
     return '$_netWorthAccountIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _movementsAccountFilterIdsKey({required String profileId}) {
+    return '$_movementsAccountFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _movementsCategoryFilterIdsKey({required String profileId}) {
+    return '$_movementsCategoryFilterIdsKeyPrefix${profileId.trim()}';
   }
 
   static Future<Set<String>?> loadDashboardNetWorthAccountIds({
@@ -227,6 +245,64 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_dashboardNetWorthAccountIdsKey(profileId: profileId));
     netWorthAccountIdsNotifier.value = null;
+  }
+
+  static Future<Set<String>?> loadMovementsAccountFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _movementsAccountFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    movementsAccountFilterIdsNotifier.value =
+        result == null || result.isEmpty ? null : result;
+    return movementsAccountFilterIdsNotifier.value;
+  }
+
+  static Future<void> saveMovementsAccountFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _movementsAccountFilterIdsKey(profileId: profileId);
+    final normalized = ids == null || ids.isEmpty ? null : ids;
+    if (normalized == null) {
+      await prefs.remove(key);
+      movementsAccountFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, normalized.toList());
+    movementsAccountFilterIdsNotifier.value = normalized;
+  }
+
+  static Future<Set<String>?> loadMovementsCategoryFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _movementsCategoryFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    movementsCategoryFilterIdsNotifier.value =
+        result == null || result.isEmpty ? null : result;
+    return movementsCategoryFilterIdsNotifier.value;
+  }
+
+  static Future<void> saveMovementsCategoryFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _movementsCategoryFilterIdsKey(profileId: profileId);
+    final normalized = ids == null || ids.isEmpty ? null : ids;
+    if (normalized == null) {
+      await prefs.remove(key);
+      movementsCategoryFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, normalized.toList());
+    movementsCategoryFilterIdsNotifier.value = normalized;
   }
 
   static Future<Set<String>> loadHiddenChartIds() async {
@@ -282,6 +358,12 @@ class PreferencesService {
       await prefs.remove(
         _dashboardNetWorthAccountIdsKey(profileId: activeProfileId),
       );
+      await prefs.remove(
+        _movementsAccountFilterIdsKey(profileId: activeProfileId),
+      );
+      await prefs.remove(
+        _movementsCategoryFilterIdsKey(profileId: activeProfileId),
+      );
     }
 
     showNotesNotifier.value = false;
@@ -292,5 +374,7 @@ class PreferencesService {
     chartStyleNotifier.value = defaultChartStyle;
     hiddenChartIdsNotifier.value = {};
     netWorthAccountIdsNotifier.value = null;
+    movementsAccountFilterIdsNotifier.value = null;
+    movementsCategoryFilterIdsNotifier.value = null;
   }
 }

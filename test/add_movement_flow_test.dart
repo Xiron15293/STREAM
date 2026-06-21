@@ -111,7 +111,10 @@ void main() {
         find.byKey(const Key('transfer_destination_list')),
         findsOneWidget,
       );
-      expect(find.text('Tutte le categorie'), findsNothing);
+      expect(
+        find.byKey(const Key('add_movement_category_step')),
+        findsNothing,
+      );
       expect(
         find.byKey(const Key('transfer_destination_chip_acc_2')),
         findsNothing,

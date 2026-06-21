@@ -6,6 +6,10 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11l-a completata: i filtri di conti e categorie sono ora scoped **solo** alla schermata Movimenti e persistono per profilo tramite `movements_filter_account_ids_<profileId>` e `movements_filter_category_ids_<profileId>`.
+- V0.11l-a completata anche sul reset: `clearForReset(activeProfileId: ...)` pulisce i filtri Movimenti del solo profilo corrente e riallinea i notifier in-memory.
+- QA locale aggiornata: `flutter test` full suite verde con `1100` passati e `~1` skipped; `flutter analyze` resta pulito da warning/error nuovi ma continua a mostrare `34` info pre-esistenti del repo.
+- Regressioni coperte: transfer origin/destination, AND tra filtri conti/categorie, sanitize ID invalidi, profile scope, movimenti view modes, show notes, QA movimenti ed extensive.
 - V0.11k-fix5 completata: backup/restore Patrimonio Dashboard ora e profile-safe end-to-end; `activeProfileId` passa da `SettingsScreen` a `BackupScreen` e poi a `BackupService` per export, pre-restore backup e restore.
 - V0.11k-fix5 completata anche sul fallback sicuro: se `activeProfileId` e nullo, il restore non crea o usa la chiave legacy `dashboard_net_worth_account_ids`.
 - QA locale aggiornata: `flutter test` full suite verde con `1091` passati e `~1` skipped; `Package.resolved` puo ancora comparire deleted dopo alcune run Flutter locali ma viene ripristinato senza commit.
@@ -39,13 +43,14 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale backup/restore multi-profilo su device reale: export da profilo B, restore su profilo B, verifica assenza bleed su profilo A
-2. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
-3. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
+1. QA manuale filtri Movimenti multi-profilo su device reale: cambio profilo, reset profilo corrente, verifica label e transfer origin/destination
+2. QA manuale backup/restore multi-profilo su device reale: export da profilo B, restore su profilo B, verifica assenza bleed su profilo A
+3. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+4. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
 
 ## Prossimo Sprint Consigliato
 
-1. QA manuale su device reale per selezione conti patrimonio e reset dati senza restart
+1. QA manuale su device reale per filtri Movimenti scoped + selezione conti patrimonio
 2. Hardening ambiente test Material 3 per il caso shader `ink_sparkle.frag`
 3. UI polish residui
 
@@ -59,6 +64,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 ## Rischi Noti
 
 - Restano info-level analyzer già presenti nel progetto.
+- `flutter analyze` locale chiude ancora con `34` info legacy del repo; la patch V0.11l-a non ne aggiunge di nuove.
 - Fragilita test nota P2: `Asset 'shaders/ink_sparkle.frag' not found` in alcuni ambienti test; non risolta in questa patch per evitare cambi fuori scope.
 - Alcuni file doc storici contengono dettagli vecchi utili; se li aggiorni, non perdere il contesto precedente.
 - Le viste Movimenti/Archivio hanno ancora molta logica di stato e vanno toccate con attenzione.
@@ -72,6 +78,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 - Profili: DB separato per profilo, `MainScaffold` keyed su `activeProfileId`, registry healing dei `dbFileName`.
 - Movimenti: form guidato con `AddMovementFlow`, `MovementCalculatorPad`, account/category selector, supporto transfer.
+- Movimenti: filtri scoped per conti/categorie persistiti per profilo; trasferimenti inclusi dal filtro conti se matchano origine o destinazione; filtro categorie esclude i transfer uncategorized quando attivo.
 - Movimenti: header top con close/confirm, amount sticky compatto, sheet azioni condiviso, tap breve modifica, long-press/tre puntini aprono lo stesso menu.
 - Heatmap: fallback legacy `list`, `calendar`, `listHeatmap`, `advancedHeatmap` verso heatmap; la UI utente non deve più esporre lista/calendario come vista predefinita.
 - Categorie: safe edit consentito anche con contenuti collegati; blocchi solo per azioni distruttive; duplicate validation su ID + namespace + nome normalizzato.

@@ -207,7 +207,10 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final screens = [
       DashboardScreen(db: widget.db, activeProfileId: widget.activeProfileId),
-      ArchiveScreen(db: widget.db),
+      ArchiveScreen(
+        db: widget.db,
+        activeProfileId: widget.activeProfileId,
+      ),
       ChartsScreen(db: widget.db),
       SettingsScreen(
         db: widget.db,
