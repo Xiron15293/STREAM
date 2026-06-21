@@ -14,6 +14,7 @@ import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/calculator_amount_pad.dart';
 import '../widgets/movement_picker.dart';
+import '../widgets/stream_kpi_card.dart';
 import '../widgets/time_filter_bar.dart';
 import '../utils/currency_formatter.dart';
 
@@ -677,37 +678,43 @@ class _AccountPeriodSummary extends StatelessWidget {
           key: const Key('account_period_income'),
           label: 'Entrate',
           value: _formatMoney(income),
-          color: p.income,
+          semanticType: StreamKpiSemanticType.income,
+          accentColor: p.income,
         ),
         _PeriodMetric(
           key: const Key('account_period_expense'),
           label: 'Uscite',
           value: _formatMoney(expenses),
-          color: p.expense,
+          semanticType: StreamKpiSemanticType.expense,
+          accentColor: p.expense,
         ),
         _PeriodMetric(
           key: const Key('account_period_transfer_net'),
           label: 'Trasf.',
           value: _formatMoney(transfersNet),
-          color: transfersNet >= 0 ? p.income : p.expense,
+          semanticType: StreamKpiSemanticType.neutral,
+          accentColor: transfersNet >= 0 ? p.income : p.expense,
         ),
         _PeriodMetric(
           key: const Key('account_period_movement_count'),
           label: 'Movimenti',
           value: '$movementCount',
-          color: p.textPrimary,
+          semanticType: StreamKpiSemanticType.count,
+          accentColor: p.textPrimary,
         ),
         _PeriodMetric(
           key: const Key('account_period_start_balance'),
           label: 'Saldo ini.',
           value: _formatMoney(startBalance),
-          color: startBalance >= 0 ? p.income : p.expense,
+          semanticType: StreamKpiSemanticType.balance,
+          accentColor: startBalance >= 0 ? p.income : p.expense,
         ),
         _PeriodMetric(
           key: const Key('account_period_end_balance'),
           label: 'Saldo fine',
           value: _formatMoney(endBalance),
-          color: endBalance >= 0 ? p.income : p.expense,
+          semanticType: StreamKpiSemanticType.balance,
+          accentColor: endBalance >= 0 ? p.income : p.expense,
         ),
       ],
     );
@@ -721,48 +728,28 @@ class _AccountPeriodSummary extends StatelessWidget {
 class _PeriodMetric extends StatelessWidget {
   final String label;
   final String value;
-  final Color color;
+  final Color accentColor;
+  final StreamKpiSemanticType semanticType;
 
   const _PeriodMetric({
     super.key,
     required this.label,
     required this.value,
-    required this.color,
+    required this.accentColor,
+    required this.semanticType,
   });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
-    return Container(
-      width: 92,
-      padding: const EdgeInsets.symmetric(
-        horizontal: StreamSpacing.sm,
-        vertical: StreamSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: surface.background,
-        borderRadius: BorderRadius.circular(StreamRadius.sm),
-        border: Border.all(color: surface.border, width: surface.borderWidth),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: StreamTypography.micro.copyWith(color: p.textSecondary),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: StreamTypography.captionBold.copyWith(color: color),
-          ),
-        ],
-      ),
+    return StreamKpiCard(
+      title: label,
+      value: value,
+      semanticType: semanticType,
+      accentColor: accentColor,
+      density: StreamKpiDensity.tight,
+      layout: StreamKpiLayout.stacked,
+      width: 96,
+      uppercaseTitle: false,
     );
   }
 }
@@ -1141,27 +1128,14 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
-    return Container(
+    return StreamKpiCard(
+      title: label,
+      value: value,
+      semanticType: StreamKpiSemanticType.neutral,
+      density: StreamKpiDensity.compact,
+      layout: StreamKpiLayout.stacked,
       width: 160,
-      padding: const EdgeInsets.all(StreamSpacing.md),
-      decoration: BoxDecoration(
-        color: surface.background,
-        borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(color: surface.border, width: surface.borderWidth),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: StreamTypography.micro.copyWith(color: p.textSecondary),
-          ),
-          const SizedBox(height: StreamSpacing.xs),
-          Text(value, style: StreamTypography.bodyBold),
-        ],
-      ),
+      uppercaseTitle: false,
     );
   }
 }

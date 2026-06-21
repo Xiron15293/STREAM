@@ -16,6 +16,7 @@ import '../widgets/categories_treemap.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/movement_picker.dart';
+import '../widgets/stream_kpi_card.dart';
 import '../widgets/time_filter_bar.dart';
 import '../utils/currency_formatter.dart';
 
@@ -1447,77 +1448,40 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final isIncome = _selectedType == MovementType.income;
     final p = context.$palette;
     final typeColor = isIncome ? p.income : p.expense;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
     final typeLabel = isIncome ? 'Entrate' : 'Uscite';
 
     return Padding(
       key: const Key('categories_type_summary_card'),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Container(
-        key: const Key('categories_period_summary'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: surface.background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: surface.border, width: surface.borderWidth),
-          boxShadow: surface.shadows,
-        ),
-        child: Row(
+      child: StreamKpiCard(
+        cardKey: const Key('categories_period_summary'),
+        title: typeLabel,
+        titleKey: const Key('categories_summary_title'),
+        value: _formatMoney(total),
+        valueKey: const Key('categories_period_total'),
+        subtitle:
+            '$movementCount ${movementCount == 1 ? 'movimento' : 'movimenti'} nel periodo',
+        subtitleKey: const Key('categories_period_movement_count'),
+        icon: isIncome ? Icons.south_west_rounded : Icons.north_east_rounded,
+        semanticType: isIncome
+            ? StreamKpiSemanticType.income
+            : StreamKpiSemanticType.expense,
+        accentColor: typeColor,
+        uppercaseTitle: false,
+        trailing: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Container(
-              width: 4,
-              height: 40,
-              decoration: BoxDecoration(
-                color: typeColor,
-                borderRadius: BorderRadius.circular(2),
+            Text(
+              '$activeCount ${activeCount == 1 ? 'attiva' : 'attive'}',
+              key: const Key('categories_summary_active_count'),
+              style: StreamTypography.caption.copyWith(color: p.textSecondary),
+            ),
+            if (archivedCount > 0)
+              Text(
+                '$archivedCount ${archivedCount == 1 ? 'archiviata' : 'archiviate'}',
+                key: const Key('categories_summary_archived_count'),
+                style: StreamTypography.micro.copyWith(color: p.textMuted),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    typeLabel,
-                    key: const Key('categories_summary_title'),
-                    style: StreamTypography.captionBold.copyWith(
-                      color: typeColor,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatMoney(total),
-                    key: const Key('categories_period_total'),
-                    style: StreamTypography.amount.copyWith(color: typeColor),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$movementCount ${movementCount == 1 ? 'movimento' : 'movimenti'} nel periodo',
-                    key: const Key('categories_period_movement_count'),
-                    style: StreamTypography.micro.copyWith(color: p.textMuted),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$activeCount ${activeCount == 1 ? 'attiva' : 'attive'}',
-                  key: const Key('categories_summary_active_count'),
-                  style: StreamTypography.caption.copyWith(
-                    color: p.textSecondary,
-                  ),
-                ),
-                if (archivedCount > 0)
-                  Text(
-                    '$archivedCount ${archivedCount == 1 ? 'archiviata' : 'archiviate'}',
-                    key: const Key('categories_summary_archived_count'),
-                    style: StreamTypography.micro.copyWith(color: p.textMuted),
-                  ),
-              ],
-            ),
           ],
         ),
       ),
@@ -1764,6 +1728,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final p = context.$palette;
     return CustomScrollView(
       key: const Key('categories_layout_stream_cards'),
+      cacheExtent: 2000,
       slivers: [
         if (active.isNotEmpty)
           SliverPadding(
@@ -3794,34 +3759,17 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
-    return Container(
+    return StreamKpiCard(
+      key: key,
+      title: label,
+      titleKey: labelKey,
+      value: value,
+      valueKey: valueKey,
+      semanticType: StreamKpiSemanticType.neutral,
+      density: StreamKpiDensity.compact,
+      layout: StreamKpiLayout.stacked,
       width: 160,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: p.surfaceElevated,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            key: labelKey,
-            style: StreamTypography.micro.copyWith(
-              color: p.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            key: valueKey,
-            style: StreamTypography.amount.copyWith(
-              color: p.textPrimary,
-            ),
-          ),
-      ],
-    ),
-  );
-}
+      uppercaseTitle: false,
+    );
+  }
 }

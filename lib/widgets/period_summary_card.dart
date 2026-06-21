@@ -7,6 +7,7 @@ import '../design/stream_theme_extension.dart';
 import '../theme.dart';
 import '../utils/heatmap_utils.dart';
 import '../utils/movement_period_metrics.dart';
+import 'stream_kpi_card.dart';
 
 class PeriodSummaryCard extends StatelessWidget {
   final TimeFilter timeFilter;
@@ -57,12 +58,14 @@ class PeriodSummaryCard extends StatelessWidget {
                 label: 'Entrate del $periodLabel',
                 value: formatEuro(metrics.totalIncome),
                 color: p.income,
+                semanticType: StreamKpiSemanticType.income,
               ),
               _MetricChip(
                 keyName: 'period_summary_expense',
                 label: 'Uscite del $periodLabel',
                 value: formatEuro(metrics.totalExpense),
                 color: p.expense,
+                semanticType: StreamKpiSemanticType.expense,
               ),
               _MetricChip(
                 keyName: 'period_summary_balance',
@@ -74,12 +77,14 @@ class PeriodSummaryCard extends StatelessWidget {
                         ? '-'
                         : ''}${formatEuro(metrics.netBalance.abs())}',
                 color: balanceColor,
+                semanticType: StreamKpiSemanticType.balance,
               ),
               _MetricChip(
                 keyName: 'period_summary_count',
                 label: 'Movimenti del $periodLabel',
                 value: '${metrics.movementCount}',
                 color: p.textPrimary,
+                semanticType: StreamKpiSemanticType.count,
               ),
             ],
           ),
@@ -94,71 +99,29 @@ class _MetricChip extends StatelessWidget {
   final String value;
   final Color color;
   final String keyName;
+  final StreamKpiSemanticType semanticType;
 
   const _MetricChip({
     required this.label,
     required this.value,
     required this.color,
     required this.keyName,
+    required this.semanticType,
   });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
-    final chipSurface = StreamSurfaceTokens.card(p, muted: true);
-    final tint = color.withValues(
-      alpha: p.brightness == Brightness.light ? 0.14 : 0.22,
-    );
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 140),
-      child: Container(
-        key: Key(keyName),
-        padding: const EdgeInsets.symmetric(
-          horizontal: StreamSpacing.sm,
-          vertical: StreamSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: chipSurface.background,
-          borderRadius: BorderRadius.circular(StreamRadius.md),
-          border: Border.all(
-            color: chipSurface.border,
-            width: chipSurface.borderWidth,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: tint,
-                shape: BoxShape.circle,
-                border: Border.all(color: color.withValues(alpha: 0.65)),
-              ),
-            ),
-            const SizedBox(width: StreamSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: StreamTypography.micro.copyWith(
-                      color: p.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: StreamTypography.captionBold.copyWith(color: color),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return StreamKpiCard(
+      cardKey: Key(keyName),
+      title: label,
+      value: value,
+      icon: Icons.circle,
+      accentColor: color,
+      semanticType: semanticType,
+      density: StreamKpiDensity.compact,
+      layout: StreamKpiLayout.stacked,
+      width: 160,
+      uppercaseTitle: false,
     );
   }
 }

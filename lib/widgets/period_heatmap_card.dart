@@ -15,6 +15,7 @@ import '../utils/movement_period_metrics.dart';
 import 'annual_heatmap_card.dart';
 import 'expense_heatmap.dart';
 import 'movement_card.dart';
+import 'stream_kpi_card.dart';
 
 class PeriodHeatmapCard extends StatelessWidget {
   final TimeFilter timeFilter;
@@ -335,6 +336,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                 label: 'Entrate',
                 value: formatEuro(income),
                 color: p.income,
+                semanticType: StreamKpiSemanticType.income,
               ),
               const SizedBox(width: StreamSpacing.md),
               _DayKpi(
@@ -342,6 +344,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                 label: 'Uscite',
                 value: formatEuro(expense),
                 color: p.expense,
+                semanticType: StreamKpiSemanticType.expense,
               ),
               const SizedBox(width: StreamSpacing.md),
               _DayKpi(
@@ -354,6 +357,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                         ? '-'
                         : ''}${formatEuro(balance.abs())}',
                 color: balanceColor,
+                semanticType: StreamKpiSemanticType.balance,
               ),
             ],
           ),
@@ -467,6 +471,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   label: 'Entrate',
                   value: formatEuro(metrics.totalIncome),
                   color: p.income,
+                  semanticType: StreamKpiSemanticType.income,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -476,6 +481,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   label: 'Uscite',
                   value: formatEuro(metrics.totalExpense),
                   color: p.expense,
+                  semanticType: StreamKpiSemanticType.expense,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -490,6 +496,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                           ? '-'
                           : ''}${formatEuro(metrics.netBalance.abs())}',
                   color: balanceColor,
+                  semanticType: StreamKpiSemanticType.balance,
                 ),
               ),
             ],
@@ -500,6 +507,7 @@ class PeriodHeatmapCard extends StatelessWidget {
             label: 'Movimenti della settimana',
             value: '${metrics.movementCount}',
             color: p.textPrimary,
+            semanticType: StreamKpiSemanticType.count,
           ),
           if (selectedPeriodDay != null) ...[
             const SizedBox(height: StreamSpacing.md),
@@ -687,6 +695,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   label: 'Entrate',
                   value: formatEuro(metrics.totalIncome),
                   color: p.income,
+                  semanticType: StreamKpiSemanticType.income,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -696,6 +705,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                   label: 'Uscite',
                   value: formatEuro(metrics.totalExpense),
                   color: p.expense,
+                  semanticType: StreamKpiSemanticType.expense,
                 ),
               ),
               const SizedBox(width: StreamSpacing.md),
@@ -710,6 +720,7 @@ class PeriodHeatmapCard extends StatelessWidget {
                           ? '-'
                           : ''}${formatEuro(metrics.netBalance.abs())}',
                   color: balanceColor,
+                  semanticType: StreamKpiSemanticType.balance,
                 ),
               ),
             ],
@@ -720,6 +731,7 @@ class PeriodHeatmapCard extends StatelessWidget {
             label: 'Movimenti',
             value: '${metrics.movementCount}',
             color: p.textPrimary,
+            semanticType: StreamKpiSemanticType.count,
           ),
           if (selectedPeriodDay != null) ...[
             const SizedBox(height: StreamSpacing.md),
@@ -1598,33 +1610,29 @@ class _MetricChip extends StatelessWidget {
   final String value;
   final Color color;
   final String keyName;
+  final StreamKpiSemanticType semanticType;
 
   const _MetricChip({
     required this.label,
     required this.value,
     required this.color,
     required this.keyName,
+    required this.semanticType,
   });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 100),
-      child: Column(
-        key: Key(keyName),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: StreamTypography.micro.copyWith(color: p.textSecondary),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: StreamTypography.captionBold.copyWith(color: color),
-          ),
-        ],
+      child: StreamKpiCard(
+        cardKey: Key(keyName),
+        title: label,
+        value: value,
+        semanticType: semanticType,
+        accentColor: color,
+        density: StreamKpiDensity.tight,
+        layout: StreamKpiLayout.stacked,
+        uppercaseTitle: false,
       ),
     );
   }
@@ -1684,40 +1692,28 @@ class _DayKpi extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final StreamKpiSemanticType semanticType;
 
   const _DayKpi({
     required this.keyName,
     required this.label,
     required this.value,
     required this.color,
+    required this.semanticType,
   });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
     return Expanded(
-      child: Container(
-        key: Key(keyName),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(StreamRadius.md),
-          border: Border.all(color: color.withValues(alpha: 0.10)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: StreamTypography.bodyBold.copyWith(color: color),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: StreamTypography.micro.copyWith(color: p.textSecondary),
-            ),
-          ],
-        ),
+      child: StreamKpiCard(
+        cardKey: Key(keyName),
+        title: label,
+        value: value,
+        semanticType: semanticType,
+        accentColor: color,
+        density: StreamKpiDensity.compact,
+        layout: StreamKpiLayout.centered,
+        uppercaseTitle: false,
       ),
     );
   }

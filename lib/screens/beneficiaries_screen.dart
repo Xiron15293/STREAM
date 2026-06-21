@@ -11,6 +11,7 @@ import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
 import '../utils/currency_formatter.dart';
 import '../widgets/grouped_movements_list.dart';
+import '../widgets/stream_kpi_card.dart';
 
 class BeneficiariesScreen extends StatefulWidget {
   final AppDatabase db;
@@ -399,14 +400,20 @@ class _BeneficiaryCard extends StatelessWidget {
                           _StatChip(
                             label: 'Entrate',
                             value: _formatEuro(entry.totalIncome),
+                            semanticType: StreamKpiSemanticType.income,
                           ),
                           _StatChip(
                             label: 'Uscite',
                             value: _formatEuro(entry.totalExpense),
+                            semanticType: StreamKpiSemanticType.expense,
                           ),
                           _StatChip(
                             label: 'Saldo',
                             value: _formatEuro(entry.balance),
+                            semanticType: StreamKpiSemanticType.balance,
+                            accentColor: entry.balance >= 0
+                                ? p.income
+                                : p.expense,
                           ),
                         ],
                       ),
@@ -600,27 +607,26 @@ class _BeneficiaryDetailSheet extends StatelessWidget {
 class _StatChip extends StatelessWidget {
   final String label;
   final String value;
+  final StreamKpiSemanticType semanticType;
+  final Color? accentColor;
 
-  const _StatChip({required this.label, required this.value});
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.semanticType,
+    this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
-    final surface = StreamSurfaceTokens.card(p, elevated: true);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: StreamSpacing.sm,
-        vertical: 6,
-      ),
-      decoration: BoxDecoration(
-        color: surface.background,
-        borderRadius: BorderRadius.circular(StreamRadius.full),
-        border: Border.all(color: surface.border, width: surface.borderWidth),
-      ),
-      child: Text(
-        '$label $value',
-        style: StreamTypography.caption.copyWith(color: p.textSecondary),
-      ),
+    return StreamKpiCard(
+      title: label,
+      value: value,
+      semanticType: semanticType,
+      accentColor: accentColor,
+      density: StreamKpiDensity.tight,
+      layout: StreamKpiLayout.stacked,
+      uppercaseTitle: false,
     );
   }
 }
