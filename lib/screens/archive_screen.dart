@@ -97,14 +97,17 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                   AccountsScreen(
                     key: const Key('archive_accounts_screen'),
                     db: widget.db,
+                    activeProfileId: widget.activeProfileId,
                   ),
                   CategoriesScreen(
                     key: const Key('archive_categories_screen'),
                     db: widget.db,
+                    activeProfileId: widget.activeProfileId,
                   ),
                   BeneficiariesScreen(
                     key: const Key('archive_beneficiaries_screen'),
                     db: widget.db,
+                    activeProfileId: widget.activeProfileId,
                   ),
                 ],
               ),

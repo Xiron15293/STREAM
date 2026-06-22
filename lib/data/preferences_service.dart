@@ -192,6 +192,14 @@ class PreferencesService {
   static const _chartsAccountFilterIdsKeyPrefix = 'charts_filter_account_ids_';
   static const _chartsCategoryFilterIdsKeyPrefix =
       'charts_filter_category_ids_';
+  static const _categoriesAccountFilterIdsKeyPrefix =
+      'categories_filter_account_ids_';
+  static const _accountsCategoryFilterIdsKeyPrefix =
+      'accounts_filter_category_ids_';
+  static const _beneficiariesAccountFilterIdsKeyPrefix =
+      'beneficiaries_filter_account_ids_';
+  static const _beneficiariesCategoryFilterIdsKeyPrefix =
+      'beneficiaries_filter_category_ids_';
   static const _hiddenChartIdsKey = 'hidden_chart_ids';
 
   static final netWorthAccountIdsNotifier = ValueNotifier<Set<String>?>(null);
@@ -207,6 +215,16 @@ class PreferencesService {
   static final chartsCategoryFilterIdsNotifier = ValueNotifier<Set<String>?>(
     null,
   );
+  static final categoriesAccountFilterIdsNotifier = ValueNotifier<Set<String>?>(
+    null,
+  );
+  static final accountsCategoryFilterIdsNotifier = ValueNotifier<Set<String>?>(
+    null,
+  );
+  static final beneficiariesAccountFilterIdsNotifier =
+      ValueNotifier<Set<String>?>(null);
+  static final beneficiariesCategoryFilterIdsNotifier =
+      ValueNotifier<Set<String>?>(null);
   static final hiddenChartIdsNotifier = ValueNotifier<Set<String>>({});
 
   static String _dashboardNetWorthAccountIdsKey({String? profileId}) {
@@ -230,6 +248,42 @@ class PreferencesService {
 
   static String _chartsCategoryFilterIdsKey({required String profileId}) {
     return '$_chartsCategoryFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _categoriesAccountFilterIdsKey({required String profileId}) {
+    return '$_categoriesAccountFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _accountsCategoryFilterIdsKey({required String profileId}) {
+    return '$_accountsCategoryFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _beneficiariesAccountFilterIdsKey({required String profileId}) {
+    return '$_beneficiariesAccountFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static String _beneficiariesCategoryFilterIdsKey({
+    required String profileId,
+  }) {
+    return '$_beneficiariesCategoryFilterIdsKeyPrefix${profileId.trim()}';
+  }
+
+  static Set<String>? normalizeScopedFilterIds(
+    Set<String>? ids,
+    Iterable<String> validIds,
+  ) {
+    if (ids == null) return null;
+    if (ids.isEmpty) return <String>{};
+
+    final validIdSet = validIds.toSet();
+    final sanitized = ids.intersection(validIdSet);
+    if (sanitized.isEmpty) {
+      return null;
+    }
+    if (sanitized.length == validIdSet.length) {
+      return null;
+    }
+    return sanitized;
   }
 
   static Future<Set<String>?> loadDashboardNetWorthAccountIds({
@@ -375,6 +429,114 @@ class PreferencesService {
     chartsCategoryFilterIdsNotifier.value = ids;
   }
 
+  static Future<Set<String>?> loadCategoriesAccountFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _categoriesAccountFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    categoriesAccountFilterIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveCategoriesAccountFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _categoriesAccountFilterIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      categoriesAccountFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
+    categoriesAccountFilterIdsNotifier.value = ids;
+  }
+
+  static Future<Set<String>?> loadAccountsCategoryFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _accountsCategoryFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    accountsCategoryFilterIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveAccountsCategoryFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _accountsCategoryFilterIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      accountsCategoryFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
+    accountsCategoryFilterIdsNotifier.value = ids;
+  }
+
+  static Future<Set<String>?> loadBeneficiariesAccountFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _beneficiariesAccountFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    beneficiariesAccountFilterIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveBeneficiariesAccountFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _beneficiariesAccountFilterIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      beneficiariesAccountFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
+    beneficiariesAccountFilterIdsNotifier.value = ids;
+  }
+
+  static Future<Set<String>?> loadBeneficiariesCategoryFilterIds({
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(
+      _beneficiariesCategoryFilterIdsKey(profileId: profileId),
+    );
+    final result = list?.toSet();
+    beneficiariesCategoryFilterIdsNotifier.value = result;
+    return result;
+  }
+
+  static Future<void> saveBeneficiariesCategoryFilterIds(
+    Set<String>? ids, {
+    required String profileId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _beneficiariesCategoryFilterIdsKey(profileId: profileId);
+    if (ids == null) {
+      await prefs.remove(key);
+      beneficiariesCategoryFilterIdsNotifier.value = null;
+      return;
+    }
+    await prefs.setStringList(key, ids.toList());
+    beneficiariesCategoryFilterIdsNotifier.value = ids;
+  }
+
   static Future<Set<String>> loadHiddenChartIds() async {
     final prefs = await SharedPreferences.getInstance();
     final list = prefs.getStringList(_hiddenChartIdsKey);
@@ -434,9 +596,23 @@ class PreferencesService {
       await prefs.remove(
         _movementsCategoryFilterIdsKey(profileId: activeProfileId),
       );
-      await prefs.remove(_chartsAccountFilterIdsKey(profileId: activeProfileId));
+      await prefs.remove(
+        _chartsAccountFilterIdsKey(profileId: activeProfileId),
+      );
       await prefs.remove(
         _chartsCategoryFilterIdsKey(profileId: activeProfileId),
+      );
+      await prefs.remove(
+        _categoriesAccountFilterIdsKey(profileId: activeProfileId),
+      );
+      await prefs.remove(
+        _accountsCategoryFilterIdsKey(profileId: activeProfileId),
+      );
+      await prefs.remove(
+        _beneficiariesAccountFilterIdsKey(profileId: activeProfileId),
+      );
+      await prefs.remove(
+        _beneficiariesCategoryFilterIdsKey(profileId: activeProfileId),
       );
     }
 
@@ -452,5 +628,9 @@ class PreferencesService {
     movementsCategoryFilterIdsNotifier.value = null;
     chartsAccountFilterIdsNotifier.value = null;
     chartsCategoryFilterIdsNotifier.value = null;
+    categoriesAccountFilterIdsNotifier.value = null;
+    accountsCategoryFilterIdsNotifier.value = null;
+    beneficiariesAccountFilterIdsNotifier.value = null;
+    beneficiariesCategoryFilterIdsNotifier.value = null;
   }
 }

@@ -20,8 +20,9 @@ import '../utils/currency_formatter.dart';
 
 class AccountsScreen extends StatefulWidget {
   final AppDatabase db;
+  final String? activeProfileId;
 
-  const AccountsScreen({super.key, required this.db});
+  const AccountsScreen({super.key, required this.db, this.activeProfileId});
 
   static const _typeLabels = {
     AccountType.cash: 'Contante',
@@ -37,12 +38,329 @@ class AccountsScreen extends StatefulWidget {
 
 class _AccountsScreenState extends State<AccountsScreen> {
   late TimeFilter _filter;
+  Set<String>? _selectedCategoryFilterIds;
+  bool _filtersSyncInProgress = false;
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _filter = TimeFilter.month(now.year, now.month);
+    _loadScopedFilters();
+  }
+
+  @override
+  void didUpdateWidget(covariant AccountsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeProfileId != widget.activeProfileId) {
+      _loadScopedFilters();
+    }
+  }
+
+  Future<void> _loadScopedFilters() async {
+    final profileId = widget.activeProfileId?.trim();
+    if (profileId == null || profileId.isEmpty) {
+      if (mounted) {
+        setState(() => _selectedCategoryFilterIds = null);
+      }
+      PreferencesService.accountsCategoryFilterIdsNotifier.value = null;
+      return;
+    }
+
+    final categoryIds = await PreferencesService.loadAccountsCategoryFilterIds(
+      profileId: profileId,
+    );
+    await _applySanitizedFilters(
+      profileId: profileId,
+      categoryIds: categoryIds,
+    );
+  }
+
+  Future<void> _applySanitizedFilters({
+    required String profileId,
+    Set<String>? categoryIds,
+  }) async {
+    if (_filtersSyncInProgress) return;
+    _filtersSyncInProgress = true;
+
+    final activeCategoryIds = widget.db.categories
+        .where((category) => !category.archived)
+        .map((category) => category.id);
+    final normalizedCategoryIds = PreferencesService.normalizeScopedFilterIds(
+      categoryIds,
+      activeCategoryIds,
+    );
+
+    try {
+      if (!_sameIdSet(categoryIds, normalizedCategoryIds)) {
+        await PreferencesService.saveAccountsCategoryFilterIds(
+          normalizedCategoryIds,
+          profileId: profileId,
+        );
+      }
+
+      if (mounted) {
+        setState(() => _selectedCategoryFilterIds = normalizedCategoryIds);
+      }
+    } finally {
+      _filtersSyncInProgress = false;
+    }
+  }
+
+  bool _sameIdSet(Set<String>? a, Set<String>? b) {
+    if (a == null) return b == null;
+    if (b == null) return false;
+    if (a.isEmpty || b.isEmpty) return a.isEmpty && b.isEmpty;
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
+  }
+
+  List<Movement> _applyCategoryScopedFilters(List<Movement> movements) {
+    if (_selectedCategoryFilterIds == null) {
+      return movements;
+    }
+
+    return movements.where((movement) {
+      if (movement.isTransfer) {
+        return movement.categoryId.isNotEmpty &&
+            _selectedCategoryFilterIds!.contains(movement.categoryId);
+      }
+      return _selectedCategoryFilterIds!.contains(movement.categoryId);
+    }).toList();
+  }
+
+  String _categoryFilterLabel() {
+    final activeCategories = widget.db.categories
+        .where((category) => !category.archived)
+        .toList();
+    final selected = _selectedCategoryFilterIds == null
+        ? <String>[]
+        : activeCategories
+              .where(
+                (category) => _selectedCategoryFilterIds!.contains(category.id),
+              )
+              .map((category) => category.id)
+              .toList();
+    if (_selectedCategoryFilterIds == null ||
+        selected.length == activeCategories.length) {
+      return 'Tutte le categorie';
+    }
+    if (_selectedCategoryFilterIds!.isEmpty) return 'Nessuna categoria';
+    if (selected.length == 1) {
+      final name = activeCategories
+          .firstWhere((category) => category.id == selected.first)
+          .name;
+      return name.length <= 20 ? name : '1 categoria selezionata';
+    }
+    return '${selected.length} categorie selezionate';
+  }
+
+  List<Category> _expenseCategories(List<Category> categories) =>
+      categories.where((c) => c.type == MovementType.expense).toList();
+
+  List<Category> _incomeCategories(List<Category> categories) =>
+      categories.where((c) => c.type == MovementType.income).toList();
+
+  Future<void> _showCategoryFilterSheet(BuildContext context) async {
+    final profileId = widget.activeProfileId?.trim();
+    if (profileId == null || profileId.isEmpty) return;
+    final p = context.$palette;
+    final activeCategories = widget.db.categories
+        .where((category) => !category.archived)
+        .toList();
+    final expenseCategories = _expenseCategories(activeCategories);
+    final incomeCategories = _incomeCategories(activeCategories);
+    Set<String> workingIds = Set.from(
+      _selectedCategoryFilterIds ??
+          activeCategories.map((category) => category.id),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Widget buildCategoryOption(Category category) {
+              final isSelected = workingIds.contains(category.id);
+              return InkWell(
+                key: Key('accounts_category_filter_option_${category.id}'),
+                onTap: () {
+                  setSheetState(() {
+                    if (isSelected) {
+                      workingIds.remove(category.id);
+                    } else {
+                      workingIds.add(category.id);
+                    }
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: p.primary,
+                        size: 22,
+                      ),
+                      const SizedBox(width: StreamSpacing.md),
+                      Expanded(
+                        child: Text(
+                          category.name,
+                          style: StreamTypography.bodyBold,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: StreamSpacing.lg,
+                  right: StreamSpacing.lg,
+                  top: StreamSpacing.lg,
+                  bottom:
+                      MediaQuery.of(context).viewInsets.bottom +
+                      StreamSpacing.lg,
+                ),
+                child: Column(
+                  key: const Key('accounts_category_filter_sheet'),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Categorie', style: StreamTypography.h3),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: StreamSpacing.md),
+                    InkWell(
+                      key: const Key('accounts_category_filter_all_option'),
+                      onTap: () {
+                        setSheetState(() {
+                          if (workingIds.length == activeCategories.length) {
+                            workingIds = <String>{};
+                          } else {
+                            workingIds = activeCategories
+                                .map((category) => category.id)
+                                .toSet();
+                          }
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              workingIds.length == activeCategories.length
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color: p.primary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: StreamSpacing.md),
+                            Text(
+                              'Tutte le categorie',
+                              style: StreamTypography.bodyBold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.55,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (expenseCategories.isNotEmpty) ...[
+                              const Padding(
+                                key: Key(
+                                  'accounts_category_filter_expense_section',
+                                ),
+                                padding: EdgeInsets.only(top: 8, bottom: 4),
+                                child: Text(
+                                  'Uscite',
+                                  style: StreamTypography.h3,
+                                ),
+                              ),
+                              ...expenseCategories.map(buildCategoryOption),
+                            ],
+                            if (incomeCategories.isNotEmpty) ...[
+                              const Padding(
+                                key: Key(
+                                  'accounts_category_filter_income_section',
+                                ),
+                                padding: EdgeInsets.only(top: 8, bottom: 4),
+                                child: Text(
+                                  'Entrate',
+                                  style: StreamTypography.h3,
+                                ),
+                              ),
+                              ...incomeCategories.map(buildCategoryOption),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: StreamSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            key: const Key('accounts_category_filter_cancel'),
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Annulla'),
+                          ),
+                        ),
+                        const SizedBox(width: StreamSpacing.md),
+                        Expanded(
+                          child: FilledButton(
+                            key: const Key('accounts_category_filter_apply'),
+                            onPressed: () async {
+                              final finalIds =
+                                  workingIds.length == activeCategories.length
+                                  ? null
+                                  : workingIds;
+                              await PreferencesService.saveAccountsCategoryFilterIds(
+                                finalIds,
+                                profileId: profileId,
+                              );
+                              await _applySanitizedFilters(
+                                profileId: profileId,
+                                categoryIds: finalIds,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            child: const Text('Applica'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -57,10 +375,34 @@ class _AccountsScreenState extends State<AccountsScreen> {
           body: ListenableBuilder(
             listenable: widget.db,
             builder: (context, _) {
+              final profileId = widget.activeProfileId?.trim();
+              final hasProfileScope = profileId != null && profileId.isNotEmpty;
+              if (!_filtersSyncInProgress && hasProfileScope) {
+                final activeCategoryIds = widget.db.categories
+                    .where((category) => !category.archived)
+                    .map((category) => category.id)
+                    .toSet();
+                final categoryNeedsSanitize =
+                    _selectedCategoryFilterIds != null &&
+                    !_selectedCategoryFilterIds!.every(
+                      activeCategoryIds.contains,
+                    );
+                if (categoryNeedsSanitize) {
+                  Future.microtask(
+                    () => _applySanitizedFilters(
+                      profileId: profileId,
+                      categoryIds: _selectedCategoryFilterIds,
+                    ),
+                  );
+                }
+              }
+
               final db = widget.db;
               final active = db.accounts.where((a) => !a.archived).toList();
               final archived = db.accounts.where((a) => a.archived).toList();
-              final periodMovements = db.movements.filterByTime(_filter);
+              final periodMovements = _applyCategoryScopedFilters(
+                db.movements.filterByTime(_filter),
+              );
               return ListView(
                 padding: const EdgeInsets.fromLTRB(
                   StreamSpacing.lg,
@@ -77,6 +419,36 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     ),
                   ),
                   const SizedBox(height: StreamSpacing.md),
+                  if (hasProfileScope)
+                    Padding(
+                      key: const Key('accounts_filters_section'),
+                      padding: const EdgeInsets.only(bottom: StreamSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Filtri',
+                            style: StreamTypography.bodyBold.copyWith(
+                              color: p.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: StreamSpacing.sm),
+                          ActionChip(
+                            key: const Key('accounts_category_filter_button'),
+                            avatar: const Icon(Icons.category, size: 18),
+                            label: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 180),
+                              child: Text(
+                                _categoryFilterLabel(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            onPressed: () => _showCategoryFilterSheet(context),
+                          ),
+                        ],
+                      ),
+                    ),
                   ...active.map(
                     (a) => _AccountCard(
                       key: Key('account_card_${a.id}'),
@@ -85,7 +457,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       periodMovements: periodMovements,
                       allMovements: db.movements,
                       filter: _filter,
-                      onTap: () => _showAccountMovements(context, db, a),
+                      onTap: () => _showAccountMovements(
+                        context,
+                        db,
+                        a,
+                        selectedCategoryIds: _selectedCategoryFilterIds,
+                      ),
                       onEdit: () => _showAddEditDialog(context, db, account: a),
                       onArchive: () => db.archiveAccount(a.id),
                       onRestore: () => db.restoreAccount(a.id),
@@ -106,7 +483,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         periodMovements: periodMovements,
                         allMovements: db.movements,
                         filter: _filter,
-                        onTap: () => _showAccountMovements(context, db, a),
+                        onTap: () => _showAccountMovements(
+                          context,
+                          db,
+                          a,
+                          selectedCategoryIds: _selectedCategoryFilterIds,
+                        ),
                         onEdit: () =>
                             _showAddEditDialog(context, db, account: a),
                         onRestore: () => db.restoreAccount(a.id),
@@ -130,8 +512,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
   void _showAccountMovements(
     BuildContext context,
     AppDatabase db,
-    Account account,
-  ) {
+    Account account, {
+    Set<String>? selectedCategoryIds,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -141,6 +524,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
         account: account,
         initialFilter: _filter,
         onEdit: () => _showAddEditDialog(context, db, account: account),
+        selectedCategoryIds: selectedCategoryIds,
       ),
     );
   }
@@ -759,12 +1143,14 @@ class _AccountMovementsSheet extends StatefulWidget {
   final Account account;
   final TimeFilter? initialFilter;
   final VoidCallback onEdit;
+  final Set<String>? selectedCategoryIds;
 
   const _AccountMovementsSheet({
     required this.db,
     required this.account,
     required this.onEdit,
     this.initialFilter,
+    this.selectedCategoryIds,
   });
 
   @override
@@ -796,6 +1182,16 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
           (m) =>
               m.accountId == account.id || m.destinationAccountId == account.id,
         )
+        .where((movement) {
+          if (widget.selectedCategoryIds == null) {
+            return true;
+          }
+          if (movement.isTransfer) {
+            return movement.categoryId.isNotEmpty &&
+                widget.selectedCategoryIds!.contains(movement.categoryId);
+          }
+          return widget.selectedCategoryIds!.contains(movement.categoryId);
+        })
         .toList()
         .filterByTime(_filter);
   }
@@ -893,9 +1289,9 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                   width: 46,
                                   height: 46,
                                   decoration: BoxDecoration(
-                                    color: Color(account.color).withValues(
-                                      alpha: 0.16,
-                                    ),
+                                    color: Color(
+                                      account.color,
+                                    ).withValues(alpha: 0.16),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Icon(
@@ -903,9 +1299,9 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                       account.iconKey,
                                     ),
                                     color: StreamSurfaceTokens.onAccent(
-                                      Color(account.color).withValues(
-                                        alpha: 0.92,
-                                      ),
+                                      Color(
+                                        account.color,
+                                      ).withValues(alpha: 0.92),
                                     ),
                                     size: 22,
                                   ),
@@ -918,10 +1314,8 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                     children: [
                                       Text(
                                         'Movimenti del conto',
-                                        style:
-                                            StreamTypography.captionBold.copyWith(
-                                              color: p.textSecondary,
-                                            ),
+                                        style: StreamTypography.captionBold
+                                            .copyWith(color: p.textSecondary),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
@@ -936,9 +1330,8 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                         account.archived
                                             ? 'Archiviato'
                                             : 'Attivo',
-                                        style: StreamTypography.caption.copyWith(
-                                          color: p.textSecondary,
-                                        ),
+                                        style: StreamTypography.caption
+                                            .copyWith(color: p.textSecondary),
                                       ),
                                     ],
                                   ),
@@ -984,8 +1377,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                         ),
                                         icon: Icons.compare_arrows,
                                         label: 'Trasferisci',
-                                        prominence:
-                                            _ActionProminence.secondary,
+                                        prominence: _ActionProminence.secondary,
                                         onPressed: () => _showAddMovement(
                                           initialType: MovementType.transfer,
                                         ),
@@ -1050,7 +1442,8 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                             child: _CompactAccountSummary(
                               income: _filteredIncome,
                               expenses: _filteredExpenses,
-                              balance: _filteredIncome -
+                              balance:
+                                  _filteredIncome -
                                   _filteredExpenses +
                                   _filteredTransfersNet,
                             ),
@@ -1083,9 +1476,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                           size: 18,
                                           color: p.textSecondary,
                                         ),
-                                        const SizedBox(
-                                          width: StreamSpacing.xs,
-                                        ),
+                                        const SizedBox(width: StreamSpacing.xs),
                                         Expanded(
                                           child: Text(
                                             'Riepilogo dettagliato',
@@ -1170,8 +1561,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                                   'account_movements_transfers',
                                                 ),
                                                 child: _StatChip(
-                                                  label:
-                                                      'Trasferimenti netti',
+                                                  label: 'Trasferimenti netti',
                                                   value: _formatMoney(
                                                     _filteredTransfersNet,
                                                   ),
@@ -1380,10 +1770,7 @@ class _CompactAccountSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface.background,
         borderRadius: BorderRadius.circular(StreamRadius.md),
-        border: Border.all(
-          color: surface.border,
-          width: surface.borderWidth,
-        ),
+        border: Border.all(color: surface.border, width: surface.borderWidth),
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: StreamSpacing.md,
@@ -1461,9 +1848,7 @@ class _AccountMovementsEmptyState extends StatelessWidget {
             const SizedBox(height: StreamSpacing.md),
             Text(
               'Nessun movimento in questo periodo',
-              style: StreamTypography.bodyBold.copyWith(
-                color: p.textSecondary,
-              ),
+              style: StreamTypography.bodyBold.copyWith(color: p.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: StreamSpacing.xs),

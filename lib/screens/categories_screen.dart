@@ -493,10 +493,7 @@ void _showCategoryMergeDialog(
                   const SizedBox(height: 4),
                   Text(
                     'La categoria sorgente verrà archiviata, non eliminata.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: p.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: p.textSecondary),
                   ),
                   if (movCount > 0 || quickCount > 0 || favCount > 0) ...[
                     const SizedBox(height: 12),
@@ -629,10 +626,7 @@ void _showCategoryMergeDialog(
                     const SizedBox(height: 4),
                     Text(
                       'Scegli cosa fare di ogni sottocategoria di "${sourceCategory.name}"',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: p.textSecondary,
-                      ),
+                      style: TextStyle(fontSize: 12, color: p.textSecondary),
                     ),
                     const SizedBox(height: 8),
                     ...childOptions.map((opt) {
@@ -960,10 +954,7 @@ void _showSubcategoryMergeDialog(
                   const SizedBox(height: 4),
                   Text(
                     'La sottocategoria sorgente verrà archiviata, non eliminata.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: p.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: p.textSecondary),
                   ),
                   if (movCount > 0 || quickCount > 0 || favCount > 0) ...[
                     const SizedBox(height: 12),
@@ -1172,10 +1163,7 @@ void _showMergeReport(BuildContext context, CategoryMergeReport report) {
                       .map(
                         (w) => Text(
                           w,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: p.warning,
-                          ),
+                          style: TextStyle(fontSize: 12, color: p.warning),
                         ),
                       )
                       .toList(),
@@ -1183,109 +1171,107 @@ void _showMergeReport(BuildContext context, CategoryMergeReport report) {
               ),
               const SizedBox(height: 12),
             ],
-          if (report.sourceType == 'subcategory') ...[
-            _reportRow('Categoria sorgente', report.sourceCategoryName),
-            _reportRow(
-              'Sottocategoria sorgente',
-              report.sourceSubcategoryName ?? '',
-            ),
-          ] else ...[
-            _reportRow('Categoria sorgente', report.sourceCategoryName),
-          ],
-          _reportRow('Categoria destinazione', report.targetCategoryName),
-          if (report.targetSubcategoryName != null &&
-              report.targetSubcategoryName!.isNotEmpty)
-            _reportRow(
-              'Sottocategoria destinaz.',
-              report.targetSubcategoryName!,
-            ),
-          if (report.targetSubcategoryCreated)
-            _reportRow('Nuova sottocat.', 'Creata'),
-          const Divider(height: 16),
-          _reportRow('Movimenti aggiornati', '${report.movementsUpdated}'),
-          _reportRow(
-            'Movimenti rapidi agg.',
-            '${report.quickMovementsUpdated}',
-          ),
-          _reportRow(
-            'Preferiti aggiornati',
-            '${report.favoriteMovementsUpdated}',
-          ),
-          const Divider(height: 16),
-          if (report.childSubcategoriesMoved > 0 ||
-              report.childSubcategoriesMerged > 0 ||
-              report.childSubcategoriesArchived > 0 ||
-              report.childSubcategoriesKept > 0) ...[
+            if (report.sourceType == 'subcategory') ...[
+              _reportRow('Categoria sorgente', report.sourceCategoryName),
+              _reportRow(
+                'Sottocategoria sorgente',
+                report.sourceSubcategoryName ?? '',
+              ),
+            ] else ...[
+              _reportRow('Categoria sorgente', report.sourceCategoryName),
+            ],
+            _reportRow('Categoria destinazione', report.targetCategoryName),
+            if (report.targetSubcategoryName != null &&
+                report.targetSubcategoryName!.isNotEmpty)
+              _reportRow(
+                'Sottocategoria destinaz.',
+                report.targetSubcategoryName!,
+              ),
+            if (report.targetSubcategoryCreated)
+              _reportRow('Nuova sottocat.', 'Creata'),
             const Divider(height: 16),
+            _reportRow('Movimenti aggiornati', '${report.movementsUpdated}'),
             _reportRow(
-              'Sottocat. figlie spostate',
-              '${report.childSubcategoriesMoved}',
+              'Movimenti rapidi agg.',
+              '${report.quickMovementsUpdated}',
             ),
             _reportRow(
-              'Sottocat. figlie unite',
-              '${report.childSubcategoriesMerged}',
+              'Preferiti aggiornati',
+              '${report.favoriteMovementsUpdated}',
             ),
-            _reportRow(
-              'Sottocat. figlie archiviate',
-              '${report.childSubcategoriesArchived}',
-            ),
-            _reportRow(
-              'Sottocat. figlie mantenute',
-              '${report.childSubcategoriesKept}',
-            ),
-            if (report.childSubcategoryDetails.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              ...report.childSubcategoryDetails.map((d) {
-                final actionLabel = switch (d.action) {
-                  'move' => 'Spostata',
-                  'merge' => 'Unita',
-                  'archive' => 'Archiviata',
-                  _ => 'Mantenuta',
-                };
-                return Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    ' • ${d.subcategoryName}: $actionLabel',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: p.textSecondary,
+            const Divider(height: 16),
+            if (report.childSubcategoriesMoved > 0 ||
+                report.childSubcategoriesMerged > 0 ||
+                report.childSubcategoriesArchived > 0 ||
+                report.childSubcategoriesKept > 0) ...[
+              const Divider(height: 16),
+              _reportRow(
+                'Sottocat. figlie spostate',
+                '${report.childSubcategoriesMoved}',
+              ),
+              _reportRow(
+                'Sottocat. figlie unite',
+                '${report.childSubcategoriesMerged}',
+              ),
+              _reportRow(
+                'Sottocat. figlie archiviate',
+                '${report.childSubcategoriesArchived}',
+              ),
+              _reportRow(
+                'Sottocat. figlie mantenute',
+                '${report.childSubcategoriesKept}',
+              ),
+              if (report.childSubcategoryDetails.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                ...report.childSubcategoryDetails.map((d) {
+                  final actionLabel = switch (d.action) {
+                    'move' => 'Spostata',
+                    'merge' => 'Unita',
+                    'archive' => 'Archiviata',
+                    _ => 'Mantenuta',
+                  };
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      ' • ${d.subcategoryName}: $actionLabel',
+                      style: TextStyle(fontSize: 12, color: p.textSecondary),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ],
+            ],
+            if (report.sourceType == 'subcategory') ...[
+              _reportRow(
+                'Sottocat. sorgente',
+                report.sourceSubcategoryArchived ? 'Archiviata' : '-',
+              ),
+              if (report.emptySourceCategoryArchived)
+                _reportRow('Categoria vuota', 'Archiviata'),
+            ] else ...[
+              _reportRow(
+                'Categoria sorgente',
+                report.sourceCategoryArchived ? 'Archiviata' : '-',
+              ),
             ],
           ],
-          if (report.sourceType == 'subcategory') ...[
-            _reportRow(
-              'Sottocat. sorgente',
-              report.sourceSubcategoryArchived ? 'Archiviata' : '-',
-            ),
-            if (report.emptySourceCategoryArchived)
-              _reportRow('Categoria vuota', 'Archiviata'),
-          ] else ...[
-            _reportRow(
-              'Categoria sorgente',
-              report.sourceCategoryArchived ? 'Archiviata' : '-',
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        FilledButton(
-          key: const Key('category_merge_report_ok'),
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('OK'),
         ),
-      ],
-    );
-  },
-);
+        actions: [
+          FilledButton(
+            key: const Key('category_merge_report_ok'),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class CategoriesScreen extends StatefulWidget {
   final AppDatabase db;
+  final String? activeProfileId;
 
-  const CategoriesScreen({super.key, required this.db});
+  const CategoriesScreen({super.key, required this.db, this.activeProfileId});
 
   @override
   State<CategoriesScreen> createState() => _CategoriesScreenState();
@@ -1295,6 +1281,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   MovementType _selectedType = MovementType.expense;
   String _layoutMode = PreferencesService.defaultCategoryLayout;
   late TimeFilter _filter;
+  Set<String>? _selectedAccountFilterIds;
+  bool _filtersSyncInProgress = false;
 
   @override
   void initState() {
@@ -1302,7 +1290,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final now = DateTime.now();
     _filter = TimeFilter.month(now.year, now.month);
     _loadLayoutMode();
+    _loadScopedFilters();
     PreferencesService.categoryLayoutNotifier.addListener(_onLayoutChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoriesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activeProfileId != widget.activeProfileId) {
+      _loadScopedFilters();
+    }
   }
 
   @override
@@ -1326,6 +1323,61 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
   }
 
+  Future<void> _loadScopedFilters() async {
+    final profileId = widget.activeProfileId?.trim();
+    if (profileId == null || profileId.isEmpty) {
+      if (mounted) {
+        setState(() => _selectedAccountFilterIds = null);
+      }
+      PreferencesService.categoriesAccountFilterIdsNotifier.value = null;
+      return;
+    }
+
+    final accountIds = await PreferencesService.loadCategoriesAccountFilterIds(
+      profileId: profileId,
+    );
+    await _applySanitizedFilters(profileId: profileId, accountIds: accountIds);
+  }
+
+  Future<void> _applySanitizedFilters({
+    required String profileId,
+    Set<String>? accountIds,
+  }) async {
+    if (_filtersSyncInProgress) return;
+    _filtersSyncInProgress = true;
+
+    final activeAccountIds = widget.db.accounts
+        .where((account) => !account.archived)
+        .map((account) => account.id);
+    final normalizedAccountIds = PreferencesService.normalizeScopedFilterIds(
+      accountIds,
+      activeAccountIds,
+    );
+
+    try {
+      if (!_sameIdSet(accountIds, normalizedAccountIds)) {
+        await PreferencesService.saveCategoriesAccountFilterIds(
+          normalizedAccountIds,
+          profileId: profileId,
+        );
+      }
+
+      if (mounted) {
+        setState(() => _selectedAccountFilterIds = normalizedAccountIds);
+      }
+    } finally {
+      _filtersSyncInProgress = false;
+    }
+  }
+
+  bool _sameIdSet(Set<String>? a, Set<String>? b) {
+    if (a == null) return b == null;
+    if (b == null) return false;
+    if (a.isEmpty || b.isEmpty) return a.isEmpty && b.isEmpty;
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
+  }
+
   void _showAddDialog() {
     _showCategoryForm(context, db: widget.db, preferredType: _selectedType);
   }
@@ -1334,6 +1386,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     return widget.db.movements
         .filterByTime(_filter)
         .where((m) => m.type == _selectedType)
+        .toList();
+  }
+
+  List<Movement> _applyAccountScopedFilters(List<Movement> movements) {
+    if (_selectedAccountFilterIds == null) {
+      return movements;
+    }
+
+    return movements
+        .where(
+          (movement) => _selectedAccountFilterIds!.contains(movement.accountId),
+        )
         .toList();
   }
 
@@ -1354,6 +1418,195 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     return formatMovementCurrency(value, showPositiveSign: true);
   }
 
+  String _accountFilterLabel() {
+    final activeAccounts = widget.db.accounts
+        .where((account) => !account.archived)
+        .toList();
+    final selected = _selectedAccountFilterIds == null
+        ? <String>[]
+        : activeAccounts
+              .where(
+                (account) => _selectedAccountFilterIds!.contains(account.id),
+              )
+              .map((account) => account.id)
+              .toList();
+    if (_selectedAccountFilterIds == null ||
+        selected.length == activeAccounts.length) {
+      return 'Tutti i conti';
+    }
+    if (_selectedAccountFilterIds!.isEmpty) return 'Nessun conto';
+    if (selected.length == 1) {
+      final name = activeAccounts
+          .firstWhere((account) => account.id == selected.first)
+          .name;
+      return name.length <= 20 ? name : '1 conto selezionato';
+    }
+    return '${selected.length} conti selezionati';
+  }
+
+  Future<void> _showAccountFilterSheet(BuildContext context) async {
+    final profileId = widget.activeProfileId?.trim();
+    if (profileId == null || profileId.isEmpty) return;
+
+    final p = context.$palette;
+    final activeAccounts = widget.db.accounts
+        .where((account) => !account.archived)
+        .toList();
+    Set<String> workingIds = Set.from(
+      _selectedAccountFilterIds ?? activeAccounts.map((account) => account.id),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: StreamSpacing.lg,
+                  right: StreamSpacing.lg,
+                  top: StreamSpacing.lg,
+                  bottom:
+                      MediaQuery.of(context).viewInsets.bottom +
+                      StreamSpacing.lg,
+                ),
+                child: Column(
+                  key: const Key('categories_account_filter_sheet'),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Conti', style: StreamTypography.h3),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: StreamSpacing.md),
+                    InkWell(
+                      key: const Key('categories_account_filter_all_option'),
+                      onTap: () {
+                        setSheetState(() {
+                          if (workingIds.length == activeAccounts.length) {
+                            workingIds = <String>{};
+                          } else {
+                            workingIds = activeAccounts
+                                .map((account) => account.id)
+                                .toSet();
+                          }
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              workingIds.length == activeAccounts.length
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color: p.primary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: StreamSpacing.md),
+                            Text(
+                              'Tutti i conti',
+                              style: StreamTypography.bodyBold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    ...activeAccounts.map((account) {
+                      final isSelected = workingIds.contains(account.id);
+                      return InkWell(
+                        key: Key(
+                          'categories_account_filter_option_${account.id}',
+                        ),
+                        onTap: () {
+                          setSheetState(() {
+                            if (isSelected) {
+                              workingIds.remove(account.id);
+                            } else {
+                              workingIds.add(account.id);
+                            }
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? Icons.check_box
+                                    : Icons.check_box_outline_blank,
+                                color: p.primary,
+                                size: 22,
+                              ),
+                              const SizedBox(width: StreamSpacing.md),
+                              Expanded(
+                                child: Text(
+                                  account.name,
+                                  style: StreamTypography.bodyBold,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: StreamSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            key: const Key('categories_account_filter_cancel'),
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Annulla'),
+                          ),
+                        ),
+                        const SizedBox(width: StreamSpacing.md),
+                        Expanded(
+                          child: FilledButton(
+                            key: const Key('categories_account_filter_apply'),
+                            onPressed: () async {
+                              final finalIds =
+                                  workingIds.length == activeAccounts.length
+                                  ? null
+                                  : workingIds;
+                              await PreferencesService.saveCategoriesAccountFilterIds(
+                                finalIds,
+                                profileId: profileId,
+                              );
+                              await _applySanitizedFilters(
+                                profileId: profileId,
+                                accountIds: finalIds,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            child: const Text('Applica'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
@@ -1363,15 +1616,50 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       body: ListenableBuilder(
         listenable: widget.db,
         builder: (context, _) {
+          final profileId = widget.activeProfileId?.trim();
+          final hasProfileScope = profileId != null && profileId.isNotEmpty;
+          if (!_filtersSyncInProgress && hasProfileScope) {
+            final activeAccountIds = widget.db.accounts
+                .where((account) => !account.archived)
+                .map((account) => account.id)
+                .toSet();
+            final accountNeedsSanitize =
+                _selectedAccountFilterIds != null &&
+                !_selectedAccountFilterIds!.every(activeAccountIds.contains);
+            if (accountNeedsSanitize) {
+              Future.microtask(
+                () => _applySanitizedFilters(
+                  profileId: profileId,
+                  accountIds: _selectedAccountFilterIds,
+                ),
+              );
+            }
+          }
+
           final all = widget.db.categories;
-          final filtered = all
-              .where((c) => c.type == _selectedType && !c.archived)
-              .toList();
-          final archivedList = all
-              .where((c) => c.archived && c.type == _selectedType)
-              .toList();
-          final periodTypeMovements = _periodTypeMovements();
-          final total = _computeTypeTotal(periodTypeMovements);
+          final scopedPeriodTypeMovements = _applyAccountScopedFilters(
+            _periodTypeMovements(),
+          );
+          final visibleCategoryIds = scopedPeriodTypeMovements
+              .map((movement) => movement.categoryId)
+              .where((categoryId) => categoryId.isNotEmpty)
+              .toSet();
+          final showAllCategories = _selectedAccountFilterIds == null;
+          final filtered = all.where((category) {
+            if (category.type != _selectedType || category.archived) {
+              return false;
+            }
+            return showAllCategories ||
+                visibleCategoryIds.contains(category.id);
+          }).toList();
+          final archivedList = all.where((category) {
+            if (category.type != _selectedType || !category.archived) {
+              return false;
+            }
+            return showAllCategories ||
+                visibleCategoryIds.contains(category.id);
+          }).toList();
+          final total = _computeTypeTotal(scopedPeriodTypeMovements);
 
           return Column(
             children: [
@@ -1412,18 +1700,48 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                 ),
               ),
+              if (hasProfileScope)
+                Padding(
+                  key: const Key('categories_filters_section'),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Filtri',
+                        style: StreamTypography.bodyBold.copyWith(
+                          color: p.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: StreamSpacing.sm),
+                      ActionChip(
+                        key: const Key('categories_account_filter_button'),
+                        avatar: const Icon(Icons.account_balance, size: 18),
+                        label: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 180),
+                          child: Text(
+                            _accountFilterLabel(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        onPressed: () => _showAccountFilterSheet(context),
+                      ),
+                    ],
+                  ),
+                ),
               _buildTypeSummaryCard(
                 total,
                 filtered.length,
                 archivedList.length,
-                periodTypeMovements.length,
+                scopedPeriodTypeMovements.length,
               ),
               const SizedBox(height: 4),
               Expanded(
                 child: _buildLayout(
                   filtered,
                   archivedList,
-                  periodTypeMovements,
+                  scopedPeriodTypeMovements,
                 ),
               ),
             ],
@@ -1498,8 +1816,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         return CategoriesTreemap(
           categories: active,
           movements: periodTypeMovements,
-          onCategoryTap: (category) =>
-              _showCategoryMovements(context, widget.db, category),
+          onCategoryTap: (category) => _showCategoryMovements(
+            context,
+            widget.db,
+            category,
+            selectedAccountIds: _selectedAccountFilterIds,
+          ),
         );
       case 'groupedList':
         return _buildGroupedList(active, archived, periodTypeMovements);
@@ -1521,7 +1843,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             key: Key('category_card_${c.id}'),
             category: c,
             db: widget.db,
-            onTap: () => _showCategoryMovements(context, widget.db, c),
+            onTap: () => _showCategoryMovements(
+              context,
+              widget.db,
+              c,
+              selectedAccountIds: _selectedAccountFilterIds,
+            ),
             onEdit: () =>
                 _showCategoryForm(context, db: widget.db, existing: c),
             onChanged: () => setState(() {}),
@@ -1546,7 +1873,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               key: Key('category_card_${c.id}'),
               category: c,
               db: widget.db,
-              onTap: () => _showCategoryMovements(context, widget.db, c),
+              onTap: () => _showCategoryMovements(
+                context,
+                widget.db,
+                c,
+                selectedAccountIds: _selectedAccountFilterIds,
+              ),
               onEdit: () =>
                   _showCategoryForm(context, db: widget.db, existing: c),
               onChanged: () => setState(() {}),
@@ -1625,8 +1957,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           key: Key('category_card_${c.id}'),
                           category: c,
                           db: widget.db,
-                          onTap: () =>
-                              _showCategoryMovements(context, widget.db, c),
+                          onTap: () => _showCategoryMovements(
+                            context,
+                            widget.db,
+                            c,
+                            selectedAccountIds: _selectedAccountFilterIds,
+                          ),
                           onEdit: () => _showCategoryForm(
                             context,
                             db: widget.db,
@@ -1707,7 +2043,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   key: Key('category_card_${c.id}'),
                   category: c,
                   db: widget.db,
-                  onTap: () => _showCategoryMovements(context, widget.db, c),
+                  onTap: () => _showCategoryMovements(
+                    context,
+                    widget.db,
+                    c,
+                    selectedAccountIds: _selectedAccountFilterIds,
+                  ),
                   onEdit: () =>
                       _showCategoryForm(context, db: widget.db, existing: c),
                   onChanged: () => setState(() {}),
@@ -1760,7 +2101,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     movementCount: movCount,
                     totalAmount: total,
                     db: widget.db,
-                    onTap: () => _showCategoryMovements(context, widget.db, c),
+                    onTap: () => _showCategoryMovements(
+                      context,
+                      widget.db,
+                      c,
+                      selectedAccountIds: _selectedAccountFilterIds,
+                    ),
                     onEdit: () =>
                         _showCategoryForm(context, db: widget.db, existing: c),
                     onChanged: () => setState(() {}),
@@ -1795,7 +2141,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     key: Key('category_card_${c.id}'),
                     category: c,
                     db: widget.db,
-                    onTap: () => _showCategoryMovements(context, widget.db, c),
+                    onTap: () => _showCategoryMovements(
+                      context,
+                      widget.db,
+                      c,
+                      selectedAccountIds: _selectedAccountFilterIds,
+                    ),
                     onEdit: () =>
                         _showCategoryForm(context, db: widget.db, existing: c),
                     onChanged: () => setState(() {}),
@@ -1813,9 +2164,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Center(
                 child: Text(
                   'Nessuna categoria',
-                  style: StreamTypography.body.copyWith(
-                    color: p.textSecondary,
-                  ),
+                  style: StreamTypography.body.copyWith(color: p.textSecondary),
                 ),
               ),
             ),
@@ -1844,8 +2193,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void _showCategoryMovements(
     BuildContext context,
     AppDatabase db,
-    Category category,
-  ) {
+    Category category, {
+    Set<String>? selectedAccountIds,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1854,6 +2204,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         db: db,
         category: category,
         initialFilter: _filter,
+        selectedAccountIds: selectedAccountIds,
       ),
     );
   }
@@ -2473,18 +2824,11 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 14,
-                        color: p.warning,
-                      ),
+                      Icon(Icons.info_outline, size: 14, color: p.warning),
                       const SizedBox(width: 8),
                       Text(
                         _typeLockMessage!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: p.warning,
-                        ),
+                        style: TextStyle(fontSize: 12, color: p.warning),
                       ),
                     ],
                   ),
@@ -2762,9 +3106,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'Nessuna sottocategoria',
-                  style: StreamTypography.caption.copyWith(
-                    color: p.textMuted,
-                  ),
+                  style: StreamTypography.caption.copyWith(color: p.textMuted),
                 ),
               )
             else
@@ -2829,11 +3171,7 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
                       if (!sub.archived)
                         IconButton(
                           key: const Key('subcategory_merge_action'),
-                          icon: Icon(
-                            Icons.merge,
-                            size: 18,
-                            color: p.textMuted,
-                          ),
+                          icon: Icon(Icons.merge, size: 18, color: p.textMuted),
                           onPressed: () => _showSubcategoryMergeDialog(
                             context,
                             widget.db,
@@ -2929,7 +3267,6 @@ class _SubcategorySectionState extends State<_SubcategorySection> {
     setState(() {});
   }
 }
-
 
 class _SubcategoryFormDialog extends StatefulWidget {
   final AppDatabase db;
@@ -3067,19 +3404,12 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 14,
-                    color: p.warning,
-                  ),
+                  Icon(Icons.info_outline, size: 14, color: p.warning),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _buildMovementSummary(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: p.warning,
-                      ),
+                      style: TextStyle(fontSize: 12, color: p.warning),
                     ),
                   ),
                 ],
@@ -3110,9 +3440,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
                 key: const Key('subcategory_delete_button'),
                 icon: const Icon(Icons.delete_outline, size: 18),
                 onPressed: () => _confirmDelete(cascade: _totalCount > 0),
-                style: TextButton.styleFrom(
-                  foregroundColor: p.expense,
-                ),
+                style: TextButton.styleFrom(foregroundColor: p.expense),
                 label: Text(
                   _totalCount > 0
                       ? 'Elimina (movimenti spostati nella madre)'
@@ -3136,9 +3464,7 @@ class _SubcategoryFormDialogState extends State<_SubcategoryFormDialog> {
                 key: const Key('subcategory_delete_button'),
                 icon: const Icon(Icons.delete_outline, size: 18),
                 onPressed: () => _confirmDelete(cascade: _totalCount > 0),
-                style: TextButton.styleFrom(
-                  foregroundColor: p.expense,
-                ),
+                style: TextButton.styleFrom(foregroundColor: p.expense),
                 label: Text(
                   _totalCount > 0
                       ? 'Elimina (movimenti spostati nella madre)'
@@ -3185,9 +3511,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
           children: [
             Text(
               'Icona',
-              style: StreamTypography.caption.copyWith(
-                color: p.textSecondary,
-              ),
+              style: StreamTypography.caption.copyWith(color: p.textSecondary),
             ),
             GestureDetector(
               onTap: () async {
@@ -3216,11 +3540,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
                       style: StreamTypography.caption,
                     ),
                     const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: p.textMuted,
-                    ),
+                    Icon(Icons.chevron_right, size: 16, color: p.textMuted),
                   ],
                 ),
               ),
@@ -3230,9 +3550,7 @@ class _SubcategoryIconColorWidget extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'Colore',
-          style: StreamTypography.caption.copyWith(
-            color: p.textSecondary,
-          ),
+          style: StreamTypography.caption.copyWith(color: p.textSecondary),
         ),
         const SizedBox(height: 12),
         ColorPicker(currentColor: color, onChanged: onColorChanged),
@@ -3245,11 +3563,13 @@ class _CategoryMovementsSheet extends StatefulWidget {
   final AppDatabase db;
   final Category category;
   final TimeFilter? initialFilter;
+  final Set<String>? selectedAccountIds;
 
   const _CategoryMovementsSheet({
     required this.db,
     required this.category,
     this.initialFilter,
+    this.selectedAccountIds,
   });
 
   @override
@@ -3281,7 +3601,9 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
           (m) =>
               m.categoryId == category.id &&
               m.type == category.type &&
-              !m.isTransfer,
+              !m.isTransfer &&
+              (widget.selectedAccountIds == null ||
+                  widget.selectedAccountIds!.contains(m.accountId)),
         )
         .toList()
         .filterByTime(_filter);
@@ -3362,7 +3684,13 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                           color: Color(category.color),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Icon(iconData, color: StreamSurfaceTokens.onAccent(Color(category.color)), size: 22),
+                        child: Icon(
+                          iconData,
+                          color: StreamSurfaceTokens.onAccent(
+                            Color(category.color),
+                          ),
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

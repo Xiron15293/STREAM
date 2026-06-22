@@ -50,7 +50,9 @@ class BackupService {
       }
       return dir.path;
     } catch (_) {
-      final dir = Directory(p.join(Directory.systemTemp.path, 'stream_backups'));
+      final dir = Directory(
+        p.join(Directory.systemTemp.path, 'stream_backups'),
+      );
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
@@ -86,6 +88,26 @@ class BackupService {
         : await PreferencesService.loadChartsCategoryFilterIds(
             profileId: resolvedProfileId,
           );
+    final categoriesFilterAccountIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadCategoriesAccountFilterIds(
+            profileId: resolvedProfileId,
+          );
+    final accountsFilterCategoryIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadAccountsCategoryFilterIds(
+            profileId: resolvedProfileId,
+          );
+    final beneficiariesFilterAccountIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadBeneficiariesAccountFilterIds(
+            profileId: resolvedProfileId,
+          );
+    final beneficiariesFilterCategoryIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadBeneficiariesCategoryFilterIds(
+            profileId: resolvedProfileId,
+          );
     final categoryLayout = await PreferencesService.loadCategoryLayout();
     final data = BackupData(
       version: currentVersion,
@@ -102,13 +124,20 @@ class BackupService {
         chartStyle: chartStyle != PreferencesService.defaultChartStyle
             ? chartStyle
             : null,
-        kpiStyle:
-            kpiStyle != PreferencesService.defaultKpiStyle ? kpiStyle : null,
+        kpiStyle: kpiStyle != PreferencesService.defaultKpiStyle
+            ? kpiStyle
+            : null,
         hiddenChartIds: hiddenChartIds.toList(),
         netWorthAccountIds: netWorthAccountIds?.toList(),
         chartsAccountFilterIds: chartsAccountFilterIds?.toList(),
         chartsCategoryFilterIds: chartsCategoryFilterIds?.toList(),
-        categoryLayout: categoryLayout != PreferencesService.defaultCategoryLayout
+        categoriesFilterAccountIds: categoriesFilterAccountIds?.toList(),
+        accountsFilterCategoryIds: accountsFilterCategoryIds?.toList(),
+        beneficiariesFilterAccountIds: beneficiariesFilterAccountIds?.toList(),
+        beneficiariesFilterCategoryIds: beneficiariesFilterCategoryIds
+            ?.toList(),
+        categoryLayout:
+            categoryLayout != PreferencesService.defaultCategoryLayout
             ? categoryLayout
             : null,
       ),
@@ -141,7 +170,9 @@ class BackupService {
     try {
       final parsed = jsonDecode(jsonString);
       if (parsed is! Map<String, dynamic>) {
-        return ValidationResult.invalid('Formato non valido: root non è un oggetto JSON');
+        return ValidationResult.invalid(
+          'Formato non valido: root non è un oggetto JSON',
+        );
       }
 
       final version = parsed['version'];
@@ -149,20 +180,27 @@ class BackupService {
         return ValidationResult.invalid('Campo "version" mancante');
       }
       if (version is! int) {
-        return ValidationResult.invalid('"version" deve essere un numero intero');
+        return ValidationResult.invalid(
+          '"version" deve essere un numero intero',
+        );
       }
       if (version < 1 || version > currentVersion) {
         return ValidationResult.invalid(
-            'Versione $version non supportata. Versione massima: $currentVersion');
+          'Versione $version non supportata. Versione massima: $currentVersion',
+        );
       }
 
       final requiredFields = ['accounts', 'categories', 'movements'];
       for (final field in requiredFields) {
         if (!parsed.containsKey(field)) {
-          return ValidationResult.invalid('Campo obbligatorio "$field" mancante');
+          return ValidationResult.invalid(
+            'Campo obbligatorio "$field" mancante',
+          );
         }
         if (parsed[field] is! List) {
-          return ValidationResult.invalid('Campo "$field" deve essere una lista');
+          return ValidationResult.invalid(
+            'Campo "$field" deve essere una lista',
+          );
         }
       }
 
@@ -211,7 +249,8 @@ class BackupService {
       if (_fieldString(item, 'id') == null) {
         return 'Categoria #${i + 1}: campo "id" mancante o vuoto';
       }
-      if (_fieldString(item, 'type') == null || !validCategoryTypes.contains(item['type'])) {
+      if (_fieldString(item, 'type') == null ||
+          !validCategoryTypes.contains(item['type'])) {
         return 'Categoria #${i + 1}: campo "type" mancante o non valido (income/expense)';
       }
     }
@@ -405,9 +444,7 @@ class BackupService {
           await PreferencesService.saveKpiStyleId(s.kpiStyle!);
         }
         if (s.hiddenChartIds.isNotEmpty) {
-          await PreferencesService.saveHiddenChartIds(
-            s.hiddenChartIds.toSet(),
-          );
+          await PreferencesService.saveHiddenChartIds(s.hiddenChartIds.toSet());
         }
         if (s.categoryLayout != null) {
           await PreferencesService.saveCategoryLayout(s.categoryLayout!);
@@ -417,20 +454,18 @@ class BackupService {
           profileId: profileId,
         );
         if (resolvedProfileId != null) {
-          if (s.netWorthAccountIds != null && s.netWorthAccountIds!.isNotEmpty) {
-            final validIds = s.netWorthAccountIds!
-                .where((id) => snapshot.accounts.any((a) => a.id == id))
-                .toList();
-            if (validIds.isNotEmpty) {
-              await PreferencesService.saveDashboardNetWorthAccountIds(
-                validIds.toSet(),
-                profileId: resolvedProfileId,
-              );
-            } else {
-              await PreferencesService.clearDashboardNetWorthAccountSelection(
-                profileId: resolvedProfileId,
-              );
-            }
+          if (s.netWorthAccountIds != null &&
+              s.netWorthAccountIds!.isNotEmpty) {
+            final validIds = PreferencesService.normalizeScopedFilterIds(
+              s.netWorthAccountIds!.toSet(),
+              snapshot.accounts
+                  .where((account) => !account.archived)
+                  .map((account) => account.id),
+            );
+            await PreferencesService.saveDashboardNetWorthAccountIds(
+              validIds,
+              profileId: resolvedProfileId,
+            );
           } else {
             await PreferencesService.clearDashboardNetWorthAccountSelection(
               profileId: resolvedProfileId,
@@ -438,9 +473,13 @@ class BackupService {
           }
 
           if (s.chartsAccountFilterIds != null) {
-            final validChartAccountIds = s.chartsAccountFilterIds!
-                .where((id) => snapshot.accounts.any((a) => a.id == id))
-                .toSet();
+            final validChartAccountIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.chartsAccountFilterIds!.toSet(),
+                  snapshot.accounts
+                      .where((account) => !account.archived)
+                      .map((account) => account.id),
+                );
             await PreferencesService.saveChartsAccountFilterIds(
               validChartAccountIds,
               profileId: resolvedProfileId,
@@ -453,9 +492,13 @@ class BackupService {
           }
 
           if (s.chartsCategoryFilterIds != null) {
-            final validChartCategoryIds = s.chartsCategoryFilterIds!
-                .where((id) => snapshot.categories.any((c) => c.id == id))
-                .toSet();
+            final validChartCategoryIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.chartsCategoryFilterIds!.toSet(),
+                  snapshot.categories
+                      .where((category) => !category.archived)
+                      .map((category) => category.id),
+                );
             await PreferencesService.saveChartsCategoryFilterIds(
               validChartCategoryIds,
               profileId: resolvedProfileId,
@@ -466,10 +509,91 @@ class BackupService {
               profileId: resolvedProfileId,
             );
           }
+
+          if (s.categoriesFilterAccountIds != null) {
+            final validCategoryAccountIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.categoriesFilterAccountIds!.toSet(),
+                  snapshot.accounts
+                      .where((account) => !account.archived)
+                      .map((account) => account.id),
+                );
+            await PreferencesService.saveCategoriesAccountFilterIds(
+              validCategoryAccountIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveCategoriesAccountFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
+
+          if (s.accountsFilterCategoryIds != null) {
+            final validAccountsCategoryIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.accountsFilterCategoryIds!.toSet(),
+                  snapshot.categories
+                      .where((category) => !category.archived)
+                      .map((category) => category.id),
+                );
+            await PreferencesService.saveAccountsCategoryFilterIds(
+              validAccountsCategoryIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveAccountsCategoryFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
+
+          if (s.beneficiariesFilterAccountIds != null) {
+            final validBeneficiariesAccountIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.beneficiariesFilterAccountIds!.toSet(),
+                  snapshot.accounts
+                      .where((account) => !account.archived)
+                      .map((account) => account.id),
+                );
+            await PreferencesService.saveBeneficiariesAccountFilterIds(
+              validBeneficiariesAccountIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveBeneficiariesAccountFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
+
+          if (s.beneficiariesFilterCategoryIds != null) {
+            final validBeneficiariesCategoryIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.beneficiariesFilterCategoryIds!.toSet(),
+                  snapshot.categories
+                      .where((category) => !category.archived)
+                      .map((category) => category.id),
+                );
+            await PreferencesService.saveBeneficiariesCategoryFilterIds(
+              validBeneficiariesCategoryIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveBeneficiariesCategoryFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
         } else {
           PreferencesService.netWorthAccountIdsNotifier.value = null;
           PreferencesService.chartsAccountFilterIdsNotifier.value = null;
           PreferencesService.chartsCategoryFilterIdsNotifier.value = null;
+          PreferencesService.categoriesAccountFilterIdsNotifier.value = null;
+          PreferencesService.accountsCategoryFilterIdsNotifier.value = null;
+          PreferencesService.beneficiariesAccountFilterIdsNotifier.value = null;
+          PreferencesService.beneficiariesCategoryFilterIdsNotifier.value =
+              null;
         }
       }
 
@@ -519,9 +643,7 @@ class BackupService {
   }
 
   static _RestoreSnapshot _buildSnapshot(BackupData data) {
-    final accountMap = <String, Account>{
-      defaultAccountId: _defaultAccount(),
-    };
+    final accountMap = <String, Account>{defaultAccountId: _defaultAccount()};
     for (final acc in data.accounts) {
       if (acc.id == defaultAccountId) continue;
       accountMap[acc.id] = acc;
@@ -550,13 +672,29 @@ class BackupService {
       quickMovementMap[quickMovement.id] = quickMovement;
     }
     final movements = data.movements
-        .map((m) => _normalizeMovement(m, accountMap, categoryMap, subcategoryMap))
+        .map(
+          (m) => _normalizeMovement(m, accountMap, categoryMap, subcategoryMap),
+        )
         .toList();
     final quickMovements = quickMovementMap.values
-        .map((q) => _normalizeQuickMovement(q, accountMap, categoryMap, subcategoryMap))
+        .map(
+          (q) => _normalizeQuickMovement(
+            q,
+            accountMap,
+            categoryMap,
+            subcategoryMap,
+          ),
+        )
         .toList();
     final favoriteMovements = data.favoriteMovements
-        .map((f) => _normalizeFavoriteMovement(f, accountMap, categoryMap, subcategoryMap))
+        .map(
+          (f) => _normalizeFavoriteMovement(
+            f,
+            accountMap,
+            categoryMap,
+            subcategoryMap,
+          ),
+        )
         .toList();
 
     return _RestoreSnapshot(
@@ -590,7 +728,8 @@ class BackupService {
     final accountId = accounts.containsKey(movement.accountId)
         ? movement.accountId
         : defaultAccountId;
-    final destinationAccountId = movement.destinationAccountId != null &&
+    final destinationAccountId =
+        movement.destinationAccountId != null &&
             accounts.containsKey(movement.destinationAccountId)
         ? movement.destinationAccountId
         : (movement.type == MovementType.transfer ? defaultAccountId : null);
@@ -598,8 +737,8 @@ class BackupService {
     final categoryId = movement.type == MovementType.transfer
         ? movement.categoryId
         : category != null && category.type == movement.type
-            ? category.id
-            : _defaultCategoryIdForType(movement.type);
+        ? category.id
+        : _defaultCategoryIdForType(movement.type);
     final subcategoryId = _normalizeSubcategoryId(
       movement.subcategoryId,
       categoryId,
@@ -667,7 +806,8 @@ class BackupService {
         ? favoriteMovement.accountId
         : defaultAccountId;
     final category = categories[favoriteMovement.categoryId];
-    final categoryId = category != null && category.type == favoriteMovement.type
+    final categoryId =
+        category != null && category.type == favoriteMovement.type
         ? category.id
         : _defaultCategoryIdForType(favoriteMovement.type);
     final subcategoryId = _normalizeSubcategoryId(
@@ -721,16 +861,16 @@ class BackupService {
   }
 
   static Map<String, dynamic> _accountToRow(Account account) => {
-        'id': account.id,
-        'name': account.name,
-        'type': account.type.name,
-        'initial_balance': account.initialBalance,
-        'icon_key': account.iconKey,
-        'color': account.color,
-        'archived': account.archived ? 1 : 0,
-        'created_at': account.createdAt.toIso8601String(),
-        'updated_at': account.updatedAt.toIso8601String(),
-      };
+    'id': account.id,
+    'name': account.name,
+    'type': account.type.name,
+    'initial_balance': account.initialBalance,
+    'icon_key': account.iconKey,
+    'color': account.color,
+    'archived': account.archived ? 1 : 0,
+    'created_at': account.createdAt.toIso8601String(),
+    'updated_at': account.updatedAt.toIso8601String(),
+  };
 
   static Map<String, dynamic> _categoryToRow(Category category) {
     final now = DateTime.now().toIso8601String();
@@ -747,18 +887,18 @@ class BackupService {
   }
 
   static Map<String, dynamic> _movementToRow(Movement movement) => {
-        'id': movement.id,
-        'title': movement.title,
-        'amount': movement.amount,
-        'type': movement.type.name,
-        'category_id': movement.categoryId,
-        'account_id': movement.accountId,
-        'destination_account_id': movement.destinationAccountId,
-        'date': movement.date.toIso8601String(),
-        'note': movement.note,
-        'created_at': movement.createdAt.toIso8601String(),
-        'updated_at': movement.updatedAt.toIso8601String(),
-      };
+    'id': movement.id,
+    'title': movement.title,
+    'amount': movement.amount,
+    'type': movement.type.name,
+    'category_id': movement.categoryId,
+    'account_id': movement.accountId,
+    'destination_account_id': movement.destinationAccountId,
+    'date': movement.date.toIso8601String(),
+    'note': movement.note,
+    'created_at': movement.createdAt.toIso8601String(),
+    'updated_at': movement.updatedAt.toIso8601String(),
+  };
 
   static Map<String, dynamic> _quickMovementToRow(QuickMovement quickMovement) {
     final now = DateTime.now().toIso8601String();
@@ -776,7 +916,8 @@ class BackupService {
   }
 
   static Map<String, dynamic> _favoriteMovementToRow(
-      FavoriteMovement favoriteMovement) {
+    FavoriteMovement favoriteMovement,
+  ) {
     final now = DateTime.now().toIso8601String();
     return {
       'id': favoriteMovement.id,
