@@ -13,6 +13,8 @@ class BackupSettings {
   final String? kpiStyle;
   final List<String> hiddenChartIds;
   final List<String>? netWorthAccountIds;
+  final List<String>? movementsAccountFilterIds;
+  final List<String>? movementsCategoryFilterIds;
   final List<String>? chartsAccountFilterIds;
   final List<String>? chartsCategoryFilterIds;
   final List<String>? categoriesFilterAccountIds;
@@ -26,6 +28,8 @@ class BackupSettings {
     this.kpiStyle,
     this.hiddenChartIds = const [],
     this.netWorthAccountIds,
+    this.movementsAccountFilterIds,
+    this.movementsCategoryFilterIds,
     this.chartsAccountFilterIds,
     this.chartsCategoryFilterIds,
     this.categoriesFilterAccountIds,
@@ -40,8 +44,11 @@ class BackupSettings {
     if (chartStyle != null) 'chartStyle': chartStyle,
     if (kpiStyle != null) 'kpiStyle': kpiStyle,
     if (hiddenChartIds.isNotEmpty) 'hiddenChartIds': hiddenChartIds,
-    if (netWorthAccountIds != null && netWorthAccountIds!.isNotEmpty)
-      'netWorthAccountIds': netWorthAccountIds,
+    if (netWorthAccountIds != null) 'netWorthAccountIds': netWorthAccountIds,
+    if (movementsAccountFilterIds != null)
+      'movementsAccountFilterIds': movementsAccountFilterIds,
+    if (movementsCategoryFilterIds != null)
+      'movementsCategoryFilterIds': movementsCategoryFilterIds,
     if (chartsAccountFilterIds != null)
       'chartsAccountFilterIds': chartsAccountFilterIds,
     if (chartsCategoryFilterIds != null)
@@ -70,6 +77,14 @@ class BackupSettings {
       netWorthAccountIds: (json['netWorthAccountIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      movementsAccountFilterIds:
+          (json['movementsAccountFilterIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
+      movementsCategoryFilterIds:
+          (json['movementsCategoryFilterIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       chartsAccountFilterIds: (json['chartsAccountFilterIds'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),

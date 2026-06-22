@@ -78,6 +78,16 @@ class BackupService {
         : await PreferencesService.loadDashboardNetWorthAccountIds(
             profileId: resolvedProfileId,
           );
+    final movementsAccountFilterIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadMovementsAccountFilterIds(
+            profileId: resolvedProfileId,
+          );
+    final movementsCategoryFilterIds = resolvedProfileId == null
+        ? null
+        : await PreferencesService.loadMovementsCategoryFilterIds(
+            profileId: resolvedProfileId,
+          );
     final chartsAccountFilterIds = resolvedProfileId == null
         ? null
         : await PreferencesService.loadChartsAccountFilterIds(
@@ -129,6 +139,8 @@ class BackupService {
             : null,
         hiddenChartIds: hiddenChartIds.toList(),
         netWorthAccountIds: netWorthAccountIds?.toList(),
+        movementsAccountFilterIds: movementsAccountFilterIds?.toList(),
+        movementsCategoryFilterIds: movementsCategoryFilterIds?.toList(),
         chartsAccountFilterIds: chartsAccountFilterIds?.toList(),
         chartsCategoryFilterIds: chartsCategoryFilterIds?.toList(),
         categoriesFilterAccountIds: categoriesFilterAccountIds?.toList(),
@@ -437,25 +449,22 @@ class BackupService {
       if (data.settings != null) {
         final s = data.settings!;
         await PreferencesService.saveShowNotes(s.showNotes);
-        if (s.chartStyle != null) {
-          await PreferencesService.saveChartStyleId(s.chartStyle!);
-        }
-        if (s.kpiStyle != null) {
-          await PreferencesService.saveKpiStyleId(s.kpiStyle!);
-        }
-        if (s.hiddenChartIds.isNotEmpty) {
-          await PreferencesService.saveHiddenChartIds(s.hiddenChartIds.toSet());
-        }
-        if (s.categoryLayout != null) {
-          await PreferencesService.saveCategoryLayout(s.categoryLayout!);
-        }
+        await PreferencesService.saveChartStyleId(
+          s.chartStyle ?? PreferencesService.defaultChartStyle,
+        );
+        await PreferencesService.saveKpiStyleId(
+          s.kpiStyle ?? PreferencesService.defaultKpiStyle,
+        );
+        await PreferencesService.saveHiddenChartIds(s.hiddenChartIds.toSet());
+        await PreferencesService.saveCategoryLayout(
+          s.categoryLayout ?? PreferencesService.defaultCategoryLayout,
+        );
         final resolvedProfileId = _resolveProfileId(
           activeProfileId: activeProfileId,
           profileId: profileId,
         );
         if (resolvedProfileId != null) {
-          if (s.netWorthAccountIds != null &&
-              s.netWorthAccountIds!.isNotEmpty) {
+          if (s.netWorthAccountIds != null) {
             final validIds = PreferencesService.normalizeScopedFilterIds(
               s.netWorthAccountIds!.toSet(),
               snapshot.accounts
@@ -468,6 +477,44 @@ class BackupService {
             );
           } else {
             await PreferencesService.clearDashboardNetWorthAccountSelection(
+              profileId: resolvedProfileId,
+            );
+          }
+
+          if (s.movementsAccountFilterIds != null) {
+            final validMovementsAccountIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.movementsAccountFilterIds!.toSet(),
+                  snapshot.accounts
+                      .where((account) => !account.archived)
+                      .map((account) => account.id),
+                );
+            await PreferencesService.saveMovementsAccountFilterIds(
+              validMovementsAccountIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveMovementsAccountFilterIds(
+              null,
+              profileId: resolvedProfileId,
+            );
+          }
+
+          if (s.movementsCategoryFilterIds != null) {
+            final validMovementsCategoryIds =
+                PreferencesService.normalizeScopedFilterIds(
+                  s.movementsCategoryFilterIds!.toSet(),
+                  snapshot.categories
+                      .where((category) => !category.archived)
+                      .map((category) => category.id),
+                );
+            await PreferencesService.saveMovementsCategoryFilterIds(
+              validMovementsCategoryIds,
+              profileId: resolvedProfileId,
+            );
+          } else {
+            await PreferencesService.saveMovementsCategoryFilterIds(
+              null,
               profileId: resolvedProfileId,
             );
           }
@@ -587,6 +634,8 @@ class BackupService {
           }
         } else {
           PreferencesService.netWorthAccountIdsNotifier.value = null;
+          PreferencesService.movementsAccountFilterIdsNotifier.value = null;
+          PreferencesService.movementsCategoryFilterIdsNotifier.value = null;
           PreferencesService.chartsAccountFilterIdsNotifier.value = null;
           PreferencesService.chartsCategoryFilterIdsNotifier.value = null;
           PreferencesService.categoriesAccountFilterIdsNotifier.value = null;

@@ -79,6 +79,44 @@ void main() {
       await sqlite.close();
     });
 
+    test(
+      'restore omitted lean settings resets stale local preferences to defaults',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
+
+        await PreferencesService.saveChartStyleId('technical');
+        await PreferencesService.saveKpiStyleId('dense');
+        await PreferencesService.saveHiddenChartIds({'chart_x'});
+        await PreferencesService.saveCategoryLayout('treemap');
+
+        final oldJson = jsonEncode({
+          'version': 2,
+          'createdAt': '2026-06-01T00:00:00',
+          'accounts': [],
+          'categories': [],
+          'movements': [],
+          'quickMovements': [],
+          'favoriteMovements': [],
+          'settings': {'showNotes': false},
+        });
+
+        final validation = BackupService.validate(oldJson);
+        expect(validation.isValid, isTrue);
+
+        await BackupService.restore(db, validation.data!);
+
+        expect(await PreferencesService.loadChartStyleId(), 'automatic');
+        expect(await PreferencesService.loadKpiStyleId(), 'automatic');
+        expect(await PreferencesService.loadHiddenChartIds(), isEmpty);
+        expect(await PreferencesService.loadCategoryLayout(), 'cleanList');
+        await sqlite.close();
+      },
+    );
+
     test('restore updates live notifiers', () async {
       SharedPreferences.setMockInitialValues({});
       final sqlite = SQLiteService();
@@ -102,81 +140,153 @@ void main() {
       await sqlite.close();
     });
 
-    test('restore applies charts filters and preserves empty none-state',
-        () async {
-      SharedPreferences.setMockInitialValues({});
-      final sqlite = SQLiteService();
-      await sqlite.open(path: inMemoryDatabasePath);
-      final db = AppDatabase(sqlite: sqlite);
-      await db.initialize();
+    test(
+      'restore applies charts filters and preserves empty none-state',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
 
-      final acc = Account(
-        id: 'valid_acc',
-        name: 'Valid',
-        type: AccountType.bank,
-        createdAt: DateTime.now(),
-      );
-      await db.addAccount(acc);
+        final acc = Account(
+          id: 'valid_acc',
+          name: 'Valid',
+          type: AccountType.bank,
+          createdAt: DateTime.now(),
+        );
+        await db.addAccount(acc);
 
-      final json = jsonEncode({
-        'version': 2,
-        'createdAt': '2026-06-01T00:00:00',
-        'accounts': [
-          {
-            'id': 'valid_acc',
-            'name': 'Valid',
-            'type': 'bank',
-            'initialBalance': 0.0,
-            'iconKey': 'account_balance',
-            'color': 4278230352,
-            'archived': false,
-            'createdAt': '2026-01-01T00:00:00.000',
-            'updatedAt': '2026-01-01T00:00:00.000',
-          }
-        ],
-        'categories': [
-          {
-            'id': 'exp_1',
-            'name': 'Spesa',
-            'type': 'expense',
-            'color': 4278190335,
-            'iconKey': 'shopping_cart',
-            'archived': false,
-          }
-        ],
-        'movements': [],
-        'quickMovements': [],
-        'favoriteMovements': [],
-        'settings': {
-          'showNotes': false,
-          'chartsAccountFilterIds': <String>[],
-          'chartsCategoryFilterIds': ['exp_1', 'ghost'],
-        },
-      });
+        final json = jsonEncode({
+          'version': 2,
+          'createdAt': '2026-06-01T00:00:00',
+          'accounts': [
+            {
+              'id': 'valid_acc',
+              'name': 'Valid',
+              'type': 'bank',
+              'initialBalance': 0.0,
+              'iconKey': 'account_balance',
+              'color': 4278230352,
+              'archived': false,
+              'createdAt': '2026-01-01T00:00:00.000',
+              'updatedAt': '2026-01-01T00:00:00.000',
+            },
+          ],
+          'categories': [
+            {
+              'id': 'exp_1',
+              'name': 'Spesa',
+              'type': 'expense',
+              'color': 4278190335,
+              'iconKey': 'shopping_cart',
+              'archived': false,
+            },
+          ],
+          'movements': [],
+          'quickMovements': [],
+          'favoriteMovements': [],
+          'settings': {
+            'showNotes': false,
+            'chartsAccountFilterIds': <String>[],
+            'chartsCategoryFilterIds': ['exp_1', 'ghost'],
+          },
+        });
 
-      final validation = BackupService.validate(json);
-      expect(validation.isValid, isTrue);
+        final validation = BackupService.validate(json);
+        expect(validation.isValid, isTrue);
 
-      await BackupService.restore(
-        db,
-        validation.data!,
-        activeProfileId: 'profile_b',
-      );
+        await BackupService.restore(
+          db,
+          validation.data!,
+          activeProfileId: 'profile_b',
+        );
 
-      expect(
-        await PreferencesService.loadChartsAccountFilterIds(
-          profileId: 'profile_b',
-        ),
-        <String>{},
-      );
-      expect(
-        await PreferencesService.loadChartsCategoryFilterIds(
-          profileId: 'profile_b',
-        ),
-        {'exp_1'},
-      );
-      await sqlite.close();
-    });
+        expect(
+          await PreferencesService.loadChartsAccountFilterIds(
+            profileId: 'profile_b',
+          ),
+          <String>{},
+        );
+        expect(
+          await PreferencesService.loadChartsCategoryFilterIds(
+            profileId: 'profile_b',
+          ),
+          {'exp_1'},
+        );
+        await sqlite.close();
+      },
+    );
+
+    test(
+      'restore applies movements filters and preserves empty none-state',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
+
+        final validation = BackupService.validate(
+          jsonEncode({
+            'version': 2,
+            'createdAt': '2026-06-01T00:00:00',
+            'accounts': [
+              {
+                'id': 'valid_acc',
+                'name': 'Valid',
+                'type': 'bank',
+                'initialBalance': 0.0,
+                'iconKey': 'account_balance',
+                'color': 4278230352,
+                'archived': false,
+                'createdAt': '2026-01-01T00:00:00.000',
+                'updatedAt': '2026-01-01T00:00:00.000',
+              },
+            ],
+            'categories': [
+              {
+                'id': 'exp_1',
+                'name': 'Spesa',
+                'type': 'expense',
+                'color': 4278190335,
+                'iconKey': 'shopping_cart',
+                'archived': false,
+              },
+            ],
+            'movements': [],
+            'quickMovements': [],
+            'favoriteMovements': [],
+            'settings': {
+              'showNotes': false,
+              'movementsAccountFilterIds': <String>[],
+              'movementsCategoryFilterIds': ['exp_1', 'ghost'],
+            },
+          }),
+        );
+        expect(validation.isValid, isTrue);
+
+        await BackupService.restore(
+          db,
+          validation.data!,
+          activeProfileId: 'profile_b',
+        );
+
+        expect(
+          await PreferencesService.loadMovementsAccountFilterIds(
+            profileId: 'profile_b',
+          ),
+          <String>{},
+        );
+        expect(
+          await PreferencesService.loadMovementsCategoryFilterIds(
+            profileId: 'profile_b',
+          ),
+          {'exp_1'},
+        );
+        await sqlite.close();
+      },
+    );
 
     test('restore sanitizes invalid netWorthAccountIds', () async {
       SharedPreferences.setMockInitialValues({});
@@ -208,7 +318,7 @@ void main() {
             'archived': false,
             'createdAt': '2026-01-01T00:00:00.000',
             'updatedAt': '2026-01-01T00:00:00.000',
-          }
+          },
         ],
         'categories': [],
         'movements': [],

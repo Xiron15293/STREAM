@@ -6,6 +6,17 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-22 — V0.11l-d
+- Audit completato su filtri/profili/backup/grafici dopo V0.11l-a/b/c
+- Trovati e fixati 2 bug P1 di backup/restore:
+  - filtri `Movimenti` non inclusi nel payload backup
+  - `netWorthAccountIds` perdeva lo stato `empty = nessuno` perche `[]` non veniva serializzato
+- Hardening aggiuntivo: restore di backup lean/legacy ora reimposta correttamente i default di `chartStyle`, `kpiStyle`, `hiddenChartIds` e `categoryLayout` invece di lasciare preferenze stale
+- Test aggiornati: `backup_preferences_test.dart`, `restore_preferences_test.dart`, `backup_cross_filters_test.dart`, `backup_restore_net_worth_profile_scope_test.dart`
+- Test mirati hardening: verdi
+- `flutter test`: **1157 passati / 1 skipped**
+- `flutter analyze`: nessun errore nuovo, solo `34` info preesistenti fuori scope
+
 ### Delta 2026-06-21 — V0.11j-fix4
 - Verificata la hero Patrimonio senza duplicazione conti: ogni conto visibile compare una sola volta e gli account extra vengono compressi in `+N altri`
 - Verificata la semplificazione del titolo hero: `Patrimonio netto` resta il titolo principale e la label ridondante `PATRIMONIO` non viene piu renderizzata

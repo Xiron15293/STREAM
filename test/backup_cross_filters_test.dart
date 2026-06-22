@@ -53,6 +53,32 @@ void main() {
     await sqlite.close();
   });
 
+  test('backup includes movements filters for current profile', () async {
+    final sqlite = SQLiteService();
+    await sqlite.open(path: inMemoryDatabasePath);
+    final db = AppDatabase(sqlite: sqlite);
+    await db.initialize();
+
+    await PreferencesService.saveMovementsAccountFilterIds({
+      'acc_1',
+    }, profileId: 'profile_test');
+    await PreferencesService.saveMovementsCategoryFilterIds(
+      <String>{},
+      profileId: 'profile_test',
+    );
+
+    final json = await BackupService.exportToJson(
+      db,
+      profileId: 'profile_test',
+    );
+    final parsed = jsonDecode(json) as Map<String, dynamic>;
+    final settings = parsed['settings'] as Map<String, dynamic>;
+
+    expect(settings['movementsAccountFilterIds'], ['acc_1']);
+    expect(settings['movementsCategoryFilterIds'], <String>[]);
+    await sqlite.close();
+  });
+
   test('restore sanitizes and scopes new cross filters', () async {
     final sqlite = SQLiteService();
     await sqlite.open(path: inMemoryDatabasePath);

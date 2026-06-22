@@ -83,12 +83,15 @@ void main() {
       await sqlite.open(path: inMemoryDatabasePath);
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
-      await PreferencesService.saveDashboardNetWorthAccountIds(
-        {'acc_1', 'acc_2'},
+      await PreferencesService.saveDashboardNetWorthAccountIds({
+        'acc_1',
+        'acc_2',
+      }, profileId: 'profile_test');
+
+      final json = await BackupService.exportToJson(
+        db,
         profileId: 'profile_test',
       );
-
-      final json = await BackupService.exportToJson(db, profileId: 'profile_test');
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final settings = parsed['settings'] as Map;
 
@@ -96,18 +99,13 @@ void main() {
       await sqlite.close();
     });
 
-    test('backup includes charts filters per profile including empty none-state',
-        () async {
+    test('backup preserves empty netWorthAccountIds none-state', () async {
       final sqlite = SQLiteService();
       await sqlite.open(path: inMemoryDatabasePath);
       final db = AppDatabase(sqlite: sqlite);
       await db.initialize();
-      await PreferencesService.saveChartsAccountFilterIds(
+      await PreferencesService.saveDashboardNetWorthAccountIds(
         <String>{},
-        profileId: 'profile_test',
-      );
-      await PreferencesService.saveChartsCategoryFilterIds(
-        {'exp_1', 'inc_1'},
         profileId: 'profile_test',
       );
 
@@ -118,10 +116,64 @@ void main() {
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final settings = parsed['settings'] as Map;
 
-      expect(settings['chartsAccountFilterIds'], <String>[]);
-      expect(settings['chartsCategoryFilterIds'], ['exp_1', 'inc_1']);
+      expect(settings['netWorthAccountIds'], <String>[]);
       await sqlite.close();
     });
+
+    test('backup includes movements filters per profile', () async {
+      final sqlite = SQLiteService();
+      await sqlite.open(path: inMemoryDatabasePath);
+      final db = AppDatabase(sqlite: sqlite);
+      await db.initialize();
+      await PreferencesService.saveMovementsAccountFilterIds(
+        <String>{},
+        profileId: 'profile_test',
+      );
+      await PreferencesService.saveMovementsCategoryFilterIds({
+        'exp_1',
+        'inc_1',
+      }, profileId: 'profile_test');
+
+      final json = await BackupService.exportToJson(
+        db,
+        profileId: 'profile_test',
+      );
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      final settings = parsed['settings'] as Map;
+
+      expect(settings['movementsAccountFilterIds'], <String>[]);
+      expect(settings['movementsCategoryFilterIds'], ['exp_1', 'inc_1']);
+      await sqlite.close();
+    });
+
+    test(
+      'backup includes charts filters per profile including empty none-state',
+      () async {
+        final sqlite = SQLiteService();
+        await sqlite.open(path: inMemoryDatabasePath);
+        final db = AppDatabase(sqlite: sqlite);
+        await db.initialize();
+        await PreferencesService.saveChartsAccountFilterIds(
+          <String>{},
+          profileId: 'profile_test',
+        );
+        await PreferencesService.saveChartsCategoryFilterIds({
+          'exp_1',
+          'inc_1',
+        }, profileId: 'profile_test');
+
+        final json = await BackupService.exportToJson(
+          db,
+          profileId: 'profile_test',
+        );
+        final parsed = jsonDecode(json) as Map<String, dynamic>;
+        final settings = parsed['settings'] as Map;
+
+        expect(settings['chartsAccountFilterIds'], <String>[]);
+        expect(settings['chartsCategoryFilterIds'], ['exp_1', 'inc_1']);
+        await sqlite.close();
+      },
+    );
 
     test('backup includes categoryLayout', () async {
       final sqlite = SQLiteService();
@@ -153,6 +205,8 @@ void main() {
       expect(settings['kpiStyle'], isNull);
       expect(settings['hiddenChartIds'], isNull);
       expect(settings['netWorthAccountIds'], isNull);
+      expect(settings['movementsAccountFilterIds'], isNull);
+      expect(settings['movementsCategoryFilterIds'], isNull);
       expect(settings['chartsAccountFilterIds'], isNull);
       expect(settings['chartsCategoryFilterIds'], isNull);
       expect(settings['categoryLayout'], isNull);

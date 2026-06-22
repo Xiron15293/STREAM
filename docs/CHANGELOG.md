@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11l-d — Total Hardening Filters, Profiles, Backup and Charts**
+  - Audit completato su propagazione `activeProfileId`, chiavi preferenze scoped, reset current-profile-only, backup/restore e semantica `null` / `empty` / `subset`
+  - Fix P1 su backup/restore preferenze filtri:
+    - backup ora include anche `movementsAccountFilterIds` e `movementsCategoryFilterIds`
+    - backup patrimonio Dashboard preserva correttamente `empty = nessuno` esportando anche `netWorthAccountIds: []`
+    - restore applica di nuovo i default lean per `chartStyle`, `kpiStyle`, `hiddenChartIds` e `categoryLayout` invece di lasciare valori stale locali
+    - restore Movimenti/Charts/Categorie/Conti/Beneficiari continua a sanificare ID invalidi/archiviati e mantiene `empty` quando rappresenta davvero "nessuno"
+  - Test aggiunti/aggiornati:
+    - `test/backup_preferences_test.dart`
+    - `test/restore_preferences_test.dart`
+    - `test/backup_cross_filters_test.dart`
+    - `test/backup_restore_net_worth_profile_scope_test.dart`
+  - Verifica finale locale:
+    - test mirati hardening verdi
+    - `flutter test` full suite verde con `1157` passati e `1` skipped
+    - `flutter analyze` senza errori nuovi; restano `34` info legacy del repo fuori scope
+  - Nessuna modifica a DB/schema/migrazioni, saldi reali, movimenti reali, import/export CSV, chart palette/style, KPI style o hidden charts
+
 - **V0.11l-a-fix1 — Group Movimenti Category Filter by Uscite and Entrate**
   - Nel bottom sheet del filtro categorie di Movimenti, le categorie sono ora divise visivamente in due sezioni: Uscite (expense) ed Entrate (income)
   - Mantenuta l'opzione "Tutte le categorie" in cima alla lista

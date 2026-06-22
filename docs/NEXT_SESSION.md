@@ -1,11 +1,18 @@
 # NEXT SESSION
 
-> Aggiornato: 2026-06-21
+> Aggiornato: 2026-06-22
 
 Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11l-d completata: hardening totale del sistema filtri/profili/backup/grafici con audit su propagazione `activeProfileId`, chiavi scoped, reset current-profile-only, backup/restore e semantica `null` / `empty` / `subset`.
+- Fix P1 completati in backup/restore:
+  - backup ora include anche i filtri `Movimenti` scoped per profilo
+  - backup/restore Patrimonio Dashboard preserva `empty = nessuno`
+  - restore di backup lean/legacy riallinea ai default `chartStyle`, `kpiStyle`, `hiddenChartIds` e `categoryLayout` invece di mantenere preferenze stale locali
+- QA locale aggiornata: test mirati hardening verdi e `flutter test` full suite verde con `1157` passati e `1` skipped.
+- `flutter analyze` continua a chiudere con `34` info legacy del repo, senza nuovi errori o warning bloccanti introdotti dalla patch.
 - V0.11l-a-fix1 completata: nel bottom sheet del filtro categorie Movimenti, le categorie sono ora raggruppate visivamente in sezioni "Uscite" (expense) ed "Entrate" (income). Selezione mista ancora supportata. Nessun cambio logica/persistenza. `flutter test` full suite `1104` passati, `~1` skipped.
 - V0.11l-a completata: i filtri di conti e categorie sono ora scoped **solo** alla schermata Movimenti e persistono per profilo tramite `movements_filter_account_ids_<profileId>` e `movements_filter_category_ids_<profileId>`.
 - V0.11l-a completata anche sul reset: `clearForReset(activeProfileId: ...)` pulisce i filtri Movimenti del solo profilo corrente e riallinea i notifier in-memory.
@@ -44,8 +51,8 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale filtri Movimenti multi-profilo su device reale: cambio profilo, reset profilo corrente, verifica label e transfer origin/destination
-2. QA manuale backup/restore multi-profilo su device reale: export da profilo B, restore su profilo B, verifica assenza bleed su profilo A
+1. QA manuale backup/restore multi-profilo su device reale: export/restore per profili diversi con verifica semantica `null` / `empty` / `subset`
+2. QA manuale filtri multi-profilo su device reale: cambio profilo, reset profilo corrente, verifica label e transfer origin/destination
 3. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
 4. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
 

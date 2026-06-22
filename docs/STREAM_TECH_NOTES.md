@@ -2,7 +2,31 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes closure candidate / QA stabilized + dashboard hero dedup + effective automatic KPI style mapping + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+**Stato:** Hermes closure candidate / QA stabilized + V0.11l-d total hardening backup-reset-filters + dashboard hero dedup + effective automatic KPI style mapping + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+
+## Update 2026-06-22 — V0.11l-d Total Hardening Filters, Profiles, Backup and Charts
+
+- Audit confermato su `MainScaffold`, `ArchiveScreen`, `SettingsScreen` e `BackupScreen`: `activeProfileId` continua a propagarsi correttamente verso Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari
+- Nessuna nuova chiave scoped usa storage globale per errore; restano profile-scoped:
+  - `dashboard_net_worth_account_ids_<profileId>`
+  - `movements_filter_account_ids_<profileId>`
+  - `movements_filter_category_ids_<profileId>`
+  - `charts_filter_account_ids_<profileId>`
+  - `charts_filter_category_ids_<profileId>`
+  - `categories_filter_account_ids_<profileId>`
+  - `accounts_filter_category_ids_<profileId>`
+  - `beneficiaries_filter_account_ids_<profileId>`
+  - `beneficiaries_filter_category_ids_<profileId>`
+- Fix P1 su backup/restore:
+  - `BackupSettings` ora serializza anche `movementsAccountFilterIds` e `movementsCategoryFilterIds`
+  - `netWorthAccountIds` viene serializzato anche quando e un array vuoto, cosi `empty = nessuno` non collassa piu in `null`
+  - `BackupService.restore()` ripristina i default lean di `chartStyle`, `kpiStyle`, `hiddenChartIds` e `categoryLayout` quando il backup non contiene override espliciti
+  - Restore scoped continua a usare `normalizeScopedFilterIds(...)` per eliminare ID invalidi/archiviati senza perdere i veri empty-set
+- Nessuna modifica a DB/schema/migrazioni o a logiche di scrittura movimenti/conti: il fix resta confinato a preferenze e backup/restore
+- Validazione locale:
+  - test mirati hardening verdi
+  - `flutter test` full suite verde con `1157` passati e `1` skipped
+  - `flutter analyze` con soli `34` info preesistenti del repo
 
 ## Update 2026-06-21 — V0.11j-fix4 Dashboard Hero Dedup + Effective Automatic KPI Style
 
