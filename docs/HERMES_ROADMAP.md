@@ -76,6 +76,7 @@
 | V0.11j | Advanced Chart Styles (automatic/soft/technical/highContrast/editorial) selezionabili dall'utente via PreferencesService | ✅ COMPLETATO | 2026-06-21 |
 | V0.11j-fix1 | Hero KPI Cards + Strong Theme Differentiation (StreamKpiEmphasis, High Contrast giallo/nero, key stabili) | ✅ COMPLETATO | 2026-06-21 |
 | V0.11j-fix4 | Dashboard Hero Dedup + Effective Automatic KPI Style | ✅ COMPLETATO | 2026-06-21 |
+| V0.11m | UX Polish Filters and Empty States | ✅ COMPLETATO | 2026-06-22 |
 | V0.11l-a | Movimenti Scoped Filters (conti/categorie profile-scoped, reset profile-safe) | ✅ COMPLETATO | 2026-06-21 |
 | V0.11l-a-fix1 | Group Movimenti Category Filter by Uscite and Entrate (raggruppamento visivo categorie nel bottom sheet, selezione mista mantenuta) | ✅ COMPLETATO | 2026-06-21 |
 
@@ -108,6 +109,7 @@ Vedi **`docs/STREAM_FEATURE_BACKLOG.md`** per il censimento completo e lo stato 
 | **Delta** | **V0.11j (✅) — advanced chart styles reali in Settings/Grafici/Dashboard + bugfix chart visibility per-card, full suite finale `1048 passed`, `1 skipped`** |
 | **Delta** | **V0.11j-fix1 (✅) — Hero KPI Cards, High Contrast giallo/nero, key stabili, full suite `1053 passed`, `1 skipped`** |
 | **Delta** | **V0.11j-fix4 (✅) — hero Patrimonio senza conti duplicati, pill compatte con `+N altri`, `Automatico` KPI risolto per tema e hero split reale in Aurora, full suite `1059 passed`, `~1 skipped`** |
+| **Delta** | **V0.11m (✅) — UX polish filtri/empty state, bottom sheet uniformati, `ChartEmptyState` con title+subtitle+icon, full suite `1160 passed`, `1 skipped` con workaround `--no-test-assets`** |
 | **Delta** | **V0.11l-a-fix1 (✅) — raggruppamento visivo categorie Uscite/Entrate nel bottom sheet filtro Movimenti, selezione mista mantenuta, nessun cambio logica/persistenza, full suite `1104 passed`, `~1 skipped`** |
 | **Delta** | **V0.11l-a (✅) — filtri Movimenti scoped su conti/categorie, preferenze per profilo, transfer origin/destination semantics, reset profile-safe, full suite `1100 passed`, `~1 skipped`** |
 | **Delta** | **Hermes Extended QA Audit (✅) — matrice QA data-driven su suggerimenti, beneficiari, TimeFilter/range e formatter valuta; stress/extensive + full suite verdi (`1048 passed`, `1 skipped`)** |

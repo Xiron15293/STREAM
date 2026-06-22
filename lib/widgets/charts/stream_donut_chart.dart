@@ -6,6 +6,8 @@ import '../../design/stream_theme_palette.dart';
 import '../../theme.dart';
 import '../../utils/analytics_metrics.dart';
 import '../../utils/currency_formatter.dart';
+import '../../utils/filter_ux_copy.dart';
+import 'chart_empty_state.dart';
 
 /// Start angle offset in degrees. -90 means start from top (12 o'clock).
 /// Must match between PieChartData and painter calculations.
@@ -32,21 +34,17 @@ class StreamDonutChart extends StatelessWidget {
     final p = context.$palette;
     final cp = context.$chart;
     if (slices.isEmpty) {
-      return Center(
-        child: Text(
-          'Nessun dato',
-          style: StreamTypography.caption.copyWith(color: p.textSecondary),
-        ),
+      return const ChartEmptyState(
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 
     final total = slices.fold<double>(0.0, (s, sl) => s + sl.value);
     if (total == 0) {
-      return Center(
-        child: Text(
-          'Nessun dato',
-          style: StreamTypography.caption.copyWith(color: p.textSecondary),
-        ),
+      return const ChartEmptyState(
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 

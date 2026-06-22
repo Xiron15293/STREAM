@@ -202,8 +202,9 @@ void main() {
     await _pumpCategories(tester, db);
 
     expect(find.byKey(const Key('categories_treemap_empty')), findsOneWidget);
+    expect(find.text('Nessun dato'), findsOneWidget);
     expect(
-      find.text('Nessun dato categorie nel periodo selezionato.'),
+      find.text('Modifica i filtri o il periodo per vedere altri risultati.'),
       findsOneWidget,
     );
   });

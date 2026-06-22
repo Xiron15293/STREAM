@@ -11,6 +11,7 @@ import '../models/movement.dart';
 import '../theme.dart';
 import '../util/beneficiary_helpers.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/filter_ux_copy.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/stream_kpi_card.dart';
 
@@ -195,7 +196,15 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                 const SizedBox(height: StreamSpacing.md),
               Expanded(
                 child: filtered.isEmpty
-                    ? _BeneficiariesEmptyState(hasQuery: query.isNotEmpty)
+                    ? _BeneficiariesEmptyState(
+                        hasQuery: query.isNotEmpty,
+                        noAccountsSelected:
+                            _selectedAccountFilterIds != null &&
+                            _selectedAccountFilterIds!.isEmpty,
+                        noCategoriesSelected:
+                            _selectedCategoryFilterIds != null &&
+                            _selectedCategoryFilterIds!.isEmpty,
+                      )
                     : ListView.builder(
                         padding: EdgeInsets.fromLTRB(
                           StreamSpacing.lg,
@@ -569,6 +578,20 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.accountToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      'Filtri i movimenti collegati ai beneficiari.',
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textMuted,
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
                       key: const Key('beneficiaries_account_filter_all_option'),
@@ -604,45 +627,54 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                       ),
                     ),
                     const Divider(),
-                    ...activeAccounts.map((account) {
-                      final isSelected = workingIds.contains(account.id);
-                      return InkWell(
-                        key: Key(
-                          'beneficiaries_account_filter_option_${account.id}',
-                        ),
-                        onTap: () {
-                          setSheetState(() {
-                            if (isSelected) {
-                              workingIds.remove(account.id);
-                            } else {
-                              workingIds.add(account.id);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: p.primary,
-                                size: 22,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: activeAccounts.map((account) {
+                            final isSelected = workingIds.contains(account.id);
+                            return InkWell(
+                              key: Key(
+                                'beneficiaries_account_filter_option_${account.id}',
                               ),
-                              const SizedBox(width: StreamSpacing.md),
-                              Expanded(
-                                child: Text(
-                                  account.name,
-                                  style: StreamTypography.bodyBold,
-                                  overflow: TextOverflow.ellipsis,
+                              onTap: () {
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    workingIds.remove(account.id);
+                                  } else {
+                                    workingIds.add(account.id);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                      color: p.primary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: StreamSpacing.md),
+                                    Expanded(
+                                      child: Text(
+                                        account.name,
+                                        style: StreamTypography.bodyBold,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.lg),
                     Row(
                       children: [
@@ -776,6 +808,20 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.categoryToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      'Filtri i movimenti collegati ai beneficiari.',
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textMuted,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
@@ -1322,21 +1368,50 @@ class _StatChip extends StatelessWidget {
 
 class _BeneficiariesEmptyState extends StatelessWidget {
   final bool hasQuery;
+  final bool noAccountsSelected;
+  final bool noCategoriesSelected;
 
-  const _BeneficiariesEmptyState({required this.hasQuery});
+  const _BeneficiariesEmptyState({
+    required this.hasQuery,
+    this.noAccountsSelected = false,
+    this.noCategoriesSelected = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = context.$palette;
+    final title = noAccountsSelected
+        ? FilterUxCopy.noAccountSelectedTitle
+        : noCategoriesSelected
+        ? FilterUxCopy.noCategorySelectedTitle
+        : hasQuery
+        ? 'Nessun beneficiario trovato'
+        : 'Nessun beneficiario disponibile';
+    final subtitle = noAccountsSelected
+        ? FilterUxCopy.noAccountSelectedSubtitle
+        : noCategoriesSelected
+        ? FilterUxCopy.noCategorySelectedSubtitle
+        : hasQuery
+        ? 'Prova a cambiare ricerca o filtri.'
+        : 'Aggiungi movimenti o modifica i filtri per vedere i beneficiari.';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(StreamSpacing.xl),
-        child: Text(
-          hasQuery
-              ? 'Nessun beneficiario trovato'
-              : 'Nessun beneficiario disponibile',
-          style: StreamTypography.body.copyWith(color: p.textSecondary),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: StreamTypography.bodyBold.copyWith(color: p.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: StreamSpacing.xs),
+            Text(
+              subtitle,
+              style: StreamTypography.caption.copyWith(color: p.textMuted),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

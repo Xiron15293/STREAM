@@ -158,4 +158,24 @@ void main() {
     expect(find.text('Nessun conto'), findsOneWidget);
     expect(find.text('Nessuna categoria'), findsOneWidget);
   });
+
+  testWidgets('account sheet shows standard title and helper copy', (
+    tester,
+  ) async {
+    final db = await seededDb();
+    await pumpScreen(tester, db, profileId: 'profile_a');
+
+    await tester.tap(find.byKey(const Key('categories_account_filter_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Conti'), findsOneWidget);
+    expect(
+      find.text('Tocca per selezionare o deselezionare tutti.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Filtri i movimenti usati per calcolare le categorie.'),
+      findsOneWidget,
+    );
+  });
 }

@@ -11,6 +11,7 @@ import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/analytics_metrics.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/filter_ux_copy.dart';
 import '../widgets/charts/chart_empty_state.dart';
 import '../widgets/charts/stream_bar_chart.dart';
 import '../widgets/charts/stream_chart_card.dart';
@@ -370,12 +371,20 @@ class _ChartsScreenState extends State<ChartsScreen> {
     if (_showsAccountFilterForSection(_section) &&
         _selectedAccountFilterIds != null &&
         _selectedAccountFilterIds!.isEmpty) {
-      return const ChartEmptyState(message: 'Nessun conto selezionato');
+      return const ChartEmptyState(
+        title: FilterUxCopy.noAccountSelectedTitle,
+        subtitle: FilterUxCopy.noAccountSelectedSubtitle,
+        icon: Icons.account_balance_outlined,
+      );
     }
     if (_showsCategoryFilterForSection(_section) &&
         _selectedCategoryFilterIds != null &&
         _selectedCategoryFilterIds!.isEmpty) {
-      return const ChartEmptyState(message: 'Nessuna categoria selezionata');
+      return const ChartEmptyState(
+        title: FilterUxCopy.noCategorySelectedTitle,
+        subtitle: FilterUxCopy.noCategorySelectedSubtitle,
+        icon: Icons.category_outlined,
+      );
     }
     switch (_section) {
       case _ChartSection.movements:
@@ -398,8 +407,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     return GestureDetector(
       onTap: () => _showChartSettings(context),
       child: const ChartEmptyState(
-        message:
-            'Nessun grafico attivo in questa sezione.\nTocca per aprire le impostazioni grafici.',
+        title: 'Nessun grafico attivo',
+        subtitle: 'Tocca per aprire le impostazioni grafici.',
+        icon: Icons.tune_rounded,
       ),
     );
   }
@@ -414,7 +424,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     if (_visibleChartsFor('movements').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
       return const ChartEmptyState(
-        message: 'Nessun movimento nel periodo selezionato',
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 
@@ -511,7 +522,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     if (_visibleChartsFor('categories').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
       return const ChartEmptyState(
-        message: 'Nessun movimento nel periodo selezionato',
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 
@@ -611,11 +623,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final filtered = movements.filterByTime(_filter);
     if (_visibleChartsFor('accounts').isEmpty) return _noVisibleCharts();
     if (active.isEmpty) {
-      return const ChartEmptyState(message: 'Nessun conto attivo');
+      return const ChartEmptyState(
+        title: 'Nessun conto attivo',
+        subtitle: 'Aggiungi o riattiva un conto per vedere i grafici.',
+        icon: Icons.account_balance_outlined,
+      );
     }
     if (filtered.isEmpty) {
       return const ChartEmptyState(
-        message: 'Nessun movimento nel periodo selezionato',
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 
@@ -748,7 +765,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     if (_visibleChartsFor('beneficiaries').isEmpty) return _noVisibleCharts();
     if (filtered.isEmpty) {
       return const ChartEmptyState(
-        message: 'Nessun movimento nel periodo selezionato',
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 
@@ -759,7 +777,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final hasData = top.isNotEmpty || freq.isNotEmpty || avg.isNotEmpty;
     if (!hasData) {
       return const ChartEmptyState(
-        message: 'Nessun beneficiario nel periodo selezionato',
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
+        icon: Icons.person_outline,
       );
     }
 
@@ -1084,15 +1104,19 @@ class _ChartsScreenState extends State<ChartsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Filtra per conti',
-                          style: StreamTypography.h3,
-                        ),
+                        const Text('Conti', style: StreamTypography.h3),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.accountToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
@@ -1129,43 +1153,54 @@ class _ChartsScreenState extends State<ChartsScreen> {
                       ),
                     ),
                     const Divider(),
-                    ...activeAccounts.map((account) {
-                      final isSelected = workingIds.contains(account.id);
-                      return InkWell(
-                        key: Key('charts_account_filter_option_${account.id}'),
-                        onTap: () {
-                          setSheetState(() {
-                            if (isSelected) {
-                              workingIds.remove(account.id);
-                            } else {
-                              workingIds.add(account.id);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: p.primary,
-                                size: 22,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: activeAccounts.map((account) {
+                            final isSelected = workingIds.contains(account.id);
+                            return InkWell(
+                              key: Key(
+                                'charts_account_filter_option_${account.id}',
                               ),
-                              const SizedBox(width: StreamSpacing.md),
-                              Expanded(
-                                child: Text(
-                                  account.name,
-                                  style: StreamTypography.bodyBold,
-                                  overflow: TextOverflow.ellipsis,
+                              onTap: () {
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    workingIds.remove(account.id);
+                                  } else {
+                                    workingIds.add(account.id);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                      color: p.primary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: StreamSpacing.md),
+                                    Expanded(
+                                      child: Text(
+                                        account.name,
+                                        style: StreamTypography.bodyBold,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.lg),
                     Row(
                       children: [
@@ -1289,15 +1324,19 @@ class _ChartsScreenState extends State<ChartsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Filtra per categorie',
-                          style: StreamTypography.h3,
-                        ),
+                        const Text('Categorie', style: StreamTypography.h3),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.categoryToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(

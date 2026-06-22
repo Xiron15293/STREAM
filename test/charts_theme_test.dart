@@ -91,7 +91,7 @@ void main() {
     await pumpCharts(tester, StreamThemeId.highContrast, withData: false);
 
     final message = tester.widget<Text>(
-      find.text('Nessun movimento nel periodo selezionato'),
+      find.text('Nessun dato'),
     );
     expect(message.style?.color, palette.textSecondary);
   });

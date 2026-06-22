@@ -97,7 +97,27 @@ void main() {
     expect(heroText('Nessun conto'), findsOneWidget);
     expect(heroText('+0.00 €'), findsOneWidget);
     expect(heroText('Nessun conto selezionato'), findsOneWidget);
+    expect(
+      heroText('Il patrimonio resta a zero finché non selezioni almeno un conto.'),
+      findsOneWidget,
+    );
     expect(PreferencesService.netWorthAccountIdsNotifier.value, <String>{});
+  });
+
+  testWidgets('account sheet shows standard helper copy', (tester) async {
+    final db = await seededDb();
+    await pumpDashboard(tester, db, profileId: 'profile_a');
+
+    await tester.tap(
+      find.byKey(const Key('dashboard_net_worth_account_filter_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Conti'), findsOneWidget);
+    expect(
+      find.text('Tocca per selezionare o deselezionare tutti.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('second toggle all restores Tutti i conti and full patrimonio', (

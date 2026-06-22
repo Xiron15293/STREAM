@@ -329,7 +329,8 @@ void main() {
         await tester.tap(find.text('Archivio'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
+        expect(find.text('Nessun movimento'), findsOneWidget);
+        expect(find.text('Aggiungi un movimento o cambia periodo.'), findsOneWidget);
         expect(find.text('Fuori periodo'), findsNothing);
       },
     );

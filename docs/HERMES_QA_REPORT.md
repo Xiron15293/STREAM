@@ -6,6 +6,17 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-22 — V0.11m
+- Verificata la standardizzazione UX di filtri, bottom sheet ed empty state senza regressioni su logica dati o semantica filtri
+- Verificati i nuovi stati:
+  - nessun conto selezionato
+  - nessuna categoria selezionata
+  - nessun dato nei grafici
+  - nessun movimento nel periodo
+- Test aggiornati su Dashboard, Grafici, Categorie, Conti, Beneficiari, Treemap e profili scoped
+- `flutter test --no-test-assets`: **1160 passati / 1 skipped**
+- `flutter analyze`: nessun errore o warning nuovo, solo `34` info preesistenti
+
 ### Delta 2026-06-22 — V0.11l-d
 - Audit completato su filtri/profili/backup/grafici dopo V0.11l-a/b/c
 - Trovati e fixati 2 bug P1 di backup/restore:

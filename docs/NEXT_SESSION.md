@@ -6,6 +6,11 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11m completata: UX polish di filtri, bottom sheet ed empty state su Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari senza cambiare logica dati o semantica `null` / `empty` / `subset`.
+- `ChartEmptyState` ora supporta `title + subtitle + icon`; i grafici distinguono meglio tra nessuna selezione, nessun dato e nessun grafico attivo.
+- Bottom sheet filtri uniformati con titoli `Conti` / `Categorie`, microcopy contestuale e liste scrollabili su viewport piccoli; `Applica` / `Annulla` e select/deselect all restano invariati.
+- QA locale aggiornata: `flutter test --no-test-assets` full suite verde con `1160` passati e `1` skipped. `flutter test` standard continua invece a crashare localmente nel tool Flutter su `NativeAssetsManifest.json`, quindi il workaround documentato resta necessario.
+- `flutter analyze` continua a chiudere con `34` info legacy del repo, senza nuovi errori o warning introdotti dalla patch.
 - V0.11l-d completata: hardening totale del sistema filtri/profili/backup/grafici con audit su propagazione `activeProfileId`, chiavi scoped, reset current-profile-only, backup/restore e semantica `null` / `empty` / `subset`.
 - Fix P1 completati in backup/restore:
   - backup ora include anche i filtri `Movimenti` scoped per profilo
@@ -51,10 +56,10 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale backup/restore multi-profilo su device reale: export/restore per profili diversi con verifica semantica `null` / `empty` / `subset`
-2. QA manuale filtri multi-profilo su device reale: cambio profilo, reset profilo corrente, verifica label e transfer origin/destination
+1. QA manuale filtri scoped su device reale: verificare microcopy, wrap chip e bottom sheet su viewport piccoli
+2. QA manuale backup/restore multi-profilo su device reale: export/restore per profili diversi con verifica semantica `null` / `empty` / `subset`
 3. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
-4. Follow-up P2 fragilita shader test: `Asset 'shaders/ink_sparkle.frag' not found`
+4. Follow-up toolchain test: chiarire il crash locale di `flutter test` con test assets attivi (`NativeAssetsManifest.json`)
 
 ## Prossimo Sprint Consigliato
 

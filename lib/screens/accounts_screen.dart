@@ -10,6 +10,7 @@ import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/duplicate_date_selector.dart';
+import '../utils/filter_ux_copy.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/calculator_amount_pad.dart';
@@ -243,6 +244,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.categoryToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      'Il saldo reale del conto non cambia.',
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textMuted,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(

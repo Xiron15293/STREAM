@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../design/stream_chart_palette.dart';
 import '../../design/stream_theme_extension.dart';
 import '../../design/stream_theme_palette.dart';
-import '../../theme.dart';
+import '../../utils/filter_ux_copy.dart';
+import 'chart_empty_state.dart';
 
 class HorizontalBarData {
   final String label;
@@ -54,11 +55,9 @@ class StreamHorizontalBarChart extends StatelessWidget {
       (b) =>
           b.value == 0 && (b.secondaryValue == null || b.secondaryValue == 0),
     )) {
-      return Center(
-        child: Text(
-          'Nessun dato',
-          style: StreamTypography.caption.copyWith(color: p.textSecondary),
-        ),
+      return const ChartEmptyState(
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
       );
     }
 

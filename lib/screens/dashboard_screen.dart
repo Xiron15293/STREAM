@@ -14,6 +14,7 @@ import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/duplicate_date_selector.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/filter_ux_copy.dart';
 import '../widgets/movement_picker.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/stream_kpi_card.dart';
@@ -246,12 +247,14 @@ class _BalanceHero extends StatelessWidget {
     final validSelectedCount = accounts.length;
     final activeCount = allAccounts.length;
 
-    if (selectedAccountIds == null ||
-        validSelectedCount == activeCount) {
+    if (selectedAccountIds == null || validSelectedCount == activeCount) {
       return 'Tutti i conti';
     }
     if (selectedAccountIds!.isEmpty) return 'Nessun conto';
-    if (validSelectedCount == 1) return '1 conto selezionato';
+    if (validSelectedCount == 1) {
+      final name = accounts.first.name;
+      return name.length <= 20 ? name : '1 conto selezionato';
+    }
     return '$validSelectedCount conti selezionati';
   }
 
@@ -285,15 +288,19 @@ class _BalanceHero extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Seleziona conti per Patrimonio',
-                          style: StreamTypography.h3,
-                        ),
+                        const Text('Conti', style: StreamTypography.h3),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.accountToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
@@ -328,62 +335,70 @@ class _BalanceHero extends StatelessWidget {
                       ),
                     ),
                     const Divider(),
-                    ...activeAccounts.map((account) {
-                      final isSelected = workingIds.contains(account.id);
-                      return InkWell(
-                        key: Key(
-                          'dashboard_net_worth_account_option_${account.id}',
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: activeAccounts.map((account) {
+                            final isSelected = workingIds.contains(account.id);
+                            return InkWell(
+                              key: Key(
+                                'dashboard_net_worth_account_option_${account.id}',
+                              ),
+                              onTap: () {
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    workingIds.remove(account.id);
+                                  } else {
+                                    workingIds.add(account.id);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                      color: p.primary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: StreamSpacing.md),
+                                    Icon(
+                                      StreamIconLibrary.getAccountIcon(
+                                        account.iconKey,
+                                      ),
+                                      size: 18,
+                                      color: Color(account.color),
+                                    ),
+                                    const SizedBox(width: StreamSpacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        account.name,
+                                        style: StreamTypography.bodyBold,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Text(
+                                      formatMovementCurrency(
+                                        db.getAccountBalance(account),
+                                        showPositiveSign: true,
+                                      ),
+                                      style: StreamTypography.captionBold
+                                          .copyWith(color: p.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
-                        onTap: () {
-                          setSheetState(() {
-                            if (isSelected) {
-                              workingIds.remove(account.id);
-                            } else {
-                              workingIds.add(account.id);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: p.primary,
-                                size: 22,
-                              ),
-                              const SizedBox(width: StreamSpacing.md),
-                              Icon(
-                                StreamIconLibrary.getAccountIcon(
-                                  account.iconKey,
-                                ),
-                                size: 18,
-                                color: Color(account.color),
-                              ),
-                              const SizedBox(width: StreamSpacing.sm),
-                              Expanded(
-                                child: Text(
-                                  account.name,
-                                  style: StreamTypography.bodyBold,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                formatMovementCurrency(
-                                  db.getAccountBalance(account),
-                                  showPositiveSign: true,
-                                ),
-                                style: StreamTypography.captionBold.copyWith(
-                                  color: p.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.lg),
                     Row(
                       children: [
@@ -608,8 +623,13 @@ class _HeroStacked extends StatelessWidget {
         if (activeAccounts.isEmpty && accounts.isEmpty) ...[
           const SizedBox(height: StreamSpacing.sm),
           Text(
-            'Nessun conto selezionato',
+            FilterUxCopy.noAccountSelectedTitle,
             style: StreamTypography.captionBold.copyWith(color: subtitleColor),
+          ),
+          const SizedBox(height: StreamSpacing.xs),
+          Text(
+            'Il patrimonio resta a zero finché non selezioni almeno un conto.',
+            style: StreamTypography.micro.copyWith(color: subtitleColor),
           ),
         ],
         if (visible.isNotEmpty) ...[
@@ -699,8 +719,13 @@ class _HeroSplit extends StatelessWidget {
         if (activeAccounts.isEmpty && accounts.isEmpty) ...[
           const SizedBox(height: StreamSpacing.sm),
           Text(
-            'Nessun conto selezionato',
+            FilterUxCopy.noAccountSelectedTitle,
             style: StreamTypography.captionBold.copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: StreamSpacing.xs),
+          Text(
+            'Il patrimonio resta a zero finché non selezioni almeno un conto.',
+            style: StreamTypography.micro.copyWith(color: p.textSecondary),
           ),
         ],
         if (visible.isNotEmpty) ...[

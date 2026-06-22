@@ -153,5 +153,11 @@ void main() {
       find.byKey(const Key('accounts_category_filter_income_section')),
       findsOneWidget,
     );
+    expect(find.text('Categorie'), findsOneWidget);
+    expect(
+      find.text('Puoi combinare categorie di uscita e di entrata.'),
+      findsOneWidget,
+    );
+    expect(find.text('Il saldo reale del conto non cambia.'), findsOneWidget);
   });
 }

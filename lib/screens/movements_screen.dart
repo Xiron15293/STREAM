@@ -8,6 +8,7 @@ import '../models/movement.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/duplicate_date_selector.dart';
+import '../utils/filter_ux_copy.dart';
 import '../utils/movement_search.dart';
 import 'heatmap_settings_screen.dart';
 import '../widgets/movement_picker.dart';
@@ -319,15 +320,19 @@ class _MovementsScreenState extends State<MovementsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Filtra per conti',
-                          style: StreamTypography.h3,
-                        ),
+                        const Text('Conti', style: StreamTypography.h3),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.accountToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
@@ -364,45 +369,54 @@ class _MovementsScreenState extends State<MovementsScreen> {
                       ),
                     ),
                     const Divider(),
-                    ...activeAccounts.map((account) {
-                      final isSelected = workingIds.contains(account.id);
-                      return InkWell(
-                        key: Key(
-                          'movements_account_filter_option_${account.id}',
-                        ),
-                        onTap: () {
-                          setSheetState(() {
-                            if (isSelected) {
-                              workingIds.remove(account.id);
-                            } else {
-                              workingIds.add(account.id);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: p.primary,
-                                size: 22,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: activeAccounts.map((account) {
+                            final isSelected = workingIds.contains(account.id);
+                            return InkWell(
+                              key: Key(
+                                'movements_account_filter_option_${account.id}',
                               ),
-                              const SizedBox(width: StreamSpacing.md),
-                              Expanded(
-                                child: Text(
-                                  account.name,
-                                  style: StreamTypography.bodyBold,
-                                  overflow: TextOverflow.ellipsis,
+                              onTap: () {
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    workingIds.remove(account.id);
+                                  } else {
+                                    workingIds.add(account.id);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                      color: p.primary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: StreamSpacing.md),
+                                    Expanded(
+                                      child: Text(
+                                        account.name,
+                                        style: StreamTypography.bodyBold,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.lg),
                     Row(
                       children: [
@@ -488,15 +502,19 @@ class _MovementsScreenState extends State<MovementsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Filtra per categorie',
-                          style: StreamTypography.h3,
-                        ),
+                        const Text('Categorie', style: StreamTypography.h3),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.categoryToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
@@ -737,6 +755,22 @@ class _MovementsScreenState extends State<MovementsScreen> {
           Widget body;
           if (allMovements.isEmpty) {
             body = _buildEmptyAll(context);
+          } else if (_selectedAccountFilterIds != null &&
+              _selectedAccountFilterIds!.isEmpty) {
+            body = _buildEmptySelection(
+              context,
+              icon: Icons.account_balance_wallet_outlined,
+              title: FilterUxCopy.noAccountSelectedTitle,
+              subtitle: FilterUxCopy.noAccountSelectedSubtitle,
+            );
+          } else if (_selectedCategoryFilterIds != null &&
+              _selectedCategoryFilterIds!.isEmpty) {
+            body = _buildEmptySelection(
+              context,
+              icon: Icons.category_outlined,
+              title: FilterUxCopy.noCategorySelectedTitle,
+              subtitle: FilterUxCopy.noCategorySelectedSubtitle,
+            );
           } else {
             if (scopedSearchFilteredMovements.isEmpty) {
               body = hasQuery
@@ -1091,16 +1125,42 @@ class _MovementsScreenState extends State<MovementsScreen> {
         children: [
           Icon(Icons.event_busy, size: 64, color: p.textMuted),
           const SizedBox(height: StreamSpacing.lg),
-          const Text(
-            'Nessun movimento in questo periodo',
-            style: StreamTypography.h2,
-          ),
+          const Text(FilterUxCopy.noMovementsTitle, style: StreamTypography.h2),
           const SizedBox(height: StreamSpacing.sm),
           Text(
-            'Prova a cambiare periodo',
+            FilterUxCopy.noMovementsSubtitle,
             style: StreamTypography.body.copyWith(color: p.textSecondary),
+            textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySelection(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final p = context.$palette;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(StreamSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 64, color: p.textMuted),
+            const SizedBox(height: StreamSpacing.lg),
+            Text(title, style: StreamTypography.h2, textAlign: TextAlign.center),
+            const SizedBox(height: StreamSpacing.sm),
+            Text(
+              subtitle,
+              style: StreamTypography.body.copyWith(color: p.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

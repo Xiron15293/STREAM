@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../models/movement.dart';
 import '../theme.dart';
+import '../utils/filter_ux_copy.dart';
 import '../utils/heatmap_utils.dart';
 
 enum CategoriesTreemapSort { totalDesc, totalAsc, nameAsc, countDesc }
@@ -359,12 +360,25 @@ class _TreemapEmpty extends StatelessWidget {
       key: const Key('categories_treemap_empty'),
       child: Padding(
         padding: const EdgeInsets.all(StreamSpacing.xl),
-        child: Text(
-          'Nessun dato categorie nel periodo selezionato.',
-          textAlign: TextAlign.center,
-          style: StreamTypography.body.copyWith(
-            color: StreamColors.textSecondary,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              FilterUxCopy.noDataTitle,
+              textAlign: TextAlign.center,
+              style: StreamTypography.bodyBold.copyWith(
+                color: StreamColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: StreamSpacing.xs),
+            Text(
+              FilterUxCopy.noDataSubtitle,
+              textAlign: TextAlign.center,
+              style: StreamTypography.caption.copyWith(
+                color: StreamColors.textMuted,
+              ),
+            ),
+          ],
         ),
       ),
     );

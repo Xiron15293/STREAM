@@ -83,7 +83,13 @@ void main() {
     expect(find.text('+30.00 €'), findsWidgets);
 
     await pumpDashboard(tester, db, profileId: 'profile_b');
-    expect(find.text('1 conto selezionato'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('dashboard_net_worth_account_filter_button')),
+        matching: find.text('Casa'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('+30.00 €'), findsWidgets);
 
     await pumpDashboard(tester, db, profileId: 'profile_c');

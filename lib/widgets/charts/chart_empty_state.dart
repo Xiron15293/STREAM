@@ -3,9 +3,16 @@ import '../../design/stream_theme_extension.dart';
 import '../../theme.dart';
 
 class ChartEmptyState extends StatelessWidget {
-  final String message;
+  final String title;
+  final String? subtitle;
+  final IconData icon;
 
-  const ChartEmptyState({super.key, required this.message});
+  const ChartEmptyState({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.icon = Icons.bar_chart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,15 +23,25 @@ class ChartEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.bar_chart, size: 40, color: cp.emptyStateIconColor),
+            Icon(icon, size: 40, color: cp.emptyStateIconColor),
             const SizedBox(height: StreamSpacing.md),
             Text(
-              message,
+              title,
               textAlign: TextAlign.center,
-              style: StreamTypography.caption.copyWith(
+              style: StreamTypography.bodyBold.copyWith(
                 color: cp.emptyStateTextColor,
               ),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: StreamSpacing.xs),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: StreamTypography.caption.copyWith(
+                  color: cp.emptyStateTextColor.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
           ],
         ),
       ),

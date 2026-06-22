@@ -4,6 +4,7 @@
 
 ## Sintesi
 
+- Delta 2026-06-22: V0.11m confermata con UX polish dei filtri, empty state chart/title-subtitle e bottom sheet uniformati, full suite finale **1160 passati / 1 skipped** con workaround `--no-test-assets`
 - Delta 2026-06-21: V0.11j-fix4 confermata con hero Patrimonio deduplicata, pill `+N altri` e `Automatico` KPI davvero theme-aware, full suite finale **1059 passati / ~1 skipped**
 - Delta 2026-06-21: V0.11j confermata con advanced chart styles reali, fix chart visibility per-card e full suite finale **1048 passati / 1 skipped**
 - Delta 2026-06-21: V0.11i-fix3 confermata con account detail movement-priority UX, KPI dettagliati collassabili e full suite finale **1038 passati / 1 skipped**

@@ -244,6 +244,41 @@ void main() {
     expect(find.byKey(const Key('charts_category_filter_button')), findsOneWidget);
   });
 
+  testWidgets('charts filter sheets show standard helper copy', (tester) async {
+    final db = await seededDb();
+    await pumpCharts(tester, db);
+
+    await tester.tap(find.byKey(const Key('charts_account_filter_button')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('charts_account_filter_sheet')),
+        matching: find.text('Conti'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Tocca per selezionare o deselezionare tutti.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byIcon(Icons.close).last, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('charts_category_filter_button')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('charts_category_filter_sheet')),
+        matching: find.text('Categorie'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Puoi combinare categorie di uscita e di entrata.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('account filter changes categories charts data', (tester) async {
     final db = await seededDb();
     await pumpCharts(tester, db);
@@ -272,7 +307,11 @@ void main() {
     await selectChartCategories(tester, ['inc_1']);
     await openSection(tester, 'Movimenti');
 
-    expect(find.text('Nessun movimento nel periodo selezionato'), findsOneWidget);
+    expect(find.text('Nessun dato'), findsOneWidget);
+    expect(
+      find.text('Modifica i filtri o il periodo per vedere altri risultati.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('hidden account filter does not affect accounts charts', (
@@ -310,6 +349,12 @@ void main() {
     await selectChartAccounts(tester, []);
 
     expect(find.text('Nessun conto selezionato'), findsWidgets);
+    expect(
+      find.text(
+        "Seleziona almeno un conto o usa 'Tutti i conti' per vedere i dati.",
+      ),
+      findsWidgets,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -320,6 +365,12 @@ void main() {
     await selectChartCategories(tester, []);
 
     expect(find.text('Nessuna categoria selezionata'), findsWidgets);
+    expect(
+      find.text(
+        "Seleziona almeno una categoria o usa 'Tutte le categorie' per vedere i dati.",
+      ),
+      findsWidgets,
+    );
     expect(tester.takeException(), isNull);
   });
 

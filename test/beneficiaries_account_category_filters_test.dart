@@ -154,7 +154,13 @@ void main() {
     await pumpScreen(tester, db, profileId: 'profile_a');
 
     expect(find.text('Nessun conto'), findsOneWidget);
-    expect(find.text('Nessun beneficiario disponibile'), findsOneWidget);
+    expect(find.text('Nessun conto selezionato'), findsOneWidget);
+    expect(
+      find.text(
+        "Seleziona almeno un conto o usa 'Tutti i conti' per vedere i dati.",
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('category sheet shows expense and income sections', (
@@ -174,6 +180,15 @@ void main() {
     );
     expect(
       find.byKey(const Key('beneficiaries_category_filter_income_section')),
+      findsOneWidget,
+    );
+    expect(find.text('Categorie'), findsOneWidget);
+    expect(
+      find.text('Puoi combinare categorie di uscita e di entrata.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Filtri i movimenti collegati ai beneficiari.'),
       findsOneWidget,
     );
   });

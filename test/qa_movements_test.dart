@@ -1821,7 +1821,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Futuro'), findsNothing);
-    expect(find.text('Nessun movimento in questo periodo'), findsOneWidget);
+    expect(find.text('Nessun movimento'), findsOneWidget);
+    expect(find.text('Aggiungi un movimento o cambia periodo.'), findsOneWidget);
   });
 
   testWidgets('79. Dataset 1000 movimenti — scroll performance', (

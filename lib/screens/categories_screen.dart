@@ -12,6 +12,7 @@ import '../models/subcategory.dart';
 import '../models/time_filter.dart';
 import '../theme.dart';
 import '../utils/duplicate_date_selector.dart';
+import '../utils/filter_ux_copy.dart';
 import '../widgets/categories_treemap.dart';
 import '../widgets/grouped_movements_list.dart';
 import '../widgets/icon_picker.dart';
@@ -1487,6 +1488,20 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      FilterUxCopy.accountToggleHint,
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: StreamSpacing.xs),
+                    Text(
+                      'Filtri i movimenti usati per calcolare le categorie.',
+                      style: StreamTypography.caption.copyWith(
+                        color: p.textMuted,
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.md),
                     InkWell(
                       key: const Key('categories_account_filter_all_option'),
@@ -1522,45 +1537,54 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                     ),
                     const Divider(),
-                    ...activeAccounts.map((account) {
-                      final isSelected = workingIds.contains(account.id);
-                      return InkWell(
-                        key: Key(
-                          'categories_account_filter_option_${account.id}',
-                        ),
-                        onTap: () {
-                          setSheetState(() {
-                            if (isSelected) {
-                              workingIds.remove(account.id);
-                            } else {
-                              workingIds.add(account.id);
-                            }
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                color: p.primary,
-                                size: 22,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: activeAccounts.map((account) {
+                            final isSelected = workingIds.contains(account.id);
+                            return InkWell(
+                              key: Key(
+                                'categories_account_filter_option_${account.id}',
                               ),
-                              const SizedBox(width: StreamSpacing.md),
-                              Expanded(
-                                child: Text(
-                                  account.name,
-                                  style: StreamTypography.bodyBold,
-                                  overflow: TextOverflow.ellipsis,
+                              onTap: () {
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    workingIds.remove(account.id);
+                                  } else {
+                                    workingIds.add(account.id);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                      color: p.primary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: StreamSpacing.md),
+                                    Expanded(
+                                      child: Text(
+                                        account.name,
+                                        style: StreamTypography.bodyBold,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: StreamSpacing.lg),
                     Row(
                       children: [

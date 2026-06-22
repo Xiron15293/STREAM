@@ -178,7 +178,11 @@ void main() {
       final db = AppDatabase();
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: ChartsScreen(db: db))));
       await tester.pumpAndSettle();
-      expect(find.text('Nessun movimento nel periodo selezionato'), findsOneWidget);
+      expect(find.text('Nessun dato'), findsOneWidget);
+      expect(
+        find.text('Modifica i filtri o il periodo per vedere altri risultati.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('ChartsScreen shows sections segmented control', (tester) async {

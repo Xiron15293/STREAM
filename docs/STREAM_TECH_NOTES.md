@@ -4,6 +4,23 @@
 
 **Stato:** Hermes closure candidate / QA stabilized + V0.11l-d total hardening backup-reset-filters + dashboard hero dedup + effective automatic KPI style mapping + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
 
+## Update 2026-06-22 — V0.11m UX Polish Filters and Empty States
+
+- Introdotto `lib/utils/filter_ux_copy.dart` come fonte condivisa per il copy standard dei filtri e degli empty state: nessuna logica nuova, solo centralizzazione del testo
+- `ChartEmptyState` ora usa `title`, `subtitle` e `icon`; i widget chart (`StreamBarChart`, `StreamHorizontalBarChart`, `StreamDonutChart`) delegano qui gli empty state
+- Dashboard: `_selectionLabel()` mostra il nome del conto quando la selezione valida e singola e leggibile; il chip non usa piu sempre la formula `1 conto selezionato`
+- Bottom sheet filtri account/categorie di Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari ora hanno:
+  - titoli standard `Conti` / `Categorie`
+  - microcopy contestuale
+  - contenuto scrollabile su liste lunghe
+  - footer `Annulla` / `Applica` invariato
+- Movimenti e Beneficiari distinguono meglio gli empty state da selezione vuota rispetto agli empty state da assenza dati/periodo
+- Nessuna modifica a DB/schema/migrazioni, backup/restore, semantica `null` / `empty` / `subset`, select/deselect all, saldi reali o chart palette/style
+- Validazione locale:
+  - `flutter analyze`: nessun errore o warning nuovo, solo `34` info legacy fuori scope
+  - `flutter test --no-test-assets`: full suite verde con `1160` passati e `1` skipped
+  - Nota toolchain: `flutter test` standard crasha localmente su `NativeAssetsManifest.json`; workaround corrente documentato = `--no-test-assets`
+
 ## Update 2026-06-22 — V0.11l-d Total Hardening Filters, Profiles, Backup and Charts
 
 - Audit confermato su `MainScaffold`, `ArchiveScreen`, `SettingsScreen` e `BackupScreen`: `activeProfileId` continua a propagarsi correttamente verso Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari

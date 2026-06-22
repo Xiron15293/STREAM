@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11m — UX Polish Filters and Empty States**
+  - Uniformato il copy UX dei filtri su Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari senza cambiare la semantica `null` / `empty` / `subset`
+  - Bottom sheet filtri aggiornati con titoli standard `Conti` / `Categorie`, microcopy contestuale, liste scrollabili su viewport piccoli e footer `Annulla` / `Applica` invariato
+  - Dashboard Patrimonio: chip conto singolo ora mostra il nome conto quando leggibile; stato `Nessun conto selezionato` piu esplicito senza far sembrare i conti eliminati
+  - Movimenti: empty state distinti per nessun conto selezionato, nessuna categoria selezionata e nessun movimento nel periodo
+  - Grafici: `ChartEmptyState` esteso con `title + subtitle + icon`; empty state uniformati per nessuna selezione, nessun dato e nessun grafico attivo
+  - Treemap categorie e lista beneficiari aggiornate con copy empty state piu chiaro e coerente con i nuovi filtri scoped
+  - Test aggiornati su copy/dashboard/charts/bottom sheet/treemap/profili scoped; nessuna modifica a DB/schema/migrazioni, saldi, movimenti, backup/restore o palette/stile grafici
+  - Verifica finale locale:
+    - `flutter analyze`: nessun errore o warning nuovo; restano `34` info legacy fuori scope
+    - `flutter test --no-test-assets`: full suite verde con `1160` passati e `1` skipped
+
 - **V0.11l-d — Total Hardening Filters, Profiles, Backup and Charts**
   - Audit completato su propagazione `activeProfileId`, chiavi preferenze scoped, reset current-profile-only, backup/restore e semantica `null` / `empty` / `subset`
   - Fix P1 su backup/restore preferenze filtri:

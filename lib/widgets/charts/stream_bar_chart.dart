@@ -1,8 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../design/stream_theme_extension.dart';
-import '../../theme.dart';
 import '../../utils/analytics_metrics.dart';
+import '../../utils/filter_ux_copy.dart';
+import 'chart_empty_state.dart';
 
 class StreamBarChart extends StatelessWidget {
   final List<ChartSeries> series;
@@ -18,11 +19,13 @@ class StreamBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.$palette;
     final cp = context.$chart;
     if (series.isEmpty) return const SizedBox.shrink();
     if (series.every((s) => s.points.every((p) => p.value == 0))) {
-      return Center(child: Text('Nessun dato', style: StreamTypography.caption.copyWith(color: p.textSecondary)));
+      return const ChartEmptyState(
+        title: FilterUxCopy.noDataTitle,
+        subtitle: FilterUxCopy.noDataSubtitle,
+      );
     }
 
     final allLabels = series.expand((s) => s.points.map((p) => p.label)).toSet().toList();
