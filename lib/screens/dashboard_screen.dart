@@ -23,8 +23,14 @@ import '../widgets/time_filter_bar.dart';
 class DashboardScreen extends StatefulWidget {
   final AppDatabase db;
   final String? activeProfileId;
+  final DateTime Function()? timeFilterNowProvider;
 
-  const DashboardScreen({super.key, required this.db, this.activeProfileId});
+  const DashboardScreen({
+    super.key,
+    required this.db,
+    this.activeProfileId,
+    this.timeFilterNowProvider,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -38,10 +44,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = _now();
     _filter = TimeFilter.month(now.year, now.month);
     _loadAccountSelection();
   }
+
+  DateTime _now() => widget.timeFilterNowProvider?.call() ?? DateTime.now();
 
   @override
   void didUpdateWidget(covariant DashboardScreen oldWidget) {
@@ -184,6 +192,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     TimeFilterBar(
                       activeFilter: _filter,
                       onChanged: _onFilterChanged,
+                      resetToTodayOnDayOrWeekModeChange: true,
+                      nowProvider: widget.timeFilterNowProvider,
                     ),
                     const SizedBox(height: StreamSpacing.md),
                     _BalanceHero(
@@ -310,7 +320,9 @@ class _BalanceHero extends StatelessWidget {
                           if (workingIds.length == activeAccounts.length) {
                             workingIds = <String>{};
                           } else {
-                            workingIds = activeAccounts.map((a) => a.id).toSet();
+                            workingIds = activeAccounts
+                                .map((a) => a.id)
+                                .toSet();
                           }
                         });
                       },
@@ -357,7 +369,9 @@ class _BalanceHero extends StatelessWidget {
                                 });
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                                 child: Row(
                                   children: [
                                     Icon(
@@ -720,7 +734,9 @@ class _HeroSplit extends StatelessWidget {
           const SizedBox(height: StreamSpacing.sm),
           Text(
             FilterUxCopy.noAccountSelectedTitle,
-            style: StreamTypography.captionBold.copyWith(color: p.textSecondary),
+            style: StreamTypography.captionBold.copyWith(
+              color: p.textSecondary,
+            ),
           ),
           const SizedBox(height: StreamSpacing.xs),
           Text(

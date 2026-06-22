@@ -134,8 +134,14 @@ enum _ChartSection { movements, categories, accounts, beneficiaries }
 class ChartsScreen extends StatefulWidget {
   final AppDatabase db;
   final String? activeProfileId;
+  final DateTime Function()? timeFilterNowProvider;
 
-  const ChartsScreen({super.key, required this.db, this.activeProfileId});
+  const ChartsScreen({
+    super.key,
+    required this.db,
+    this.activeProfileId,
+    this.timeFilterNowProvider,
+  });
 
   @override
   State<ChartsScreen> createState() => _ChartsScreenState();
@@ -152,10 +158,12 @@ class _ChartsScreenState extends State<ChartsScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = _now();
     _filter = TimeFilter.month(now.year, now.month);
     _loadScopedFilters();
   }
+
+  DateTime _now() => widget.timeFilterNowProvider?.call() ?? DateTime.now();
 
   @override
   void didUpdateWidget(covariant ChartsScreen oldWidget) {
@@ -196,9 +204,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 .where((category) => !category.archived)
                 .map((category) => category.id)
                 .toSet();
-            final accountNeedsSanitize = _selectedAccountFilterIds != null &&
+            final accountNeedsSanitize =
+                _selectedAccountFilterIds != null &&
                 !_selectedAccountFilterIds!.every(activeAccountIds.contains);
-            final categoryNeedsSanitize = _selectedCategoryFilterIds != null &&
+            final categoryNeedsSanitize =
+                _selectedCategoryFilterIds != null &&
                 !_selectedCategoryFilterIds!.every(activeCategoryIds.contains);
             if (accountNeedsSanitize || categoryNeedsSanitize) {
               Future.microtask(
@@ -252,6 +262,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
                     activeFilter: _filter,
                     onChanged: (value) => setState(() => _filter = value),
                     customRangeLabel: 'Range',
+                    resetToTodayOnDayOrWeekModeChange: true,
+                    nowProvider: widget.timeFilterNowProvider,
                   ),
                 ),
               ),
@@ -675,7 +687,10 @@ class _ChartsScreenState extends State<ChartsScreen> {
           StreamChartCard(
             cardKey: const Key('chart_card_accounts_flows'),
             title: 'Flussi per conto',
-            height: _horizontalChartCardHeight(flows[0].points.length, hasLegend: true),
+            height: _horizontalChartCardHeight(
+              flows[0].points.length,
+              hasLegend: true,
+            ),
             child: StreamHorizontalBarChart(
               bars: flows[0].points.asMap().entries.map((e) {
                 final expensePoint = flows.length > 1
@@ -948,7 +963,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     required bool applyCategoryFilter,
   }) {
     return movements.where((movement) {
-      final matchesAccount = !applyAccountFilter ||
+      final matchesAccount =
+          !applyAccountFilter ||
           _selectedAccountFilterIds == null ||
           _selectedAccountFilterIds!.contains(movement.accountId) ||
           (movement.destinationAccountId != null &&
@@ -1020,7 +1036,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final selected = _selectedAccountFilterIds == null
         ? <String>[]
         : activeAccounts
-              .where((account) => _selectedAccountFilterIds!.contains(account.id))
+              .where(
+                (account) => _selectedAccountFilterIds!.contains(account.id),
+              )
               .map((account) => account.id)
               .toList();
     if (_selectedAccountFilterIds == null ||
@@ -1175,7 +1193,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
                                 });
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                                 child: Row(
                                   children: [
                                     Icon(
@@ -1383,7 +1403,10 @@ class _ChartsScreenState extends State<ChartsScreen> {
                           children: [
                             if (expenseCategories.isNotEmpty) ...[
                               Padding(
-                                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 4,
+                                ),
                                 child: Text(
                                   'Uscite',
                                   style: StreamTypography.h3,
@@ -1393,7 +1416,10 @@ class _ChartsScreenState extends State<ChartsScreen> {
                             ],
                             if (incomeCategories.isNotEmpty) ...[
                               Padding(
-                                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 4,
+                                ),
                                 child: Text(
                                   'Entrate',
                                   style: StreamTypography.h3,

@@ -10,6 +10,12 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/account.dart';
 import 'package:stream_app/models/category.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 const String _defaultAccountId = 'acc_default';
 
 Movement _makeMovement(int i) {
@@ -42,7 +48,7 @@ Movement _makeAccountMovement(int i, String accountId) {
 Future<AppDatabase> _pumpApp(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final db = AppDatabase();
-  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
   return db;
 }
 

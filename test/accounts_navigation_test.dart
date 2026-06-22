@@ -12,6 +12,12 @@ import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/accounts_screen.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 DateTime _monthDay(DateTime base, int day) =>
     DateTime(base.year, base.month, day);
 
@@ -145,7 +151,7 @@ void main() {
         .id;
     await db.archiveCategory(archivedCategoryId);
 
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());
@@ -237,7 +243,7 @@ void main() {
     );
     await db.archiveAccount('acc_restore');
 
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await openAccountSheet(tester, 'acc_restore');
@@ -261,7 +267,7 @@ void main() {
     (WidgetTester tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
-      final currentMonthDay1 = _monthDay(now, 1);
+      final currentMonthDay1 = DateTime(now.year, now.month, now.day);
       final currentMonthDay2 = _monthDay(now, 2);
       final currentMonthDay3 = _monthDay(now, 3);
       final otherMonthSameYear = _sameYearOtherMonth(now);
@@ -333,7 +339,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await openAccountSheet(tester, 'acc_main');
@@ -533,7 +539,7 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: AccountsScreen(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('account_card_acc_transfer_origin')));
@@ -564,7 +570,7 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await openAccountSheet(tester, 'acc_empty');
@@ -600,7 +606,7 @@ void main() {
       );
       await db.archiveAccount('acc_archived_click');
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await openAccountSheet(tester, 'acc_archived_click');
@@ -777,7 +783,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: AccountsScreen(db: db)));
         await tester.pumpAndSettle();
 
         final card = find.byKey(const Key('account_card_acc_period_balance'));
@@ -859,7 +865,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await openArchiveAccounts(tester);

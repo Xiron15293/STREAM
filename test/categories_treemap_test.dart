@@ -12,6 +12,12 @@ import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/widgets/categories_treemap.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   setUpAll(() {
     sqfliteFfiInit();
@@ -79,7 +85,7 @@ void main() {
   testWidgets('treemap respects day, month and year filters', (tester) async {
     final db = AppDatabase();
     final now = DateTime.now();
-    final currentDay = DateTime(now.year, now.month, 1, 10);
+    final currentDay = DateTime(now.year, now.month, now.day, 10);
     final sameMonth = DateTime(now.year, now.month, 2, 10);
     final sameYear = DateTime(now.year, now.month == 1 ? 2 : 1, 3, 10);
     final category = await _addCategory(db, 'Period Filtered', 0xFFE53935);
@@ -289,6 +295,7 @@ Future<void> _addMovement(
 Future<void> _pumpCategories(WidgetTester tester, AppDatabase db) async {
   await tester.pumpWidget(
     MaterialApp(
+      theme: _testTheme(),
       home: Scaffold(body: CategoriesScreen(db: db)),
     ),
   );
@@ -302,6 +309,7 @@ Future<void> _pumpTreemapWidget(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      theme: _testTheme(),
       home: Scaffold(
         body: SizedBox(
           width: 420,

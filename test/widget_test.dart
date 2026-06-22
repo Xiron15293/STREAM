@@ -9,6 +9,12 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'helpers/calculator_test_helpers.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   SharedPreferences.setMockInitialValues({});
 
@@ -86,7 +92,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Archivio'));
@@ -110,7 +116,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Archivio'));
@@ -133,7 +139,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     expect(find.text('0.00 €'), findsWidgets);
@@ -165,7 +171,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Impostazioni'));
@@ -196,7 +202,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: AccountsScreen(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(FloatingActionButton));

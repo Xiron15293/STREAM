@@ -13,6 +13,12 @@ import 'package:stream_app/utils/heatmap_utils.dart';
 import 'package:stream_app/widgets/categories_treemap.dart';
 import 'package:stream_app/widgets/expense_heatmap.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -73,7 +79,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(home: SettingsScreen(db: AppDatabase())),
+      MaterialApp(theme: _testTheme(), home: SettingsScreen(db: AppDatabase())),
     );
     await tester.pumpAndSettle();
 
@@ -117,7 +123,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: HeatmapSettingsScreen()),
+      MaterialApp(theme: _testTheme(), home: HeatmapSettingsScreen()),
     );
     await tester.pumpAndSettle();
 
@@ -148,7 +154,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: HeatmapSettingsScreen()),
+      MaterialApp(theme: _testTheme(), home: HeatmapSettingsScreen()),
     );
     await tester.pumpAndSettle();
 
@@ -188,6 +194,7 @@ void main() {
     final date = DateTime(2026, 6, 1);
     await tester.pumpWidget(
       MaterialApp(
+        theme: _testTheme(),
         home: Scaffold(
           body: ExpenseHeatmap(
             allMovements: [
@@ -231,6 +238,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(
             body: SizedBox(
               width: 420,

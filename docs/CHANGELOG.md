@@ -7,6 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **V0.11m-fix1b — TimeFilter Picker Routing and Test Completion**
+  - Ristrutturato il routing del TimeFilter per rispettare la regola UX definitiva:
+    - **Giorno** → calendario/date picker (unico caso con `showDatePicker`)
+    - **Settimana** → elenco settimane (lista, nessun calendario, nessuna rotella)
+    - **Mese** → rotella glass mese + anno (due colonne CupertinoPicker, nessun calendario)
+    - **Anno** → rotella glass solo anno (singola colonna, nessun mese, nessun calendario)
+    - **Intervallo** → picker intervallo esistente (nessun calendario singolo)
+  - `time_filter_picker_sheets.dart` come fonte unica degli helper `showTimeFilterDayPicker`, `showTimeFilterWeekPicker`, `showTimeFilterMonthPicker`, `showTimeFilterYearPicker`
+  - `TimeFilterBar._pickDate()` dispatch corretto per ogni modalità
+  - Nuovo picker mese+anno: `_TimeFilterMonthYearWheelSheet` con due `CupertinoPicker` affiancati
+  - Nuovo picker anno: `_TimeFilterWheelPickerSheet` con singolo `CupertinoPicker`
+  - Key stabili aggiunte: `time_filter_day_picker`, `time_filter_week_picker`, `time_filter_month_picker_month_wheel`, `time_filter_month_picker_year_wheel`, `time_filter_year_picker`, `time_filter_interval_picker_sheet`
+  - Test forti aggiunti in `test/time_filter_picker_routing_test.dart` (5 test: Day, Week, Month, Year, Interval)
+  - Test `test/time_filter_bar_test.dart` esteso con copertura reale picker (week list, month+year wheel, year wheel, interval)
+  - Test `test/time_filter_mode_defaults_test.dart` aggiunto (reset a oggi per day/week su tutte le schermate)
+  - Fix test failures:
+    - `categories_navigation_test.dart`: test data aggiornato — `firstDay` ora usa oggi invece del 1° del mese per essere compatibile con `resetToTodayOnDayOrWeekModeChange: true`
+    - `categories_treemap_test.dart`: `currentDay` aggiornato a oggi per compatibilità con reset a giorno
+    - `qa_extensive_test.dart`: `_pumpMainApp` corretto per usare il parametro `theme` passato (era ignorato); ora il test H3 con `TargetPlatform.iOS` apre correttamente il Cupertino date picker
+  - Test infrastructure: tutti i test MaterialApp ora usano `NoSplash.splashFactory` tramite helper comune per evitare crash shader `ink_sparkle.frag` — già presente nei fondamenti da patch precedenti
+  - Verifica finale locale:
+    - `flutter analyze`: nessun errore o warning nuovo; restano `37` info legacy fuori scope (deprecation `alpha`, `useMaterial3`, `cacheExtent`)
+    - `flutter test --no-test-assets`: full suite verde con `1176` passati e `1` skipped
+  - Nessuna modifica a DB/schema/migrazioni, saldi reali, movimenti reali, backup/restore, filtri conti/categorie, chart palette/style, KPI style
+
 - **V0.11m — UX Polish Filters and Empty States**
   - Uniformato il copy UX dei filtri su Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari senza cambiare la semantica `null` / `empty` / `subset`
   - Bottom sheet filtri aggiornati con titoli standard `Conti` / `Categorie`, microcopy contestuale, liste scrollabili su viewport piccoli e footer `Annulla` / `Applica` invariato

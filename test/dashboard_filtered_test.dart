@@ -11,6 +11,12 @@ import 'package:stream_app/models/quick_movement.dart';
 import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/screens/dashboard_screen.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   group('1. Dashboard filtered KPI (in-memory logic)', () {
     late AppDatabase db;
@@ -530,7 +536,7 @@ void main() {
   group('2. Dashboard UI widget tests', () {
     testWidgets('2.1 TimeFilterBar and KPIs render correctly', (tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       expect(find.text('Giorno'), findsOneWidget);
       expect(find.text('Mese'), findsOneWidget);
@@ -573,7 +579,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       expect(find.textContaining('2500.00'), findsWidgets);
       expect(find.textContaining('800.00'), findsWidgets);
@@ -632,7 +638,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       expect(find.text('1142.52 €'), findsOneWidget);
       expect(find.text('328.08 €'), findsWidgets);
@@ -690,7 +696,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
       await tester.tap(find.byTooltip('Precedente'));
       await tester.pumpAndSettle();
 
@@ -704,7 +710,7 @@ void main() {
       tester,
     ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       expect(
         find.text('Nessuna spesa nel periodo selezionato'),
@@ -754,7 +760,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       expect(find.text('Spese per categoria'), findsOneWidget);
       expect(find.text('Stipendio'), findsNothing);
@@ -795,7 +801,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
         expect(find.text('30.00 €'), findsWidgets);
         expect(find.text('80.00 €'), findsNothing);
@@ -821,7 +827,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
         // Dashboard must NOT show a flat movement list
         expect(find.text('Movimenti del periodo'), findsNothing);
@@ -846,7 +852,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       // No movement list section
       expect(find.text('Movimenti del periodo'), findsNothing);
@@ -873,7 +879,7 @@ void main() {
         );
       }
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       // No movement list on Dashboard
       expect(find.text('Movimenti del periodo'), findsNothing);
@@ -911,7 +917,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       // No movement list on Dashboard
       expect(find.text('Movimenti del periodo'), findsNothing);
@@ -925,7 +931,7 @@ void main() {
       '3.1 Intervallo segmented button exists and opens bottom sheet',
       (tester) async {
         final db = AppDatabase();
-        await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
         expect(find.text('Intervallo'), findsOneWidget);
         await tester.tap(find.text('Intervallo'));
@@ -942,7 +948,7 @@ void main() {
 
     testWidgets('3.2 Annulla non modifica il filtro attivo', (tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       final now = DateTime.now();
       final expectedLabel = TimeFilter.month(now.year, now.month).label;
@@ -964,7 +970,7 @@ void main() {
       tester,
     ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       final now = DateTime.now();
       final monthLabel = TimeFilter.month(now.year, now.month).label;
@@ -988,7 +994,7 @@ void main() {
 
     testWidgets('3.4 Bottom sheet mostra data formattata', (tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
 
       await tester.tap(find.text('Intervallo'));
       await tester.pumpAndSettle();
@@ -1030,7 +1036,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
       await tester.pumpAndSettle();
 
       // Deve apparire la sezione Spese per categoria con la categoria Spesa
@@ -1054,7 +1060,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
       await tester.pumpAndSettle();
 
       // Scroll fino alla sezione categorie e tappa la riga
@@ -1086,7 +1092,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
       await tester.pumpAndSettle();
 
       final categoryRow = find.ancestor(

@@ -22,8 +22,14 @@ import '../utils/currency_formatter.dart';
 class AccountsScreen extends StatefulWidget {
   final AppDatabase db;
   final String? activeProfileId;
+  final DateTime Function()? timeFilterNowProvider;
 
-  const AccountsScreen({super.key, required this.db, this.activeProfileId});
+  const AccountsScreen({
+    super.key,
+    required this.db,
+    this.activeProfileId,
+    this.timeFilterNowProvider,
+  });
 
   static const _typeLabels = {
     AccountType.cash: 'Contante',
@@ -45,10 +51,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = _now();
     _filter = TimeFilter.month(now.year, now.month);
     _loadScopedFilters();
   }
+
+  DateTime _now() => widget.timeFilterNowProvider?.call() ?? DateTime.now();
 
   @override
   void didUpdateWidget(covariant AccountsScreen oldWidget) {
@@ -431,6 +439,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     child: TimeFilterBar(
                       activeFilter: _filter,
                       onChanged: (value) => setState(() => _filter = value),
+                      resetToTodayOnDayOrWeekModeChange: true,
+                      nowProvider: widget.timeFilterNowProvider,
                     ),
                   ),
                   const SizedBox(height: StreamSpacing.md),
@@ -540,6 +550,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
         initialFilter: _filter,
         onEdit: () => _showAddEditDialog(context, db, account: account),
         selectedCategoryIds: selectedCategoryIds,
+        timeFilterNowProvider: widget.timeFilterNowProvider,
       ),
     );
   }
@@ -1159,6 +1170,7 @@ class _AccountMovementsSheet extends StatefulWidget {
   final TimeFilter? initialFilter;
   final VoidCallback onEdit;
   final Set<String>? selectedCategoryIds;
+  final DateTime Function()? timeFilterNowProvider;
 
   const _AccountMovementsSheet({
     required this.db,
@@ -1166,6 +1178,7 @@ class _AccountMovementsSheet extends StatefulWidget {
     required this.onEdit,
     this.initialFilter,
     this.selectedCategoryIds,
+    this.timeFilterNowProvider,
   });
 
   @override
@@ -1186,7 +1199,7 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = widget.timeFilterNowProvider?.call() ?? DateTime.now();
     _filter = widget.initialFilter ?? TimeFilter.month(now.year, now.month);
   }
 
@@ -1448,6 +1461,8 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                 activeFilter: _filter,
                                 onChanged: (value) =>
                                     setState(() => _filter = value),
+                                resetToTodayOnDayOrWeekModeChange: true,
+                                nowProvider: widget.timeFilterNowProvider,
                               ),
                             ),
                           ),

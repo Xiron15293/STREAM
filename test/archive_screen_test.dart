@@ -9,6 +9,12 @@ import 'package:stream_app/screens/beneficiaries_screen.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 import 'package:stream_app/screens/movements_screen.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({
@@ -20,7 +26,7 @@ void main() {
     tester,
   ) async {
     final db = AppDatabase();
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());

@@ -8,6 +8,12 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/category.dart';
 import 'package:stream_app/screens/calendar_screen.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 String _monthLabel(int year, int month) {
   const months = [
     'gennaio',
@@ -38,7 +44,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);
@@ -49,7 +55,7 @@ void main() {
 
     testWidgets('shows weekday headers', (WidgetTester tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);
@@ -62,7 +68,7 @@ void main() {
 
     testWidgets('navigation arrows change month', (WidgetTester tester) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);
@@ -80,7 +86,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       final now = DateTime.now();
@@ -106,7 +112,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       final now = DateTime.now();
@@ -143,7 +149,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final db = AppDatabase();
-      await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
       await tester.pumpAndSettle();
 
       await _openCalendar(tester);

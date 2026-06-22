@@ -20,7 +20,16 @@ Future<AppDatabase> pumpApp(WidgetTester tester) async {
     'movements_view_mode': 'listHeatmap',
   });
   final db = AppDatabase();
-  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(useMaterial3: true).copyWith(
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+      ),
+      home: MainScaffold(db: db),
+    ),
+  );
   return db;
 }
 
@@ -970,7 +979,9 @@ void main() {
     expect(db.movements.length, 1);
   });
 
-  testWidgets('53c. Duplica Domani/Ieri/Scegli data funzionano', (tester) async {
+  testWidgets('53c. Duplica Domani/Ieri/Scegli data funzionano', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     await saveMovement(tester, title: 'Cena', amount: '30');
     expect(db.movements.length, 1);
@@ -1822,7 +1833,10 @@ void main() {
 
     expect(find.text('Futuro'), findsNothing);
     expect(find.text('Nessun movimento'), findsOneWidget);
-    expect(find.text('Aggiungi un movimento o cambia periodo.'), findsOneWidget);
+    expect(
+      find.text('Aggiungi un movimento o cambia periodo.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('79. Dataset 1000 movimenti — scroll performance', (
@@ -1869,9 +1883,7 @@ void main() {
     expect(find.text('Elimina'), findsOneWidget);
   });
 
-  testWidgets('80a. Tap sulla card movimento apre la modifica', (
-    tester,
-  ) async {
+  testWidgets('80a. Tap sulla card movimento apre la modifica', (tester) async {
     await pumpApp(tester);
     await saveMovement(tester, title: 'EditTap', amount: '25');
     await tester.tap(find.text('Archivio'));

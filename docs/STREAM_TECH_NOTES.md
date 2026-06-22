@@ -2,7 +2,33 @@
 
 > Decisioni architetturali e note tecniche per sviluppatori.
 
-**Stato:** Hermes closure candidate / QA stabilized + V0.11l-d total hardening backup-reset-filters + dashboard hero dedup + effective automatic KPI style mapping + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+**Stato:** Hermes closure candidate / QA stabilized + V0.11m-fix1b TimeFilter Picker Routing + V0.11l-d total hardening backup-reset-filters + dashboard hero dedup + effective automatic KPI style mapping + advanced chart styles rollout + global KPI style coverage + account detail movement-priority UX + movement theme completion + movement actions sheet centralizzato + beneficiari manuali auditati + movement suggestion chips + currency preference + profili separati | **DB:** v12 per singolo profilo | **Build:** ✅ nessun errore bloccante (`flutter analyze` info-only fuori scope)
+
+## Update 2026-06-22 — V0.11m-fix1b TimeFilter Picker Routing
+
+- Introdotto `lib/widgets/time_filter_picker_sheets.dart` come fonte unica degli helper di picker per ogni modalità TimeFilter:
+  - `showTimeFilterDayPicker` → `StreamDatePicker.show` (calendario/date picker, unico caso)
+  - `showTimeFilterWeekPicker` → `_TimeFilterWeekPickerSheet` (elenco settimane in lista scrollabile)
+  - `showTimeFilterMonthPicker` → `_TimeFilterMonthYearWheelSheet` (due `CupertinoPicker` affiancati: mese + anno)
+  - `showTimeFilterYearPicker` → `_TimeFilterWheelPickerSheet` (singolo `CupertinoPicker` solo anno)
+- `TimeFilterBar._pickDate()` dispatca ogni modalità al picker corretto; nessuna altra modalità chiama `showDatePicker`
+- Regola UX applicata:
+  - Day = calendario (date picker)
+  - Week = elenco settimane (lista, no calendario, no rotelle)
+  - Month = rotella glass mese + anno (due colonne, no calendario, no week list)
+  - Year = rotella glass solo anno (una colonna, no mese, no calendario)
+  - Custom range = picker intervallo esistente (nessun calendario singolo)
+- Schermate aggiornate: Dashboard, Movimenti, Grafici, Categorie, Conti, Beneficiari (tutte usano `TimeFilterBar` condiviso)
+- Nessuna modifica Android-specific: il routing è platform-agnostic, `StreamDatePicker.show` già gestisce platform branching per iOS/macOS vs Android
+- Test aggiunti: `test/time_filter_picker_routing_test.dart` (5 test obbligatori con key stabili), `test/time_filter_mode_defaults_test.dart` (reset a oggi su tutte le schermate)
+- Test esistenti estesi: `test/time_filter_bar_test.dart` copertura reale picker (week list scroll, month+year wheel drag, year wheel drag, interval sheet)
+- Fix test failures:
+  - `categories_navigation_test.dart`: `firstDay` → oggi (prima era 1° del mese, incompatibile con reset-to-today)
+  - `categories_treemap_test.dart`: `currentDay` → oggi (stessa causa)
+  - `qa_extensive_test.dart`: `_pumpMainApp` ora usa il parametro `theme` passato (prima ignorato)
+- Test infrastructure: tutti i test Material usano `NoSplash.splashFactory` nei wrapper comuni per evitare crash shader `ink_sparkle.frag` — già presente in patch precedenti, non introdotto in questa
+- `flutter analyze`: nessun errore o warning nuovo; restano 37 info legacy del repo
+- `flutter test --no-test-assets`: full suite verde con **1176 passati / 1 skipped**
 
 ## Update 2026-06-22 — V0.11m UX Polish Filters and Empty States
 

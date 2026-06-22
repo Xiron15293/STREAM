@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import '../design/stream_surface_tokens.dart';
 import '../design/stream_theme_extension.dart';
 import '../models/time_filter.dart';
-import '../design/stream_date_picker.dart';
 import '../theme.dart';
 import 'interval_picker_sheet.dart';
+import 'time_filter_picker_sheets.dart';
 
 class TimeFilterBar extends StatelessWidget {
   final TimeFilter activeFilter;
   final ValueChanged<TimeFilter> onChanged;
   final ValueChanged<DateTime>? onDatePicked;
   final String? customRangeLabel;
+  final bool resetToTodayOnDayOrWeekModeChange;
+  final DateTime Function()? nowProvider;
 
   const TimeFilterBar({
     super.key,
@@ -18,23 +20,40 @@ class TimeFilterBar extends StatelessWidget {
     required this.onChanged,
     this.onDatePicked,
     this.customRangeLabel,
+    this.resetToTodayOnDayOrWeekModeChange = false,
+    this.nowProvider,
   });
 
   void _onModeChanged(TimeFilterMode mode, BuildContext context) {
     final s = activeFilter.startDate;
+    final nowDate = nowProvider?.call() ?? DateTime.now();
+    final now = DateTime(nowDate.year, nowDate.month, nowDate.day);
     switch (mode) {
       case TimeFilterMode.day:
-        onChanged(TimeFilter.day(s));
+        onChanged(
+          resetToTodayOnDayOrWeekModeChange
+              ? TimeFilter.day(now)
+              : TimeFilter.day(s),
+        );
+        break;
       case TimeFilterMode.week:
-        onChanged(TimeFilter.week(s));
+        onChanged(
+          resetToTodayOnDayOrWeekModeChange
+              ? TimeFilter.week(now)
+              : TimeFilter.week(s),
+        );
+        break;
       case TimeFilterMode.month:
         onChanged(TimeFilter.month(s.year, s.month));
+        break;
       case TimeFilterMode.year:
         onChanged(TimeFilter.year(s.year));
+        break;
       case TimeFilterMode.customRange:
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => _pickDate(context, forcedMode: TimeFilterMode.customRange),
         );
+        break;
     }
   }
 
@@ -44,7 +63,7 @@ class TimeFilterBar extends StatelessWidget {
   }) async {
     switch (forcedMode ?? activeFilter.mode) {
       case TimeFilterMode.day:
-        final picked = await StreamDatePicker.show(
+        final picked = await showTimeFilterDayPicker(
           context: context,
           initialDate: activeFilter.startDate,
         );
@@ -52,8 +71,9 @@ class TimeFilterBar extends StatelessWidget {
           onDatePicked?.call(picked);
           onChanged(TimeFilter.day(picked));
         }
+        break;
       case TimeFilterMode.week:
-        final picked = await StreamDatePicker.show(
+        final picked = await showTimeFilterWeekPicker(
           context: context,
           initialDate: activeFilter.startDate,
         );
@@ -61,8 +81,9 @@ class TimeFilterBar extends StatelessWidget {
           onDatePicked?.call(picked);
           onChanged(TimeFilter.week(picked));
         }
+        break;
       case TimeFilterMode.month:
-        final picked = await StreamDatePicker.show(
+        final picked = await showTimeFilterMonthPicker(
           context: context,
           initialDate: activeFilter.startDate,
         );
@@ -70,15 +91,17 @@ class TimeFilterBar extends StatelessWidget {
           onDatePicked?.call(picked);
           onChanged(TimeFilter.month(picked.year, picked.month));
         }
+        break;
       case TimeFilterMode.year:
-        final picked = await StreamDatePicker.show(
+        final picked = await showTimeFilterYearPicker(
           context: context,
-          initialDate: DateTime(activeFilter.startDate.year, 6, 15),
+          initialDate: activeFilter.startDate,
         );
         if (picked != null) {
           onDatePicked?.call(picked);
           onChanged(TimeFilter.year(picked.year));
         }
+        break;
       case TimeFilterMode.customRange:
         final range = await showIntervalPicker(
           context: context,
@@ -88,6 +111,7 @@ class TimeFilterBar extends StatelessWidget {
         if (range != null) {
           onChanged(TimeFilter.customRange(range.start, range.end));
         }
+        break;
     }
   }
 

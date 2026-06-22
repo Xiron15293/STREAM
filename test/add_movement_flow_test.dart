@@ -13,6 +13,12 @@ import 'package:stream_app/widgets/movement_calculator_pad.dart';
 import 'package:stream_app/widgets/movement_picker.dart';
 import 'package:stream_app/widgets/movement_text_suggestions.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   SharedPreferences.setMockInitialValues({});
 
@@ -339,6 +345,7 @@ void main() {
       final controller = TextEditingController();
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: MovementCalculatorPad(controller: controller)),
         ),
       );
@@ -1147,6 +1154,7 @@ void main() {
       final controller = TextEditingController();
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: MovementCalculatorPad(controller: controller)),
         ),
       );
@@ -1163,6 +1171,7 @@ void main() {
       final controller = TextEditingController();
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: MovementCalculatorPad(controller: controller)),
         ),
       );
@@ -1278,6 +1287,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
+            theme: _testTheme(),
             home: Scaffold(
               body: MovementPicker(db: db, prefill: movement),
             ),
@@ -1435,7 +1445,7 @@ void main() {
 }
 
 Future<void> _pumpApp(WidgetTester tester, AppDatabase db) async {
-  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
   await tester.pumpAndSettle();
 }
 
@@ -1444,7 +1454,7 @@ Future<void> _pumpMovementPickerSheet(
   AppDatabase db,
 ) async {
   await tester.pumpWidget(
-    const MaterialApp(home: Scaffold(body: SizedBox.shrink())),
+    MaterialApp(theme: _testTheme(), home: Scaffold(body: const SizedBox.shrink())),
   );
   final context = tester.element(find.byType(Scaffold));
   // ignore: unawaited_futures

@@ -9,6 +9,12 @@ import 'package:stream_app/utils/movement_period_metrics.dart';
 import 'package:stream_app/widgets/period_heatmap_card.dart';
 import 'package:stream_app/widgets/period_summary_card.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   final movements = [
     Movement(
@@ -71,6 +77,7 @@ void main() {
   }) {
     return tester.pumpWidget(
       MaterialApp(
+        theme: _testTheme(),
         home: Scaffold(
           body: PeriodSummaryCard(
             timeFilter: filter,
@@ -157,6 +164,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(
             body: ListView(
               children: [
@@ -215,6 +223,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(
             body: ListView(
               children: [
@@ -290,6 +299,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: _testTheme(),
         home: Scaffold(
           body: PeriodHeatmapCard(
             timeFilter: filter,
@@ -342,6 +352,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(
             body: PeriodHeatmapCard(
               timeFilter: filter,
@@ -378,6 +389,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(
             body: PeriodHeatmapCard(
               timeFilter: filter,
@@ -407,6 +419,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: _testTheme(),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PeriodHeatmapCard(timeFilter: filter, movements: movements),
@@ -429,6 +442,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: _testTheme(),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PeriodHeatmapCard(timeFilter: filter, movements: movements),
@@ -459,6 +473,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: _testTheme(),
         home: Scaffold(
           body: SingleChildScrollView(
             child: PeriodHeatmapCard(

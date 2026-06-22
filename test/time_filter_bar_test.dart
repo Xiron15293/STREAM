@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,12 +14,19 @@ import 'package:stream_app/widgets/time_filter_bar.dart';
 void main() {
   SharedPreferences.setMockInitialValues({});
 
+  ThemeData testTheme() => ThemeData(useMaterial3: true).copyWith(
+    splashFactory: NoSplash.splashFactory,
+    highlightColor: Colors.transparent,
+    hoverColor: Colors.transparent,
+  );
+
   group('TimeFilterBar widget', () {
     testWidgets('shows Giorno/Mese/Anno/Intervallo segments and label', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme(),
           home: Material(
             child: TimeFilterBar(
               activeFilter: TimeFilter.month(2026, 6),
@@ -41,6 +49,7 @@ void main() {
       TimeFilter current = TimeFilter.month(2026, 6);
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme(),
           home: Material(
             child: StatefulBuilder(
               builder: (context, setState) => TimeFilterBar(
@@ -65,6 +74,7 @@ void main() {
       TimeFilter current = TimeFilter.day(DateTime(2026, 6, 15));
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme(),
           home: Material(
             child: StatefulBuilder(
               builder: (context, setState) => TimeFilterBar(
@@ -91,6 +101,7 @@ void main() {
       TimeFilter current = TimeFilter.year(2026);
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme(),
           home: Material(
             child: StatefulBuilder(
               builder: (context, setState) => TimeFilterBar(
@@ -117,6 +128,7 @@ void main() {
       TimeFilter current = TimeFilter.month(2026, 6);
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme(),
           home: Material(
             child: StatefulBuilder(
               builder: (context, setState) => TimeFilterBar(
@@ -150,6 +162,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
+          theme: testTheme(),
           home: Material(
             child: StatefulBuilder(
               builder: (context, setState) => TimeFilterBar(
@@ -169,6 +182,230 @@ void main() {
       await tester.tap(find.byIcon(Icons.chevron_right));
       await tester.pumpAndSettle();
       expect(current, before);
+    });
+
+    testWidgets('day and week mode can reset to today on demand', (
+      WidgetTester tester,
+    ) async {
+      final fixedNow = DateTime(2026, 6, 21);
+      TimeFilter current = TimeFilter.month(2026, 6);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: Material(
+            child: StatefulBuilder(
+              builder: (context, setState) => TimeFilterBar(
+                activeFilter: current,
+                onChanged: (f) => setState(() => current = f),
+                resetToTodayOnDayOrWeekModeChange: true,
+                nowProvider: () => fixedNow,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Giorno'));
+      await tester.pumpAndSettle();
+      expect(current, TimeFilter.day(fixedNow));
+
+      await tester.tap(find.text('Mese'));
+      await tester.pumpAndSettle();
+      expect(current.mode, TimeFilterMode.month);
+
+      await tester.tap(find.text('Sett.'));
+      await tester.pumpAndSettle();
+      expect(current, TimeFilter.week(fixedNow));
+    });
+
+    testWidgets('day picker opens the date picker dialog', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: Material(
+            child: TimeFilterBar(
+              activeFilter: TimeFilter.day(DateTime(2026, 6, 21)),
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('21 giugno 2026'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      expect(find.byKey(const Key('time_filter_week_picker')), findsNothing);
+      expect(
+        find.byKey(const Key('time_filter_month_picker_month_wheel')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('time_filter_year_picker')), findsNothing);
+    });
+
+    testWidgets('week picker uses a week list', (tester) async {
+      final fixedNow = DateTime(2026, 6, 21);
+      TimeFilter current = TimeFilter.week(fixedNow);
+      final selectedWeek = TimeFilter.week(fixedNow);
+      final nextAnchor = DateTime(
+        selectedWeek.startDate.year,
+        selectedWeek.startDate.month,
+        selectedWeek.startDate.day,
+      ).add(const Duration(days: 7));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: Material(
+            child: StatefulBuilder(
+              builder: (context, setState) => TimeFilterBar(
+                activeFilter: current,
+                onChanged: (f) => setState(() => current = f),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text(selectedWeek.label));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('time_filter_week_picker')), findsOneWidget);
+      expect(find.byType(CupertinoPicker), findsNothing);
+
+      final nextWeekKey = find.byKey(
+        Key(
+          'time_filter_week_option_${nextAnchor.year}_${nextAnchor.month}_${nextAnchor.day}',
+        ),
+      );
+      await tester.scrollUntilVisible(
+        nextWeekKey,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(nextWeekKey);
+      await tester.pumpAndSettle();
+
+      expect(current, TimeFilter.week(nextAnchor));
+    });
+
+    testWidgets('month picker uses a month+year wheel', (tester) async {
+      TimeFilter current = TimeFilter.month(2026, 6);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: Material(
+            child: StatefulBuilder(
+              builder: (context, setState) => TimeFilterBar(
+                activeFilter: current,
+                onChanged: (f) => setState(() => current = f),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('giugno 2026'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('time_filter_month_picker_month_wheel')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('time_filter_month_picker_year_wheel')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('time_filter_week_picker')), findsNothing);
+      expect(find.byKey(const Key('time_filter_year_picker')), findsNothing);
+      expect(find.byType(DatePickerDialog), findsNothing);
+      expect(find.byType(CupertinoPicker), findsNWidgets(2));
+
+      await tester.drag(
+        find.byKey(const Key('time_filter_month_picker_month_wheel')),
+        const Offset(0, -48),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('time_filter_month_picker_confirm')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(current, TimeFilter.month(2026, 7));
+    });
+
+    testWidgets('year picker uses a year wheel', (tester) async {
+      TimeFilter current = TimeFilter.year(2026);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: Material(
+            child: StatefulBuilder(
+              builder: (context, setState) => TimeFilterBar(
+                activeFilter: current,
+                onChanged: (f) => setState(() => current = f),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('2026'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('time_filter_year_picker')), findsOneWidget);
+      expect(find.byKey(const Key('time_filter_week_picker')), findsNothing);
+      expect(find.byType(CupertinoPicker), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const Key('time_filter_year_picker')),
+        const Offset(0, -48),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('time_filter_year_picker_confirm')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(current, TimeFilter.year(2027));
+    });
+
+    testWidgets('interval picker keeps the existing range sheet', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: Material(
+            child: TimeFilterBar(
+              activeFilter: TimeFilter.customRange(
+                DateTime(2026, 6, 15),
+                DateTime(2026, 6, 30),
+              ),
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('15 giu 2026 → 30 giu 2026'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('time_filter_interval_picker_sheet')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('time_filter_week_picker')), findsNothing);
+      expect(
+        find.byKey(const Key('time_filter_month_picker_month_wheel')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('time_filter_year_picker')), findsNothing);
     });
   });
 
@@ -217,7 +454,12 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(StreamApp(db: db));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: MainScaffold(db: db),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Archivio'));
@@ -272,7 +514,12 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(StreamApp(db: db));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: MainScaffold(db: db),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Archivio'));
@@ -323,14 +570,22 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(StreamApp(db: db));
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: testTheme(),
+            home: MainScaffold(db: db),
+          ),
+        );
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Archivio'));
         await tester.pumpAndSettle();
 
         expect(find.text('Nessun movimento'), findsOneWidget);
-        expect(find.text('Aggiungi un movimento o cambia periodo.'), findsOneWidget);
+        expect(
+          find.text('Aggiungi un movimento o cambia periodo.'),
+          findsOneWidget,
+        );
         expect(find.text('Fuori periodo'), findsNothing);
       },
     );
@@ -340,7 +595,12 @@ void main() {
     ) async {
       final db = AppDatabase();
 
-      await tester.pumpWidget(StreamApp(db: db));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: MainScaffold(db: db),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Archivio'));
@@ -367,7 +627,12 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: MainScaffold(db: db),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Archivio'));
@@ -422,7 +687,12 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(StreamApp(db: db));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: testTheme(),
+          home: MainScaffold(db: db),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Archivio'));

@@ -14,6 +14,12 @@ import 'package:stream_app/screens/dashboard_screen.dart';
 import 'package:stream_app/screens/movements_screen.dart';
 import 'package:stream_app/widgets/movement_picker.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 typedef _EntryPointPump =
     Future<void> Function(
       WidgetTester tester,
@@ -118,6 +124,7 @@ void main() {
 
           await tester.pumpWidget(
             MaterialApp(
+              theme: _testTheme(),
               home: Scaffold(body: MovementPicker(db: db)),
             ),
           );
@@ -144,12 +151,12 @@ void main() {
           );
           expect(tester.takeException(), isNull);
 
-          await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+          await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
           await tester.pumpAndSettle();
           expect(find.byType(Scrollable), findsWidgets);
           expect(tester.takeException(), isNull);
 
-          await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+          await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: AccountsScreen(db: db)));
           await tester.pumpAndSettle();
           expect(
             find.byKey(const Key('account_card_acc_default')),
@@ -157,7 +164,7 @@ void main() {
           );
           expect(tester.takeException(), isNull);
 
-          await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+          await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CategoriesScreen(db: db)));
           await tester.pumpAndSettle();
           expect(find.byKey(const Key('category_card_exp_1')), findsOneWidget);
           expect(tester.takeException(), isNull);
@@ -218,7 +225,7 @@ Future<void> _openEditFromMovements(
   AppDatabase db,
   Movement movement,
 ) async {
-  await tester.pumpWidget(MaterialApp(home: MovementsScreen(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MovementsScreen(db: db)));
   await tester.pumpAndSettle();
   final card = find.byKey(Key('movement_card_${movement.id}'));
   await _tapVisible(tester, card);
@@ -229,7 +236,7 @@ Future<void> _openEditFromDashboard(
   AppDatabase db,
   Movement movement,
 ) async {
-  await tester.pumpWidget(MaterialApp(home: DashboardScreen(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: DashboardScreen(db: db)));
   await tester.pumpAndSettle();
   final categoryRow = find.ancestor(
     of: find.text('Spesa'),
@@ -245,7 +252,7 @@ Future<void> _openEditFromAccounts(
   AppDatabase db,
   Movement movement,
 ) async {
-  await tester.pumpWidget(MaterialApp(home: AccountsScreen(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: AccountsScreen(db: db)));
   await tester.pumpAndSettle();
   await _tapVisible(tester, find.byKey(const Key('account_card_acc_default')));
   final card = find.byKey(Key('movement_card_${movement.id}')).last;
@@ -257,7 +264,7 @@ Future<void> _openEditFromCategories(
   AppDatabase db,
   Movement movement,
 ) async {
-  await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CategoriesScreen(db: db)));
   await tester.pumpAndSettle();
   await _tapVisible(tester, find.byKey(const Key('category_card_exp_1')));
   final card = find.byKey(Key('movement_card_${movement.id}')).last;
@@ -269,7 +276,7 @@ Future<void> _openEditFromCalendar(
   AppDatabase db,
   Movement movement,
 ) async {
-  await tester.pumpWidget(MaterialApp(home: CalendarScreen(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CalendarScreen(db: db)));
   await tester.pumpAndSettle();
   final today = DateTime.now().day;
   await _tapVisible(tester, find.text('$today').first);

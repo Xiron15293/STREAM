@@ -27,6 +27,12 @@ import 'package:stream_app/utils/movement_search.dart';
 import 'package:stream_app/widgets/grouped_movements_list.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 const Object _throwingMovementUnset = Object();
 
 class _FailingTransactionSQLiteService extends SQLiteService {
@@ -79,12 +85,11 @@ class _ThrowingMovement extends Movement {
 
 Future<void> _pumpMainAppWithResetBackupStub(
   WidgetTester tester,
-  AppDatabase db, {
-  ThemeData? theme,
-}) async {
+  AppDatabase db,
+) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: theme,
+      theme: _testTheme(),
       home: _TestMainScaffold(db: db),
     ),
   );
@@ -236,9 +241,16 @@ Future<void> _pumpMainApp(
   AppDatabase db, {
   ThemeData? theme,
 }) async {
+  final base = _testTheme();
+  final applied = theme != null
+      ? base.copyWith(
+          platform: theme.platform,
+          useMaterial3: base.useMaterial3,
+        )
+      : base;
   await tester.pumpWidget(
     MaterialApp(
-      theme: theme,
+      theme: applied,
       home: MainScaffold(db: db),
     ),
   );

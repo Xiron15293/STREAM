@@ -18,11 +18,13 @@ import '../widgets/time_filter_bar.dart';
 class MovementsScreen extends StatefulWidget {
   final AppDatabase db;
   final String? activeProfileId;
+  final DateTime Function()? timeFilterNowProvider;
 
   const MovementsScreen({
     super.key,
     required this.db,
     this.activeProfileId,
+    this.timeFilterNowProvider,
   });
 
   @override
@@ -46,7 +48,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = _now();
     _activeFilter = TimeFilter.month(now.year, now.month);
     _selectedDay = now;
     _visibleCalendarMonth = DateTime(now.year, now.month, 1);
@@ -58,6 +60,8 @@ class _MovementsScreenState extends State<MovementsScreen> {
     PreferencesService.showNotesNotifier.addListener(_showNotesListener);
     _loadScopedFilters();
   }
+
+  DateTime _now() => widget.timeFilterNowProvider?.call() ?? DateTime.now();
 
   @override
   void didUpdateWidget(covariant MovementsScreen oldWidget) {
@@ -167,7 +171,8 @@ class _MovementsScreenState extends State<MovementsScreen> {
 
   List<Movement> _applyMovementScopedFilters(List<Movement> movements) {
     return movements.where((movement) {
-      final matchesAccount = _selectedAccountFilterIds == null ||
+      final matchesAccount =
+          _selectedAccountFilterIds == null ||
           _selectedAccountFilterIds!.contains(movement.accountId) ||
           (movement.destinationAccountId != null &&
               _selectedAccountFilterIds!.contains(
@@ -196,7 +201,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
     final selected = _selectedAccountFilterIds == null
         ? <String>[]
         : activeAccounts
-              .where((account) => _selectedAccountFilterIds!.contains(account.id))
+              .where(
+                (account) => _selectedAccountFilterIds!.contains(account.id),
+              )
               .map((account) => account.id)
               .toList();
     if (_selectedAccountFilterIds == null ||
@@ -219,9 +226,12 @@ class _MovementsScreenState extends State<MovementsScreen> {
   List<Category> _incomeCategories(List<Category> categories) =>
       categories.where((c) => c.type == MovementType.income).toList();
 
-  Widget _buildCategoryOption(Category category, Set<String> workingIds,
-      void Function(VoidCallback) setSheetState,
-      StreamThemePalette palette) {
+  Widget _buildCategoryOption(
+    Category category,
+    Set<String> workingIds,
+    void Function(VoidCallback) setSheetState,
+    StreamThemePalette palette,
+  ) {
     final isSelected = workingIds.contains(category.id);
     return InkWell(
       key: Key('movements_category_filter_option_${category.id}'),
@@ -239,9 +249,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
         child: Row(
           children: [
             Icon(
-              isSelected
-                  ? Icons.check_box
-                  : Icons.check_box_outline_blank,
+              isSelected ? Icons.check_box : Icons.check_box_outline_blank,
               color: palette.primary,
               size: 22,
             ),
@@ -391,7 +399,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
                                 });
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                                 child: Row(
                                   children: [
                                     Icon(
@@ -562,27 +572,43 @@ class _MovementsScreenState extends State<MovementsScreen> {
                           children: [
                             if (expenseCategories.isNotEmpty) ...[
                               Padding(
-                                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 4,
+                                ),
                                 child: Text(
                                   'Uscite',
                                   style: StreamTypography.h3,
                                 ),
                               ),
-                              ...expenseCategories
-                                  .map((c) => _buildCategoryOption(
-                                      c, workingIds, setSheetState, p)),
+                              ...expenseCategories.map(
+                                (c) => _buildCategoryOption(
+                                  c,
+                                  workingIds,
+                                  setSheetState,
+                                  p,
+                                ),
+                              ),
                             ],
                             if (incomeCategories.isNotEmpty) ...[
                               Padding(
-                                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 4,
+                                ),
                                 child: Text(
                                   'Entrate',
                                   style: StreamTypography.h3,
                                 ),
                               ),
-                              ...incomeCategories
-                                  .map((c) => _buildCategoryOption(
-                                      c, workingIds, setSheetState, p)),
+                              ...incomeCategories.map(
+                                (c) => _buildCategoryOption(
+                                  c,
+                                  workingIds,
+                                  setSheetState,
+                                  p,
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -722,9 +748,11 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 .where((category) => !category.archived)
                 .map((category) => category.id)
                 .toSet();
-            final accountNeedsSanitize = _selectedAccountFilterIds != null &&
+            final accountNeedsSanitize =
+                _selectedAccountFilterIds != null &&
                 !_selectedAccountFilterIds!.every(activeAccountIds.contains);
-            final categoryNeedsSanitize = _selectedCategoryFilterIds != null &&
+            final categoryNeedsSanitize =
+                _selectedCategoryFilterIds != null &&
                 !_selectedCategoryFilterIds!.every(activeCategoryIds.contains);
             if (accountNeedsSanitize || categoryNeedsSanitize) {
               Future.microtask(
@@ -811,7 +839,9 @@ class _MovementsScreenState extends State<MovementsScreen> {
                       onSaveAsFavorite: (movement) {
                         widget.db.saveMovementAsFavorite(movement);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Salvato nei preferiti')),
+                          const SnackBar(
+                            content: Text('Salvato nei preferiti'),
+                          ),
                         );
                       },
                       onAddQuick: (movement) {
@@ -905,6 +935,8 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 activeFilter: _activeFilter,
                 onChanged: _setActiveFilter,
                 onDatePicked: _rememberPickedDate,
+                resetToTodayOnDayOrWeekModeChange: true,
+                nowProvider: widget.timeFilterNowProvider,
               ),
               Padding(
                 key: const Key('movements_filters_section'),
@@ -1152,7 +1184,11 @@ class _MovementsScreenState extends State<MovementsScreen> {
           children: [
             Icon(icon, size: 64, color: p.textMuted),
             const SizedBox(height: StreamSpacing.lg),
-            Text(title, style: StreamTypography.h2, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: StreamTypography.h2,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: StreamSpacing.sm),
             Text(
               subtitle,

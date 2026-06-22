@@ -1271,8 +1271,14 @@ void _showMergeReport(BuildContext context, CategoryMergeReport report) {
 class CategoriesScreen extends StatefulWidget {
   final AppDatabase db;
   final String? activeProfileId;
+  final DateTime Function()? timeFilterNowProvider;
 
-  const CategoriesScreen({super.key, required this.db, this.activeProfileId});
+  const CategoriesScreen({
+    super.key,
+    required this.db,
+    this.activeProfileId,
+    this.timeFilterNowProvider,
+  });
 
   @override
   State<CategoriesScreen> createState() => _CategoriesScreenState();
@@ -1288,12 +1294,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = _now();
     _filter = TimeFilter.month(now.year, now.month);
     _loadLayoutMode();
     _loadScopedFilters();
     PreferencesService.categoryLayoutNotifier.addListener(_onLayoutChanged);
   }
+
+  DateTime _now() => widget.timeFilterNowProvider?.call() ?? DateTime.now();
 
   @override
   void didUpdateWidget(covariant CategoriesScreen oldWidget) {
@@ -1559,7 +1567,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 });
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                                 child: Row(
                                   children: [
                                     Icon(
@@ -1721,6 +1731,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   child: TimeFilterBar(
                     activeFilter: _filter,
                     onChanged: (value) => setState(() => _filter = value),
+                    resetToTodayOnDayOrWeekModeChange: true,
+                    nowProvider: widget.timeFilterNowProvider,
                   ),
                 ),
               ),
@@ -2229,6 +2241,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         category: category,
         initialFilter: _filter,
         selectedAccountIds: selectedAccountIds,
+        timeFilterNowProvider: widget.timeFilterNowProvider,
       ),
     );
   }
@@ -3588,12 +3601,14 @@ class _CategoryMovementsSheet extends StatefulWidget {
   final Category category;
   final TimeFilter? initialFilter;
   final Set<String>? selectedAccountIds;
+  final DateTime Function()? timeFilterNowProvider;
 
   const _CategoryMovementsSheet({
     required this.db,
     required this.category,
     this.initialFilter,
     this.selectedAccountIds,
+    this.timeFilterNowProvider,
   });
 
   @override
@@ -3614,7 +3629,7 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final now = widget.timeFilterNowProvider?.call() ?? DateTime.now();
     _filter = widget.initialFilter ?? TimeFilter.month(now.year, now.month);
   }
 
@@ -3840,6 +3855,8 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                   child: TimeFilterBar(
                     activeFilter: _filter,
                     onChanged: (value) => setState(() => _filter = value),
+                    resetToTodayOnDayOrWeekModeChange: true,
+                    nowProvider: widget.timeFilterNowProvider,
                   ),
                 ),
                 const SizedBox(height: 12),

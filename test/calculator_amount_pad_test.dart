@@ -11,6 +11,12 @@ import 'package:stream_app/widgets/movement_picker.dart';
 
 import 'helpers/calculator_test_helpers.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   group('AmountExpressionEvaluator', () {
     const evaluator = AmountExpressionEvaluator();
@@ -428,6 +434,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(
             body: Builder(
               builder: (context) => FilledButton(
@@ -493,6 +500,7 @@ Future<void> _pumpAmountField(
 ) async {
   await tester.pumpWidget(
     MaterialApp(
+      theme: _testTheme(),
       home: Scaffold(
         body: CalculatorAmountField(
           controller: controller,
@@ -510,7 +518,7 @@ Future<void> _openPad(WidgetTester tester) async {
 }
 
 Future<void> _pumpMainScaffold(WidgetTester tester, AppDatabase db) async {
-  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
   await tester.pumpAndSettle();
 }
 

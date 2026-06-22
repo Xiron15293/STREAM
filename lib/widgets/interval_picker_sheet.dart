@@ -80,6 +80,7 @@ class _IntervalPickerSheetState extends State<_IntervalPickerSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
+        key: const Key('time_filter_interval_picker_sheet'),
         decoration: BoxDecoration(
           color: StreamColors.canvas,
           borderRadius: const BorderRadius.vertical(
@@ -105,10 +106,7 @@ class _IntervalPickerSheetState extends State<_IntervalPickerSheet> {
                 StreamSpacing.lg,
                 StreamSpacing.md,
               ),
-              child: Text(
-                'Seleziona intervallo',
-                style: StreamTypography.h3,
-              ),
+              child: Text('Seleziona intervallo', style: StreamTypography.h3),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: StreamSpacing.lg),
@@ -170,8 +168,7 @@ class _IntervalPickerSheetState extends State<_IntervalPickerSheet> {
                         side: BorderSide(color: StreamColors.textMuted),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(StreamRadius.md),
+                          borderRadius: BorderRadius.circular(StreamRadius.md),
                         ),
                       ),
                       child: const Text('Annulla'),
@@ -182,15 +179,14 @@ class _IntervalPickerSheetState extends State<_IntervalPickerSheet> {
                     child: FilledButton(
                       onPressed: _isValid
                           ? () => Navigator.pop(
-                                context,
-                                DateTimeRange(start: _start, end: _end),
-                              )
+                              context,
+                              DateTimeRange(start: _start, end: _end),
+                            )
                           : null,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(StreamRadius.md),
+                          borderRadius: BorderRadius.circular(StreamRadius.md),
                         ),
                       ),
                       child: const Text('Applica'),
@@ -233,9 +229,7 @@ class _DateCard extends StatelessWidget {
               : StreamColors.surfaceElevated,
           borderRadius: BorderRadius.circular(StreamRadius.md),
           border: isActive
-              ? Border.all(
-                  color: StreamColors.primary.withValues(alpha: 0.5),
-                )
+              ? Border.all(color: StreamColors.primary.withValues(alpha: 0.5))
               : null,
         ),
         child: Column(
@@ -250,10 +244,7 @@ class _DateCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: StreamSpacing.xs),
-            Text(
-              formatted,
-              style: StreamTypography.bodyBold,
-            ),
+            Text(formatted, style: StreamTypography.bodyBold),
           ],
         ),
       ),

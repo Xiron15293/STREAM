@@ -21,6 +21,12 @@ import 'package:stream_app/screens/settings_screen.dart';
 import 'package:stream_app/services/backup_service.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 class TriggerFailingSQLiteService extends SQLiteService {
   Future<void> installAbortTrigger() async {
     await transaction((txn) async {
@@ -41,6 +47,7 @@ Future<void> _pumpMainAppWithResetBackupStub(
 ) async {
   await tester.pumpWidget(
     MaterialApp(
+      theme: _testTheme(),
       home: _TestMainScaffold(db: db),
     ),
   );
@@ -364,7 +371,7 @@ void main() {
     final db = AppDatabase();
     await seedUserData(db);
 
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await openSettingsOrResetArea(tester);
@@ -454,11 +461,12 @@ void main() {
       await seedUserData(db);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: SettingsScreen(
-            db: db,
-            createPreResetBackup: (_) async {
-              throw StateError('forced backup failure');
+      MaterialApp(
+        theme: _testTheme(),
+        home: SettingsScreen(
+          db: db,
+          createPreResetBackup: (_) async {
+            throw StateError('forced backup failure');
             },
           ),
         ),
@@ -483,11 +491,12 @@ void main() {
       await seedUserData(db);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: SettingsScreen(
-            db: db,
-            createPreResetBackup: (_) async {
-              throw StateError('forced backup failure');
+      MaterialApp(
+        theme: _testTheme(),
+        home: SettingsScreen(
+          db: db,
+          createPreResetBackup: (_) async {
+            throw StateError('forced backup failure');
             },
           ),
         ),

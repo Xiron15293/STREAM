@@ -9,6 +9,12 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/screens/movements_screen.dart';
 import 'package:stream_app/screens/settings_screen.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   late DateTime today;
 
@@ -49,7 +55,7 @@ void main() {
 
   Future<void> pumpMovements(WidgetTester tester, AppDatabase db) async {
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(MaterialApp(home: MovementsScreen(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MovementsScreen(db: db)));
     await tester.pumpAndSettle();
   }
 
@@ -68,7 +74,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      await tester.pumpWidget(MaterialApp(home: SettingsScreen(db: seededDb())));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: SettingsScreen(db: seededDb())));
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(

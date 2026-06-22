@@ -6,6 +6,7 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Stato Attuale
 
+- V0.11m-fix1b completata: TimeFilter Picker Routing unificato. Giorno → calendario, Settimana → elenco settimane, Mese → rotella glass mese+anno, Anno → rotella glass solo anno, Intervallo → picker intervallo. Routing corretto in Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari. Test forti aggiunti (routing, mode defaults, picker routing). Fix test failures: categories_navigation, categories_treemap, qa_extensive (tema iOS ignorato da `_pumpMainApp`). Full suite verde con `1176` passati + `1` skipped.
 - V0.11m completata: UX polish di filtri, bottom sheet ed empty state su Dashboard, Movimenti, Grafici, Categorie, Conti e Beneficiari senza cambiare logica dati o semantica `null` / `empty` / `subset`.
 - `ChartEmptyState` ora supporta `title + subtitle + icon`; i grafici distinguono meglio tra nessuna selezione, nessun dato e nessun grafico attivo.
 - Bottom sheet filtri uniformati con titoli `Conti` / `Categorie`, microcopy contestuale e liste scrollabili su viewport piccoli; `Applica` / `Annulla` e select/deselect all restano invariati.
@@ -56,15 +57,16 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Focus consigliato
 
-1. QA manuale filtri scoped su device reale: verificare microcopy, wrap chip e bottom sheet su viewport piccoli
-2. QA manuale backup/restore multi-profilo su device reale: export/restore per profili diversi con verifica semantica `null` / `empty` / `subset`
-3. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
-4. Follow-up toolchain test: chiarire il crash locale di `flutter test` con test assets attivi (`NativeAssetsManifest.json`)
+1. QA manuale su device reale per TimeFilter routing: verificare che Day apra calendario, Week apra elenco settimane, Month apra rotella mese+anno, Year apra rotella solo anno, Interval apra picker intervallo — su Android e iOS
+2. QA manuale filtri scoped su device reale: verificare microcopy, wrap chip e bottom sheet su viewport piccoli
+3. QA manuale backup/restore multi-profilo su device reale: export/restore per profili diversi con verifica semantica `null` / `empty` / `subset`
+4. Follow-up repo hygiene: capire perche alcune run Flutter marcano deleted `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+5. Follow-up toolchain test: chiarire il crash locale di `flutter test` con test assets attivi (`NativeAssetsManifest.json`)
 
 ## Prossimo Sprint Consigliato
 
-1. QA manuale su device reale per filtri Movimenti scoped + selezione conti patrimonio
-2. Hardening ambiente test Material 3 per il caso shader `ink_sparkle.frag`
+1. QA manuale su device reale per TimeFilter routing (Android + iOS)
+2. QA manuale su device reale per filtri Movimenti scoped + selezione conti patrimonio
 3. UI polish residui
 
 ## Regole Git
@@ -76,9 +78,9 @@ Questa pagina è il punto di partenza consigliato per la prossima sessione.
 
 ## Rischi Noti
 
-- Restano info-level analyzer già presenti nel progetto.
-- `flutter analyze` locale chiude ancora con `34` info legacy del repo; la patch V0.11l-a non ne aggiunge di nuove.
-- Fragilita test nota P2: `Asset 'shaders/ink_sparkle.frag' not found` in alcuni ambienti test; non risolta in questa patch per evitare cambi fuori scope.
+- Restano info-level analyzer già presenti nel progetto (37 info legacy, deprecation `alpha`, `useMaterial3`, `cacheExtent`).
+- `flutter analyze` locale chiude ancora solo con info legacy del repo; la patch V0.11m-fix1b non ne introduce di nuove.
+- Fragilita test nota P2: `Asset 'shaders/ink_sparkle.frag' not found` in alcuni ambienti test mitigata con `NoSplash.splashFactory` nei wrapper test; resta un rischio solo se si introducono nuovi test Material senza splash factory esplicita.
 - Alcuni file doc storici contengono dettagli vecchi utili; se li aggiorni, non perdere il contesto precedente.
 - Le viste Movimenti/Archivio hanno ancora molta logica di stato e vanno toccate con attenzione.
 - Il flusso categorie ha regole di sicurezza e duplicati già consolidate: qualsiasi refactor futuro deve preservare ID, namespace e normalizzazione.

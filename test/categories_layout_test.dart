@@ -11,6 +11,12 @@ import 'package:stream_app/models/category.dart';
 import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/screens/categories_screen.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 DateTime _previousMonth(DateTime date) =>
     DateTime(date.year, date.month - 1, 15);
 
@@ -32,7 +38,7 @@ void main() {
       await db.addCategory('Prova Test', MovementType.expense, 0xFF42A5F5);
       final cat = db.categories.firstWhere((c) => c.name == 'Prova Test');
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -54,7 +60,7 @@ void main() {
       await db.addCategory('Prova Clean', MovementType.expense, 0xFF42A5F5);
       final cat = db.categories.firstWhere((c) => c.name == 'Prova Clean');
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -93,7 +99,7 @@ void main() {
         );
       }
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -127,6 +133,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: CategoriesScreen(db: db)),
         ),
       );
@@ -167,6 +174,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: CategoriesScreen(db: db)),
         ),
       );
@@ -188,7 +196,7 @@ void main() {
       await db.addCategory('Custom Uscita', MovementType.expense, 0xFFFF453A);
       await db.addCategory('Custom Entrata', MovementType.income, 0xFF34C759);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -210,7 +218,7 @@ void main() {
       await db.addCategory('Custom Uscita', MovementType.expense, 0xFFFF453A);
       await db.addCategory('Custom Entrata', MovementType.income, 0xFF34C759);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -230,7 +238,7 @@ void main() {
       final cat = db.categories.firstWhere((c) => c.name == 'Arch Only Income');
       await db.archiveCategory(cat.id);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -279,7 +287,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -310,7 +318,7 @@ void main() {
         (c) => c.name == 'Da Modificare Test',
       );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -343,7 +351,7 @@ void main() {
     ) async {
       final db = AppDatabase();
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -366,7 +374,7 @@ void main() {
     ) async {
       final db = AppDatabase();
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -389,7 +397,7 @@ void main() {
       await db.addCategory('Trasporti', MovementType.expense, 0xFFFF453A);
       await db.addCategory('Stipendio', MovementType.income, 0xFF34C759);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -429,7 +437,7 @@ void main() {
       await db.addCategory('Cibo', MovementType.expense, 0xFF42A5F5);
       await db.addCategory('Stipendio', MovementType.income, 0xFF34C759);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -464,7 +472,7 @@ void main() {
       await db.addCategory('Trasporti', MovementType.expense, 0xFFFF453A);
       await db.addCategory('Stipendio', MovementType.income, 0xFF34C759);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -495,7 +503,7 @@ void main() {
       final archCat = db.categories.firstWhere((c) => c.name == 'Cibo');
       await db.archiveCategory(archCat.id);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -533,7 +541,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -559,7 +567,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -585,7 +593,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -615,7 +623,7 @@ void main() {
         final arch = db.categories.firstWhere((c) => c.name == 'Archived Cat');
         await db.archiveCategory(arch.id);
 
-        await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -658,7 +666,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -684,7 +692,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -710,7 +718,7 @@ void main() {
         final db = AppDatabase();
         await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-        await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -739,7 +747,7 @@ void main() {
         await db.addCategory('Cat B', MovementType.expense, 0xFFFF453A);
         await db.addCategory('Cat C', MovementType.expense, 0xFF34C759);
 
-        await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -795,7 +803,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -832,7 +840,7 @@ void main() {
           (c) => c.type == MovementType.expense,
         );
 
-        await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('bottom_nav_archive')));
@@ -908,7 +916,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CategoriesScreen(db: db)));
         await tester.pumpAndSettle();
 
         final card = find.byKey(Key('category_card_${cat.id}'));
@@ -958,7 +966,7 @@ void main() {
       final db = AppDatabase();
       await db.addCategory('Test', MovementType.expense, 0xFF42A5F5);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('bottom_nav_archive')));

@@ -14,6 +14,12 @@ import 'package:stream_app/widgets/movement_picker.dart';
 
 import 'helpers/calculator_test_helpers.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() {
@@ -358,7 +364,7 @@ void main() {
       );
       final subId = db.getSubcategoriesForCategory(cat.id).first.id;
 
-      await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CategoriesScreen(db: db)));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -406,13 +412,14 @@ void main() {
         final db = await _buildMovementSelectorDb();
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(body: MovementPicker(db: db)),
-          ),
-        );
-        await tester.pumpAndSettle();
+        MaterialApp(
+          theme: _testTheme(),
+          home: Scaffold(body: MovementPicker(db: db)),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(
+      expect(
           find.byKey(const Key('add_movement_category_step')),
           findsOneWidget,
         );
@@ -441,6 +448,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
+            theme: _testTheme(),
             home: Scaffold(body: MovementPicker(db: db)),
           ),
         );
@@ -475,6 +483,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
+            theme: _testTheme(),
             home: Scaffold(body: MovementPicker(db: db)),
           ),
         );
@@ -518,6 +527,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
+            theme: _testTheme(),
             home: Scaffold(body: MovementPicker(db: db)),
           ),
         );
@@ -568,6 +578,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: MovementPicker(db: db)),
         ),
       );
@@ -609,6 +620,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
+            theme: _testTheme(),
             home: Scaffold(body: MovementPicker(db: db)),
           ),
         );
@@ -634,6 +646,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: MovementPicker(db: db)),
         ),
       );
@@ -683,6 +696,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: _testTheme(),
           home: Scaffold(body: MovementPicker(db: db)),
         ),
       );
@@ -895,7 +909,7 @@ void main() {
         var notifications = 0;
         db.addListener(() => notifications++);
 
-        await tester.pumpWidget(MaterialApp(home: CategoriesScreen(db: db)));
+        await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: CategoriesScreen(db: db)));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(Key('category_card_${parent.id}')));
@@ -973,13 +987,14 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: MovementPicker(db: db, prefill: movement),
-            ),
+        MaterialApp(
+          theme: _testTheme(),
+          home: Scaffold(
+            body: MovementPicker(db: db, prefill: movement),
           ),
-        );
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
         await db.updateCategory(
           parent.id,

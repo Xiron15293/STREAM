@@ -11,6 +11,12 @@ import 'package:stream_app/models/movement.dart';
 import 'package:stream_app/models/time_filter.dart';
 import 'package:stream_app/widgets/movement_card.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 Future<void> openArchiveCategories(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('bottom_nav_archive')).hitTestable());
   await tester.pumpAndSettle();
@@ -103,8 +109,10 @@ void main() {
     (WidgetTester tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
-      final firstDay = DateTime(now.year, now.month, 1);
-      final secondDay = DateTime(now.year, now.month, 2);
+      final firstDay = DateTime(now.year, now.month, now.day);
+      final secondDay = now.day >= 28
+          ? DateTime(now.year, now.month, now.day - 1)
+          : DateTime(now.year, now.month, now.day + 1);
       final otherMonth = now.month == 12 ? 11 : now.month + 1;
       final otherMonthDay3 = DateTime(now.year, otherMonth, 3);
 
@@ -180,7 +188,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await openCategorySheet(
@@ -288,7 +296,7 @@ void main() {
       (c) => c.name == 'Entrate Azione',
     );
 
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await openCategorySheet(
@@ -336,7 +344,7 @@ void main() {
       );
       await db.archiveCategory(category.id);
 
-      await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+      await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
       await tester.pumpAndSettle();
 
       await openArchiveCategories(tester);
@@ -392,7 +400,7 @@ void main() {
       (c) => c.name == 'Categoria Vuota QA',
     );
 
-    await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+    await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
     await tester.pumpAndSettle();
 
     await openCategorySheet(tester, category.id);

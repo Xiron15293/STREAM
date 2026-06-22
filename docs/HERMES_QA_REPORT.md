@@ -6,6 +6,17 @@
 
 ## Hermes Extended QA Audit
 
+### Delta 2026-06-22 — V0.11m-fix1b
+- Verificato il routing unico del TimeFilter: Day → calendario, Week → elenco settimane, Month → rotella mese+anno, Year → rotella solo anno, Interval → picker intervallo
+- Verificato che nessuna modalità diversa da Day chiami `showDatePicker`
+- Verificato che Month usi due colonne (mese + anno) e non sia un anno standalone
+- Verificato che Year usi solo anno (nessuna colonna mese)
+- Verificato che Week usi lista (nessuna rotella, nessun calendario)
+- Test aggiunti: `test/time_filter_picker_routing_test.dart` (5 test), `test/time_filter_mode_defaults_test.dart` (reset a oggi)
+- Fix test: `categories_navigation_test` (data today), `categories_treemap_test` (data oggi), `qa_extensive_test` (`_pumpMainApp` parametro `theme`)
+- `flutter test --no-test-assets`: **1176 passati / 1 skipped**
+- `flutter analyze`: nessun errore o warning nuovo, solo `37` info preesistenti
+
 ### Delta 2026-06-22 — V0.11m
 - Verificata la standardizzazione UX di filtri, bottom sheet ed empty state senza regressioni su logica dati o semantica filtri
 - Verificati i nuovi stati:

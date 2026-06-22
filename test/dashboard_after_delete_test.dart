@@ -12,11 +12,17 @@ import 'package:stream_app/models/favorite_movement.dart';
 import 'package:stream_app/main.dart';
 import 'helpers/calculator_test_helpers.dart';
 
+ThemeData _testTheme() => ThemeData(useMaterial3: true).copyWith(
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+);
+
 /// Helper: create AppDatabase + pump app
 Future<AppDatabase> pumpApp(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({'movements_view_mode': 'listHeatmap'});
   final db = AppDatabase();
-  await tester.pumpWidget(MaterialApp(home: MainScaffold(db: db)));
+  await tester.pumpWidget(MaterialApp(theme: _testTheme(), home: MainScaffold(db: db)));
   return db;
 }
 
