@@ -935,7 +935,6 @@ class _MovementsScreenState extends State<MovementsScreen> {
                 activeFilter: _activeFilter,
                 onChanged: _setActiveFilter,
                 onDatePicked: _rememberPickedDate,
-                resetToTodayOnDayOrWeekModeChange: true,
                 nowProvider: widget.timeFilterNowProvider,
               ),
               Padding(

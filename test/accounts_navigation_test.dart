@@ -267,7 +267,8 @@ void main() {
     (WidgetTester tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
-      final currentMonthDay1 = DateTime(now.year, now.month, now.day);
+      final lastDay = DateTime(now.year, now.month + 1, 0);
+      final currentMonthDay1 = DateTime(now.year, now.month, lastDay.day);
       final currentMonthDay2 = _monthDay(now, 2);
       final currentMonthDay3 = _monthDay(now, 3);
       final otherMonthSameYear = _sameYearOtherMonth(now);

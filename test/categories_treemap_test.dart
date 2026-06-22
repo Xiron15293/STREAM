@@ -85,7 +85,8 @@ void main() {
   testWidgets('treemap respects day, month and year filters', (tester) async {
     final db = AppDatabase();
     final now = DateTime.now();
-    final currentDay = DateTime(now.year, now.month, now.day, 10);
+    final lastDay = DateTime(now.year, now.month + 1, 0);
+    final currentDay = DateTime(lastDay.year, lastDay.month, lastDay.day, 10);
     final sameMonth = DateTime(now.year, now.month, 2, 10);
     final sameYear = DateTime(now.year, now.month == 1 ? 2 : 1, 3, 10);
     final category = await _addCategory(db, 'Period Filtered', 0xFFE53935);

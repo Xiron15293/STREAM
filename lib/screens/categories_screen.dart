@@ -1731,7 +1731,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   child: TimeFilterBar(
                     activeFilter: _filter,
                     onChanged: (value) => setState(() => _filter = value),
-                    resetToTodayOnDayOrWeekModeChange: true,
                     nowProvider: widget.timeFilterNowProvider,
                   ),
                 ),
@@ -3855,7 +3854,6 @@ class _CategoryMovementsSheetState extends State<_CategoryMovementsSheet> {
                   child: TimeFilterBar(
                     activeFilter: _filter,
                     onChanged: (value) => setState(() => _filter = value),
-                    resetToTodayOnDayOrWeekModeChange: true,
                     nowProvider: widget.timeFilterNowProvider,
                   ),
                 ),

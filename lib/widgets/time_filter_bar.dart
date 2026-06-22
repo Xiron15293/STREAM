@@ -11,7 +11,6 @@ class TimeFilterBar extends StatelessWidget {
   final ValueChanged<TimeFilter> onChanged;
   final ValueChanged<DateTime>? onDatePicked;
   final String? customRangeLabel;
-  final bool resetToTodayOnDayOrWeekModeChange;
   final DateTime Function()? nowProvider;
 
   const TimeFilterBar({
@@ -20,34 +19,23 @@ class TimeFilterBar extends StatelessWidget {
     required this.onChanged,
     this.onDatePicked,
     this.customRangeLabel,
-    this.resetToTodayOnDayOrWeekModeChange = false,
     this.nowProvider,
   });
 
   void _onModeChanged(TimeFilterMode mode, BuildContext context) {
-    final s = activeFilter.startDate;
-    final nowDate = nowProvider?.call() ?? DateTime.now();
-    final now = DateTime(nowDate.year, nowDate.month, nowDate.day);
+    final anchor = activeFilter.endDate;
     switch (mode) {
       case TimeFilterMode.day:
-        onChanged(
-          resetToTodayOnDayOrWeekModeChange
-              ? TimeFilter.day(now)
-              : TimeFilter.day(s),
-        );
+        onChanged(TimeFilter.day(anchor));
         break;
       case TimeFilterMode.week:
-        onChanged(
-          resetToTodayOnDayOrWeekModeChange
-              ? TimeFilter.week(now)
-              : TimeFilter.week(s),
-        );
+        onChanged(TimeFilter.week(anchor));
         break;
       case TimeFilterMode.month:
-        onChanged(TimeFilter.month(s.year, s.month));
+        onChanged(TimeFilter.month(anchor.year, anchor.month));
         break;
       case TimeFilterMode.year:
-        onChanged(TimeFilter.year(s.year));
+        onChanged(TimeFilter.year(anchor.year));
         break;
       case TimeFilterMode.customRange:
         WidgetsBinding.instance.addPostFrameCallback(

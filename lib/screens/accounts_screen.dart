@@ -439,7 +439,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     child: TimeFilterBar(
                       activeFilter: _filter,
                       onChanged: (value) => setState(() => _filter = value),
-                      resetToTodayOnDayOrWeekModeChange: true,
                       nowProvider: widget.timeFilterNowProvider,
                     ),
                   ),
@@ -1461,7 +1460,6 @@ class _AccountMovementsSheetState extends State<_AccountMovementsSheet> {
                                 activeFilter: _filter,
                                 onChanged: (value) =>
                                     setState(() => _filter = value),
-                                resetToTodayOnDayOrWeekModeChange: true,
                                 nowProvider: widget.timeFilterNowProvider,
                               ),
                             ),

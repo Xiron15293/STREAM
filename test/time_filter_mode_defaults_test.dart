@@ -176,92 +176,144 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Movimenti day/week reset to today and manual navigation works', (
+  testWidgets('Movimenti — month day switch preserves context', (
     tester,
   ) async {
     final db = await seededDb();
     await pumpMovements(tester, db);
+    final junEnd = TimeFilter.month(2026, 6).endDate;
 
     await tester.tap(find.text('Giorno'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.day(fixedNow).label), findsOneWidget);
-    expect(find.text('Oggi'), findsOneWidget);
-    expect(find.text('Ieri'), findsNothing);
+    expect(timeFilterLabel(TimeFilter.day(junEnd).label), findsOneWidget);
 
     await tester.tap(timeFilterChevronRight());
     await tester.pumpAndSettle();
     expect(
       timeFilterLabel(
-        TimeFilter.day(fixedNow.add(const Duration(days: 1))).label,
+        TimeFilter.day(junEnd.add(const Duration(days: 1))).label,
       ),
       findsOneWidget,
     );
 
     await tester.tap(find.text('Sett.'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.week(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.week(junEnd).label), findsOneWidget);
   });
 
-  testWidgets('Categorie day/week reset to today', (tester) async {
+  testWidgets('Categorie — month day preserves context', (tester) async {
     final db = await seededDb();
     await pumpCategories(tester, db);
+    final junEnd = TimeFilter.month(2026, 6).endDate;
 
     await tester.tap(find.text('Giorno'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.day(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.day(junEnd).label), findsOneWidget);
 
     await tester.tap(find.text('Sett.'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.week(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.week(junEnd).label), findsOneWidget);
   });
 
-  testWidgets('Conti day/week reset to today', (tester) async {
+  testWidgets('Conti — month day preserves context', (tester) async {
     final db = await seededDb();
     await pumpAccounts(tester, db);
+    final junEnd = TimeFilter.month(2026, 6).endDate;
 
     await tester.tap(find.text('Giorno'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.day(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.day(junEnd).label), findsOneWidget);
 
     await tester.tap(find.text('Sett.'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.week(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.week(junEnd).label), findsOneWidget);
   });
 
-  testWidgets('Dashboard day/week reset to today and manual navigation works', (
+  testWidgets('Dashboard — month day preserves context', (
     tester,
   ) async {
     final db = await seededDb();
     await pumpDashboard(tester, db);
+    final junEnd = TimeFilter.month(2026, 6).endDate;
 
     await tester.tap(find.text('Giorno'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.day(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.day(junEnd).label), findsOneWidget);
 
     await tester.tap(timeFilterChevronRight());
     await tester.pumpAndSettle();
     expect(
       timeFilterLabel(
-        TimeFilter.day(fixedNow.add(const Duration(days: 1))).label,
+        TimeFilter.day(junEnd.add(const Duration(days: 1))).label,
       ),
       findsOneWidget,
     );
 
     await tester.tap(find.text('Sett.'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.week(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.week(junEnd).label), findsOneWidget);
   });
 
-  testWidgets('Charts day/week reset to today', (tester) async {
+  testWidgets('Charts — month day preserves context', (tester) async {
     final db = await seededDb();
     await pumpCharts(tester, db);
+    final junEnd = TimeFilter.month(2026, 6).endDate;
 
     await tester.tap(find.text('Giorno'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.day(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.day(junEnd).label), findsOneWidget);
 
     await tester.tap(find.text('Sett.'));
     await tester.pumpAndSettle();
-    expect(timeFilterLabel(TimeFilter.week(fixedNow).label), findsOneWidget);
+    expect(timeFilterLabel(TimeFilter.week(junEnd).label), findsOneWidget);
+  });
+
+  testWidgets('Mese Maggio 2026 → Giorno → 31 maggio 2026', (tester) async {
+    final db = await seededDb();
+    await pumpMovements(tester, db);
+    final mayEnd = TimeFilter.month(2026, 5).endDate;
+
+    await tester.tap(find.text('Mese'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Giorno'));
+    await tester.pumpAndSettle();
+    expect(timeFilterLabel(TimeFilter.day(mayEnd).label), findsOneWidget);
+  });
+
+  testWidgets('Week passata → Giorno → ultimo giorno settimana', (
+    tester,
+  ) async {
+    final db = await seededDb();
+    await pumpMovements(tester, db);
+    final junEnd = TimeFilter.month(2026, 6).endDate;
+    final weekFromMonthEnd = TimeFilter.week(junEnd);
+    final weekEnd = weekFromMonthEnd.endDate;
+
+    await tester.tap(find.text('Sett.'));
+    await tester.pumpAndSettle();
+    expect(timeFilterLabel(weekFromMonthEnd.label), findsOneWidget);
+
+    await tester.tap(find.text('Giorno'));
+    await tester.pumpAndSettle();
+    expect(timeFilterLabel(TimeFilter.day(weekEnd).label), findsOneWidget);
+  });
+
+  testWidgets('Mese Maggio 2026 → Settimana → settimana contenente 31 maggio', (
+    tester,
+  ) async {
+    final db = await seededDb();
+    await pumpMovements(tester, db);
+    final mayEnd = TimeFilter.month(2026, 5).endDate;
+
+    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sett.'));
+    await tester.pumpAndSettle();
+    expect(timeFilterLabel(TimeFilter.week(mayEnd).label), findsOneWidget);
   });
 }

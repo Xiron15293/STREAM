@@ -109,10 +109,9 @@ void main() {
     (WidgetTester tester) async {
       final db = AppDatabase();
       final now = DateTime.now();
-      final firstDay = DateTime(now.year, now.month, now.day);
-      final secondDay = now.day >= 28
-          ? DateTime(now.year, now.month, now.day - 1)
-          : DateTime(now.year, now.month, now.day + 1);
+      final lastDay = DateTime(now.year, now.month + 1, 0);
+      final firstDay = DateTime(now.year, now.month, lastDay.day);
+      final secondDay = DateTime(now.year, now.month, lastDay.day - 1);
       final otherMonth = now.month == 12 ? 11 : now.month + 1;
       final otherMonthDay3 = DateTime(now.year, otherMonth, 3);
 

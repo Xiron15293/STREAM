@@ -184,11 +184,11 @@ void main() {
       expect(current, before);
     });
 
-    testWidgets('day and week mode can reset to today on demand', (
+    testWidgets('mode switch preserves temporal context', (
       WidgetTester tester,
     ) async {
-      final fixedNow = DateTime(2026, 6, 21);
-      TimeFilter current = TimeFilter.month(2026, 6);
+      TimeFilter current = TimeFilter.month(2026, 5);
+      final mayEnd = DateTime(2026, 5, 31);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -198,8 +198,6 @@ void main() {
               builder: (context, setState) => TimeFilterBar(
                 activeFilter: current,
                 onChanged: (f) => setState(() => current = f),
-                resetToTodayOnDayOrWeekModeChange: true,
-                nowProvider: () => fixedNow,
               ),
             ),
           ),
@@ -208,7 +206,7 @@ void main() {
 
       await tester.tap(find.text('Giorno'));
       await tester.pumpAndSettle();
-      expect(current, TimeFilter.day(fixedNow));
+      expect(current, TimeFilter.day(mayEnd));
 
       await tester.tap(find.text('Mese'));
       await tester.pumpAndSettle();
@@ -216,7 +214,7 @@ void main() {
 
       await tester.tap(find.text('Sett.'));
       await tester.pumpAndSettle();
-      expect(current, TimeFilter.week(fixedNow));
+      expect(current, TimeFilter.week(mayEnd));
     });
 
     testWidgets('day picker opens the date picker dialog', (

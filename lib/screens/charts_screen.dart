@@ -262,7 +262,6 @@ class _ChartsScreenState extends State<ChartsScreen> {
                     activeFilter: _filter,
                     onChanged: (value) => setState(() => _filter = value),
                     customRangeLabel: 'Range',
-                    resetToTodayOnDayOrWeekModeChange: true,
                     nowProvider: widget.timeFilterNowProvider,
                   ),
                 ),

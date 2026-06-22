@@ -192,7 +192,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     TimeFilterBar(
                       activeFilter: _filter,
                       onChanged: _onFilterChanged,
-                      resetToTodayOnDayOrWeekModeChange: true,
                       nowProvider: widget.timeFilterNowProvider,
                     ),
                     const SizedBox(height: StreamSpacing.md),
